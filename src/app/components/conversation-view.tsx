@@ -4,7 +4,7 @@ import {
   Phone, Mail, Info, X, GitBranch, SquarePen,
   User as UserIcon, UserPlus, UserCheck, CheckCircle2, XCircle,
   Clock, Tag, MoreHorizontal, Paperclip, Smile, Lock,
-  ChevronDown, ArrowUp, Filter, Circle, Plus,
+  ChevronDown, ArrowUp, Filter, Circle, Plus, Calendar,
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { toast } from "sonner";
@@ -542,6 +542,7 @@ function ConversationContextPanel({
 }) {
   const [newNote, setNewNote] = useState("");
   const [savedNotes, setSavedNotes] = useState<{ id: string; content: string; createdAt: string; author: string }[]>([]);
+  const [filterDate, setFilterDate] = useState("");
   const assignee    = users.find(u => u.id === meta.assigneeId);
   const contactGroups = meta.labels || [];
   const contactMessages = systemItems.filter(i => i.content);
@@ -557,6 +558,10 @@ function ConversationContextPanel({
     setSavedNotes(prev => [note, ...prev]);
     setNewNote("");
   };
+
+  const filteredNotes = filterDate
+    ? savedNotes.filter(note => new Date(note.createdAt).toISOString().slice(0, 10) === filterDate)
+    : savedNotes;
 
   return (
     <div className="w-[576px] border-l border-border bg-card flex flex-col shrink-0 h-full overflow-y-auto">
@@ -617,7 +622,25 @@ function ConversationContextPanel({
 
       {/* Notes Section */}
       <div className="px-6 py-5 flex-1">
-        <h3 className="text-sm font-bold text-foreground mb-3">Notes</h3>
+        <div className="flex items-center justify-between mb-3">
+          <h3 className="text-sm font-bold text-foreground">Notes</h3>
+          <div className="flex items-center gap-2">
+            <div className="relative flex items-center">
+              <Calendar className="w-3.5 h-3.5 text-muted-foreground absolute left-2.5 pointer-events-none" />
+              <input
+                type="date"
+                value={filterDate}
+                onChange={(e) => setFilterDate(e.target.value)}
+                className="pl-8 pr-2 py-1.5 bg-background border border-input rounded-lg text-xs text-foreground focus:ring-1 focus:ring-ring outline-none cursor-pointer"
+              />
+            </div>
+            {filterDate && (
+              <button onClick={() => setFilterDate("")} className="text-[10px] font-bold text-primary hover:text-primary/80 transition-colors">
+                Clear
+              </button>
+            )}
+          </div>
+        </div>
         <div className="flex gap-2 mb-4">
           <input
             value={newNote}
@@ -631,12 +654,12 @@ function ConversationContextPanel({
           </button>
         </div>
         <div className="space-y-4">
-          {savedNotes.length === 0 && (
-            <p className="text-xs text-muted-foreground/50 italic p-2">No notes yet. Type a note above and click + to save.</p>
+          {filteredNotes.length === 0 && (
+            <p className="text-xs text-muted-foreground/50 italic p-2">{filterDate ? "No notes found for this date." : "No notes yet. Type a note above and click + to save."}</p>
           )}
           {(() => {
             const grouped: Record<string, typeof savedNotes> = {};
-            savedNotes.forEach(note => {
+            filteredNotes.forEach(note => {
               const dateKey = new Date(note.createdAt).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" });
               if (!grouped[dateKey]) grouped[dateKey] = [];
               grouped[dateKey].push(note);
