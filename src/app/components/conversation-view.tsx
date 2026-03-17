@@ -541,10 +541,22 @@ function ConversationContextPanel({
   onClose:     () => void;
 }) {
   const [newNote, setNewNote] = useState("");
+  const [savedNotes, setSavedNotes] = useState<{ id: string; content: string; createdAt: string; author: string }[]>([]);
   const assignee    = users.find(u => u.id === meta.assigneeId);
   const contactGroups = meta.labels || [];
   const contactMessages = systemItems.filter(i => i.content);
-  const contactNotes = systemItems.filter(i => i.content).slice(0, 4);
+
+  const handleAddNote = () => {
+    if (!newNote.trim()) return;
+    const note = {
+      id: Date.now().toString(),
+      content: newNote.trim(),
+      createdAt: new Date().toISOString(),
+      author: assignee?.name || "System Admin",
+    };
+    setSavedNotes(prev => [note, ...prev]);
+    setNewNote("");
+  };
 
   return (
     <div className="w-[576px] border-l border-border bg-card flex flex-col shrink-0 h-full overflow-y-auto">
@@ -582,7 +594,7 @@ function ConversationContextPanel({
           <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mt-0.5">Groups</span>
         </div>
         <div className="flex flex-col items-center py-4">
-          <span className="text-xl font-bold text-primary">{contactNotes.length}</span>
+          <span className="text-xl font-bold text-primary">{savedNotes.length}</span>
           <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mt-0.5">Notes</span>
         </div>
       </div>
@@ -610,23 +622,39 @@ function ConversationContextPanel({
           <input
             value={newNote}
             onChange={(e) => setNewNote(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && handleAddNote()}
             placeholder="Type here"
             className="flex-1 bg-background border border-input rounded-lg px-3 py-2.5 text-sm focus:ring-1 focus:ring-ring outline-none placeholder:text-muted-foreground/50"
           />
-          <button className="bg-primary text-primary-foreground p-2.5 rounded-lg hover:bg-primary/90 transition-all shrink-0">
+          <button onClick={handleAddNote} disabled={!newNote.trim()} className="bg-primary text-primary-foreground p-2.5 rounded-lg hover:bg-primary/90 transition-all shrink-0 disabled:opacity-50">
             <Plus className="w-5 h-5" />
           </button>
         </div>
-        <div className="space-y-3">
-          {contactNotes.map(note => (
-            <div key={note.id} className="p-4 bg-muted/30 rounded-lg border border-border">
-              <p className="text-sm text-foreground leading-relaxed">{note.content}</p>
-              <p className="text-xs text-primary mt-2 font-medium">System Admin name {new Date(note.createdAt).toLocaleDateString()}</p>
-            </div>
-          ))}
-          {contactNotes.length === 0 && (
-            <p className="text-xs text-muted-foreground/50 italic p-2">No notes yet.</p>
+        <div className="space-y-4">
+          {savedNotes.length === 0 && (
+            <p className="text-xs text-muted-foreground/50 italic p-2">No notes yet. Type a note above and click + to save.</p>
           )}
+          {(() => {
+            const grouped: Record<string, typeof savedNotes> = {};
+            savedNotes.forEach(note => {
+              const dateKey = new Date(note.createdAt).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" });
+              if (!grouped[dateKey]) grouped[dateKey] = [];
+              grouped[dateKey].push(note);
+            });
+            return Object.entries(grouped).map(([date, notes]) => (
+              <div key={date}>
+                <p className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider mb-2">{date}</p>
+                <div className="space-y-2">
+                  {notes.map(note => (
+                    <div key={note.id} className="p-4 bg-muted/30 rounded-lg border border-border">
+                      <p className="text-sm text-foreground leading-relaxed">{note.content}</p>
+                      <p className="text-xs text-primary mt-2 font-medium">{note.author} {new Date(note.createdAt).toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" })}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ));
+          })()}
         </div>
       </div>
     </div>
