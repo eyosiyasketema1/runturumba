@@ -1,0 +1,114 @@
+Here’s a **clear prompt you can give to Figma Make or an AI UI builder** so it adds the **Manage Groups flow** properly based on the page you shared.
+
+---
+
+### Prompt
+
+Using the existing **Users management page layout**, add a **“Manage Groups”** feature beside the **Invite User** button.
+
+**1. Users Page Update**
+
+* Keep the current layout exactly the same.
+* Add a secondary button beside **“Invite User”** called **“Manage Groups.”**
+* This button opens a **Manage Groups page**.
+
+---
+
+**2. Manage Groups Page**
+
+Create a new page called **Manage Groups** where admins organize users into groups.
+
+Page structure:
+
+**Header**
+
+* Title: **Groups**
+* Description: *Organize users into groups for routing conversations and managing responsibilities.*
+* Primary action button: **Create Group**
+
+---
+
+**3. Empty State (First Time)**
+
+If no groups exist, show an empty state:
+
+Title:
+**No groups yet**
+
+Description:
+**Create groups to organize agents and route conversations more efficiently.**
+
+Action button:
+**Create Group**
+
+Optional hint text:
+**Groups can be used for things like VIP support, sales teams, or channel-specific handling.**
+
+---
+
+**4. Create Group Flow**
+
+When clicking **Create Group**, open a modal or page with:
+
+Fields:
+
+* **Group Name**
+  Example placeholder: *VIP Telegram Support*
+
+* **Label / Tag**
+  Used to categorize the group (example: Support, Sales, VIP)
+
+* **Add Users / Agents**
+  Multi-select dropdown showing users from the Users list.
+
+* **Description (optional)**
+  Example: *Handles VIP customers contacting us through Telegram.*
+
+Actions:
+
+* Cancel
+* Create Group
+
+---
+
+**5. Groups List (After Creation)**
+
+Display groups in a clean list or table.
+
+Each group shows:
+
+* **Group Name**
+  Example: **VIP Telegram Support**
+
+* **Label**
+  Example: `VIP`
+
+* **Members**
+  Avatars or names of users in the group
+
+* **Created Date**
+
+* **Actions**
+
+  * Edit
+  * Manage Members
+  * Delete
+
+Example group:
+
+VIP Telegram Support
+Label: VIP
+Members: Eyosiyas Ketema + others
+
+---
+
+**6. UX Details**
+
+* Users can belong to **multiple groups**.
+* Show **member avatars** for quick recognition.
+* Allow **adding/removing users** inside the group edit view.
+* Keep visual style consistent with the current **Users page design system**.
+
+---
+
+If you want, I can also give you a **much stronger prompt used by product designers to force Figma Make to follow the system architecture** from the Turumba messaging doc. That one will make the groups work correctly with **conversation routing and teams**, which is likely what this system actually needs.
