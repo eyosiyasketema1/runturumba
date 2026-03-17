@@ -4,7 +4,7 @@ import {
   Phone, Mail, Info, X, GitBranch, SquarePen,
   User as UserIcon, UserPlus, UserCheck, CheckCircle2, XCircle,
   Clock, Tag, MoreHorizontal, Paperclip, Smile, Lock,
-  ChevronDown, ArrowUp, Filter, Circle,
+  ChevronDown, ArrowUp, Filter, Circle, Plus,
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { toast } from "sonner";
@@ -540,112 +540,94 @@ function ConversationContextPanel({
   systemItems: LocalItem[];
   onClose:     () => void;
 }) {
+  const [newNote, setNewNote] = useState("");
   const assignee    = users.find(u => u.id === meta.assigneeId);
-  const statusOpt   = STATUS_OPTIONS.find(s => s.id === meta.status)!;
-  const priorityOpt = PRIORITY_OPTIONS.find(p => p.id === meta.priority)!;
+  const contactGroups = meta.labels || [];
+  const contactMessages = systemItems.filter(i => i.content);
+  const contactNotes = systemItems.filter(i => i.content).slice(0, 4);
 
   return (
-    <div className="w-72 border-l border-border bg-card flex flex-col shrink-0 h-full overflow-y-auto">
+    <div className="w-[576px] border-l border-border bg-card flex flex-col shrink-0 h-full overflow-y-auto">
       {/* Header */}
-      <div className="flex items-center justify-between px-4 py-3.5 border-b border-border bg-muted/10 sticky top-0">
-        <span className="text-xs font-bold text-foreground uppercase tracking-widest">Context</span>
-        <button onClick={onClose} className="p-1 text-muted-foreground hover:text-foreground transition-colors">
+      <div className="flex items-center justify-between px-6 py-4 border-b border-border bg-muted/10 sticky top-0 z-10">
+        <span className="text-sm font-bold text-foreground">Contact Info</span>
+        <button onClick={onClose} className="p-1.5 text-muted-foreground hover:text-foreground hover:bg-muted rounded-md transition-colors">
           <X className="w-4 h-4" />
         </button>
       </div>
 
-      {/* Contact */}
-      <div className="p-4 border-b border-border">
-        <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-3">Contact</p>
-        <div className="flex items-center gap-3 mb-3">
-          <div className="w-10 h-10 rounded-full bg-primary/10 border-2 border-primary/20 flex items-center justify-center text-sm font-bold text-primary shrink-0">
-            {contact.name.charAt(0)}
-          </div>
-          <div>
-            <p className="text-sm font-bold text-foreground">{contact.name}</p>
-            {contact.tags?.length > 0 && (
-              <div className="flex flex-wrap gap-1 mt-1">
-                {contact.tags.slice(0, 3).map(tag => (
-                  <span key={tag} className="text-[9px] font-bold px-1.5 py-0.5 bg-primary/10 text-primary border border-primary/20 uppercase">{tag}</span>
-                ))}
-              </div>
-            )}
-          </div>
+      {/* Contact Profile - Centered */}
+      <div className="flex flex-col items-center py-8 px-6 border-b border-border">
+        <div className="w-20 h-20 rounded-full bg-muted border-2 border-border flex items-center justify-center text-3xl font-bold text-foreground mb-4 overflow-hidden">
+          {contact.name.charAt(0)}
         </div>
-        <div className="space-y-2">
-          {contact.phone && (
-            <div className="flex items-center gap-2">
-              <Phone className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
-              <span className="text-xs text-foreground font-medium">{contact.phone}</span>
-            </div>
-          )}
-          {contact.email && (
-            <div className="flex items-center gap-2">
-              <Mail className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
-              <span className="text-xs text-foreground font-medium truncate">{contact.email}</span>
-            </div>
+        <h2 className="text-xl font-bold text-foreground mb-1">{contact.name}</h2>
+        {contact.phone && (
+          <p className="text-sm text-foreground font-medium">{contact.phone}</p>
+        )}
+        {contact.email && (
+          <p className="text-sm text-muted-foreground mt-0.5">{contact.email}</p>
+        )}
+        <p className="text-xs text-primary mt-1.5 font-medium">Contact Since {new Date().toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })}</p>
+      </div>
+
+      {/* Stats Row */}
+      <div className="grid grid-cols-3 border-b border-border">
+        <div className="flex flex-col items-center py-4 border-r border-border">
+          <span className="text-xl font-bold text-primary">{contactMessages.length}</span>
+          <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mt-0.5">Msgs</span>
+        </div>
+        <div className="flex flex-col items-center py-4 border-r border-border">
+          <span className="text-xl font-bold text-primary">{contactGroups.length}</span>
+          <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mt-0.5">Groups</span>
+        </div>
+        <div className="flex flex-col items-center py-4">
+          <span className="text-xl font-bold text-primary">{contactNotes.length}</span>
+          <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mt-0.5">Notes</span>
+        </div>
+      </div>
+
+      {/* Groups and Tags */}
+      <div className="px-6 py-5 border-b border-border">
+        <h3 className="text-sm font-bold text-foreground mb-3">Groups and tags</h3>
+        <div className="flex flex-wrap gap-2">
+          {meta.labels.map(label => (
+            <span key={label} className="px-3 py-1 bg-muted border border-border rounded-full text-xs font-medium text-foreground">{label}</span>
+          ))}
+          {contact.tags?.map(tag => (
+            <span key={tag} className="px-3 py-1 bg-primary/10 border border-primary/20 rounded-full text-xs font-medium text-primary">{tag}</span>
+          ))}
+          {meta.labels.length === 0 && (!contact.tags || contact.tags.length === 0) && (
+            <span className="text-xs text-muted-foreground italic">No groups or tags</span>
           )}
         </div>
       </div>
 
-      {/* Conversation metadata */}
-      <div className="p-4 border-b border-border space-y-3">
-        <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Conversation</p>
-        <div className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-2.5 text-xs">
-          <span className="text-muted-foreground font-semibold pt-0.5">Status</span>
-          <span className={cn("inline-flex px-2 py-0.5 border text-[10px] font-bold w-fit", statusOpt.cls)}>{statusOpt.label}</span>
-
-          <span className="text-muted-foreground font-semibold pt-0.5">Priority</span>
-          <span className="flex items-center gap-1.5">
-            <span className={cn("w-2 h-2 rounded-full", priorityOpt.dot)} />
-            <span className={cn("text-xs font-semibold", priorityOpt.text)}>{priorityOpt.label}</span>
-          </span>
-
-          <span className="text-muted-foreground font-semibold pt-0.5">Assigned</span>
-          {assignee ? (
-            <div className="flex items-center gap-1.5">
-              <div className="relative">
-                <div className="w-5 h-5 rounded-full bg-violet-500/20 flex items-center justify-center text-[9px] font-bold text-violet-700">{assignee.name.charAt(0)}</div>
-                <div className={cn("absolute -bottom-0.5 -right-0.5 w-1.5 h-1.5 rounded-full border border-background", PRESENCE_DOT[getPresence(assignee.id)])} />
-              </div>
-              <span className="text-xs font-semibold text-foreground">{assignee.name.split(" ")[0]}</span>
+      {/* Notes Section */}
+      <div className="px-6 py-5 flex-1">
+        <h3 className="text-sm font-bold text-foreground mb-3">Notes</h3>
+        <div className="flex gap-2 mb-4">
+          <input
+            value={newNote}
+            onChange={(e) => setNewNote(e.target.value)}
+            placeholder="Type here"
+            className="flex-1 bg-background border border-input rounded-lg px-3 py-2.5 text-sm focus:ring-1 focus:ring-ring outline-none placeholder:text-muted-foreground/50"
+          />
+          <button className="bg-primary text-primary-foreground p-2.5 rounded-lg hover:bg-primary/90 transition-all shrink-0">
+            <Plus className="w-5 h-5" />
+          </button>
+        </div>
+        <div className="space-y-3">
+          {contactNotes.map(note => (
+            <div key={note.id} className="p-4 bg-muted/30 rounded-lg border border-border">
+              <p className="text-sm text-foreground leading-relaxed">{note.content}</p>
+              <p className="text-xs text-primary mt-2 font-medium">System Admin name {new Date(note.createdAt).toLocaleDateString()}</p>
             </div>
-          ) : (
-            <span className="text-xs text-muted-foreground/60 italic">Unassigned</span>
+          ))}
+          {contactNotes.length === 0 && (
+            <p className="text-xs text-muted-foreground/50 italic p-2">No notes yet.</p>
           )}
         </div>
-
-        {/* Labels */}
-        {meta.labels.length > 0 && (
-          <div>
-            <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-1.5">Labels</p>
-            <div className="flex flex-wrap gap-1">
-              {meta.labels.map(label => (
-                <span key={label} className="text-[10px] font-bold px-2 py-0.5 bg-muted border border-border text-muted-foreground">{label}</span>
-              ))}
-            </div>
-          </div>
-        )}
-      </div>
-
-      {/* Recent Activity */}
-      <div className="p-4 flex-1">
-        <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-3">Recent Activity</p>
-        {systemItems.length === 0 ? (
-          <p className="text-xs text-muted-foreground/50 italic">No activity yet.</p>
-        ) : (
-          <div className="space-y-2">
-            {[...systemItems].reverse().slice(0, 8).map(item => (
-              <div key={item.id} className="flex items-start gap-2">
-                <div className="w-1.5 h-1.5 rounded-full bg-primary/40 mt-1.5 shrink-0" />
-                <div>
-                  <p className="text-xs text-foreground">{item.content}</p>
-                  <p className="text-[10px] text-muted-foreground/60">{formatTimeAgo(item.createdAt)}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
       </div>
     </div>
   );
@@ -1342,7 +1324,7 @@ export const ConversationView = ({
               {/* Context panel */}
               <AnimatePresence>
                 {isInfoOpen && (
-                  <motion.div initial={{ width: 0, opacity: 0 }} animate={{ width: 288, opacity: 1 }}
+                  <motion.div initial={{ width: 0, opacity: 0 }} animate={{ width: 576, opacity: 1 }}
                     exit={{ width: 0, opacity: 0 }} transition={{ duration: 0.2 }} className="overflow-hidden shrink-0"
                   >
                     <ConversationContextPanel
