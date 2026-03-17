@@ -338,6 +338,8 @@ const BLANK_ENDPOINT_FORM = {
   brandGradientDir: "135deg",
   brandHeaderImage: "",
   cornerRadius: 12,
+  widgetWidth: 380,
+  widgetHeight: 520,
   launcherText: "Chat with us",
   welcomeMessage: "Hi! How can we help you today?",
   offlineMessage: "Our team is currently offline. Leave a message and we'll get back to you.",
@@ -401,6 +403,8 @@ function EndpointFormModal({
         brandGradientDir:  endpoint.brandGradientDir  ?? "135deg",
         brandHeaderImage:  endpoint.brandHeaderImage  ?? "",
         cornerRadius:      endpoint.cornerRadius      ?? 12,
+        widgetWidth:       (endpoint as any).widgetWidth  ?? 380,
+        widgetHeight:      (endpoint as any).widgetHeight ?? 520,
         launcherText:      endpoint.launcherText,
         welcomeMessage:    endpoint.welcomeMessage,
         offlineMessage:    endpoint.offlineMessage,
@@ -862,6 +866,73 @@ function EndpointFormModal({
           </div>
         </div>
 
+        {/* Widget Size */}
+        <div className="space-y-3 border border-border p-4 bg-muted/10">
+          <Label>Chat Widget Size</Label>
+          <div className="grid grid-cols-3 gap-1.5 mb-3">
+            {([
+              { label: "Small",  w: 320, h: 440 },
+              { label: "Medium", w: 380, h: 520 },
+              { label: "Large",  w: 440, h: 600 },
+            ] as const).map(p => (
+              <button
+                key={p.label}
+                type="button"
+                onClick={() => { set("widgetWidth", p.w); set("widgetHeight", p.h); }}
+                className={cn(
+                  "flex flex-col items-center gap-1.5 border py-2 px-1 transition-all text-[10px] font-semibold",
+                  form.widgetWidth === p.w && form.widgetHeight === p.h
+                    ? "border-primary bg-primary/5 text-primary"
+                    : "border-border text-muted-foreground hover:border-primary/40 hover:bg-muted/30"
+                )}
+              >
+                <div
+                  className="border-2 shrink-0"
+                  style={{
+                    width: Math.round(p.w / 14),
+                    height: Math.round(p.h / 14),
+                    borderRadius: 3,
+                    borderColor: form.widgetWidth === p.w && form.widgetHeight === p.h ? "var(--primary)" : "var(--border)",
+                  }}
+                />
+                {p.label}
+              </button>
+            ))}
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-1.5">
+              <div className="flex items-center justify-between">
+                <span className="text-[11px] font-semibold text-muted-foreground">Width</span>
+                <span className="text-[11px] font-mono font-semibold px-2 py-0.5 bg-muted border border-border text-foreground">{form.widgetWidth}px</span>
+              </div>
+              <input
+                type="range"
+                min={280}
+                max={500}
+                step={10}
+                value={form.widgetWidth}
+                onChange={e => set("widgetWidth", Number(e.target.value))}
+                className="w-full accent-primary h-1.5 cursor-pointer"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <div className="flex items-center justify-between">
+                <span className="text-[11px] font-semibold text-muted-foreground">Height</span>
+                <span className="text-[11px] font-mono font-semibold px-2 py-0.5 bg-muted border border-border text-foreground">{form.widgetHeight}px</span>
+              </div>
+              <input
+                type="range"
+                min={360}
+                max={700}
+                step={10}
+                value={form.widgetHeight}
+                onChange={e => set("widgetHeight", Number(e.target.value))}
+                className="w-full accent-primary h-1.5 cursor-pointer"
+              />
+            </div>
+          </div>
+        </div>
+
         {/* Messages */}
         <div className="space-y-1.5">
           <Label>Welcome Message</Label>
@@ -1054,8 +1125,8 @@ function EndpointFormModal({
               >
                 {/* Chat window */}
                 <div
-                  className="w-[190px] overflow-hidden shadow-xl border border-black/10 bg-white"
-                  style={{ borderRadius: form.cornerRadius }}
+                  className="overflow-hidden shadow-xl border border-black/10 bg-white"
+                  style={{ borderRadius: form.cornerRadius, width: Math.round(form.widgetWidth / 2), height: Math.round(form.widgetHeight / 2.5) }}
                 >
                   {/* Header */}
                   <div
