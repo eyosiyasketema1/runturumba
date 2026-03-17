@@ -1179,7 +1179,7 @@ export const ConversationView = ({
             className="flex items-center gap-2 px-4 py-1.5 bg-background border border-border text-sm font-semibold text-foreground hover:bg-muted/40 transition-colors"
           >
             <GitBranch className="w-3.5 h-3.5 text-primary" />
-            Manage Routing
+            Conversation Rules
           </button>
           <button onClick={() => setIsComposeOpen(true)}
             className="flex items-center gap-2 px-4 py-1.5 bg-primary text-primary-foreground text-sm font-semibold hover:bg-primary/90 transition-colors"

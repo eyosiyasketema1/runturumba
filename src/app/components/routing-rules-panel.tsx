@@ -303,7 +303,7 @@ function RuleFormModal({
   ];
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title={rule ? "Edit Routing" : "New Routing"} size="2xl">
+    <Modal isOpen={isOpen} onClose={onClose} title={rule ? "Edit Conversation Rule" : "New Conversation Rule"} size="2xl">
       <div className="space-y-5">
         {/* Name + Priority */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
@@ -507,7 +507,7 @@ function RuleFormModal({
 
         <div className="flex justify-end gap-2 pt-2 border-t border-border">
           <Button variant="outline" onClick={onClose}>Cancel</Button>
-          <Button onClick={handleSubmit}>{rule ? "Save Changes" : "New Routing"}</Button>
+          <Button onClick={handleSubmit}>{rule ? "Save Changes" : "New Conversation Rule"}</Button>
         </div>
       </div>
     </Modal>
@@ -649,13 +649,13 @@ export function RoutingRulesPanel({
                   <div className="w-6 h-6 bg-primary/10 border border-primary/20 flex items-center justify-center">
                     <GitBranch className="w-3 h-3 text-primary" />
                   </div>
-                  <h1 className="text-sm font-bold text-foreground">Manage Routing</h1>
+                  <h1 className="text-sm font-bold text-foreground">Conversation Rules</h1>
                 </div>
               </div>
 
               <Button size="sm" onClick={openCreate} className="shrink-0">
                 <Plus className="w-3.5 h-3.5 mr-1.5" />
-                New Routing
+                New Conversation Rule
               </Button>
             </div>
 
@@ -665,7 +665,7 @@ export function RoutingRulesPanel({
 
                 {/* Page heading */}
                 <div>
-                  <h2 className="text-xl font-bold text-foreground">Routing Rules</h2>
+                  <h2 className="text-xl font-bold text-foreground">Conversation Rules</h2>
                   <p className="text-sm text-muted-foreground mt-0.5">
                     Control how inbound conversations are created and assigned. Rules run in priority order — first match wins.
                   </p>
@@ -692,7 +692,7 @@ export function RoutingRulesPanel({
                       <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
                       <input
                         type="text"
-                        placeholder="Search routing rules…"
+                        placeholder="Search conversation rules…"
                         value={searchQuery}
                         onChange={e => setSearchQuery(e.target.value)}
                         className="w-full pl-9 pr-8 h-9 bg-background border border-input text-sm focus:ring-1 focus:ring-ring outline-none transition-all"
@@ -826,18 +826,18 @@ export function RoutingRulesPanel({
                     </div>
                     <div>
                       <p className="text-sm font-semibold text-muted-foreground">
-                        {searchQuery || activeFilterCount > 0 ? "No rules match your filters" : "No routing rules yet"}
+                        {searchQuery || activeFilterCount > 0 ? "No rules match your filters" : "No conversation rules yet"}
                       </p>
                       <p className="text-xs text-muted-foreground/60 mt-1">
                         {searchQuery || activeFilterCount > 0
                           ? "Try adjusting your search or filters."
-                          : "Create your first routing rule to control how inbound conversations are handled."}
+                          : "Create your first conversation rule to control how inbound conversations are handled."}
                       </p>
                     </div>
                     {!(searchQuery || activeFilterCount > 0) ? (
                       <Button size="sm" onClick={openCreate}>
                         <Plus className="w-4 h-4 mr-1.5" />
-                        New Routing
+                        New Conversation Rule
                       </Button>
                     ) : (
                       <button onClick={clearFilters} className="text-sm font-semibold text-primary hover:underline">
