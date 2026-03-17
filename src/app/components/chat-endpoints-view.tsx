@@ -1714,6 +1714,8 @@ function WidgetPreviewOverlay({
   };
 
   const cr  = endpoint.cornerRadius ?? 12;
+  const ww  = (endpoint as any).widgetWidth  ?? 380;
+  const wh  = (endpoint as any).widgetHeight ?? 520;
   const ep  = endpoint as unknown as BrandForm;
 
   const sendMessage = () => {
@@ -1778,7 +1780,7 @@ function WidgetPreviewOverlay({
               exit={{ opacity: 0, y: 16, scale: 0.96 }}
               transition={{ type: "spring", stiffness: 380, damping: 28 }}
               className="overflow-hidden shadow-2xl border border-black/10 bg-white flex flex-col"
-              style={{ borderRadius: cr, width: 360 }}
+              style={{ borderRadius: cr, width: ww, height: wh }}
             >
               {/* Header */}
               <div
@@ -1856,7 +1858,7 @@ function WidgetPreviewOverlay({
               ) : (
                 <>
                   {/* Message list */}
-                  <div className="flex-1 overflow-y-auto p-4 space-y-3 max-h-[360px] min-h-[180px]">
+                  <div className="flex-1 overflow-y-auto p-4 space-y-3 min-h-0">
                     {messages.map(msg => (
                       <div
                         key={msg.id}

@@ -687,6 +687,8 @@ export interface ChatEndpoint {
   brandGradientDir?: string;
   brandHeaderImage?: string;
   cornerRadius?: number;
+  widgetWidth?: number;
+  widgetHeight?: number;
   publicKey: string;
   launcherText: string;
   welcomeMessage: string;
