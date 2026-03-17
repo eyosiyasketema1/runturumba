@@ -132,7 +132,7 @@ export const DashboardView = ({
             <div>
               <div className="flex items-center gap-2">
                 <h3 className="text-sm font-bold text-foreground">{planInfo.name} Plan</h3>
-                <Badge variant="secondary" className="text-[10px]">Active</Badge>
+                <Badge variant="secondary" className="text-xs">Active</Badge>
               </div>
               <p className="text-xs text-muted-foreground mt-0.5">
                 {planInfo.features[0]} &middot; {planInfo.features[1]}
@@ -144,8 +144,8 @@ export const DashboardView = ({
               <div className="flex items-center gap-3">
                 <div className="w-32">
                   <div className="flex justify-between mb-1">
-                    <span className="text-[10px] font-semibold text-muted-foreground">Contacts</span>
-                    <span className="text-[10px] font-bold text-foreground">{usage}/{limit}</span>
+                    <span className="text-xs font-semibold text-muted-foreground">Contacts</span>
+                    <span className="text-xs font-bold text-foreground">{usage}/{limit}</span>
                   </div>
                   <div className="h-1.5 w-full bg-muted rounded-full overflow-hidden">
                     <motion.div
@@ -188,13 +188,13 @@ export const DashboardView = ({
                 <kpi.icon className="w-4 h-4 text-muted-foreground group-hover:text-primary transition-all" />
               </div>
               <span className={cn(
-                "text-[10px] font-bold px-1.5 py-0.5 rounded-full border",
+                "text-xs font-bold px-1.5 py-0.5 rounded-full border",
                 kpi.up ? "bg-emerald-500/10 text-emerald-600 border-emerald-500/20" : "bg-rose-500/10 text-rose-600 border-rose-500/20"
               )}>
                 {kpi.trend}
               </span>
             </div>
-            <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-widest">{kpi.label}</p>
+            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-widest">{kpi.label}</p>
             <p className="text-2xl font-bold tracking-tight text-foreground mt-0.5">{kpi.value}</p>
           </div>
         ))}
@@ -219,7 +219,7 @@ export const DashboardView = ({
                 <action.icon className="w-4 h-4 text-muted-foreground group-hover:text-primary transition-all" />
               </div>
               <p className="text-xs font-bold text-foreground group-hover:text-primary transition-all">{action.label}</p>
-              <p className="text-[10px] text-muted-foreground mt-0.5">{action.desc}</p>
+              <p className="text-xs text-muted-foreground mt-0.5">{action.desc}</p>
             </button>
           ))}
         </div>
@@ -233,16 +233,16 @@ export const DashboardView = ({
             <div className="flex items-center justify-between mb-6">
               <div>
                 <h3 className="text-sm font-bold text-foreground">Message Volume</h3>
-                <p className="text-[11px] text-muted-foreground">Sent vs received — last 7 days</p>
+                <p className="text-xs text-muted-foreground">Sent vs received — last 7 days</p>
               </div>
               <div className="flex items-center gap-4">
                 <div className="flex items-center gap-1.5">
                   <div className="w-2 h-2 bg-primary rounded-full" />
-                  <span className="text-[10px] font-bold text-muted-foreground uppercase">Sent</span>
+                  <span className="text-xs font-bold text-muted-foreground uppercase">Sent</span>
                 </div>
                 <div className="flex items-center gap-1.5">
                   <div className="w-2 h-2 bg-blue-500 rounded-full" />
-                  <span className="text-[10px] font-bold text-muted-foreground uppercase">Received</span>
+                  <span className="text-xs font-bold text-muted-foreground uppercase">Received</span>
                 </div>
               </div>
             </div>
@@ -276,7 +276,7 @@ export const DashboardView = ({
           <div className="bg-card p-6 rounded-lg border border-border shadow-sm flex flex-col">
             <div className="mb-4">
               <h3 className="text-sm font-bold text-foreground">Delivery Breakdown</h3>
-              <p className="text-[11px] text-muted-foreground">By message status</p>
+              <p className="text-xs text-muted-foreground">By message status</p>
             </div>
             <div className="flex-1 flex flex-col justify-center">
               <ResponsiveContainer width="100%" height={170}>
@@ -294,9 +294,9 @@ export const DashboardView = ({
                   <div key={entry.name} className="flex items-center justify-between px-1 py-1 hover:bg-muted/50 rounded transition-colors">
                     <div className="flex items-center gap-2">
                       <div className="w-2 h-2 rounded-full" style={{ backgroundColor: entry.color }} />
-                      <span className="text-[11px] font-semibold text-muted-foreground">{entry.name}</span>
+                      <span className="text-xs font-semibold text-muted-foreground">{entry.name}</span>
                     </div>
-                    <span className="text-[11px] font-bold text-foreground">{entry.value}</span>
+                    <span className="text-xs font-bold text-foreground">{entry.value}</span>
                   </div>
                 ))}
               </div>
@@ -315,7 +315,7 @@ export const DashboardView = ({
           </p>
           <div className="flex items-center justify-center gap-2 mt-4">
             <Crown className="w-3.5 h-3.5 text-amber-600" />
-            <span className="text-[10px] font-bold text-amber-700 uppercase tracking-wider">Pro Feature</span>
+            <span className="text-xs font-bold text-amber-700 uppercase tracking-wider">Pro Feature</span>
           </div>
           <Button size="sm" className="mt-4" onClick={() => onNavigate("settings")}>
             View Plans
@@ -329,20 +329,20 @@ export const DashboardView = ({
         <div className="bg-card p-6 rounded-lg border border-border shadow-sm">
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-sm font-bold text-foreground">Channel Health</h3>
-            <button onClick={() => onNavigate("channels")} className="text-[10px] font-bold text-primary hover:underline uppercase tracking-wider">View All</button>
+            <button onClick={() => onNavigate("channels")} className="text-xs font-bold text-primary hover:underline uppercase tracking-wider">View All</button>
           </div>
           <div className="grid grid-cols-3 gap-2 mb-4">
             <div className="p-2.5 bg-emerald-50 border border-emerald-200 text-center">
               <p className="text-lg font-bold text-emerald-700">{connectedChannels}</p>
-              <p className="text-[10px] font-semibold text-emerald-700/70 uppercase tracking-wider">Connected</p>
+              <p className="text-xs font-semibold text-emerald-700/70 uppercase tracking-wider">Connected</p>
             </div>
             <div className="p-2.5 bg-muted border border-border text-center">
               <p className="text-lg font-bold text-muted-foreground">{channels.filter(c => c.status === "disconnected").length}</p>
-              <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Offline</p>
+              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Offline</p>
             </div>
             <div className={cn("p-2.5 border text-center", errorChannels > 0 ? "bg-destructive/5 border-destructive/20" : "bg-muted border-border")}>
               <p className={cn("text-lg font-bold", errorChannels > 0 ? "text-destructive" : "text-muted-foreground")}>{errorChannels}</p>
-              <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Errors</p>
+              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Errors</p>
             </div>
           </div>
           <div className="space-y-1.5">
@@ -358,7 +358,7 @@ export const DashboardView = ({
                     "w-1.5 h-1.5 rounded-full shrink-0",
                     ch.status === "connected" ? "bg-emerald-500" : ch.status === "error" ? "bg-destructive" : "bg-muted-foreground/40"
                   )} />
-                  <span className={cn("text-[10px] font-semibold",
+                  <span className={cn("text-xs font-semibold",
                     ch.status === "connected" ? "text-emerald-600" : ch.status === "error" ? "text-destructive" : "text-muted-foreground"
                   )}>
                     {ch.status === "connected" ? "Online" : ch.status === "error" ? "Error" : "Offline"}
@@ -373,7 +373,7 @@ export const DashboardView = ({
         <div className="bg-card p-6 rounded-lg border border-border shadow-sm">
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-sm font-bold text-foreground">Recent Activity</h3>
-            <button onClick={() => onNavigate("team")} className="text-[10px] font-bold text-primary hover:underline uppercase tracking-wider">Audit Log</button>
+            <button onClick={() => onNavigate("team")} className="text-xs font-bold text-primary hover:underline uppercase tracking-wider">Audit Log</button>
           </div>
           <div className="space-y-0 divide-y divide-border/50">
             {recentActivity.length === 0 ? (
@@ -381,7 +381,7 @@ export const DashboardView = ({
             ) : (
               recentActivity.map(entry => (
                 <div key={entry.id} className="flex items-start gap-3 py-3 first:pt-0 last:pb-0">
-                  <div className="w-7 h-7 rounded-full bg-muted border border-border flex items-center justify-center text-[10px] font-bold text-muted-foreground shrink-0 mt-0.5">
+                  <div className="w-7 h-7 rounded-full bg-muted border border-border flex items-center justify-center text-xs font-bold text-muted-foreground shrink-0 mt-0.5">
                     {entry.userName.split(" ").map(n => n[0]).join("")}
                   </div>
                   <div className="flex-1 min-w-0">
@@ -389,9 +389,9 @@ export const DashboardView = ({
                       <span className="font-semibold text-foreground">{entry.userName}</span>
                       <span className="text-muted-foreground"> &middot; {entry.action.replace(".", " ")}</span>
                     </p>
-                    <p className="text-[10px] text-muted-foreground mt-0.5 truncate">{entry.target} &mdash; {entry.details}</p>
+                    <p className="text-xs text-muted-foreground mt-0.5 truncate">{entry.target} &mdash; {entry.details}</p>
                   </div>
-                  <span className="text-[10px] text-muted-foreground shrink-0">{(() => {
+                  <span className="text-xs text-muted-foreground shrink-0">{(() => {
                     const d = new Date(entry.createdAt);
                     return d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
                   })()}</span>
@@ -410,9 +410,9 @@ export const DashboardView = ({
             <div className="flex items-center justify-between mb-5">
               <div>
                 <h3 className="text-sm font-bold text-foreground">Most Engaged Contacts</h3>
-                <p className="text-[11px] text-muted-foreground">Highest message volume</p>
+                <p className="text-xs text-muted-foreground">Highest message volume</p>
               </div>
-              <button onClick={() => onNavigate("contacts")} className="text-[10px] font-bold text-primary hover:underline uppercase tracking-wider">All Contacts</button>
+              <button onClick={() => onNavigate("contacts")} className="text-xs font-bold text-primary hover:underline uppercase tracking-wider">All Contacts</button>
             </div>
             <div className="space-y-4">
               {topContacts.map((contact, i) => {
@@ -422,12 +422,12 @@ export const DashboardView = ({
                   <div key={i} className="space-y-1.5">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2.5">
-                        <div className="w-8 h-8 rounded-full bg-muted border border-border flex items-center justify-center text-[10px] font-bold text-muted-foreground">
+                        <div className="w-8 h-8 rounded-full bg-muted border border-border flex items-center justify-center text-xs font-bold text-muted-foreground">
                           {contact.name.charAt(0)}
                         </div>
                         <div>
                           <p className="text-xs font-bold text-foreground leading-tight">{contact.name}</p>
-                          <p className="text-[10px] text-muted-foreground">{contact.phone}</p>
+                          <p className="text-xs text-muted-foreground">{contact.phone}</p>
                         </div>
                       </div>
                       <span className="text-xs font-bold text-foreground">{contact.messages}</span>
@@ -446,9 +446,9 @@ export const DashboardView = ({
             <div className="flex items-center justify-between mb-5">
               <div>
                 <h3 className="text-sm font-bold text-foreground">Broadcast Performance</h3>
-                <p className="text-[11px] text-muted-foreground">Latest broadcasts delivery metrics</p>
+                <p className="text-xs text-muted-foreground">Latest broadcasts delivery metrics</p>
               </div>
-              <button onClick={() => onNavigate("messages")} className="text-[10px] font-bold text-primary hover:underline uppercase tracking-wider">View All</button>
+              <button onClick={() => onNavigate("messages")} className="text-xs font-bold text-primary hover:underline uppercase tracking-wider">View All</button>
             </div>
             <div className="divide-y divide-border/50">
               {broadcasts.slice(0, 5).map((bc, i) => (
@@ -456,9 +456,9 @@ export const DashboardView = ({
                   <div className="space-y-1 min-w-0 flex-1">
                     <p className="text-xs font-bold text-foreground group-hover:text-primary transition-all truncate">{bc.name}</p>
                     <div className="flex items-center gap-2">
-                      <span className="text-[10px] text-muted-foreground">{formatTimeAgo(bc.createdAt)}</span>
+                      <span className="text-xs text-muted-foreground">{formatTimeAgo(bc.createdAt)}</span>
                       <span className="w-1 h-1 bg-border rounded-full" />
-                      <span className="text-[10px] font-semibold text-emerald-600">
+                      <span className="text-xs font-semibold text-emerald-600">
                         {Math.round((bc.stats.delivered / bc.stats.sent) * 100)}% delivered
                       </span>
                     </div>
@@ -466,7 +466,7 @@ export const DashboardView = ({
                   <div className="flex items-center gap-2 shrink-0 ml-3">
                     <div className="text-right">
                       <p className="text-xs font-bold text-foreground">{bc.stats.sent}</p>
-                      <p className="text-[10px] text-muted-foreground uppercase">sent</p>
+                      <p className="text-xs text-muted-foreground uppercase">sent</p>
                     </div>
                     <ChevronRight className="w-3.5 h-3.5 text-muted-foreground" />
                   </div>

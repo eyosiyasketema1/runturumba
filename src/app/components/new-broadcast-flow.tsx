@@ -123,7 +123,7 @@ export const NewBroadcastFlow: React.FC<NewBroadcastFlowProps> = ({
                 {isCompleted ? <Check className="w-5 h-5" /> : <Icon className="w-4 h-4" />}
               </div>
               <span className={cn(
-                "text-[10px] font-bold uppercase tracking-widest",
+                "text-xs font-bold uppercase tracking-widest",
                 isActive ? "text-primary" : "text-muted-foreground"
               )}>
                 {step.label}
@@ -230,7 +230,7 @@ export const NewBroadcastFlow: React.FC<NewBroadcastFlowProps> = ({
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-2">
-                  <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest px-1">Broadcast Title</label>
+                  <label className="text-xs font-bold text-muted-foreground uppercase tracking-widest px-1">Broadcast Title</label>
                   <input 
                     type="text"
                     value={broadcastTitle}
@@ -250,7 +250,7 @@ export const NewBroadcastFlow: React.FC<NewBroadcastFlowProps> = ({
 
               <div className="space-y-2 flex-1 flex flex-col">
                 <div className="flex items-center justify-between px-1">
-                  <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Message Content</label>
+                  <label className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Message Content</label>
                   <button className="flex items-center gap-1.5 text-xs font-bold text-primary hover:bg-primary/10 px-2 py-1 rounded-md transition-all">
                     <Sparkles className="w-3.5 h-3.5" />
                     AI Assist
@@ -263,7 +263,7 @@ export const NewBroadcastFlow: React.FC<NewBroadcastFlowProps> = ({
                     placeholder="Type your broadcast message here... Use {name} for personalization."
                     className="flex-1 w-full p-4 bg-muted/30 border border-input rounded-md text-sm focus:ring-2 focus:ring-primary/20 outline-none transition-all resize-none"
                   />
-                  <div className="absolute bottom-4 right-4 flex gap-4 text-[10px] font-bold text-muted-foreground bg-background/80 backdrop-blur px-2 py-1 rounded-md border border-border">
+                  <div className="absolute bottom-4 right-4 flex gap-4 text-xs font-bold text-muted-foreground bg-background/80 backdrop-blur px-2 py-1 rounded-md border border-border">
                     <span>{messageContent.length} chars</span>
                     <span>{Math.ceil(messageContent.length / 160)} parts</span>
                   </div>
@@ -271,7 +271,7 @@ export const NewBroadcastFlow: React.FC<NewBroadcastFlowProps> = ({
               </div>
 
               <div className="space-y-2">
-                <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest px-1">Templates</label>
+                <label className="text-xs font-bold text-muted-foreground uppercase tracking-widest px-1">Templates</label>
                 <div className="flex gap-2 overflow-x-auto pb-2 no-scrollbar">
                   {templates.slice(0, 6).map(tmpl => (
                     <button
@@ -336,7 +336,7 @@ export const NewBroadcastFlow: React.FC<NewBroadcastFlowProps> = ({
 
                 <div className="space-y-6">
                   <div className="space-y-4">
-                    <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest px-1">Delivery Schedule</label>
+                    <label className="text-xs font-bold text-muted-foreground uppercase tracking-widest px-1">Delivery Schedule</label>
                     <div className="grid grid-cols-2 gap-3">
                       <button
                         onClick={() => setIsScheduled(false)}
@@ -347,7 +347,7 @@ export const NewBroadcastFlow: React.FC<NewBroadcastFlowProps> = ({
                       >
                         <Send className={cn("w-5 h-5 mb-2", !isScheduled ? "text-primary" : "text-muted-foreground")} />
                         <p className="text-sm font-bold text-foreground">Immediate</p>
-                        <p className="text-[10px] text-muted-foreground uppercase tracking-tight">Send right now</p>
+                        <p className="text-xs text-muted-foreground uppercase tracking-tight">Send right now</p>
                       </button>
                       <button
                         onClick={() => setIsScheduled(true)}
@@ -358,7 +358,7 @@ export const NewBroadcastFlow: React.FC<NewBroadcastFlowProps> = ({
                       >
                         <Clock className={cn("w-5 h-5 mb-2", isScheduled ? "text-primary" : "text-muted-foreground")} />
                         <p className="text-sm font-bold text-foreground">Scheduled</p>
-                        <p className="text-[10px] text-muted-foreground uppercase tracking-tight">Send later</p>
+                        <p className="text-xs text-muted-foreground uppercase tracking-tight">Send later</p>
                       </button>
                     </div>
                   </div>
@@ -370,7 +370,7 @@ export const NewBroadcastFlow: React.FC<NewBroadcastFlowProps> = ({
                       className="space-y-6 p-5 bg-muted/20 rounded-xl border border-border shadow-inner"
                     >
                       <div className="space-y-2">
-                        <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest px-1">Send Date & Time</label>
+                        <label className="text-xs font-bold text-muted-foreground uppercase tracking-widest px-1">Send Date & Time</label>
                         <div className="relative">
                           <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                           <input 

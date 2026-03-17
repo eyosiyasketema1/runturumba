@@ -327,7 +327,7 @@ export default function App() {
             {(!isSidebarCollapsed || isMobileSidebarOpen) && (
               <div className="flex flex-col min-w-0">
                 <span className="text-sm font-bold text-sidebar-foreground tracking-tight truncate">Turumba</span>
-                <span className="text-[10px] font-medium text-slate-500 truncate">{activeTenant.name}</span>
+                <span className="text-xs font-medium text-slate-500 truncate">{activeTenant.name}</span>
               </div>
             )}
           </div>
@@ -344,7 +344,7 @@ export default function App() {
           {filteredNavSections.map((section) => (
             <div key={section.label} className="space-y-0.5">
               {(!isSidebarCollapsed || isMobileSidebarOpen) && (
-                <p className="text-[10px] font-semibold text-slate-500 uppercase tracking-widest px-3 pb-1">{section.label}</p>
+                <p className="text-xs font-semibold text-slate-500 uppercase tracking-widest px-3 pb-1">{section.label}</p>
               )}
               {isSidebarCollapsed && !isMobileSidebarOpen && <div className="h-px bg-sidebar-border mx-2 mb-2" />}
               {section.items.map((item) => {
@@ -368,7 +368,7 @@ export default function App() {
                         <span className="flex-1 text-left">{item.name}</span>
                         {item.badge && (
                           <span className={cn(
-                            "px-1.5 py-0.5 text-[10px] font-bold",
+                            "px-1.5 py-0.5 text-xs font-bold",
                             isActive ? "bg-white/20 text-white" : "bg-blue-600/20 text-blue-400"
                           )}>
                             {item.badge}
@@ -388,8 +388,8 @@ export default function App() {
           {(!isSidebarCollapsed || isMobileSidebarOpen) && (
             <div className="px-3 py-2.5 border-b border-sidebar-border">
               <div className="flex items-center justify-between mb-1.5">
-                <span className="text-[10px] font-semibold text-slate-500 uppercase tracking-widest">Plan</span>
-                <span className="text-[10px] font-bold text-blue-400 uppercase">{activeTenant.plan}</span>
+                <span className="text-xs font-semibold text-slate-500 uppercase tracking-widest">Plan</span>
+                <span className="text-xs font-bold text-blue-400 uppercase">{activeTenant.plan}</span>
               </div>
               <div className="h-1 w-full bg-slate-700 overflow-hidden mb-1">
                 <div
@@ -397,7 +397,7 @@ export default function App() {
                   style={{ width: `${Math.min(100, (activeTenant.stats.contacts / PLAN_LIMITS[activeTenant.plan].maxContacts) * 100)}%` }}
                 />
               </div>
-              <p className="text-[10px] text-slate-500">{activeTenant.stats.contacts.toLocaleString()} / {PLAN_LIMITS[activeTenant.plan].maxContacts.toLocaleString()} contacts</p>
+              <p className="text-xs text-slate-500">{activeTenant.stats.contacts.toLocaleString()} / {PLAN_LIMITS[activeTenant.plan].maxContacts.toLocaleString()} contacts</p>
             </div>
           )}
 
@@ -408,7 +408,7 @@ export default function App() {
             {(!isSidebarCollapsed || isMobileSidebarOpen) && (
               <div className="flex flex-col min-w-0 flex-1">
                 <span className="text-sm font-semibold text-sidebar-foreground truncate leading-tight">{currentUser.name}</span>
-                <span className="text-[10px] text-slate-500 capitalize">{currentUser.role}</span>
+                <span className="text-xs text-slate-500 capitalize">{currentUser.role}</span>
               </div>
             )}
             <button
@@ -498,7 +498,7 @@ export default function App() {
             <div className="flex items-center gap-2.5">
               <div className="hidden lg:flex flex-col items-end">
                 <span className="text-sm font-semibold text-foreground leading-tight">{currentUser.name}</span>
-                <span className="text-[10px] text-muted-foreground capitalize">{currentUser.role}</span>
+                <span className="text-xs text-muted-foreground capitalize">{currentUser.role}</span>
               </div>
               <div className="w-8 h-8 bg-muted border border-border flex items-center justify-center shrink-0 overflow-hidden">
                 <img src={imgAvatar} alt={currentUser.name} className="w-full h-full object-cover" />

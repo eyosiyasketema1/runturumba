@@ -112,14 +112,14 @@ function ChannelBadge({ port, size = "sm" }: { port: string; size?: "sm" | "md" 
   }
   if (size === "md") {
     return (
-      <span className={cn("inline-flex items-center gap-1 px-2 py-0.5 border text-[10px] font-bold uppercase tracking-wide", colorCls)}>
+      <span className={cn("inline-flex items-center gap-1 px-2 py-0.5 border text-xs font-bold uppercase tracking-wide", colorCls)}>
         {channelIcon(port, "w-3 h-3")}
         {CHANNEL_LABEL[port] ?? port}
       </span>
     );
   }
   return (
-    <span className={cn("inline-flex items-center gap-1 px-1.5 py-0.5 border text-[9px] font-bold uppercase tracking-wide", colorCls)}>
+    <span className={cn("inline-flex items-center gap-1 px-1.5 py-0.5 border text-xs font-bold uppercase tracking-wide", colorCls)}>
       {channelIcon(port, "w-2.5 h-2.5")}
       {CHANNEL_LABEL[port] ?? port}
     </span>
@@ -159,7 +159,7 @@ function TypingIndicator() {
           />
         ))}
       </div>
-      <span className="text-[11px] text-muted-foreground italic">Visitor is typing…</span>
+      <span className="text-xs text-muted-foreground italic">Visitor is typing…</span>
     </div>
   );
 }
@@ -171,7 +171,7 @@ function ThreadMessage({ entry }: { entry: ThreadEntry }) {
     return (
       <div className="flex items-center gap-3 py-2.5 px-5">
         <div className="flex-1 h-px bg-border/60" />
-        <span className="text-[10px] font-semibold text-muted-foreground/60 uppercase tracking-widest whitespace-nowrap px-3">
+        <span className="text-xs font-semibold text-muted-foreground/60 uppercase tracking-widest whitespace-nowrap px-3">
           {entry.content}
         </span>
         <div className="flex-1 h-px bg-border/60" />
@@ -184,10 +184,10 @@ function ThreadMessage({ entry }: { entry: ThreadEntry }) {
         <div className="max-w-[80%] w-full bg-amber-50 border border-amber-200/80 px-4 py-3">
           <div className="flex items-center gap-1.5 mb-1.5">
             <Lock className="w-3 h-3 text-amber-600" />
-            <span className="text-[10px] font-bold text-amber-700 uppercase tracking-widest">Internal Note</span>
+            <span className="text-xs font-bold text-amber-700 uppercase tracking-widest">Internal Note</span>
           </div>
           <p className="text-sm text-amber-900 whitespace-pre-wrap leading-relaxed">{entry.content}</p>
-          <span className="text-[9px] text-amber-600/60 mt-1.5 block">
+          <span className="text-xs text-amber-600/60 mt-1.5 block">
             {new Date(entry.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
           </span>
         </div>
@@ -212,7 +212,7 @@ function ThreadMessage({ entry }: { entry: ThreadEntry }) {
           {entry.port && !isAgent && (
             <ChannelBadge port={entry.port} size="sm" />
           )}
-          <span className="text-[9px] font-bold text-muted-foreground uppercase tracking-wider opacity-60">
+          <span className="text-xs font-bold text-muted-foreground uppercase tracking-wider opacity-60">
             {new Date(entry.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
           </span>
           {isAgent && (
@@ -276,12 +276,12 @@ const InboxListItem = React.memo(function InboxListItem({
           </span>
           <div className="flex items-center gap-1.5 shrink-0">
             {lastMsg && (
-              <span className="text-[10px] font-semibold text-muted-foreground">
+              <span className="text-xs font-semibold text-muted-foreground">
                 {formatTimeAgo(lastMsg.createdAt)}
               </span>
             )}
             {meta.unreadCount > 0 && (
-              <span className="min-w-[18px] h-[18px] px-1 rounded-full bg-primary text-primary-foreground text-[10px] font-bold flex items-center justify-center">
+              <span className="min-w-[18px] h-[18px] px-1 rounded-full bg-primary text-primary-foreground text-xs font-bold flex items-center justify-center">
                 {meta.unreadCount}
               </span>
             )}
@@ -302,11 +302,11 @@ const InboxListItem = React.memo(function InboxListItem({
 
         {/* Row 4: status + priority */}
         <div className="flex items-center gap-1.5 mt-2 flex-wrap">
-          <span className={cn("text-[10px] font-bold px-2 py-0.5 border", statusOpt.cls)}>
+          <span className={cn("text-xs font-bold px-2 py-0.5 border", statusOpt.cls)}>
             {statusOpt.label}
           </span>
           {meta.priority !== "normal" && (
-            <span className={cn("flex items-center gap-1 text-[10px] font-bold uppercase", priorityOpt.text)}>
+            <span className={cn("flex items-center gap-1 text-xs font-bold uppercase", priorityOpt.text)}>
               <span className={cn("w-1.5 h-1.5 rounded-full", priorityOpt.dot)} />
               {priorityOpt.label}
             </span>
@@ -358,7 +358,7 @@ function ConversationControlBar({
               <h3 className="text-sm font-bold text-foreground leading-tight">{contact.name}</h3>
               {port && <ChannelBadge port={port} size="md" />}
             </div>
-            <p className="text-[10px] text-muted-foreground mt-0.5">{contact.phone || contact.email}</p>
+            <p className="text-xs text-muted-foreground mt-0.5">{contact.phone || contact.email}</p>
           </div>
         </div>
         <button onClick={onToggleInfo}
@@ -376,7 +376,7 @@ function ConversationControlBar({
         {!isAgent && (
           <div className="relative">
             <button onClick={() => toggle("ctrl-assign")}
-              className="flex items-center gap-1.5 h-7 px-2.5 border border-border text-xs font-semibold text-foreground hover:bg-muted/50 transition-colors"
+              className="flex items-center gap-1.5 h-8 px-3 border border-border text-xs font-semibold text-foreground hover:bg-muted/50 transition-colors"
             >
               <UserPlus className="w-3 h-3 text-muted-foreground" />
               {assignee ? assignee.name.split(" ")[0] : "Assign"}
@@ -385,7 +385,7 @@ function ConversationControlBar({
             {openDropdown === "ctrl-assign" && (
               <div className="absolute top-full left-0 z-50 mt-1 w-52 bg-background border border-border shadow-xl">
                 <div className="px-3 py-2 border-b border-border">
-                  <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Assign Agent</span>
+                  <span className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Assign Agent</span>
                 </div>
                 <button onClick={() => { onUpdateMeta({ assigneeId: null, status: "open" }); onAddSystem("Conversation unassigned"); setOpenDropdown(null); }}
                   className="w-full flex items-center gap-2 px-3 py-2 text-xs text-muted-foreground hover:bg-muted/50 transition-colors"
@@ -400,14 +400,14 @@ function ConversationControlBar({
                       className="w-full flex items-center gap-2.5 px-3 py-2.5 hover:bg-muted/50 transition-colors"
                     >
                       <div className="relative shrink-0">
-                        <div className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center text-[10px] font-bold text-primary">
+                        <div className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center text-xs font-bold text-primary">
                           {u.name.charAt(0)}
                         </div>
                         <div className={cn("absolute -bottom-0.5 -right-0.5 w-2 h-2 rounded-full border border-background", PRESENCE_DOT[pr])} />
                       </div>
                       <div className="flex-1 min-w-0">
                         <p className="text-xs font-semibold text-foreground truncate">{u.name}</p>
-                        <p className="text-[10px] text-muted-foreground capitalize">{pr} · {u.role}</p>
+                        <p className="text-xs text-muted-foreground capitalize">{pr} · {u.role}</p>
                       </div>
                       {meta.assigneeId === u.id && <Check className="w-3.5 h-3.5 text-primary shrink-0" />}
                     </button>
@@ -421,7 +421,7 @@ function ConversationControlBar({
         {/* Status */}
         <div className="relative">
           <button onClick={() => toggle("ctrl-status")}
-            className={cn("flex items-center gap-1.5 h-7 px-2.5 border text-xs font-bold transition-colors", statusOpt.cls)}
+            className={cn("flex items-center gap-1.5 h-8 px-3 border text-xs font-bold transition-colors", statusOpt.cls)}
           >
             {meta.status === "open"     && <Circle className="w-2.5 h-2.5" />}
             {meta.status === "assigned" && <UserCheck className="w-2.5 h-2.5" />}
@@ -438,7 +438,7 @@ function ConversationControlBar({
                   onClick={() => { onUpdateMeta({ status: s.id }); onAddSystem(`Status changed to ${s.label}`); setOpenDropdown(null); }}
                   className={cn("w-full flex items-center gap-2 px-3 py-2.5 text-xs font-semibold hover:bg-muted/50 transition-colors", s.id === meta.status && "bg-muted/30")}
                 >
-                  <span className={cn("px-2 py-0.5 border text-[10px] font-bold", s.cls)}>{s.label}</span>
+                  <span className={cn("px-2 py-0.5 border text-xs font-bold", s.cls)}>{s.label}</span>
                   {s.id === meta.status && <Check className="w-3 h-3 text-primary ml-auto" />}
                 </button>
               ))}
@@ -449,7 +449,7 @@ function ConversationControlBar({
         {/* Priority */}
         <div className="relative">
           <button onClick={() => toggle("ctrl-priority")}
-            className="flex items-center gap-1.5 h-7 px-2.5 border border-border text-xs font-semibold hover:bg-muted/50 transition-colors"
+            className="flex items-center gap-1.5 h-8 px-3 border border-border text-xs font-semibold hover:bg-muted/50 transition-colors"
           >
             <span className={cn("w-2 h-2 rounded-full shrink-0", priorityOpt.dot)} />
             <span className={priorityOpt.text}>{priorityOpt.label}</span>
@@ -474,7 +474,7 @@ function ConversationControlBar({
         {/* Labels */}
         <div className="relative">
           <button onClick={() => toggle("ctrl-labels")}
-            className="flex items-center gap-1.5 h-7 px-2.5 border border-border text-xs font-semibold text-muted-foreground hover:bg-muted/50 transition-colors"
+            className="flex items-center gap-1.5 h-8 px-3 border border-border text-xs font-semibold text-muted-foreground hover:bg-muted/50 transition-colors"
           >
             <Tag className="w-3 h-3" />
             {meta.labels.length > 0 ? (
@@ -486,14 +486,14 @@ function ConversationControlBar({
           </button>
           {openDropdown === "ctrl-labels" && (
             <div className="absolute top-full left-0 z-50 mt-1 w-48 bg-background border border-border shadow-xl p-3">
-              <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-2">Toggle Labels</p>
+              <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest mb-2">Toggle Labels</p>
               <div className="flex flex-wrap gap-1.5">
                 {COMMON_LABELS.map(label => {
                   const active = meta.labels.includes(label);
                   return (
                     <button key={label}
                       onClick={() => onUpdateMeta({ labels: active ? meta.labels.filter(l => l !== label) : [...meta.labels, label] })}
-                      className={cn("text-[10px] font-bold px-2 py-1 border transition-colors", active ? "bg-primary text-primary-foreground border-primary" : "border-border text-muted-foreground hover:border-primary hover:text-primary")}
+                      className={cn("text-xs font-bold px-2 py-1 border transition-colors", active ? "bg-primary text-primary-foreground border-primary" : "border-border text-muted-foreground hover:border-primary hover:text-primary")}
                     >
                       {label}
                     </button>
@@ -595,15 +595,15 @@ function ConversationContextPanel({
       <div className="grid grid-cols-3 border-b border-border">
         <div className="flex flex-col items-center py-4 border-r border-border">
           <span className="text-xl font-bold text-primary">{contactMessages.length}</span>
-          <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mt-0.5">Msgs</span>
+          <span className="text-xs font-bold text-muted-foreground uppercase tracking-widest mt-0.5">Msgs</span>
         </div>
         <div className="flex flex-col items-center py-4 border-r border-border">
           <span className="text-xl font-bold text-primary">{contactGroups.length}</span>
-          <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mt-0.5">Groups</span>
+          <span className="text-xs font-bold text-muted-foreground uppercase tracking-widest mt-0.5">Groups</span>
         </div>
         <div className="flex flex-col items-center py-4">
           <span className="text-xl font-bold text-primary">{savedNotes.length}</span>
-          <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mt-0.5">Notes</span>
+          <span className="text-xs font-bold text-muted-foreground uppercase tracking-widest mt-0.5">Notes</span>
         </div>
       </div>
 
@@ -638,7 +638,7 @@ function ConversationContextPanel({
               />
             </div>
             {filterDate && (
-              <button onClick={() => setFilterDate("")} className="text-[10px] font-bold text-primary hover:text-primary/80 transition-colors">
+              <button onClick={() => setFilterDate("")} className="text-xs font-bold text-primary hover:text-primary/80 transition-colors">
                 Clear
               </button>
             )}
@@ -669,7 +669,7 @@ function ConversationContextPanel({
             });
             return Object.entries(grouped).map(([date, notes]) => (
               <div key={date}>
-                <p className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider mb-2">{date}</p>
+                <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-2">{date}</p>
                 <div className="space-y-2">
                   {notes.map(note => (
                     <div key={note.id} className="p-4 bg-muted/30 rounded-lg border border-border">
@@ -742,7 +742,7 @@ function ComposeArea({
         {/* Channel indicator (reply mode only) */}
         {!isNote && (
           <div className="flex items-center gap-2">
-            <span className="text-[10px] text-muted-foreground font-medium">Replying via</span>
+            <span className="text-xs text-muted-foreground font-medium">Replying via</span>
             <div className="relative">
               <button onClick={() => setOpenDropdown(openDropdown === "compose-port" ? null : "compose-port")}
                 className={cn("flex items-center gap-1.5 text-xs font-bold px-2.5 py-1 border transition-colors hover:opacity-80", PORT_COLORS[port] ?? "bg-muted text-muted-foreground border-border")}
@@ -754,7 +754,7 @@ function ComposeArea({
               {openDropdown === "compose-port" && (
                 <div className="absolute bottom-full right-0 mb-1 z-50 w-44 bg-background border border-border shadow-xl py-1">
                   <div className="px-3 py-1.5 border-b border-border">
-                    <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Send via</span>
+                    <span className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Send via</span>
                   </div>
                   {Object.entries(CHANNEL_LABEL).filter(([k]) => k !== "smpp").map(([k, label]) => (
                     <button key={k} onClick={() => { setPort(k as MessagePort); setOpenDropdown(null); }}
@@ -773,7 +773,7 @@ function ComposeArea({
           </div>
         )}
         {isNote && (
-          <span className="flex items-center gap-1.5 text-[10px] font-semibold text-amber-600">
+          <span className="flex items-center gap-1.5 text-xs font-semibold text-amber-600">
             <Lock className="w-3 h-3" />
             Only visible to agents
           </span>
@@ -851,9 +851,9 @@ function ComposeArea({
           </div>
         </div>
         <div className="flex items-center justify-between mt-1.5">
-          <p className="text-[10px] text-muted-foreground/50">Enter to send · Shift+Enter for new line</p>
+          <p className="text-xs text-muted-foreground/50">Enter to send · Shift+Enter for new line</p>
           {!isNote && (
-            <p className="text-[10px] font-medium text-muted-foreground/70">
+            <p className="text-xs font-medium text-muted-foreground/70">
               Replying via <span className="font-bold capitalize">{CHANNEL_LABEL[port] || port}</span>
             </p>
           )}
@@ -931,7 +931,7 @@ function NewConversationModal({ isOpen, onClose, contacts, onStart }: {
               </div>
               <div>
                 <h3 className="text-sm font-bold text-foreground">New Conversation</h3>
-                <p className="text-[10px] text-muted-foreground">Start a fresh conversation with any contact</p>
+                <p className="text-xs text-muted-foreground">Start a fresh conversation with any contact</p>
               </div>
             </div>
             <button onClick={onClose} className="p-1.5 text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"><X className="w-4 h-4" /></button>
@@ -945,7 +945,7 @@ function NewConversationModal({ isOpen, onClose, contacts, onStart }: {
                     <div className="w-7 h-7 rounded-full bg-primary/20 flex items-center justify-center text-xs font-bold text-primary shrink-0">{selected.name.charAt(0)}</div>
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-semibold text-foreground">{selected.name}</p>
-                      <p className="text-[10px] text-muted-foreground">{selected.phone || selected.email}</p>
+                      <p className="text-xs text-muted-foreground">{selected.phone || selected.email}</p>
                     </div>
                     <button type="button" onClick={() => { setSelected(null); setSearch(""); setTimeout(() => searchRef.current?.focus(), 50); }} className="p-1 text-muted-foreground hover:text-destructive transition-colors shrink-0"><X className="w-3.5 h-3.5" /></button>
                   </div>
@@ -969,7 +969,7 @@ function NewConversationModal({ isOpen, onClose, contacts, onStart }: {
                             <div className="w-7 h-7 rounded-full bg-muted border border-border flex items-center justify-center text-xs font-bold text-muted-foreground shrink-0">{c.name.charAt(0)}</div>
                             <div className="flex-1 min-w-0">
                               <p className="text-sm font-semibold text-foreground truncate">{c.name}</p>
-                              <p className="text-[10px] text-muted-foreground truncate">{c.phone || c.email || "—"}</p>
+                              <p className="text-xs text-muted-foreground truncate">{c.phone || c.email || "—"}</p>
                             </div>
                           </button>
                         ))
@@ -1217,7 +1217,7 @@ export const ConversationView = ({
               {(["all", "open", "assigned", "pending", "resolved"] as const).map(f => (
                 <button key={f} onClick={() => setStatusFilter(f)}
                   className={cn(
-                    "flex-1 px-1 py-3 text-[11px] font-bold uppercase tracking-wider transition-colors border-b-2 whitespace-nowrap",
+                    "flex-1 px-1 py-3 text-xs font-bold uppercase tracking-wider transition-colors border-b-2 whitespace-nowrap",
                     statusFilter === f ? "border-primary text-primary bg-primary/5" : "border-transparent text-muted-foreground hover:text-foreground hover:bg-muted/30"
                   )}
                 >{f}</button>
@@ -1242,7 +1242,7 @@ export const ConversationView = ({
             {!isAgent && (
               <div className="relative">
                 <button onClick={() => setOpenDropdown(openDropdown === "f-assign" ? null : "f-assign")}
-                  className={cn("flex items-center gap-1.5 h-7 px-2.5 border text-xs font-semibold transition-colors", assigneeFilter ? "border-primary text-primary bg-primary/5" : "border-border text-muted-foreground hover:border-primary hover:text-primary")}
+                  className={cn("flex items-center gap-1.5 h-8 px-3 border text-xs font-semibold transition-colors", assigneeFilter ? "border-primary text-primary bg-primary/5" : "border-border text-muted-foreground hover:border-primary hover:text-primary")}
                 >
                   <UserIcon className="w-3 h-3" />
                   {assigneeFilter ? users.find(u => u.id === assigneeFilter)?.name.split(" ")[0] ?? "Agent" : "Agent"}
@@ -1264,7 +1264,7 @@ export const ConversationView = ({
             {/* Channel filter */}
             <div className="relative">
               <button onClick={() => setOpenDropdown(openDropdown === "f-channel" ? null : "f-channel")}
-                className={cn("flex items-center gap-1.5 h-7 px-2.5 border text-xs font-semibold transition-colors", channelFilter ? "border-primary text-primary bg-primary/5" : "border-border text-muted-foreground hover:border-primary hover:text-primary")}
+                className={cn("flex items-center gap-1.5 h-8 px-3 border text-xs font-semibold transition-colors", channelFilter ? "border-primary text-primary bg-primary/5" : "border-border text-muted-foreground hover:border-primary hover:text-primary")}
               >
                 <Filter className="w-3 h-3" />
                 {channelFilter ? CHANNEL_LABEL[channelFilter] : "Channel"}
@@ -1285,7 +1285,7 @@ export const ConversationView = ({
             {/* Priority filter */}
             <div className="relative">
               <button onClick={() => setOpenDropdown(openDropdown === "f-priority" ? null : "f-priority")}
-                className={cn("flex items-center gap-1.5 h-7 px-2.5 border text-xs font-semibold transition-colors", priorityFilter ? "border-primary text-primary bg-primary/5" : "border-border text-muted-foreground hover:border-primary hover:text-primary")}
+                className={cn("flex items-center gap-1.5 h-8 px-3 border text-xs font-semibold transition-colors", priorityFilter ? "border-primary text-primary bg-primary/5" : "border-border text-muted-foreground hover:border-primary hover:text-primary")}
               >
                 <ArrowUp className="w-3 h-3" />
                 {priorityFilter ? PRIORITY_OPTIONS.find(p => p.id === priorityFilter)?.label : "Priority"}

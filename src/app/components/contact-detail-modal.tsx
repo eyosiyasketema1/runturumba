@@ -94,16 +94,16 @@ export const ContactDetailModal = ({
           {/* Stats & Associations */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             <div className="space-y-4">
-              <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest px-1">Audience Segments</label>
+              <label className="text-xs font-bold text-muted-foreground uppercase tracking-widest px-1">Audience Segments</label>
               <div className="flex flex-wrap gap-2">
                 {contactGroups.map(g => (
-                  <span key={g.id} className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-primary/5 text-primary text-[10px] font-bold rounded border border-primary/10 uppercase tracking-wider">
+                  <span key={g.id} className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-primary/5 text-primary text-xs font-bold rounded border border-primary/10 uppercase tracking-wider">
                     <Database className="w-3.5 h-3.5 opacity-60" />
                     {g.name}
                   </span>
                 ))}
                 {contact.tags.map(tag => (
-                  <span key={tag} className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-muted text-muted-foreground text-[10px] font-bold rounded border border-border uppercase tracking-wider">
+                  <span key={tag} className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-muted text-muted-foreground text-xs font-bold rounded border border-border uppercase tracking-wider">
                     <Hash className="w-3.5 h-3.5 opacity-40" />
                     {tag}
                   </span>
@@ -117,11 +117,11 @@ export const ContactDetailModal = ({
             <div className="grid grid-cols-2 gap-4">
               <div className="p-4 bg-muted/30 rounded-lg border border-border">
                 <p className="text-2xl font-bold tracking-tight text-foreground">{contactMessages.length}</p>
-                <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Touchpoints</p>
+                <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Touchpoints</p>
               </div>
               <div className="p-4 bg-muted/30 rounded-lg border border-border">
                 <p className="text-2xl font-bold tracking-tight text-foreground">{contactNotes.length}</p>
-                <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Internal Notes</p>
+                <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Internal Notes</p>
               </div>
             </div>
           </div>
@@ -142,7 +142,7 @@ export const ContactDetailModal = ({
                 <div key={note.id} className="p-4 bg-card border border-border rounded-lg shadow-sm group relative">
                   <p className="text-sm text-foreground leading-relaxed pr-8">{note.content}</p>
                   <div className="mt-3 flex items-center justify-between">
-                    <span className="text-[10px] font-bold text-muted-foreground uppercase opacity-60">{new Date(note.createdAt).toLocaleDateString()}</span>
+                    <span className="text-xs font-bold text-muted-foreground uppercase opacity-60">{new Date(note.createdAt).toLocaleDateString()}</span>
                     <button onClick={() => onDeleteNote(note.id)} className="p-1 text-muted-foreground hover:text-destructive opacity-0 group-hover:opacity-100 transition-all"><Trash2 className="w-3.5 h-3.5" /></button>
                   </div>
                 </div>
@@ -161,7 +161,7 @@ export const ContactDetailModal = ({
                   <div className={cn("w-2 h-2 rounded-full mt-1.5 shrink-0", msg.senderType === "user" ? "bg-primary" : "bg-emerald-500")} />
                   <div className="flex-1 space-y-1">
                     <p className="text-sm text-foreground leading-relaxed">{msg.content}</p>
-                    <p className="text-[10px] font-bold text-muted-foreground uppercase opacity-60">{formatTimeAgo(msg.createdAt)} • {msg.senderType === "user" ? "Outgoing" : "Incoming"}</p>
+                    <p className="text-xs font-bold text-muted-foreground uppercase opacity-60">{formatTimeAgo(msg.createdAt)} • {msg.senderType === "user" ? "Outgoing" : "Incoming"}</p>
                   </div>
                 </div>
               ))}

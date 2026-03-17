@@ -107,9 +107,9 @@ export const AutomationView = ({
         ].map(stat => (
           <Card key={stat.label}>
             <CardContent className="p-4">
-              <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">{stat.label}</p>
+              <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest">{stat.label}</p>
               <p className="text-2xl font-bold text-foreground mt-1">{stat.value}</p>
-              <p className="text-[11px] text-muted-foreground">{stat.sub}</p>
+              <p className="text-xs text-muted-foreground">{stat.sub}</p>
             </CardContent>
           </Card>
         ))}
@@ -127,7 +127,7 @@ export const AutomationView = ({
           >
             <Zap className="w-3.5 h-3.5" />
             Automation Rules
-            <Badge variant="secondary" className="text-[9px] ml-1">{automations.length}</Badge>
+            <Badge variant="secondary" className="text-xs ml-1">{automations.length}</Badge>
           </button>
           <button
             onClick={() => setActiveTab("webhooks")}
@@ -138,7 +138,7 @@ export const AutomationView = ({
           >
             <Webhook className="w-3.5 h-3.5" />
             Webhooks
-            <Badge variant="secondary" className="text-[9px] ml-1">{webhooks.length}</Badge>
+            <Badge variant="secondary" className="text-xs ml-1">{webhooks.length}</Badge>
           </button>
         </div>
         <div className="relative flex-1 max-w-sm">
@@ -193,16 +193,16 @@ export const AutomationView = ({
                           <div className="flex items-center gap-2">
                             <p className="text-sm font-semibold text-foreground truncate">{rule.name}</p>
                             {rule.enabled && (
-                              <Badge className="text-[9px] bg-emerald-50 text-emerald-600 border-emerald-200" variant="outline">Active</Badge>
+                              <Badge className="text-xs bg-emerald-50 text-emerald-600 border-emerald-200" variant="outline">Active</Badge>
                             )}
                           </div>
                           <p className="text-xs text-muted-foreground mt-0.5 truncate">{rule.description}</p>
                           <div className="flex items-center gap-3 mt-1.5">
-                            <span className="text-[10px] text-muted-foreground">
+                            <span className="text-xs text-muted-foreground">
                               <span className="font-semibold text-foreground">{rule.triggerCount}</span> executions
                             </span>
                             {rule.lastTriggeredAt && (
-                              <span className="text-[10px] text-muted-foreground">
+                              <span className="text-xs text-muted-foreground">
                                 Last: {formatTimeAgo(rule.lastTriggeredAt)}
                               </span>
                             )}
@@ -255,14 +255,14 @@ export const AutomationView = ({
                         <div className="flex items-center gap-2">
                           <p className="text-sm font-semibold text-foreground truncate">{wh.name}</p>
                           {wh.failureCount > 5 && (
-                            <Badge variant="outline" className="text-[9px] text-destructive border-destructive/20 bg-destructive/5">
+                            <Badge variant="outline" className="text-xs text-destructive border-destructive/20 bg-destructive/5">
                               <AlertCircle className="w-2.5 h-2.5 mr-0.5" />
                               {wh.failureCount} failures
                             </Badge>
                           )}
                         </div>
                         <div className="flex items-center gap-2 mt-0.5">
-                          <code className="text-[11px] text-muted-foreground font-mono truncate max-w-[300px]">{wh.url}</code>
+                          <code className="text-xs text-muted-foreground font-mono truncate max-w-[300px]">{wh.url}</code>
                           <button
                             onClick={() => { copyToClipboard(wh.url); toast.success("URL copied"); }}
                             className="text-muted-foreground hover:text-foreground"
@@ -272,7 +272,7 @@ export const AutomationView = ({
                         </div>
                         <div className="flex items-center gap-2 mt-1.5 flex-wrap">
                           {wh.events.map(ev => (
-                            <Badge key={ev} variant="secondary" className="text-[9px]">{ev}</Badge>
+                            <Badge key={ev} variant="secondary" className="text-xs">{ev}</Badge>
                           ))}
                         </div>
                       </div>
@@ -280,7 +280,7 @@ export const AutomationView = ({
                       <div className="flex items-center gap-3 shrink-0">
                         {wh.lastCalledAt && (
                           <div className="text-right hidden md:block">
-                            <p className="text-[10px] text-muted-foreground">Last called</p>
+                            <p className="text-xs text-muted-foreground">Last called</p>
                             <p className="text-xs font-medium text-foreground">{formatTimeAgo(wh.lastCalledAt)}</p>
                           </div>
                         )}
@@ -362,7 +362,7 @@ const AddRuleModal = ({ isOpen, onClose, onAdd }: { isOpen: boolean; onClose: ()
                 <t.icon className={cn("w-4 h-4 shrink-0", trigger === t.id ? "text-primary" : "text-muted-foreground")} />
                 <div>
                   <p className="font-semibold">{t.label}</p>
-                  <p className="text-[10px] text-muted-foreground">{t.description}</p>
+                  <p className="text-xs text-muted-foreground">{t.description}</p>
                 </div>
               </button>
             ))}
@@ -384,7 +384,7 @@ const AddRuleModal = ({ isOpen, onClose, onAdd }: { isOpen: boolean; onClose: ()
                 <a.icon className={cn("w-4 h-4 shrink-0", action === a.id ? "text-emerald-600" : "text-muted-foreground")} />
                 <div>
                   <p className="font-semibold">{a.label}</p>
-                  <p className="text-[10px] text-muted-foreground">{a.description}</p>
+                  <p className="text-xs text-muted-foreground">{a.description}</p>
                 </div>
               </button>
             ))}
@@ -441,7 +441,7 @@ const AddWebhookModal = ({ isOpen, onClose, onAdd }: { isOpen: boolean; onClose:
         <div className="grid gap-2">
           <Label className="text-xs font-semibold">Endpoint URL</Label>
           <Input placeholder="https://your-api.com/webhooks" value={url} onChange={(e) => setUrl(e.target.value)} className="h-9 text-sm font-mono" />
-          <p className="text-[11px] text-muted-foreground">Turumba will POST JSON payloads to this URL.</p>
+          <p className="text-xs text-muted-foreground">Turumba will POST JSON payloads to this URL.</p>
         </div>
         <div className="grid gap-2">
           <Label className="text-xs font-semibold">Subscribe to Events</Label>
@@ -451,7 +451,7 @@ const AddWebhookModal = ({ isOpen, onClose, onAdd }: { isOpen: boolean; onClose:
                 key={ev}
                 onClick={() => toggleEvent(ev)}
                 className={cn(
-                  "px-2.5 py-1 text-[11px] font-medium border transition-all",
+                  "px-2.5 py-1 text-xs font-medium border transition-all",
                   events.includes(ev) ? "bg-primary text-primary-foreground border-primary" : "bg-background text-muted-foreground border-border hover:bg-muted"
                 )}
               >

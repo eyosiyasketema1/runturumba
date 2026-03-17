@@ -105,7 +105,7 @@ export function TemplatesTab({
           <button
             onClick={() => setTemplateCategory("all")}
             className={cn(
-              "px-4 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-wider transition-all border",
+              "px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider transition-all border",
               templateCategory === "all" ? "bg-primary text-primary-foreground border-primary shadow-md" : "bg-muted text-muted-foreground border-border hover:border-primary/30"
             )}
           >
@@ -119,7 +119,7 @@ export function TemplatesTab({
                 key={cat}
                 onClick={() => setTemplateCategory(cat)}
                 className={cn(
-                  "px-4 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-wider transition-all border",
+                  "px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider transition-all border",
                   templateCategory === cat ? "bg-primary text-primary-foreground border-primary shadow-md" : "bg-muted text-muted-foreground border-border hover:border-primary/30"
                 )}
               >
@@ -152,7 +152,7 @@ export function TemplatesTab({
                       <div className="space-y-1">
                         <h4 className="font-bold text-foreground leading-tight">{tmpl.name}</h4>
                         <div className="flex items-center gap-2">
-                          <span className="text-[9px] font-black uppercase tracking-widest px-1.5 py-0.5 bg-primary/5 text-primary rounded-sm border border-primary/10">
+                          <span className="text-xs font-black uppercase tracking-widest px-1.5 py-0.5 bg-primary/5 text-primary rounded-sm border border-primary/10">
                             {tmpl.category}
                           </span>
                         </div>
@@ -171,16 +171,16 @@ export function TemplatesTab({
 
                     <div className="flex flex-wrap gap-1.5">
                       {placeholders.slice(0, 3).map((ph, i) => (
-                        <span key={i} className="text-[9px] font-bold text-muted-foreground uppercase border border-border px-1.5 py-0.5 rounded-sm bg-background">{ph}</span>
+                        <span key={i} className="text-xs font-bold text-muted-foreground uppercase border border-border px-1.5 py-0.5 rounded-sm bg-background">{ph}</span>
                       ))}
-                      {placeholders.length > 3 && <span className="text-[9px] font-bold text-muted-foreground uppercase">+ {placeholders.length - 3}</span>}
+                      {placeholders.length > 3 && <span className="text-xs font-bold text-muted-foreground uppercase">+ {placeholders.length - 3}</span>}
                     </div>
                   </div>
 
                   <div className="px-5 py-3 border-t border-border bg-muted/10">
                     <button
                       onClick={() => onUseTemplate(tmpl.content, tmpl.name)}
-                      className="w-full py-2 bg-primary/5 text-primary text-[10px] font-bold uppercase tracking-widest rounded-md hover:bg-primary hover:text-primary-foreground transition-all flex items-center justify-center gap-2 border border-primary/10 group-hover:border-primary/30"
+                      className="w-full py-2 bg-primary/5 text-primary text-xs font-bold uppercase tracking-widest rounded-md hover:bg-primary hover:text-primary-foreground transition-all flex items-center justify-center gap-2 border border-primary/10 group-hover:border-primary/30"
                     >
                       <Send className="w-3 h-3" />
                       Select Template
@@ -206,29 +206,29 @@ export function TemplatesTab({
               <div className="p-6 space-y-6 overflow-y-auto custom-scrollbar">
                 <div className="space-y-4">
                   <div className="space-y-2">
-                    <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest px-1">Template Title</label>
+                    <label className="text-xs font-bold text-muted-foreground uppercase tracking-widest px-1">Template Title</label>
                     <input type="text" placeholder="e.g. Welcome Series Step 1" value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} className="w-full px-3 py-2 bg-background border border-input rounded-md text-sm focus:ring-1 focus:ring-ring outline-none" />
                   </div>
                   <div className="space-y-2">
-                    <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest px-1">Category</label>
+                    <label className="text-xs font-bold text-muted-foreground uppercase tracking-widest px-1">Category</label>
                     <select value={form.category} onChange={e => setForm({ ...form, category: e.target.value })} className="w-full px-3 py-2 bg-background border border-input rounded-md text-sm outline-none">
                       {TEMPLATE_CATEGORIES.map(cat => <option key={cat} value={cat}>{cat}</option>)}
                     </select>
                   </div>
                   <div className="space-y-2">
                     <div className="flex items-center justify-between px-1">
-                      <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Drafting Area</label>
-                      <span className="text-[9px] font-bold text-muted-foreground opacity-60 uppercase">{form.content.length} characters</span>
+                      <label className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Drafting Area</label>
+                      <span className="text-xs font-bold text-muted-foreground opacity-60 uppercase">{form.content.length} characters</span>
                     </div>
                     <textarea rows={6} placeholder="Type your message with {PLACEHOLDERS}..." value={form.content} onChange={e => setForm({ ...form, content: e.target.value })} className="w-full p-4 bg-muted/20 border border-input rounded-md text-sm font-mono focus:ring-1 focus:ring-ring outline-none resize-none" />
                   </div>
                 </div>
 
                 <div className="space-y-2">
-                  <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest px-1">Insert Personalization</label>
+                  <label className="text-xs font-bold text-muted-foreground uppercase tracking-widest px-1">Insert Personalization</label>
                   <div className="flex flex-wrap gap-1.5 p-1">
                     {TEMPLATE_PLACEHOLDERS.map(ph => (
-                      <button key={ph.key} type="button" onClick={() => setForm({ ...form, content: form.content + ph.key })} className="px-2 py-1 bg-background border border-border rounded-md text-[9px] font-bold uppercase tracking-wider hover:bg-muted transition-all">{ph.key}</button>
+                      <button key={ph.key} type="button" onClick={() => setForm({ ...form, content: form.content + ph.key })} className="px-2 py-1 bg-background border border-border rounded-md text-xs font-bold uppercase tracking-wider hover:bg-muted transition-all">{ph.key}</button>
                     ))}
                   </div>
                 </div>

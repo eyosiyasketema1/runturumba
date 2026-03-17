@@ -302,7 +302,7 @@ export const ChannelsView = ({
             <Bot className="w-4 h-4 mr-2" />
             Chat Endpoints
             {chatEndpoints.length > 0 && (
-              <span className="ml-1.5 inline-flex items-center justify-center w-5 h-5 text-[10px] font-bold bg-primary/10 text-primary border border-primary/20">
+              <span className="ml-1.5 inline-flex items-center justify-center w-5 h-5 text-xs font-bold bg-primary/10 text-primary border border-primary/20">
                 {chatEndpoints.length}
               </span>
             )}
@@ -325,9 +325,9 @@ export const ChannelsView = ({
         ].map((stat) => (
           <Card key={stat.label}>
             <CardContent className="p-4">
-              <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">{stat.label}</p>
+              <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest">{stat.label}</p>
               <p className={cn("text-2xl font-bold mt-1", stat.accent || "text-foreground")}>{stat.value}</p>
-              <p className="text-[11px] text-muted-foreground">{stat.sub}</p>
+              <p className="text-xs text-muted-foreground">{stat.sub}</p>
             </CardContent>
           </Card>
         ))}
@@ -372,7 +372,7 @@ export const ChannelsView = ({
           </div>
           {/* Sort */}
           <div className="flex items-center gap-1 ml-auto">
-            <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mr-1">Sort:</span>
+            <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mr-1">Sort:</span>
             {([
               { key: "name" as SortKey, label: "Name" },
               { key: "status" as SortKey, label: "Status" },
@@ -384,7 +384,7 @@ export const ChannelsView = ({
                 key={s.key}
                 onClick={() => toggleSort(s.key)}
                 className={cn(
-                  "flex items-center gap-1 px-2 py-1 text-[11px] font-semibold transition-all",
+                  "flex items-center gap-1 px-2 py-1 text-xs font-semibold transition-all",
                   sortKey === s.key ? "text-foreground" : "text-muted-foreground hover:text-foreground"
                 )}
               >
@@ -504,7 +504,7 @@ const FilterButton = ({ active, onClick, children }: { active: boolean; onClick:
   <button
     onClick={onClick}
     className={cn(
-      "px-2.5 py-1.5 text-[11px] font-semibold transition-all flex items-center gap-1.5 whitespace-nowrap shrink-0",
+      "px-2.5 py-1.5 text-xs font-semibold transition-all flex items-center gap-1.5 whitespace-nowrap shrink-0",
       active ? "bg-background text-foreground shadow-sm border border-border" : "text-muted-foreground hover:text-foreground"
     )}
   >
@@ -584,11 +584,11 @@ const ChannelRow = ({ channel, onToggle, onDetail, onEdit, onDelete, onDuplicate
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2">
                 <p className="text-sm font-semibold text-foreground truncate">{channel.name}</p>
-                <Badge variant="outline" className={cn("text-[9px] border", statusInfo.bgColor, statusInfo.color)}>
+                <Badge variant="outline" className={cn("text-xs border", statusInfo.bgColor, statusInfo.color)}>
                   <StatusIcon className="w-2.5 h-2.5 mr-1" />
                   {statusInfo.label}
                 </Badge>
-                {!channel.enabled && <Badge variant="secondary" className="text-[9px]">Disabled</Badge>}
+                {!channel.enabled && <Badge variant="secondary" className="text-xs">Disabled</Badge>}
               </div>
               <p className="text-xs text-muted-foreground mt-0.5">
                 {typeInfo?.label} &middot; {channel.senderName || "No sender name"}
@@ -600,15 +600,15 @@ const ChannelRow = ({ channel, onToggle, onDetail, onEdit, onDelete, onDuplicate
             <div className="hidden md:flex items-center gap-6 text-center">
               <div>
                 <p className="text-xs font-bold text-foreground">{channel.stats.sent.toLocaleString()}</p>
-                <p className="text-[10px] text-muted-foreground">Sent</p>
+                <p className="text-xs text-muted-foreground">Sent</p>
               </div>
               <div>
                 <p className={cn("text-xs font-bold", chDeliveryRate >= 90 ? "text-emerald-600" : chDeliveryRate >= 70 ? "text-amber-600" : "text-foreground")}>{chDeliveryRate}%</p>
-                <p className="text-[10px] text-muted-foreground">Delivery</p>
+                <p className="text-xs text-muted-foreground">Delivery</p>
               </div>
               <div>
                 <p className={cn("text-xs font-bold", channel.stats.failed > 0 ? "text-destructive" : "text-foreground")}>{channel.stats.failed}</p>
-                <p className="text-[10px] text-muted-foreground">Failed</p>
+                <p className="text-xs text-muted-foreground">Failed</p>
               </div>
             </div>
 
@@ -722,7 +722,7 @@ const AddChannelModal = ({ isOpen, onClose, onAdd }: {
           <div key={s.n} className="contents">
             <div className="flex items-center gap-1.5">
               <div className={cn(
-                "w-6 h-6 flex items-center justify-center text-[10px] font-bold border transition-all",
+                "w-6 h-6 flex items-center justify-center text-xs font-bold border transition-all",
                 step > s.n ? "bg-primary text-primary-foreground border-primary" :
                 step === s.n ? "border-foreground text-foreground" : "border-muted-foreground/30 text-muted-foreground/40"
               )}>
@@ -752,7 +752,7 @@ const AddChannelModal = ({ isOpen, onClose, onAdd }: {
                   </div>
                   <div>
                     <p className="text-sm font-semibold text-foreground">{ct.label}</p>
-                    <p className="text-[11px] text-muted-foreground mt-0.5">{ct.description}</p>
+                    <p className="text-xs text-muted-foreground mt-0.5">{ct.description}</p>
                   </div>
                 </button>
               ))}
@@ -773,7 +773,7 @@ const AddChannelModal = ({ isOpen, onClose, onAdd }: {
                 </div>
                 <div>
                   <p className="text-sm font-semibold">{typeInfo.label}</p>
-                  <p className="text-[11px] text-muted-foreground">{typeInfo.description}</p>
+                  <p className="text-xs text-muted-foreground">{typeInfo.description}</p>
                 </div>
               </div>
             )}
@@ -787,13 +787,13 @@ const AddChannelModal = ({ isOpen, onClose, onAdd }: {
               <div className="grid gap-2">
                 <Label className="text-xs font-semibold">Sender Name</Label>
                 <Input placeholder="e.g. Acme Corp, support@acme.com" value={senderName} onChange={e => setSenderName(e.target.value)} className="h-9 text-sm" />
-                <p className="text-[11px] text-muted-foreground">The name or number recipients will see.</p>
+                <p className="text-xs text-muted-foreground">The name or number recipients will see.</p>
               </div>
 
               <Separator />
 
               {/* Credentials */}
-              <h4 className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Credentials & API Settings</h4>
+              <h4 className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Credentials & API Settings</h4>
               {fields.map(f => (
                 <div key={f.key} className="grid gap-2">
                   <Label className="text-xs font-semibold">{f.label}</Label>
@@ -804,14 +804,14 @@ const AddChannelModal = ({ isOpen, onClose, onAdd }: {
                     onChange={e => setConfig(prev => ({ ...prev, [f.key]: e.target.value }))}
                     className="h-9 text-sm"
                   />
-                  {f.hint && <p className="text-[11px] text-muted-foreground">{f.hint}</p>}
+                  {f.hint && <p className="text-xs text-muted-foreground">{f.hint}</p>}
                 </div>
               ))}
 
               <Separator />
 
               {/* Advanced */}
-              <h4 className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Advanced Options</h4>
+              <h4 className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Advanced Options</h4>
               <div className="grid grid-cols-3 gap-3">
                 <div className="grid gap-2">
                   <Label className="text-xs font-semibold">Rate Limit</Label>
@@ -854,7 +854,7 @@ const AddChannelModal = ({ isOpen, onClose, onAdd }: {
                   )}
                   <div>
                     <p className="text-sm font-bold text-foreground">{name || "Unnamed Channel"}</p>
-                    <p className="text-[11px] text-muted-foreground">{typeInfo?.label} &middot; {senderName || "No sender name"}</p>
+                    <p className="text-xs text-muted-foreground">{typeInfo?.label} &middot; {senderName || "No sender name"}</p>
                   </div>
                 </div>
                 <div className="grid grid-cols-2 gap-2">
@@ -882,7 +882,7 @@ const AddChannelModal = ({ isOpen, onClose, onAdd }: {
               </div>
 
               <div className="p-3 bg-amber-50 border border-amber-200">
-                <p className="text-[11px] text-amber-700">
+                <p className="text-xs text-amber-700">
                   <AlertTriangle className="w-3 h-3 inline mr-1 -mt-0.5" />
                   The channel will be created in <strong>Disconnected</strong> state. Use "Test Connection" to verify credentials, then enable the channel to go live.
                 </p>
@@ -947,9 +947,9 @@ const EditChannelModal = ({ isOpen, onClose, channel, onSave }: {
             </div>
             <div className="flex-1">
               <p className="text-sm font-semibold">{typeInfo.label}</p>
-              <p className="text-[11px] text-muted-foreground">{typeInfo.description}</p>
+              <p className="text-xs text-muted-foreground">{typeInfo.description}</p>
             </div>
-            <Badge variant="secondary" className="text-[9px]">Type cannot be changed</Badge>
+            <Badge variant="secondary" className="text-xs">Type cannot be changed</Badge>
           </div>
         )}
 
@@ -966,7 +966,7 @@ const EditChannelModal = ({ isOpen, onClose, channel, onSave }: {
         <Separator />
 
         {/* Credentials */}
-        <h4 className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Credentials & API Settings</h4>
+        <h4 className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Credentials & API Settings</h4>
         {fields.map(f => (
           <div key={f.key} className="grid gap-2">
             <Label className="text-xs font-semibold">{f.label}</Label>
@@ -983,7 +983,7 @@ const EditChannelModal = ({ isOpen, onClose, channel, onSave }: {
         <Separator />
 
         {/* Advanced */}
-        <h4 className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Advanced</h4>
+        <h4 className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Advanced</h4>
         <div className="grid grid-cols-3 gap-3">
           <div className="grid gap-2">
             <Label className="text-xs font-semibold">Rate Limit</Label>
@@ -1066,7 +1066,7 @@ const ChannelDetailDrawer = ({ isOpen, onClose, channel, onToggle, onEdit, onDel
           <div className="flex-1 min-w-0">
             <h3 className="text-lg font-bold text-foreground">{channel.name}</h3>
             <div className="flex items-center gap-2 mt-1 flex-wrap">
-              <Badge variant="outline" className={cn("text-[10px] border", statusInfo.bgColor, statusInfo.color)}>
+              <Badge variant="outline" className={cn("text-xs border", statusInfo.bgColor, statusInfo.color)}>
                 <StatusIcon className="w-2.5 h-2.5 mr-1" />
                 {statusInfo.label}
               </Badge>
@@ -1110,26 +1110,26 @@ const ChannelDetailDrawer = ({ isOpen, onClose, channel, onToggle, onEdit, onDel
               <div className="grid grid-cols-4 gap-3">
                 <div className="p-3 bg-muted/30 border text-center">
                   <p className="text-xl font-bold text-foreground">{channel.stats.sent.toLocaleString()}</p>
-                  <p className="text-[10px] text-muted-foreground font-semibold uppercase tracking-wider">Sent</p>
+                  <p className="text-xs text-muted-foreground font-semibold uppercase tracking-wider">Sent</p>
                 </div>
                 <div className="p-3 bg-muted/30 border text-center">
                   <p className="text-xl font-bold text-foreground">{channel.stats.delivered.toLocaleString()}</p>
-                  <p className="text-[10px] text-muted-foreground font-semibold uppercase tracking-wider">Delivered</p>
+                  <p className="text-xs text-muted-foreground font-semibold uppercase tracking-wider">Delivered</p>
                 </div>
                 <div className="p-3 bg-muted/30 border text-center">
                   <p className={cn("text-xl font-bold", deliveryRate >= 90 ? "text-emerald-600" : deliveryRate >= 70 ? "text-amber-600" : "text-destructive")}>{deliveryRate}%</p>
-                  <p className="text-[10px] text-muted-foreground font-semibold uppercase tracking-wider">Delivery Rate</p>
+                  <p className="text-xs text-muted-foreground font-semibold uppercase tracking-wider">Delivery Rate</p>
                 </div>
                 <div className="p-3 bg-muted/30 border text-center">
                   <p className={cn("text-xl font-bold", channel.stats.failed > 0 ? "text-destructive" : "text-foreground")}>{channel.stats.failed}</p>
-                  <p className="text-[10px] text-muted-foreground font-semibold uppercase tracking-wider">Failed</p>
+                  <p className="text-xs text-muted-foreground font-semibold uppercase tracking-wider">Failed</p>
                 </div>
               </div>
 
               {/* Quick info */}
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-2 p-4 border bg-muted/10">
-                  <h5 className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Channel Info</h5>
+                  <h5 className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Channel Info</h5>
                   <InfoRow label="Type" value={typeInfo?.label || channel.type} />
                   <InfoRow label="Sender" value={channel.senderName || "—"} />
                   <InfoRow label="Country Code" value={channel.defaultCountryCode || "—"} />
@@ -1137,7 +1137,7 @@ const ChannelDetailDrawer = ({ isOpen, onClose, channel, onToggle, onEdit, onDel
                   <InfoRow label="Priority" value={channel.priority ? `#${channel.priority}` : "—"} />
                 </div>
                 <div className="space-y-2 p-4 border bg-muted/10">
-                  <h5 className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Timeline</h5>
+                  <h5 className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Timeline</h5>
                   <InfoRow label="Created" value={channel.createdAt ? new Date(channel.createdAt).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) : "—"} />
                   <InfoRow label="Last Active" value={channel.lastActiveAt ? formatTimeAgo(channel.lastActiveAt) : "Never"} />
                   <InfoRow label="Status Since" value={channel.lastActiveAt ? formatTimeAgo(channel.lastActiveAt) : "—"} />
@@ -1150,7 +1150,7 @@ const ChannelDetailDrawer = ({ isOpen, onClose, channel, onToggle, onEdit, onDel
                   <AlertTriangle className="w-4 h-4 text-destructive shrink-0 mt-0.5" />
                   <div>
                     <p className="text-xs font-semibold text-destructive">Connection Error</p>
-                    <p className="text-[11px] text-muted-foreground mt-0.5">This channel has a connection error. Try reconnecting or verify your credentials in the Configuration tab.</p>
+                    <p className="text-xs text-muted-foreground mt-0.5">This channel has a connection error. Try reconnecting or verify your credentials in the Configuration tab.</p>
                   </div>
                 </div>
               )}
@@ -1159,7 +1159,7 @@ const ChannelDetailDrawer = ({ isOpen, onClose, channel, onToggle, onEdit, onDel
                   <Activity className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
                   <div>
                     <p className="text-xs font-semibold text-amber-700">Rate Limited</p>
-                    <p className="text-[11px] text-amber-600/80 mt-0.5">This channel has hit its rate limit. Messages will queue until the limit resets.</p>
+                    <p className="text-xs text-amber-600/80 mt-0.5">This channel has hit its rate limit. Messages will queue until the limit resets.</p>
                   </div>
                 </div>
               )}
@@ -1169,7 +1169,7 @@ const ChannelDetailDrawer = ({ isOpen, onClose, channel, onToggle, onEdit, onDel
           {tab === "config" && (
             <motion.div key="config" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="space-y-4">
               <div className="space-y-2 p-4 border bg-muted/10">
-                <h5 className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-3">API Credentials</h5>
+                <h5 className="text-xs font-bold text-muted-foreground uppercase tracking-widest mb-3">API Credentials</h5>
                 {fields.map(f => (
                   <div key={f.key} className="flex justify-between items-center text-sm py-1.5">
                     <span className="text-muted-foreground text-xs">{f.label}</span>
@@ -1181,7 +1181,7 @@ const ChannelDetailDrawer = ({ isOpen, onClose, channel, onToggle, onEdit, onDel
               </div>
 
               <div className="space-y-2 p-4 border bg-muted/10">
-                <h5 className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-3">Delivery Settings</h5>
+                <h5 className="text-xs font-bold text-muted-foreground uppercase tracking-widest mb-3">Delivery Settings</h5>
                 <InfoRow label="Sender Name" value={channel.senderName || "—"} />
                 <InfoRow label="Default Country Code" value={channel.defaultCountryCode || "—"} />
                 <InfoRow label="Rate Limit" value={channel.rateLimit ? `${channel.rateLimit.toLocaleString()} msg/hr` : "Unlimited"} />
@@ -1215,7 +1215,7 @@ const ChannelDetailDrawer = ({ isOpen, onClose, channel, onToggle, onEdit, onDel
                       <p className="font-semibold text-foreground">{log.event}</p>
                       <p className="text-muted-foreground mt-0.5">{log.detail}</p>
                     </div>
-                    <span className="text-[10px] text-muted-foreground shrink-0">{formatTimeAgo(log.time)}</span>
+                    <span className="text-xs text-muted-foreground shrink-0">{formatTimeAgo(log.time)}</span>
                   </div>
                 ))}
               </div>
@@ -1402,7 +1402,7 @@ const TestChannelModal = ({ isOpen, onClose, channel, onStatusChange }: {
             </div>
             <div>
               <p className="text-sm font-semibold">{channel.name}</p>
-              <p className="text-[11px] text-muted-foreground">{typeInfo.label} &middot; {channel.senderName || "No sender"}</p>
+              <p className="text-xs text-muted-foreground">{typeInfo.label} &middot; {channel.senderName || "No sender"}</p>
             </div>
           </div>
         )}
@@ -1439,14 +1439,14 @@ const TestChannelModal = ({ isOpen, onClose, channel, onStatusChange }: {
                     {p.label}
                   </p>
                   {(isActive || result) && (
-                    <p className="text-[11px] text-muted-foreground mt-0.5">
+                    <p className="text-xs text-muted-foreground mt-0.5">
                       {result === "fail" ? "Failed — check your credentials" : result === "pass" ? "Passed" : p.description}
                     </p>
                   )}
                 </div>
-                {isActive && <Badge className="text-[9px] bg-primary/10 text-primary border-primary/20" variant="outline">Testing</Badge>}
-                {result === "pass" && <span className="text-[10px] text-emerald-600 font-semibold">OK</span>}
-                {result === "fail" && <span className="text-[10px] text-destructive font-semibold">FAIL</span>}
+                {isActive && <Badge className="text-xs bg-primary/10 text-primary border-primary/20" variant="outline">Testing</Badge>}
+                {result === "pass" && <span className="text-xs text-emerald-600 font-semibold">OK</span>}
+                {result === "fail" && <span className="text-xs text-destructive font-semibold">FAIL</span>}
               </div>
             );
           })}
@@ -1460,7 +1460,7 @@ const TestChannelModal = ({ isOpen, onClose, channel, onStatusChange }: {
                 <CircleCheck className="w-5 h-5 text-emerald-600" />
                 <div>
                   <p className="text-sm font-semibold text-emerald-700">Connection Successful</p>
-                  <p className="text-[11px] text-emerald-600/80 mt-0.5">All checks passed. Channel is ready to send messages.</p>
+                  <p className="text-xs text-emerald-600/80 mt-0.5">All checks passed. Channel is ready to send messages.</p>
                 </div>
               </div>
             </motion.div>
@@ -1471,7 +1471,7 @@ const TestChannelModal = ({ isOpen, onClose, channel, onStatusChange }: {
                 <CircleX className="w-5 h-5 text-destructive" />
                 <div>
                   <p className="text-sm font-semibold text-destructive">Connection Failed</p>
-                  <p className="text-[11px] text-muted-foreground mt-0.5">Authentication failed. Please verify your API credentials in the channel configuration.</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">Authentication failed. Please verify your API credentials in the channel configuration.</p>
                 </div>
               </div>
             </motion.div>
@@ -1481,7 +1481,7 @@ const TestChannelModal = ({ isOpen, onClose, channel, onStatusChange }: {
         {/* Send test message (only when connected) */}
         {overallResult === "success" && (
           <div className="space-y-2 p-4 border bg-muted/10">
-            <h5 className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Send a Test Message</h5>
+            <h5 className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Send a Test Message</h5>
             <div className="flex gap-2">
               <Input
                 placeholder="Enter test message..."

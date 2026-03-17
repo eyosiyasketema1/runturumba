@@ -102,11 +102,11 @@ export const ContactsView = ({
           <table className="w-full text-left">
             <thead>
               <tr className="bg-muted/50 border-b border-border">
-                <th className="px-6 py-3 text-[11px] font-bold text-muted-foreground uppercase tracking-widest">Contact</th>
-                <th className="px-6 py-3 text-[11px] font-bold text-muted-foreground uppercase tracking-widest">Phone Number</th>
-                <th className="px-6 py-3 text-[11px] font-bold text-muted-foreground uppercase tracking-widest hidden lg:table-cell">Groups & Tags</th>
-                <th className="px-6 py-3 text-[11px] font-bold text-muted-foreground uppercase tracking-widest hidden md:table-cell">Created</th>
-                <th className="px-6 py-3 text-[11px] font-bold text-muted-foreground uppercase tracking-widest w-14 text-right">
+                <th className="px-6 py-3 text-xs font-bold text-muted-foreground uppercase tracking-widest">Contact</th>
+                <th className="px-6 py-3 text-xs font-bold text-muted-foreground uppercase tracking-widest">Phone Number</th>
+                <th className="px-6 py-3 text-xs font-bold text-muted-foreground uppercase tracking-widest hidden lg:table-cell">Groups & Tags</th>
+                <th className="px-6 py-3 text-xs font-bold text-muted-foreground uppercase tracking-widest hidden md:table-cell">Created</th>
+                <th className="px-6 py-3 text-xs font-bold text-muted-foreground uppercase tracking-widest w-14 text-right">
                   <span className="sr-only">Actions</span>
                 </th>
               </tr>
@@ -158,7 +158,7 @@ export const ContactsView = ({
                         </div>
                         <div className="min-w-0">
                           <p className="text-sm font-bold text-foreground leading-tight group-hover:text-primary transition-all truncate">{contact.name}</p>
-                          <p className="text-[11px] text-muted-foreground mt-0.5 truncate">{contact.email || "No email"}</p>
+                          <p className="text-xs text-muted-foreground mt-0.5 truncate">{contact.email || "No email"}</p>
                         </div>
                       </button>
                     </td>
@@ -168,21 +168,21 @@ export const ContactsView = ({
                     <td className="px-6 py-4 hidden lg:table-cell">
                       <div className="flex flex-wrap gap-1.5">
                         {contact.groupIds?.slice(0, 2).map(gid => (
-                          <span key={gid} className="px-1.5 py-0.5 bg-blue-500/10 text-blue-700 text-[10px] font-bold rounded uppercase border border-blue-500/20">
+                          <span key={gid} className="px-1.5 py-0.5 bg-blue-500/10 text-blue-700 text-xs font-bold rounded uppercase border border-blue-500/20">
                             {groups.find(g => g.id === gid)?.name || "Group"}
                           </span>
                         ))}
                         {contact.tags.slice(0, 2).map(tag => (
-                          <span key={tag} className="px-1.5 py-0.5 bg-primary/5 text-primary text-[10px] font-bold rounded uppercase border border-primary/10">
+                          <span key={tag} className="px-1.5 py-0.5 bg-primary/5 text-primary text-xs font-bold rounded uppercase border border-primary/10">
                             {tag}
                           </span>
                         ))}
                         {(contact.tags.length > 2 || (contact.groupIds?.length || 0) > 2) && (
-                          <span className="text-[10px] font-bold text-muted-foreground">+more</span>
+                          <span className="text-xs font-bold text-muted-foreground">+more</span>
                         )}
                       </div>
                     </td>
-                    <td className="px-6 py-4 text-[11px] font-bold text-muted-foreground uppercase hidden md:table-cell">
+                    <td className="px-6 py-4 text-xs font-bold text-muted-foreground uppercase hidden md:table-cell">
                       {new Date(contact.createdAt).toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' })}
                     </td>
                     <td className="px-6 py-4 text-right">

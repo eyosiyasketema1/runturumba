@@ -53,7 +53,7 @@ const DropdownPortSelector = ({ value, onChange, label }: { value: string, onCha
   const ports = ["Port 1 (Marketing)", "Port 2 (Transactional)", "Port 3 (Alerts)"];
   return (
     <div className="space-y-2">
-      <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest px-1">{label}</label>
+      <label className="text-xs font-bold text-muted-foreground uppercase tracking-widest px-1">{label}</label>
       <select 
         value={value}
         onChange={(e) => onChange(e.target.value)}
@@ -69,14 +69,14 @@ const FrequencySelector = ({ value, onChange }: { value: string, onChange: (v: s
   const options = ["One-time", "Daily", "Weekly", "Monthly"];
   return (
     <div className="space-y-2">
-      <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest px-1">Repeat</label>
+      <label className="text-xs font-bold text-muted-foreground uppercase tracking-widest px-1">Repeat</label>
       <div className="flex bg-muted p-1 rounded-md border border-input">
         {options.map(opt => (
           <button
             key={opt}
             onClick={() => onChange(opt)}
             className={cn(
-              "flex-1 py-1.5 text-[10px] font-bold uppercase tracking-wider rounded-sm transition-all",
+              "flex-1 py-1.5 text-xs font-bold uppercase tracking-wider rounded-sm transition-all",
               value === opt ? "bg-background text-foreground shadow-sm border border-border" : "text-muted-foreground hover:text-foreground"
             )}
           >
@@ -168,7 +168,7 @@ export const NewMessageFlow: React.FC<NewMessageFlowProps> = ({
                 {isCompleted ? <Check className="w-5 h-5" /> : <Icon className="w-4 h-4" />}
               </div>
               <span className={cn(
-                "text-[10px] font-bold uppercase tracking-widest",
+                "text-xs font-bold uppercase tracking-widest",
                 isActive ? "text-primary" : "text-muted-foreground"
               )}>
                 {step.label}
@@ -260,7 +260,7 @@ export const NewMessageFlow: React.FC<NewMessageFlowProps> = ({
                         <button 
                           onClick={() => setSendType("broadcast")}
                           className={cn(
-                            "px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider rounded-sm transition-all",
+                            "px-3 py-1.5 text-xs font-bold uppercase tracking-wider rounded-sm transition-all",
                             sendType === "broadcast" ? "bg-background text-foreground shadow-sm border border-border" : "text-muted-foreground"
                           )}
                         >
@@ -269,7 +269,7 @@ export const NewMessageFlow: React.FC<NewMessageFlowProps> = ({
                         <button 
                           onClick={() => setSendType("individual")}
                           className={cn(
-                            "px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider rounded-sm transition-all",
+                            "px-3 py-1.5 text-xs font-bold uppercase tracking-wider rounded-sm transition-all",
                             sendType === "individual" ? "bg-background text-foreground shadow-sm border border-border" : "text-muted-foreground"
                           )}
                         >
@@ -283,19 +283,19 @@ export const NewMessageFlow: React.FC<NewMessageFlowProps> = ({
                 {selectedContactIds.length > 0 || selectedGroupIds.length > 0 ? (
                   <div className="mb-6 p-4 bg-background rounded-lg border border-border shadow-sm">
                     <div className="w-full flex items-center justify-between mb-4">
-                      <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Selection ({totalRecipientsCount})</span>
+                      <span className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Selection ({totalRecipientsCount})</span>
                       <div className="flex items-center gap-3">
                         {selectedContactIds.length >= 2 && !isNamingGroup && (
                           <button 
                             onClick={() => setIsNamingGroup(true)}
-                            className="flex items-center gap-1.5 px-2.5 py-1 text-[11px] font-bold text-primary bg-primary/10 border border-primary/20 rounded-md hover:bg-primary/20 transition-all"
+                            className="flex items-center gap-1.5 px-2.5 py-1 text-xs font-bold text-primary bg-primary/10 border border-primary/20 rounded-md hover:bg-primary/20 transition-all"
                           >
                             <Plus className="w-3.5 h-3.5" /> Save Group
                           </button>
                         )}
                         <button 
                           onClick={() => { setSelectedContactIds([]); setSelectedGroupIds([]); }}
-                          className="text-[11px] font-bold text-destructive hover:underline"
+                          className="text-xs font-bold text-destructive hover:underline"
                         >
                           Clear All
                         </button>
@@ -347,7 +347,7 @@ export const NewMessageFlow: React.FC<NewMessageFlowProps> = ({
                       {selectedGroupIds.map(gid => {
                         const g = groups.find(group => group.id === gid);
                         return (
-                          <div key={gid} className="flex items-center gap-1.5 px-2.5 py-1.5 bg-primary text-primary-foreground rounded-md text-[11px] font-bold shadow-sm">
+                          <div key={gid} className="flex items-center gap-1.5 px-2.5 py-1.5 bg-primary text-primary-foreground rounded-md text-xs font-bold shadow-sm">
                             <Layers className="w-3.5 h-3.5 opacity-80" />
                             {g?.name}
                             <button onClick={() => toggleGroup(gid)} className="hover:text-primary-foreground/70 ml-1"><X className="w-3.5 h-3.5" /></button>
@@ -357,7 +357,7 @@ export const NewMessageFlow: React.FC<NewMessageFlowProps> = ({
                       {selectedContactIds.map(cid => {
                         const c = contacts.find(contact => contact.id === cid);
                         return (
-                          <div key={cid} className="flex items-center gap-1.5 px-2.5 py-1.5 bg-muted text-foreground border border-border rounded-md text-[11px] font-bold shadow-sm">
+                          <div key={cid} className="flex items-center gap-1.5 px-2.5 py-1.5 bg-muted text-foreground border border-border rounded-md text-xs font-bold shadow-sm">
                             <User className="w-3.5 h-3.5 text-muted-foreground" />
                             {c?.name}
                             <button onClick={() => toggleContact(cid)} className="hover:text-destructive ml-1"><X className="w-3.5 h-3.5" /></button>
@@ -471,12 +471,12 @@ export const NewMessageFlow: React.FC<NewMessageFlowProps> = ({
                         onChange={setSelectedPort}
                         label="Channel"
                       />
-                      <p className="text-[10px] text-muted-foreground font-bold uppercase tracking-widest px-1">Selected port for delivery</p>
+                      <p className="text-xs text-muted-foreground font-bold uppercase tracking-widest px-1">Selected port for delivery</p>
                     </div>
                     
                     {totalRecipientsCount > 1 && (
                       <div className="space-y-3">
-                        <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest px-1">Broadcast Title</label>
+                        <label className="text-xs font-bold text-muted-foreground uppercase tracking-widest px-1">Broadcast Title</label>
                         <input 
                           type="text"
                           value={broadcastName}
@@ -489,7 +489,7 @@ export const NewMessageFlow: React.FC<NewMessageFlowProps> = ({
                   </div>
 
                   <div className="space-y-3">
-                    <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest px-1">Quick Templates</label>
+                    <label className="text-xs font-bold text-muted-foreground uppercase tracking-widest px-1">Quick Templates</label>
                     <div className="flex gap-2 overflow-x-auto pb-2 custom-scrollbar no-scrollbar">
                       {templates.slice(0, 5).map(tmpl => (
                         <button
@@ -506,7 +506,7 @@ export const NewMessageFlow: React.FC<NewMessageFlowProps> = ({
 
                 <div className="space-y-3 flex-1 flex flex-col">
                   <div className="flex items-center justify-between px-1">
-                    <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Message Content</label>
+                    <label className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Message Content</label>
                     <button className="flex items-center gap-1.5 text-xs font-bold text-primary hover:bg-primary/10 px-2 py-1 rounded-md transition-all">
                       <Sparkles className="w-3.5 h-3.5" />
                       AI Assist
@@ -519,13 +519,13 @@ export const NewMessageFlow: React.FC<NewMessageFlowProps> = ({
                       placeholder="Type your message here..."
                       className="flex-1 w-full p-4 bg-background border border-input rounded-md text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 transition-all resize-none shadow-sm"
                     />
-                    <div className="absolute bottom-4 right-4 flex gap-4 text-[10px] font-bold text-muted-foreground pointer-events-none">
+                    <div className="absolute bottom-4 right-4 flex gap-4 text-xs font-bold text-muted-foreground pointer-events-none">
                       <span>{messageContent.length} chars</span>
                       <span>{Math.ceil(messageContent.length / 160)} parts</span>
                     </div>
                   </div>
                   <div className="flex justify-between items-center px-1">
-                    <p className="text-[10px] font-bold text-muted-foreground">Recipients: <span className="text-foreground">{totalRecipientsCount}</span></p>
+                    <p className="text-xs font-bold text-muted-foreground">Recipients: <span className="text-foreground">{totalRecipientsCount}</span></p>
                   </div>
                 </div>
               </div>
@@ -544,7 +544,7 @@ export const NewMessageFlow: React.FC<NewMessageFlowProps> = ({
               <div className="space-y-8">
                 {/* Delivery Option Selection */}
                 <div className="space-y-4">
-                  <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest px-1">Choose Delivery Method</label>
+                  <label className="text-xs font-bold text-muted-foreground uppercase tracking-widest px-1">Choose Delivery Method</label>
                   
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <button
@@ -617,7 +617,7 @@ export const NewMessageFlow: React.FC<NewMessageFlowProps> = ({
                       <div className="p-6 bg-muted/30 rounded-xl border border-border border-dashed space-y-6">
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                           <div className="space-y-2">
-                            <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest px-1">Delivery Date & Time</label>
+                            <label className="text-xs font-bold text-muted-foreground uppercase tracking-widest px-1">Delivery Date & Time</label>
                             <input 
                               type="datetime-local"
                               value={scheduledAt}
@@ -630,7 +630,7 @@ export const NewMessageFlow: React.FC<NewMessageFlowProps> = ({
                             onChange={setFrequency}
                           />
                         </div>
-                        <div className="p-3 bg-primary/5 rounded-md border border-primary/10 flex items-center gap-3 text-[10px] font-bold text-primary/80">
+                        <div className="p-3 bg-primary/5 rounded-md border border-primary/10 flex items-center gap-3 text-xs font-bold text-primary/80">
                           <Info className="w-4 h-4 shrink-0" />
                           Delivery will be based on your workspace timezone (UTC+0).
                         </div>
@@ -647,14 +647,14 @@ export const NewMessageFlow: React.FC<NewMessageFlowProps> = ({
                   <div className="p-6 space-y-6">
                     <div className="grid grid-cols-2 gap-8">
                       <div className="space-y-1">
-                        <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Recipient Count</p>
+                        <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Recipient Count</p>
                         <p className="text-xl font-bold text-foreground flex items-center gap-2">
                           <Users className="w-5 h-5 text-primary" />
                           {totalRecipientsCount}
                         </p>
                       </div>
                       <div className="space-y-1">
-                        <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Channel</p>
+                        <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Channel</p>
                         <p className="text-sm font-bold text-foreground bg-muted w-fit px-3 py-1 rounded-md border border-border">
                           {selectedPort}
                         </p>
@@ -663,13 +663,13 @@ export const NewMessageFlow: React.FC<NewMessageFlowProps> = ({
 
                     {broadcastName && (
                       <div className="space-y-1 pt-4 border-t border-border">
-                        <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Broadcast Name</p>
+                        <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Broadcast Name</p>
                         <p className="text-sm font-bold text-foreground">{broadcastName}</p>
                       </div>
                     )}
 
                     <div className="space-y-2 pt-4 border-t border-border">
-                      <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Message Preview</p>
+                      <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Message Preview</p>
                       <div className="p-4 bg-muted/20 rounded-lg border border-border italic text-xs text-muted-foreground line-clamp-3 leading-relaxed">
                         {messageContent || "No content provided."}
                       </div>

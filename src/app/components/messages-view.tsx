@@ -146,7 +146,7 @@ export const MessagesView = ({
                 <span>{tab.label}</span>
                 {tab.count !== undefined && (
                   <span className={cn(
-                    "ml-1 px-1.5 py-0.5 rounded-full text-[10px]",
+                    "ml-1 px-1.5 py-0.5 rounded-full text-xs",
                     activeTab === tab.id ? "bg-primary/10 text-primary" : "bg-muted-foreground/10 text-muted-foreground"
                   )}>
                     {tab.count}
@@ -193,12 +193,12 @@ export const MessagesView = ({
                 <table className="w-full text-left">
                   <thead>
                     <tr className="bg-muted/50 border-b border-border">
-                      <th className="px-6 py-3 text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Recipient</th>
-                      <th className="px-6 py-3 text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Message</th>
-                      <th className="px-6 py-3 text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Channel</th>
-                      <th className="px-6 py-3 text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Status</th>
-                      <th className="px-6 py-3 text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Time</th>
-                      <th className="px-6 py-3 text-[10px] font-bold text-muted-foreground uppercase tracking-widest w-20"></th>
+                      <th className="px-6 py-3 text-xs font-bold text-muted-foreground uppercase tracking-widest">Recipient</th>
+                      <th className="px-6 py-3 text-xs font-bold text-muted-foreground uppercase tracking-widest">Message</th>
+                      <th className="px-6 py-3 text-xs font-bold text-muted-foreground uppercase tracking-widest">Channel</th>
+                      <th className="px-6 py-3 text-xs font-bold text-muted-foreground uppercase tracking-widest">Status</th>
+                      <th className="px-6 py-3 text-xs font-bold text-muted-foreground uppercase tracking-widest">Time</th>
+                      <th className="px-6 py-3 text-xs font-bold text-muted-foreground uppercase tracking-widest w-20"></th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-border/50">
@@ -208,12 +208,12 @@ export const MessagesView = ({
                         <tr key={msg.id} className="hover:bg-muted/30 transition-colors group">
                           <td className="px-6 py-4">
                             <div className="flex items-center gap-3">
-                              <div className="w-8 h-8 rounded-full bg-primary/10 border border-primary/20 flex items-center justify-center text-[10px] font-bold text-primary">
+                              <div className="w-8 h-8 rounded-full bg-primary/10 border border-primary/20 flex items-center justify-center text-xs font-bold text-primary">
                                 {contact?.name.charAt(0)}
                               </div>
                               <div>
                                 <p className="text-sm font-bold text-foreground leading-none">{contact?.name || "Unknown"}</p>
-                                <p className="text-[10px] text-muted-foreground mt-1">{contact?.phone}</p>
+                                <p className="text-xs text-muted-foreground mt-1">{contact?.phone}</p>
                               </div>
                             </div>
                           </td>
@@ -233,7 +233,7 @@ export const MessagesView = ({
                               {msg.status}
                             </span>
                           </td>
-                          <td className="px-6 py-4 text-[10px] font-bold text-muted-foreground uppercase">
+                          <td className="px-6 py-4 text-xs font-bold text-muted-foreground uppercase">
                             {formatTimeAgo(msg.createdAt)}
                           </td>
                           <td className="px-6 py-4 text-right">
@@ -258,16 +258,16 @@ export const MessagesView = ({
                 <table className="w-full text-left border-collapse">
                   <thead>
                     <tr className="bg-muted/50 border-b border-border">
-                      <th className="px-6 py-4 w-12 text-[10px] font-bold text-muted-foreground uppercase tracking-widest text-center">
+                      <th className="px-6 py-4 w-12 text-xs font-bold text-muted-foreground uppercase tracking-widest text-center">
                         <input type="checkbox" className="rounded border-input shadow-sm focus:ring-1 focus:ring-ring" />
                       </th>
-                      <th className="px-6 py-4 text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Message</th>
-                      <th className="px-6 py-4 text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Channel</th>
-                      <th className="px-6 py-4 text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Status</th>
-                      <th className="px-6 py-4 text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Target</th>
-                      <th className="px-6 py-4 text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Stat(S/D/R/F)</th>
-                      <th className="px-6 py-4 text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Date</th>
-                      <th className="px-6 py-4 text-[10px] font-bold text-muted-foreground uppercase tracking-widest w-24 text-right">Actions</th>
+                      <th className="px-6 py-4 text-xs font-bold text-muted-foreground uppercase tracking-widest">Message</th>
+                      <th className="px-6 py-4 text-xs font-bold text-muted-foreground uppercase tracking-widest">Channel</th>
+                      <th className="px-6 py-4 text-xs font-bold text-muted-foreground uppercase tracking-widest">Status</th>
+                      <th className="px-6 py-4 text-xs font-bold text-muted-foreground uppercase tracking-widest">Target</th>
+                      <th className="px-6 py-4 text-xs font-bold text-muted-foreground uppercase tracking-widest">Stat(S/D/R/F)</th>
+                      <th className="px-6 py-4 text-xs font-bold text-muted-foreground uppercase tracking-widest">Date</th>
+                      <th className="px-6 py-4 text-xs font-bold text-muted-foreground uppercase tracking-widest w-24 text-right">Actions</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-border/50">
@@ -313,7 +313,7 @@ export const MessagesView = ({
                               <div key={i} className="flex flex-col items-center gap-1">
                                 <div className="flex items-center gap-1.5">
                                   <div className={cn("w-1.5 h-1.5 rounded-full shadow-sm", stat.color)} />
-                                  <span className="text-[10px] font-bold text-foreground">{stat.value}</span>
+                                  <span className="text-xs font-bold text-foreground">{stat.value}</span>
                                 </div>
                                 <span className="text-[8px] font-black text-muted-foreground uppercase opacity-40">{stat.label}</span>
                               </div>

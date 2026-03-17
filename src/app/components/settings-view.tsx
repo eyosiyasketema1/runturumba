@@ -99,8 +99,8 @@ const ProfileSection = ({ user, onUpdate }: { user: UserType; onUpdate: (data: P
               <p className="text-sm font-semibold text-foreground">{user.name}</p>
               <p className="text-xs text-muted-foreground">{user.email}</p>
               <div className="flex items-center gap-2 mt-1">
-                <Badge variant="secondary" className="capitalize text-[11px]">{user.role}</Badge>
-                <Badge variant="outline" className="capitalize text-[11px] text-emerald-600 border-emerald-200 bg-emerald-50">{user.status}</Badge>
+                <Badge variant="secondary" className="capitalize text-xs">{user.role}</Badge>
+                <Badge variant="outline" className="capitalize text-xs text-emerald-600 border-emerald-200 bg-emerald-50">{user.status}</Badge>
               </div>
             </div>
           </div>
@@ -277,7 +277,7 @@ const OrganizationSection = ({ tenant, onUpdate }: { tenant: Tenant; onUpdate: (
             ].map((stat) => (
               <div key={stat.label} className="text-center p-3 bg-muted/30 rounded-lg">
                 <p className="text-xl font-bold text-foreground">{stat.value}</p>
-                <p className="text-[11px] text-muted-foreground font-medium mt-0.5">
+                <p className="text-xs text-muted-foreground font-medium mt-0.5">
                   {stat.label}
                   {stat.max && <span className="text-muted-foreground/60"> / {stat.max}</span>}
                 </p>
@@ -359,7 +359,7 @@ const BillingSection = ({ tenant, onUpgrade }: { tenant: Tenant; onUpgrade: (pla
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2">
                 <p className="text-sm font-semibold text-foreground">{planInfo.name} Plan</p>
-                <Badge variant="secondary" className="text-[10px]">Active</Badge>
+                <Badge variant="secondary" className="text-xs">Active</Badge>
               </div>
               <p className="text-xs text-muted-foreground mt-0.5">
                 {planInfo.price === "$0"
@@ -435,16 +435,16 @@ const BillingSection = ({ tenant, onUpgrade }: { tenant: Tenant; onUpgrade: (pla
                       )}
                     >
                       {isCurrent && (
-                        <Badge className="absolute -top-2 right-3 text-[9px]">Current</Badge>
+                        <Badge className="absolute -top-2 right-3 text-xs">Current</Badge>
                       )}
                       <p className="text-sm font-semibold text-foreground">{plan.name}</p>
                       <div className="flex items-baseline gap-1 mt-1">
                         <span className="text-lg font-bold text-foreground">{plan.price}</span>
-                        <span className="text-[11px] text-muted-foreground">/{plan.period}</span>
+                        <span className="text-xs text-muted-foreground">/{plan.period}</span>
                       </div>
                       <ul className="mt-3 space-y-1">
                         {plan.features.slice(0, 3).map((f, i) => (
-                          <li key={i} className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
+                          <li key={i} className="flex items-center gap-1.5 text-xs text-muted-foreground">
                             <Check className="w-3 h-3 text-primary shrink-0" />
                             <span>{f}</span>
                           </li>
@@ -478,13 +478,13 @@ const BillingSection = ({ tenant, onUpgrade }: { tenant: Tenant; onUpgrade: (pla
           ) : (
             <div className="flex items-center gap-4">
               <div className="w-12 h-8 rounded bg-gradient-to-br from-blue-600 to-blue-800 flex items-center justify-center shrink-0">
-                <span className="text-white text-[10px] font-bold">VISA</span>
+                <span className="text-white text-xs font-bold">VISA</span>
               </div>
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-medium text-foreground">Visa ending in 4242</p>
                 <p className="text-xs text-muted-foreground">Expires 08/2028</p>
               </div>
-              <Badge variant="outline" className="text-[10px] text-emerald-600 border-emerald-200 bg-emerald-50">Default</Badge>
+              <Badge variant="outline" className="text-xs text-emerald-600 border-emerald-200 bg-emerald-50">Default</Badge>
             </div>
           )}
         </CardContent>
@@ -541,7 +541,7 @@ const BillingSection = ({ tenant, onUpgrade }: { tenant: Tenant; onUpgrade: (pla
                       <td className="px-4 py-2.5 text-muted-foreground text-xs">{inv.date}</td>
                       <td className="px-4 py-2.5 text-foreground font-medium text-xs">{inv.amount}</td>
                       <td className="px-4 py-2.5">
-                        <Badge variant="outline" className="text-[10px] capitalize text-emerald-600 border-emerald-200 bg-emerald-50">
+                        <Badge variant="outline" className="text-xs capitalize text-emerald-600 border-emerald-200 bg-emerald-50">
                           {inv.status}
                         </Badge>
                       </td>
@@ -869,7 +869,7 @@ const SecuritySection = () => {
                 <p className="text-xs text-emerald-700">Using authenticator app</p>
               </div>
             </div>
-            <Badge variant="outline" className="border-emerald-300 text-emerald-700 bg-emerald-50 text-[11px]">Active</Badge>
+            <Badge variant="outline" className="border-emerald-300 text-emerald-700 bg-emerald-50 text-xs">Active</Badge>
           </div>
         </CardContent>
       </Card>
@@ -898,7 +898,7 @@ const SecuritySection = () => {
                   <div>
                     <p className="text-sm font-medium text-foreground">
                       {session.device}
-                      {session.current && <Badge variant="secondary" className="ml-2 text-[10px]">This device</Badge>}
+                      {session.current && <Badge variant="secondary" className="ml-2 text-xs">This device</Badge>}
                     </p>
                     <p className="text-xs text-muted-foreground">{session.location} &middot; {session.time}</p>
                   </div>
@@ -967,7 +967,7 @@ export const SettingsView = ({
           {/* Left Navigation Column */}
           <nav className="lg:w-60 shrink-0 border-b lg:border-b-0 lg:border-r border-border bg-muted/30">
             <div className="p-3 space-y-0.5">
-              <p className="px-3 pt-2 pb-3 text-[10px] font-bold text-muted-foreground uppercase tracking-widest">
+              <p className="px-3 pt-2 pb-3 text-xs font-bold text-muted-foreground uppercase tracking-widest">
                 Settings
               </p>
               {settingsNav.map((item) => {
@@ -992,7 +992,7 @@ export const SettingsView = ({
                     <div className="flex flex-col min-w-0">
                       <span className="truncate">{item.label}</span>
                       <span className={cn(
-                        "text-[11px] truncate transition-colors",
+                        "text-xs truncate transition-colors",
                         isActive ? "text-muted-foreground" : "text-muted-foreground/60"
                       )}>
                         {item.description}
@@ -1060,9 +1060,9 @@ const ApiSection = () => {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-semibold text-foreground">{ak.name}</p>
-                  <p className="text-[11px] text-muted-foreground">Created {ak.created} &middot; Last used {ak.lastUsed}</p>
+                  <p className="text-xs text-muted-foreground">Created {ak.created} &middot; Last used {ak.lastUsed}</p>
                 </div>
-                <Badge variant="outline" className="text-[10px] text-emerald-600 border-emerald-200 bg-emerald-50">Active</Badge>
+                <Badge variant="outline" className="text-xs text-emerald-600 border-emerald-200 bg-emerald-50">Active</Badge>
               </div>
               <div className="flex items-center gap-2 bg-muted/50 p-2 border rounded">
                 <code className="text-xs font-mono text-foreground flex-1">
@@ -1116,7 +1116,7 @@ const ApiSection = () => {
             ].map(rl => (
               <div key={rl.label} className="text-center p-3 bg-muted/30 rounded-lg">
                 <p className="text-xl font-bold text-foreground">{rl.value}</p>
-                <p className="text-[11px] text-muted-foreground font-medium mt-0.5">{rl.label}</p>
+                <p className="text-xs text-muted-foreground font-medium mt-0.5">{rl.label}</p>
               </div>
             ))}
           </div>

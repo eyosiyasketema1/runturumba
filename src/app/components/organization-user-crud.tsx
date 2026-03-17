@@ -130,9 +130,9 @@ export const TeamManagement = ({
         ].map(stat => (
           <Card key={stat.label}>
             <CardContent className="p-4">
-              <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">{stat.label}</p>
+              <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest">{stat.label}</p>
               <p className="text-2xl font-bold text-foreground mt-1">{stat.value}</p>
-              <p className="text-[11px] text-muted-foreground">{stat.sub}</p>
+              <p className="text-xs text-muted-foreground">{stat.sub}</p>
             </CardContent>
           </Card>
         ))}
@@ -150,7 +150,7 @@ export const TeamManagement = ({
           >
             <UsersIcon className="w-3.5 h-3.5" />
             Members
-            <Badge variant="secondary" className="text-[10px] ml-1">{users.length}</Badge>
+            <Badge variant="secondary" className="text-xs ml-1">{users.length}</Badge>
           </button>
           <button
             onClick={() => setActiveTab("audit")}
@@ -161,7 +161,7 @@ export const TeamManagement = ({
           >
             <FileText className="w-3.5 h-3.5" />
             Audit Log
-            <Badge variant="secondary" className="text-[10px] ml-1">{auditLog.length}</Badge>
+            <Badge variant="secondary" className="text-xs ml-1">{auditLog.length}</Badge>
           </button>
         </div>
         <div className="relative flex-1 max-w-sm">
@@ -199,11 +199,11 @@ export const TeamManagement = ({
                 <table className="w-full text-left border-collapse">
                   <thead>
                     <tr className="bg-muted/30 border-b border-border">
-                      <th className="px-6 py-3 text-[10px] font-black text-muted-foreground uppercase tracking-widest">Member</th>
-                      <th className="px-6 py-3 text-[10px] font-black text-muted-foreground uppercase tracking-widest">Role</th>
-                      <th className="px-6 py-3 text-[10px] font-black text-muted-foreground uppercase tracking-widest">Status</th>
-                      <th className="px-6 py-3 text-[10px] font-black text-muted-foreground uppercase tracking-widest">Joined</th>
-                      <th className="px-6 py-3 text-[10px] font-black text-muted-foreground uppercase tracking-widest text-right">Actions</th>
+                      <th className="px-6 py-3 text-xs font-black text-muted-foreground uppercase tracking-widest">Member</th>
+                      <th className="px-6 py-3 text-xs font-black text-muted-foreground uppercase tracking-widest">Role</th>
+                      <th className="px-6 py-3 text-xs font-black text-muted-foreground uppercase tracking-widest">Status</th>
+                      <th className="px-6 py-3 text-xs font-black text-muted-foreground uppercase tracking-widest">Joined</th>
+                      <th className="px-6 py-3 text-xs font-black text-muted-foreground uppercase tracking-widest text-right">Actions</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-border">
@@ -235,7 +235,7 @@ export const TeamManagement = ({
                           <td className="px-6 py-4"><RoleBadge role={user.role} /></td>
                           <td className="px-6 py-4">
                             <span className={cn(
-                              "inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-bold border uppercase tracking-widest",
+                              "inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs font-bold border uppercase tracking-widest",
                               user.status === "active"
                                 ? "bg-emerald-500/10 text-emerald-600 border-emerald-500/20"
                                 : "bg-amber-500/10 text-amber-600 border-amber-500/20"
@@ -320,7 +320,7 @@ const FilterBtn = ({ active, onClick, children }: { active: boolean; onClick: ()
   <button
     onClick={onClick}
     className={cn(
-      "px-2.5 py-1.5 text-[11px] font-semibold transition-all whitespace-nowrap",
+      "px-2.5 py-1.5 text-xs font-semibold transition-all whitespace-nowrap",
       active ? "bg-background text-foreground shadow-sm border border-border" : "text-muted-foreground hover:text-foreground"
     )}
   >
@@ -411,17 +411,17 @@ const ManageGroups = ({
                     <tr key={group.id} className="hover:bg-muted/20 transition-colors">
                       <td className="px-6 py-4 font-medium text-foreground">{group.name}</td>
                       <td className="px-6 py-4">
-                        <Badge variant="outline" className="text-[10px] font-semibold tracking-wide bg-background text-muted-foreground">{group.label}</Badge>
+                        <Badge variant="outline" className="text-xs font-semibold tracking-wide bg-background text-muted-foreground">{group.label}</Badge>
                       </td>
                       <td className="px-6 py-4">
                         <div className="flex -space-x-2">
                           {groupUsers.slice(0, 3).map(u => (
-                            <div key={u.id} className="w-7 h-7 rounded-full bg-primary/20 border-2 border-background flex items-center justify-center text-[10px] font-bold text-primary overflow-hidden" title={u.name}>
+                            <div key={u.id} className="w-7 h-7 rounded-full bg-primary/20 border-2 border-background flex items-center justify-center text-xs font-bold text-primary overflow-hidden" title={u.name}>
                               {u.avatar ? <img src={u.avatar} alt={u.name} className="w-full h-full object-cover" /> : u.name.charAt(0)}
                             </div>
                           ))}
                           {groupUsers.length > 3 && (
-                            <div className="w-7 h-7 rounded-full bg-muted border-2 border-background flex items-center justify-center text-[10px] font-bold text-muted-foreground">
+                            <div className="w-7 h-7 rounded-full bg-muted border-2 border-background flex items-center justify-center text-xs font-bold text-muted-foreground">
                               +{groupUsers.length - 3}
                             </div>
                           )}
@@ -507,7 +507,7 @@ const GroupFormModal = ({
           <div className="space-y-2">
             <Label className="text-xs font-semibold">Label / Tag <span className="text-destructive">*</span></Label>
             <Input value={label} onChange={e => setLabel(e.target.value)} placeholder="e.g. VIP, Sales, Support" className="h-9" />
-            <p className="text-[10px] text-muted-foreground">Used to categorize the group internally.</p>
+            <p className="text-xs text-muted-foreground">Used to categorize the group internally.</p>
           </div>
 
           <div className="space-y-2">
@@ -526,12 +526,12 @@ const GroupFormModal = ({
                   <div className={cn("w-4 h-4 rounded border flex items-center justify-center", userIds.includes(u.id) ? "bg-primary border-primary text-primary-foreground" : "border-input bg-background")}>
                     {userIds.includes(u.id) && <Check className="w-3 h-3" />}
                   </div>
-                  <div className="w-6 h-6 rounded-full bg-primary/20 flex items-center justify-center text-[10px] font-bold text-primary shrink-0 overflow-hidden">
+                  <div className="w-6 h-6 rounded-full bg-primary/20 flex items-center justify-center text-xs font-bold text-primary shrink-0 overflow-hidden">
                     {u.avatar ? <img src={u.avatar} alt={u.name} className="w-full h-full object-cover" /> : u.name.charAt(0)}
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium text-foreground truncate">{u.name}</p>
-                    <p className="text-[10px] text-muted-foreground truncate">{u.email}</p>
+                    <p className="text-xs text-muted-foreground truncate">{u.email}</p>
                   </div>
                 </div>
               ))}
@@ -618,13 +618,13 @@ const AuditLogTab = ({ auditLog, searchQuery }: { auditLog: AuditLogEntry[]; sea
                     <div className="flex items-center gap-2 flex-wrap">
                       <span className="text-sm font-semibold text-foreground">{entry.userName}</span>
                       <span className="text-xs text-muted-foreground">&middot;</span>
-                      <Badge variant="outline" className={cn("text-[9px]", cfg.color)}>{cfg.label}</Badge>
+                      <Badge variant="outline" className={cn("text-xs", cfg.color)}>{cfg.label}</Badge>
                     </div>
                     <p className="text-xs text-muted-foreground mt-0.5">
                       <span className="font-medium text-foreground">{entry.target}</span> &mdash; {entry.details}
                     </p>
                   </div>
-                  <span className="text-[10px] text-muted-foreground shrink-0 mt-1">{formatTimeAgo(entry.createdAt)}</span>
+                  <span className="text-xs text-muted-foreground shrink-0 mt-1">{formatTimeAgo(entry.createdAt)}</span>
                 </div>
               );
             })
@@ -700,7 +700,7 @@ const AddUserForm = ({ onAdd, onCancel }: { onAdd: (data: Partial<UserType>) => 
               type="button"
               onClick={() => setFormData(p => ({ ...p, role }))}
               className={cn(
-                "py-2 text-[11px] font-bold uppercase tracking-widest transition-all",
+                "py-2 text-xs font-bold uppercase tracking-widest transition-all",
                 formData.role === role
                   ? "bg-background text-primary shadow-sm border border-border"
                   : "text-muted-foreground hover:text-foreground"
@@ -710,7 +710,7 @@ const AddUserForm = ({ onAdd, onCancel }: { onAdd: (data: Partial<UserType>) => 
             </button>
           ))}
         </div>
-        <p className="text-[11px] text-muted-foreground">
+        <p className="text-xs text-muted-foreground">
           {formData.role === "admin" && "Full access to all settings, billing, and data."}
           {formData.role === "agent" && "Can manage contacts, messages, and broadcasts."}
           {formData.role === "viewer" && "Read-only access to analytics and logs."}
@@ -769,7 +769,7 @@ const EditUserForm = ({ user, onUpdate, onCancel }: {
               type="button"
               onClick={() => setFormData(p => ({ ...p, role }))}
               className={cn(
-                "py-2 text-[11px] font-bold uppercase tracking-widest transition-all",
+                "py-2 text-xs font-bold uppercase tracking-widest transition-all",
                 formData.role === role
                   ? "bg-background text-primary shadow-sm border border-border"
                   : "text-muted-foreground hover:text-foreground"

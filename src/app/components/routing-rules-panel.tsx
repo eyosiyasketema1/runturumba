@@ -154,7 +154,7 @@ function DraggableRuleRow({
             {rule.sources.map(src => {
               const s = getSourceLabel(src, endpoints);
               return (
-                <span key={src} className="inline-flex items-center gap-1 text-[10px] font-semibold px-1.5 py-0.5 bg-muted border border-border text-muted-foreground">
+                <span key={src} className="inline-flex items-center gap-1 text-xs font-semibold px-1.5 py-0.5 bg-muted border border-border text-muted-foreground">
                   <s.icon className={cn("w-2.5 h-2.5", s.color)} />
                   {s.label}
                 </span>
@@ -165,14 +165,14 @@ function DraggableRuleRow({
 
         {/* Audience — w-32 */}
         <div className="w-32 shrink-0">
-          <span className={cn("inline-block text-[10px] font-semibold px-1.5 py-0.5 border", audienceCfg[rule.audienceMode].color)}>
+          <span className={cn("inline-block text-xs font-semibold px-1.5 py-0.5 border", audienceCfg[rule.audienceMode].color)}>
             {audienceCfg[rule.audienceMode].label}
           </span>
         </div>
 
         {/* Mode — w-24 */}
         <div className="w-24 shrink-0">
-          <span className={cn("inline-block text-[10px] font-semibold px-1.5 py-0.5 border", creationCfg[rule.creationMode].color)}>
+          <span className={cn("inline-block text-xs font-semibold px-1.5 py-0.5 border", creationCfg[rule.creationMode].color)}>
             {creationCfg[rule.creationMode].label}
           </span>
         </div>
@@ -185,7 +185,7 @@ function DraggableRuleRow({
             title={rule.active ? "Deactivate rule" : "Activate rule"}
           />
           <span className={cn(
-            "text-[10px] font-semibold",
+            "text-xs font-semibold",
             rule.active ? "text-emerald-600" : "text-muted-foreground"
           )}>
             {rule.active ? "On" : "Off"}
@@ -314,7 +314,7 @@ function RuleFormModal({
           <div className="space-y-1.5">
             <Label>Priority</Label>
             <Input type="number" min={1} value={form.priority} onChange={e => set("priority", Number(e.target.value))} />
-            <p className="text-[10px] text-muted-foreground">Lower = evaluated first</p>
+            <p className="text-xs text-muted-foreground">Lower = evaluated first</p>
           </div>
         </div>
 
@@ -337,7 +337,7 @@ function RuleFormModal({
             {sourceOpen && (
               <div className="absolute top-full left-0 right-0 z-[70] bg-background border border-border shadow-lg mt-1 max-h-52 overflow-y-auto">
                 <div className="p-1">
-                  <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest px-2 py-1">Channels</p>
+                  <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest px-2 py-1">Channels</p>
                   {CHANNEL_SOURCE_OPTIONS.map(opt => (
                     <label key={opt.id} className="flex items-center gap-2 px-2 py-1.5 hover:bg-muted/40 cursor-pointer text-sm">
                       <input type="checkbox" checked={form.sources.includes(opt.id)} onChange={() => toggleSource(opt.id)} className="w-3.5 h-3.5 accent-primary" />
@@ -347,7 +347,7 @@ function RuleFormModal({
                   ))}
                   {chatEndpoints.length > 0 && (
                     <>
-                      <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest px-2 py-1 mt-1 border-t border-border pt-2">Chat Endpoints</p>
+                      <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest px-2 py-1 mt-1 border-t border-border pt-2">Chat Endpoints</p>
                       {chatEndpoints.map(ep => (
                         <label key={ep.id} className="flex items-center gap-2 px-2 py-1.5 hover:bg-muted/40 cursor-pointer text-sm">
                           <input type="checkbox" checked={form.sources.includes(ep.id)} onChange={() => toggleSource(ep.id)} className="w-3.5 h-3.5 accent-primary" />
@@ -369,7 +369,7 @@ function RuleFormModal({
               {form.sources.map(src => {
                 const s = allSourceOptions.find(o => o.id === src);
                 return s ? (
-                  <span key={src} className="inline-flex items-center gap-1 text-[10px] font-semibold px-1.5 py-0.5 bg-muted border border-border">
+                  <span key={src} className="inline-flex items-center gap-1 text-xs font-semibold px-1.5 py-0.5 bg-muted border border-border">
                     <s.icon className={cn("w-3 h-3", s.color)} />
                     {s.label}
                     <button onClick={() => toggleSource(src)} className="ml-0.5 hover:text-destructive transition-colors"><X className="w-2.5 h-2.5" /></button>
@@ -398,7 +398,7 @@ function RuleFormModal({
                 <label key={g.id} className="flex items-center gap-2 p-2 hover:bg-white/60 cursor-pointer text-sm">
                   <input type="checkbox" checked={form.allowedGroups.includes(g.id)} onChange={() => toggleGroup(g.id)} className="w-3.5 h-3.5 accent-primary" />
                   <span>{g.name}</span>
-                  <span className="text-muted-foreground text-[10px]">({g.contactCount})</span>
+                  <span className="text-muted-foreground text-xs">({g.contactCount})</span>
                 </label>
               ))}
             </div>
@@ -420,7 +420,7 @@ function RuleFormModal({
                   <label key={u.id} className="flex items-center gap-2 p-1.5 hover:bg-white/60 cursor-pointer text-sm">
                     <input type="checkbox" checked={form.allowedContacts.includes(u.id)} onChange={() => toggleContact(u.id)} className="w-3.5 h-3.5 accent-primary" />
                     <span>{u.name}</span>
-                    <span className="text-muted-foreground text-[10px]">{u.email}</span>
+                    <span className="text-muted-foreground text-xs">{u.email}</span>
                   </label>
                 ))}
             </div>
@@ -437,7 +437,7 @@ function RuleFormModal({
                 <input type="radio" name="creationMode" value={mode} checked={form.creationMode === mode} onChange={() => set("creationMode", mode)} className="mt-0.5 accent-primary" />
                 <div>
                   <p className="text-sm font-semibold capitalize">{mode}</p>
-                  <p className="text-[11px] text-muted-foreground">
+                  <p className="text-xs text-muted-foreground">
                     {mode === "auto" ? "Conversation created immediately when a message arrives." : "Inbound messages go to a Pending Messages queue."}
                   </p>
                 </div>
@@ -456,7 +456,7 @@ function RuleFormModal({
                 <input type="radio" name="reopenPolicy" value={opt.id} checked={form.reopenPolicy === opt.id} onChange={() => set("reopenPolicy", opt.id)} className="accent-primary" />
                 <div className="min-w-0">
                   <p className="text-sm font-semibold">{opt.label}</p>
-                  <p className="text-[11px] text-muted-foreground">{opt.description}</p>
+                  <p className="text-xs text-muted-foreground">{opt.description}</p>
                 </div>
               </label>
             ))}
@@ -495,7 +495,7 @@ function RuleFormModal({
         <div className="flex items-center justify-between py-3 border-t border-border">
           <div>
             <p className="text-sm font-semibold">Rule Active</p>
-            <p className="text-[11px] text-muted-foreground">Enable or disable this routing rule</p>
+            <p className="text-xs text-muted-foreground">Enable or disable this routing rule</p>
           </div>
           <div className="flex items-center gap-2">
             <span className={cn("text-xs font-semibold", form.active ? "text-emerald-600" : "text-muted-foreground")}>
@@ -678,7 +678,7 @@ export function RoutingRulesPanel({
                       <s.icon className={cn("w-4 h-4 shrink-0", s.color)} />
                       <div>
                         <p className="text-lg font-bold text-foreground leading-none">{s.value}</p>
-                        <p className="text-[10px] font-semibold text-muted-foreground mt-0.5 uppercase tracking-wide">{s.label}</p>
+                        <p className="text-xs font-semibold text-muted-foreground mt-0.5 uppercase tracking-wide">{s.label}</p>
                       </div>
                     </div>
                   ))}
@@ -714,7 +714,7 @@ export function RoutingRulesPanel({
                         <X className="w-3 h-3" />
                         Clear
                         {activeFilterCount > 0 && (
-                          <span className="w-4 h-4 bg-primary text-primary-foreground rounded-full text-[10px] flex items-center justify-center font-bold">
+                          <span className="w-4 h-4 bg-primary text-primary-foreground rounded-full text-xs flex items-center justify-center font-bold">
                             {activeFilterCount}
                           </span>
                         )}
@@ -726,7 +726,7 @@ export function RoutingRulesPanel({
 
                   {/* Filter controls */}
                   <div className="flex flex-wrap gap-x-4 gap-y-2 items-center">
-                    <span className="flex items-center gap-1.5 text-[10px] font-bold text-muted-foreground uppercase tracking-widest shrink-0">
+                    <span className="flex items-center gap-1.5 text-xs font-bold text-muted-foreground uppercase tracking-widest shrink-0">
                       <SlidersHorizontal className="w-3 h-3" />
                       Filters
                     </span>
@@ -742,7 +742,7 @@ export function RoutingRulesPanel({
                           key={f.id}
                           onClick={() => setStatusFilter(f.id)}
                           className={cn(
-                            "px-2.5 py-1 text-[11px] font-bold border transition-colors",
+                            "px-2.5 py-1 text-xs font-bold border transition-colors",
                             statusFilter === f.id
                               ? "bg-primary text-primary-foreground border-primary"
                               : "bg-background border-border text-muted-foreground hover:bg-muted/40 hover:text-foreground"
@@ -766,7 +766,7 @@ export function RoutingRulesPanel({
                           key={f.id}
                           onClick={() => setModeFilter(f.id)}
                           className={cn(
-                            "px-2.5 py-1 text-[11px] font-bold border transition-colors",
+                            "px-2.5 py-1 text-xs font-bold border transition-colors",
                             modeFilter === f.id
                               ? "bg-primary text-primary-foreground border-primary"
                               : "bg-background border-border text-muted-foreground hover:bg-muted/40 hover:text-foreground"
@@ -784,7 +784,7 @@ export function RoutingRulesPanel({
                       value={audienceFilter}
                       onChange={e => setAudienceFilter(e.target.value as AudienceFilter)}
                       className={cn(
-                        "h-7 border px-2 text-[11px] font-bold bg-background focus:outline-none focus:ring-1 focus:ring-ring transition-colors cursor-pointer",
+                        "h-7 border px-2 text-xs font-bold bg-background focus:outline-none focus:ring-1 focus:ring-ring transition-colors cursor-pointer",
                         audienceFilter !== "all"
                           ? "border-primary text-primary bg-primary/5"
                           : "border-border text-muted-foreground hover:text-foreground"
@@ -801,7 +801,7 @@ export function RoutingRulesPanel({
                       value={sourceFilter}
                       onChange={e => setSourceFilter(e.target.value)}
                       className={cn(
-                        "h-7 border px-2 text-[11px] font-bold bg-background focus:outline-none focus:ring-1 focus:ring-ring transition-colors cursor-pointer",
+                        "h-7 border px-2 text-xs font-bold bg-background focus:outline-none focus:ring-1 focus:ring-ring transition-colors cursor-pointer",
                         sourceFilter !== "all"
                           ? "border-primary text-primary bg-primary/5"
                           : "border-border text-muted-foreground hover:text-foreground"
@@ -856,7 +856,7 @@ export function RoutingRulesPanel({
                         )} rule{conversationRules.length !== 1 ? "s" : ""}
                       </p>
                       {activeFilterCount === 0 && !searchQuery && (
-                        <p className="text-[10px] text-muted-foreground/50 flex items-center gap-1">
+                        <p className="text-xs text-muted-foreground/50 flex items-center gap-1">
                           <GripVertical className="w-3 h-3" />
                           Drag rows to reorder priority
                         </p>
@@ -864,7 +864,7 @@ export function RoutingRulesPanel({
                     </div>
 
                     {/* Column header */}
-                    <div className="hidden md:flex items-center gap-3 px-6 py-2 bg-muted border border-border border-b-0 text-[10px] font-bold text-muted-foreground uppercase tracking-widest">
+                    <div className="hidden md:flex items-center gap-3 px-6 py-2 bg-muted border border-border border-b-0 text-xs font-bold text-muted-foreground uppercase tracking-widest">
                       <span className="w-4 shrink-0" />
                       <span className="w-6 shrink-0 text-center">#</span>
                       <span className="flex-1">Name / Sources</span>

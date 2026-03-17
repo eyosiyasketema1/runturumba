@@ -114,11 +114,11 @@ export function ScheduledTab({
                   <table className="w-full text-left">
                     <thead>
                       <tr className="bg-muted/50 border-b border-border">
-                        <th className="px-6 py-3 text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Recipient</th>
-                        <th className="px-6 py-3 text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Message Preview</th>
-                        <th className="px-6 py-3 text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Channel</th>
-                        <th className="px-6 py-3 text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Release Date</th>
-                        <th className="px-6 py-3 text-[10px] font-bold text-muted-foreground uppercase tracking-widest w-24"></th>
+                        <th className="px-6 py-3 text-xs font-bold text-muted-foreground uppercase tracking-widest">Recipient</th>
+                        <th className="px-6 py-3 text-xs font-bold text-muted-foreground uppercase tracking-widest">Message Preview</th>
+                        <th className="px-6 py-3 text-xs font-bold text-muted-foreground uppercase tracking-widest">Channel</th>
+                        <th className="px-6 py-3 text-xs font-bold text-muted-foreground uppercase tracking-widest">Release Date</th>
+                        <th className="px-6 py-3 text-xs font-bold text-muted-foreground uppercase tracking-widest w-24"></th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-border/50">
@@ -128,12 +128,12 @@ export function ScheduledTab({
                           <tr key={msg.id} className="hover:bg-muted/30 transition-colors group">
                             <td className="px-6 py-4">
                               <div className="flex items-center gap-3">
-                                <div className="w-8 h-8 rounded-full bg-primary/10 border border-primary/20 flex items-center justify-center text-[10px] font-bold text-primary">
+                                <div className="w-8 h-8 rounded-full bg-primary/10 border border-primary/20 flex items-center justify-center text-xs font-bold text-primary">
                                   {contact?.name.charAt(0)}
                                 </div>
                                 <div>
                                   <p className="text-sm font-bold text-foreground leading-none">{contact?.name || "Unknown"}</p>
-                                  <p className="text-[10px] text-muted-foreground mt-1">{contact?.phone}</p>
+                                  <p className="text-xs text-muted-foreground mt-1">{contact?.phone}</p>
                                 </div>
                               </div>
                             </td>
@@ -147,7 +147,7 @@ export function ScheduledTab({
                                 <span className="text-xs font-bold text-foreground">
                                   {new Date(msg.createdAt).toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' })}
                                 </span>
-                                <span className="text-[10px] text-muted-foreground font-bold uppercase ml-1">
+                                <span className="text-xs text-muted-foreground font-bold uppercase ml-1">
                                   at {new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                                 </span>
                               </div>
@@ -187,12 +187,12 @@ export function ScheduledTab({
                   <table className="w-full text-left">
                     <thead>
                       <tr className="bg-muted/50 border-b border-border">
-                        <th className="px-6 py-3 text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Broadcast Name</th>
-                        <th className="px-6 py-3 text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Target</th>
-                        <th className="px-6 py-3 text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Channel</th>
-                        <th className="px-6 py-3 text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Scheduled For</th>
-                        <th className="px-6 py-3 text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Frequency</th>
-                        <th className="px-6 py-3 text-[10px] font-bold text-muted-foreground uppercase tracking-widest w-24"></th>
+                        <th className="px-6 py-3 text-xs font-bold text-muted-foreground uppercase tracking-widest">Broadcast Name</th>
+                        <th className="px-6 py-3 text-xs font-bold text-muted-foreground uppercase tracking-widest">Target</th>
+                        <th className="px-6 py-3 text-xs font-bold text-muted-foreground uppercase tracking-widest">Channel</th>
+                        <th className="px-6 py-3 text-xs font-bold text-muted-foreground uppercase tracking-widest">Scheduled For</th>
+                        <th className="px-6 py-3 text-xs font-bold text-muted-foreground uppercase tracking-widest">Frequency</th>
+                        <th className="px-6 py-3 text-xs font-bold text-muted-foreground uppercase tracking-widest w-24"></th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-border/50">
@@ -216,19 +216,19 @@ export function ScheduledTab({
                               <span className="text-sm font-bold text-foreground">
                                 {bc.scheduledAt ? new Date(bc.scheduledAt).toLocaleDateString([], { month: 'short', day: 'numeric' }) : "\u2014"}
                               </span>
-                              <span className="text-[10px] text-muted-foreground font-bold uppercase tracking-wider">
+                              <span className="text-xs text-muted-foreground font-bold uppercase tracking-wider">
                                 {bc.scheduledAt ? new Date(bc.scheduledAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : "No time"}
                               </span>
                             </div>
                           </td>
                           <td className="px-6 py-4">
                             {bc.frequency && bc.frequency !== "once" ? (
-                              <span className="inline-flex items-center gap-1.5 px-2 py-0.5 bg-primary/10 text-primary text-[10px] font-bold rounded-md border border-primary/20 uppercase tracking-widest">
+                              <span className="inline-flex items-center gap-1.5 px-2 py-0.5 bg-primary/10 text-primary text-xs font-bold rounded-md border border-primary/20 uppercase tracking-widest">
                                 <Repeat className="w-3 h-3" />
                                 {bc.frequency}
                               </span>
                             ) : (
-                              <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest opacity-60">One-time</span>
+                              <span className="text-xs font-bold text-muted-foreground uppercase tracking-widest opacity-60">One-time</span>
                             )}
                           </td>
                           <td className="px-6 py-4 text-right">

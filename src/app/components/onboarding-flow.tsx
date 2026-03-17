@@ -258,11 +258,11 @@ export const OnboardingFlow = ({ onComplete }: OnboardingFlowProps) => {
               return (
                 <div key={step.id} className="flex items-center">
                   <div className={cn(
-                    "flex items-center gap-1.5 px-2.5 py-1 text-[11px] font-semibold transition-all",
+                    "flex items-center gap-1.5 px-2.5 py-1 text-xs font-semibold transition-all",
                     isDone ? "text-primary" : isActive ? "text-foreground" : "text-muted-foreground/50"
                   )}>
                     <div className={cn(
-                      "w-5 h-5 flex items-center justify-center text-[10px] font-bold border transition-all",
+                      "w-5 h-5 flex items-center justify-center text-xs font-bold border transition-all",
                       isDone ? "bg-primary text-primary-foreground border-primary" :
                       isActive ? "border-foreground text-foreground" : "border-muted-foreground/30 text-muted-foreground/50"
                     )}>
@@ -277,7 +277,7 @@ export const OnboardingFlow = ({ onComplete }: OnboardingFlowProps) => {
               );
             })}
           </div>
-          <div className="text-[11px] text-muted-foreground font-medium">
+          <div className="text-xs text-muted-foreground font-medium">
             Step {currentStep} of {STEPS.length - 2}
           </div>
         </header>
@@ -408,7 +408,7 @@ const WelcomeStep = ({ onGetStarted, onSkip }: { onGetStarted: () => void; onSki
             >
               <feature.icon className="w-5 h-5 text-primary mx-auto mb-2" />
               <p className="text-xs font-bold text-foreground">{feature.label}</p>
-              <p className="text-[10px] text-muted-foreground mt-0.5">{feature.desc}</p>
+              <p className="text-xs text-muted-foreground mt-0.5">{feature.desc}</p>
             </motion.div>
           ))}
         </div>
@@ -417,7 +417,7 @@ const WelcomeStep = ({ onGetStarted, onSkip }: { onGetStarted: () => void; onSki
           Get Started
           <ArrowRight className="w-4 h-4 ml-2" />
         </Button>
-        <p className="text-[11px] text-muted-foreground mt-4">Free to start. No credit card required.</p>
+        <p className="text-xs text-muted-foreground mt-4">Free to start. No credit card required.</p>
         <button
           onClick={onSkip}
           className="block mx-auto mt-3 text-xs text-muted-foreground hover:text-foreground transition-colors underline underline-offset-2"
@@ -447,7 +447,7 @@ const WelcomeStep = ({ onGetStarted, onSkip }: { onGetStarted: () => void; onSki
             <div className={cn("w-2 h-2 rounded-full shrink-0", item.color)} />
             <div className="flex-1">
               <p className="text-sm font-semibold text-foreground">{item.ch}</p>
-              <p className="text-[10px] text-muted-foreground">{item.status}</p>
+              <p className="text-xs text-muted-foreground">{item.status}</p>
             </div>
             <Check className="w-4 h-4 text-emerald-500" />
           </motion.div>
@@ -459,7 +459,7 @@ const WelcomeStep = ({ onGetStarted, onSkip }: { onGetStarted: () => void; onSki
           transition={{ delay: 1 }}
           className="text-center pt-4"
         >
-          <p className="text-[11px] text-muted-foreground font-medium">Your channels, one dashboard</p>
+          <p className="text-xs text-muted-foreground font-medium">Your channels, one dashboard</p>
         </motion.div>
       </div>
     </div>
@@ -534,7 +534,7 @@ const AccountStep = ({ data, updateData, showPassword, setShowPassword }: {
           ))}
         </div>
       </div>
-      <p className="text-[11px] text-muted-foreground text-center pt-2">
+      <p className="text-xs text-muted-foreground text-center pt-2">
         By creating an account, you agree to our Terms of Service and Privacy Policy.
       </p>
     </div>
@@ -564,7 +564,7 @@ const OrganizationStep = ({ data, updateData }: {
           onChange={(e) => updateData({ orgName: e.target.value })}
           className="h-11"
         />
-        <p className="text-[11px] text-muted-foreground">This will appear as your sender identity on some channels.</p>
+        <p className="text-xs text-muted-foreground">This will appear as your sender identity on some channels.</p>
       </div>
 
       <div className="grid gap-2">
@@ -654,7 +654,7 @@ const ChannelSelectStep = ({ selectedChannels, onToggle }: {
               <p className={cn("text-sm font-bold transition-all", isSelected ? "text-foreground" : "text-foreground")}>
                 {ct.label}
               </p>
-              <p className="text-[11px] text-muted-foreground mt-0.5">{ct.description}</p>
+              <p className="text-xs text-muted-foreground mt-0.5">{ct.description}</p>
             </div>
           </button>
         );
@@ -662,7 +662,7 @@ const ChannelSelectStep = ({ selectedChannels, onToggle }: {
     </div>
 
     <div className="text-center mt-8">
-      <p className="text-[11px] text-muted-foreground">
+      <p className="text-xs text-muted-foreground">
         You can always add or remove channels later from Settings &rarr; Channels.
       </p>
     </div>
@@ -766,19 +766,19 @@ const ChannelConfigStep = ({ selectedChannels, configs, onUpdateConfig, activeId
               </div>
               <div className="flex-1">
                 <p className="text-sm font-bold text-foreground">{channelInfo.label}</p>
-                <p className="text-[11px] text-muted-foreground">{channelInfo.description}</p>
+                <p className="text-xs text-muted-foreground">{channelInfo.description}</p>
               </div>
               {/* Test Connection status indicator */}
               {currentTestStatus === "success" && (
                 <div className="flex items-center gap-1.5 text-emerald-600">
                   <CircleCheck className="w-4 h-4" />
-                  <span className="text-[11px] font-semibold">Connected</span>
+                  <span className="text-xs font-semibold">Connected</span>
                 </div>
               )}
               {currentTestStatus === "failed" && (
                 <div className="flex items-center gap-1.5 text-destructive">
                   <CircleX className="w-4 h-4" />
-                  <span className="text-[11px] font-semibold">Failed</span>
+                  <span className="text-xs font-semibold">Failed</span>
                 </div>
               )}
             </div>
@@ -824,7 +824,7 @@ const ChannelConfigStep = ({ selectedChannels, configs, onUpdateConfig, activeId
                 <motion.span
                   initial={{ opacity: 0, x: -5 }}
                   animate={{ opacity: 1, x: 0 }}
-                  className="text-[11px] text-emerald-600 font-medium"
+                  className="text-xs text-emerald-600 font-medium"
                 >
                   All checks passed
                 </motion.span>
@@ -833,7 +833,7 @@ const ChannelConfigStep = ({ selectedChannels, configs, onUpdateConfig, activeId
                 <motion.span
                   initial={{ opacity: 0, x: -5 }}
                   animate={{ opacity: 1, x: 0 }}
-                  className="text-[11px] text-destructive font-medium"
+                  className="text-xs text-destructive font-medium"
                 >
                   Check credentials and try again
                 </motion.span>
@@ -851,7 +851,7 @@ const ChannelConfigStep = ({ selectedChannels, configs, onUpdateConfig, activeId
                 >
                   <div className="flex items-center gap-2">
                     <CircleCheck className="w-4 h-4 text-emerald-600 shrink-0" />
-                    <p className="text-[11px] text-emerald-700">
+                    <p className="text-xs text-emerald-700">
                       <span className="font-semibold">Connection successful!</span> Your {channelInfo.label} credentials are valid and ready to use.
                     </p>
                   </div>
@@ -866,7 +866,7 @@ const ChannelConfigStep = ({ selectedChannels, configs, onUpdateConfig, activeId
                 >
                   <div className="flex items-center gap-2">
                     <AlertTriangle className="w-4 h-4 text-destructive shrink-0" />
-                    <p className="text-[11px] text-destructive">
+                    <p className="text-xs text-destructive">
                       <span className="font-semibold">Connection failed.</span> Please verify your {channelInfo.label} credentials and try again. You can also skip and configure later.
                     </p>
                   </div>
@@ -875,7 +875,7 @@ const ChannelConfigStep = ({ selectedChannels, configs, onUpdateConfig, activeId
             </AnimatePresence>
 
             <div className="mt-4 p-3 bg-muted/30 border border-border">
-              <p className="text-[11px] text-muted-foreground">
+              <p className="text-xs text-muted-foreground">
                 <span className="font-semibold text-foreground">Tip:</span> You don't need to fill these in right now. You can configure channel credentials at any time from the Channels settings page.
               </p>
             </div>
@@ -926,7 +926,7 @@ const ContactsStep = ({ data, updateData, onAddContact, onUpdateContact, onRemov
           <method.icon className={cn("w-5 h-5", data.contactMethod === method.id ? "text-primary" : "text-muted-foreground")} />
           <div>
             <p className="text-xs font-bold text-foreground">{method.label}</p>
-            <p className="text-[10px] text-muted-foreground">{method.desc}</p>
+            <p className="text-xs text-muted-foreground">{method.desc}</p>
           </div>
         </button>
       ))}
@@ -939,7 +939,7 @@ const ContactsStep = ({ data, updateData, onAddContact, onUpdateContact, onRemov
           <Card key={i}>
             <CardContent className="p-4">
               <div className="flex items-center justify-between mb-3">
-                <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Contact {i + 1}</span>
+                <span className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Contact {i + 1}</span>
                 {data.manualContacts.length > 1 && (
                   <button onClick={() => onRemoveContact(i)} className="text-muted-foreground hover:text-destructive">
                     <X className="w-3.5 h-3.5" />

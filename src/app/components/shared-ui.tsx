@@ -80,7 +80,7 @@ export const RoleBadge = ({ role }: { role: Role }) => {
 
   return (
     <span className={cn(
-      "px-2 py-0.5 rounded-full text-[10px] font-bold border uppercase tracking-wider",
+      "px-2 py-0.5 rounded-full text-xs font-bold border uppercase tracking-wider",
       styles[role]
     )}>
       {role}
@@ -98,7 +98,7 @@ export const StatCard = ({ label, value, icon: Icon, trend }: any) => (
       </div>
       {trend && (
         <span className={cn(
-          "text-[10px] font-bold px-1.5 py-0.5 rounded-full border",
+          "text-xs font-bold px-1.5 py-0.5 rounded-full border",
           trend > 0 ? "bg-emerald-500/10 text-emerald-600 border-emerald-500/20" : "bg-rose-500/10 text-rose-600 border-rose-500/20"
         )}>
           {trend > 0 ? "+" : ""}{trend}%
@@ -118,7 +118,7 @@ export const PortSelector = ({ value, onChange, size = "default" }: { value: Mes
   const isCompact = size === "compact";
   return (
     <div className="space-y-2">
-      {!isCompact && <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest flex items-center gap-1.5 px-1"><Radio className="w-3 h-3" />Message Port</label>}
+      {!isCompact && <label className="text-xs font-bold text-muted-foreground uppercase tracking-widest flex items-center gap-1.5 px-1"><Radio className="w-3 h-3" />Message Port</label>}
       <div className={cn("flex gap-1.5", isCompact ? "p-1 bg-muted rounded-md border border-border" : "p-1 bg-muted rounded-lg border border-border")}>
         {MESSAGE_PORTS.map(port => {
           const isActive = value === port.id;
@@ -130,7 +130,7 @@ export const PortSelector = ({ value, onChange, size = "default" }: { value: Mes
               className={cn(
                 "flex items-center justify-center gap-1.5 transition-all font-semibold",
                 isCompact
-                  ? "px-3 py-1.5 rounded-sm text-[10px]"
+                  ? "px-3 py-1.5 rounded-sm text-xs"
                   : "flex-1 px-3 py-2 rounded-md text-xs",
                 isActive
                   ? "bg-background text-foreground shadow-sm border border-border"
@@ -157,7 +157,7 @@ export const DropdownPortSelector = ({ value, onChange, label = "Select Channel"
 
   return (
     <div className="relative">
-      <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-2 block px-1">{label}</label>
+      <label className="text-xs font-bold text-muted-foreground uppercase tracking-widest mb-2 block px-1">{label}</label>
       <button
         type="button"
         onClick={() => setIsOpen(!isOpen)}
@@ -210,7 +210,7 @@ export const DropdownPortSelector = ({ value, onChange, label = "Select Channel"
                       </div>
                       <div className="flex flex-col">
                         <span className="font-semibold text-sm">{port.label}</span>
-                        <span className="text-[10px] opacity-70">Send via {port.label}</span>
+                        <span className="text-xs opacity-70">Send via {port.label}</span>
                       </div>
                     </div>
                     {isActive && <Check className="w-3.5 h-3.5 text-primary" />}
@@ -232,7 +232,7 @@ export const PortBadge = ({ port }: { port: MessagePort }) => {
   const portInfo = MESSAGE_PORTS.find(p => p.id === port);
   if (!portInfo) return null;
   return (
-    <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-[10px] font-bold border border-border bg-muted/50 text-foreground shadow-sm">
+    <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-xs font-bold border border-border bg-muted/50 text-foreground shadow-sm">
       <portInfo.icon className="w-3.5 h-3.5 opacity-60" />
       {portInfo.label}
     </span>
@@ -243,7 +243,7 @@ export const PortBadge = ({ port }: { port: MessagePort }) => {
 
 export const FrequencySelector = ({ value, onChange }: { value: ScheduleFrequency; onChange: (freq: ScheduleFrequency) => void }) => (
   <div className="space-y-2">
-    <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest flex items-center gap-1.5 px-1">
+    <label className="text-xs font-bold text-muted-foreground uppercase tracking-widest flex items-center gap-1.5 px-1">
       <Repeat className="w-3 h-3" />
       Frequency
     </label>
@@ -254,7 +254,7 @@ export const FrequencySelector = ({ value, onChange }: { value: ScheduleFrequenc
           type="button"
           onClick={() => onChange?.(freq.id)}
           className={cn(
-            "px-3 py-1.5 rounded-md text-[10px] font-bold uppercase tracking-wider transition-all border",
+            "px-3 py-1.5 rounded-md text-xs font-bold uppercase tracking-wider transition-all border",
             value === freq.id
               ? "bg-primary text-primary-foreground border-primary shadow-sm"
               : "bg-background text-muted-foreground border-border hover:bg-muted hover:text-foreground shadow-sm"
@@ -300,7 +300,7 @@ export const SubscriptionUsageBanner = ({ usage, limit, onUpgrade }: { usage: nu
       </div>
       <button
         onClick={onUpgrade}
-        className={cn("px-4 py-2 text-[11px] font-bold uppercase tracking-wider rounded-md transition-colors shadow-sm whitespace-nowrap", styles.btn)}
+        className={cn("px-4 py-2 text-xs font-bold uppercase tracking-wider rounded-md transition-colors shadow-sm whitespace-nowrap", styles.btn)}
       >
         Upgrade Plan
       </button>
@@ -430,10 +430,10 @@ export const NotificationDropdown = ({
           <div className="flex items-center gap-2">
             <h3 className="text-xs font-bold uppercase tracking-widest text-foreground">Notifications</h3>
             {unreadCount > 0 && (
-              <span className="px-1.5 py-0.5 bg-primary text-primary-foreground text-[10px] font-bold rounded-full">{unreadCount}</span>
+              <span className="px-1.5 py-0.5 bg-primary text-primary-foreground text-xs font-bold rounded-full">{unreadCount}</span>
             )}
           </div>
-          <button className="text-[11px] font-bold text-primary hover:underline transition-colors uppercase tracking-wider">Clear</button>
+          <button className="text-xs font-bold text-primary hover:underline transition-colors uppercase tracking-wider">Clear</button>
         </div>
 
         <div className="max-h-[400px] overflow-y-auto custom-scrollbar bg-background">
@@ -466,7 +466,7 @@ export const NotificationDropdown = ({
                     {!notif.read && <div className="w-1.5 h-1.5 bg-primary rounded-full shrink-0 mt-1.5" />}
                   </div>
                   <p className="text-xs text-muted-foreground mt-0.5 line-clamp-1">{notif.description}</p>
-                  <p className="text-[10px] text-muted-foreground/60 font-bold uppercase mt-1 tracking-wider">{notif.time}</p>
+                  <p className="text-xs text-muted-foreground/60 font-bold uppercase mt-1 tracking-wider">{notif.time}</p>
                 </div>
               </button>
             ))
@@ -476,7 +476,7 @@ export const NotificationDropdown = ({
         <div className="p-2 border-t border-border bg-muted/20">
           <button
             onClick={() => { onNavigate("messages"); onClose(); }}
-            className="w-full py-2 text-[10px] font-bold uppercase tracking-widest text-primary hover:bg-primary/5 rounded-md transition-colors"
+            className="w-full py-2 text-xs font-bold uppercase tracking-widest text-primary hover:bg-primary/5 rounded-md transition-colors"
           >
             See all activity
           </button>

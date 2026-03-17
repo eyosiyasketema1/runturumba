@@ -107,7 +107,7 @@ export const AnalyticsView = ({
         </button>
         <div className="mt-6 flex items-center gap-2 px-3 py-1 bg-amber-500/10 border border-amber-500/20 rounded-full">
           <Crown className="w-3.5 h-3.5 text-amber-600" />
-          <span className="text-[10px] font-bold text-amber-700 uppercase tracking-wider">Pro Feature</span>
+          <span className="text-xs font-bold text-amber-700 uppercase tracking-wider">Pro Feature</span>
         </div>
       </div>
     );
@@ -146,7 +146,7 @@ export const AnalyticsView = ({
                 <kpi.icon className="w-4 h-4 text-muted-foreground group-hover:text-primary transition-all" />
               </div>
               <span className={cn(
-                "text-[10px] font-bold px-1.5 py-0.5 rounded-full border",
+                "text-xs font-bold px-1.5 py-0.5 rounded-full border",
                 kpi.trend.startsWith("+") ? "bg-emerald-500/10 text-emerald-600 border-emerald-500/20" : "bg-rose-500/10 text-rose-600 border-rose-500/20"
               )}>
                 {kpi.trend}
@@ -167,8 +167,8 @@ export const AnalyticsView = ({
               <p className="text-xs text-muted-foreground">Monitoring sent vs received message volume</p>
             </div>
             <div className="flex items-center gap-4">
-              <div className="flex items-center gap-1.5"><div className="w-2 h-2 bg-primary rounded-full" /><span className="text-[10px] font-bold text-muted-foreground uppercase">Sent</span></div>
-              <div className="flex items-center gap-1.5"><div className="w-2 h-2 bg-blue-500 rounded-full" /><span className="text-[10px] font-bold text-muted-foreground uppercase">Received</span></div>
+              <div className="flex items-center gap-1.5"><div className="w-2 h-2 bg-primary rounded-full" /><span className="text-xs font-bold text-muted-foreground uppercase">Sent</span></div>
+              <div className="flex items-center gap-1.5"><div className="w-2 h-2 bg-blue-500 rounded-full" /><span className="text-xs font-bold text-muted-foreground uppercase">Received</span></div>
             </div>
           </div>
           <ResponsiveContainer width="100%" height={300}>
@@ -240,17 +240,17 @@ export const AnalyticsView = ({
                 <div key={i} className="space-y-2">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
-                      <div className="w-9 h-9 rounded-full bg-muted border border-border flex items-center justify-center text-[10px] font-bold text-muted-foreground">
+                      <div className="w-9 h-9 rounded-full bg-muted border border-border flex items-center justify-center text-xs font-bold text-muted-foreground">
                         {contact.name.charAt(0)}
                       </div>
                       <div>
                         <p className="text-sm font-bold text-foreground leading-tight">{contact.name}</p>
-                        <p className="text-[10px] font-bold text-muted-foreground uppercase opacity-60">{contact.phone}</p>
+                        <p className="text-xs font-bold text-muted-foreground uppercase opacity-60">{contact.phone}</p>
                       </div>
                     </div>
                     <div className="text-right">
                       <p className="text-sm font-bold text-foreground">{contact.messages}</p>
-                      <p className="text-[10px] font-bold text-muted-foreground uppercase opacity-60">msgs</p>
+                      <p className="text-xs font-bold text-muted-foreground uppercase opacity-60">msgs</p>
                     </div>
                   </div>
                   <div className="h-1.5 w-full bg-muted rounded-full overflow-hidden border border-border/20">
@@ -279,15 +279,15 @@ export const AnalyticsView = ({
                 <div className="space-y-1">
                   <p className="text-sm font-bold text-foreground group-hover:text-primary transition-all">{bc.name}</p>
                   <div className="flex items-center gap-3">
-                    <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">{formatTimeAgo(bc.createdAt)}</span>
+                    <span className="text-xs font-bold text-muted-foreground uppercase tracking-widest">{formatTimeAgo(bc.createdAt)}</span>
                     <span className="w-1 h-1 bg-border rounded-full" />
-                    <span className="text-[10px] font-bold text-emerald-600 uppercase tracking-widest">{Math.round((bc.stats.delivered / bc.stats.sent) * 100)}% delivery</span>
+                    <span className="text-xs font-bold text-emerald-600 uppercase tracking-widest">{Math.round((bc.stats.delivered / bc.stats.sent) * 100)}% delivery</span>
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
                   <div className="text-right hidden sm:block mr-2">
                     <p className="text-xs font-bold text-foreground">{bc.stats.sent}</p>
-                    <p className="text-[9px] font-bold text-muted-foreground uppercase tracking-wider">Targeted</p>
+                    <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Targeted</p>
                   </div>
                   <button className="p-2 text-muted-foreground hover:text-foreground hover:bg-muted rounded-md transition-all">
                     <ChevronRight className="w-4 h-4" />

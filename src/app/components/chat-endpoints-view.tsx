@@ -239,7 +239,7 @@ function DraggableRuleRow({
 
         {/* Priority badge */}
         <div className="w-7 h-7 rounded-full bg-muted border border-border flex items-center justify-center shrink-0 mt-0.5">
-          <span className="text-[11px] font-bold text-muted-foreground">{rule.priority}</span>
+          <span className="text-xs font-bold text-muted-foreground">{rule.priority}</span>
         </div>
 
         {/* Content */}
@@ -247,7 +247,7 @@ function DraggableRuleRow({
           <div className="flex flex-wrap items-center gap-2">
             <span className="font-semibold text-sm text-foreground">{rule.name}</span>
             <span className={cn(
-              "text-[10px] font-bold px-1.5 py-0.5 border uppercase tracking-wide",
+              "text-xs font-bold px-1.5 py-0.5 border uppercase tracking-wide",
               rule.active
                 ? "bg-emerald-50 text-emerald-700 border-emerald-200"
                 : "bg-muted text-muted-foreground border-border"
@@ -260,7 +260,7 @@ function DraggableRuleRow({
             {rule.sources.map(src => {
               const s = getSourceLabel(src, endpoints);
               return (
-                <span key={src} className="inline-flex items-center gap-1 text-[10px] font-semibold px-1.5 py-0.5 bg-muted border border-border text-muted-foreground">
+                <span key={src} className="inline-flex items-center gap-1 text-xs font-semibold px-1.5 py-0.5 bg-muted border border-border text-muted-foreground">
                   <s.icon className={cn("w-2.5 h-2.5", s.color)} />
                   {s.label}
                 </span>
@@ -269,21 +269,21 @@ function DraggableRuleRow({
           </div>
 
           <div className="flex flex-wrap items-center gap-1.5">
-            <span className={cn("text-[10px] font-semibold px-1.5 py-0.5 border", audienceConfig[rule.audienceMode].color)}>
+            <span className={cn("text-xs font-semibold px-1.5 py-0.5 border", audienceConfig[rule.audienceMode].color)}>
               {audienceConfig[rule.audienceMode].label}
             </span>
-            <span className={cn("text-[10px] font-semibold px-1.5 py-0.5 border", creationConfig[rule.creationMode].color)}>
+            <span className={cn("text-xs font-semibold px-1.5 py-0.5 border", creationConfig[rule.creationMode].color)}>
               {creationConfig[rule.creationMode].label} creation
             </span>
             {rule.reopenPolicy === "threshold" && rule.reopenWindowHours && (
-              <span className="text-[10px] text-muted-foreground">
+              <span className="text-xs text-muted-foreground">
                 Reopen ≤ {rule.reopenWindowHours}h
               </span>
             )}
             {rule.defaultTeam && (() => {
               const tg = teamGroups.find(t => t.id === rule.defaultTeam);
               return tg ? (
-                <span className="text-[10px] text-muted-foreground">Team: {tg.name}</span>
+                <span className="text-xs text-muted-foreground">Team: {tg.name}</span>
               ) : null;
             })()}
           </div>
@@ -465,7 +465,7 @@ function EndpointFormModal({
         <div className="flex gap-4 items-start">
           {/* Logo upload */}
           <div className="shrink-0 flex flex-col items-center gap-1.5">
-            <Label className="text-[11px]">Logo</Label>
+            <Label className="text-xs">Logo</Label>
             <button
               type="button"
               onClick={() => logoInputRef.current?.click()}
@@ -481,14 +481,14 @@ function EndpointFormModal({
                 </div>
               )}
               <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                <span className="text-[9px] text-white font-bold">UPLOAD</span>
+                <span className="text-xs text-white font-bold">UPLOAD</span>
               </div>
             </button>
             {form.logoUrl && (
               <button
                 type="button"
                 onClick={() => set("logoUrl", "")}
-                className="text-[9px] text-destructive hover:underline font-semibold"
+                className="text-xs text-destructive hover:underline font-semibold"
               >
                 Remove
               </button>
@@ -503,7 +503,7 @@ function EndpointFormModal({
               <Input placeholder="Support Chat" value={form.name} onChange={e => set("name", e.target.value)} />
             </div>
             <div className="space-y-1.5">
-              <Label>Description <span className="text-[11px] text-muted-foreground font-normal">(optional)</span></Label>
+              <Label>Description <span className="text-xs text-muted-foreground font-normal">(optional)</span></Label>
               <Input
                 placeholder="Help visitors with questions about our products…"
                 value={form.description}
@@ -531,7 +531,7 @@ function EndpointFormModal({
                   type="button"
                   onClick={() => set("brandColorMode", mode as "solid" | "gradient" | "image")}
                   className={cn(
-                    "px-3 py-1 text-[11px] font-semibold transition-all",
+                    "px-3 py-1 text-xs font-semibold transition-all",
                     form.brandColorMode === mode
                       ? "bg-background text-foreground shadow-sm border border-border"
                       : "text-muted-foreground hover:text-foreground"
@@ -584,8 +584,8 @@ function EndpointFormModal({
                     className="w-9 h-9 border-0 bg-transparent cursor-pointer p-0"
                   />
                   <div className="space-y-0.5">
-                    <p className="text-[11px] font-semibold text-foreground">Custom Color</p>
-                    <p className="text-[11px] font-mono text-muted-foreground">{form.brandColor}</p>
+                    <p className="text-xs font-semibold text-foreground">Custom Color</p>
+                    <p className="text-xs font-mono text-muted-foreground">{form.brandColor}</p>
                   </div>
                 </div>
               )}
@@ -620,29 +620,29 @@ function EndpointFormModal({
               {/* Custom from/to */}
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1">
-                  <p className="text-[11px] font-semibold text-muted-foreground">From</p>
+                  <p className="text-xs font-semibold text-muted-foreground">From</p>
                   <div className="flex items-center gap-2 border border-border p-2 bg-background">
                     <input type="color" value={form.brandGradientFrom}
                       onChange={e => set("brandGradientFrom", e.target.value)}
                       className="w-7 h-7 border-0 bg-transparent cursor-pointer p-0"
                     />
-                    <span className="text-[11px] font-mono text-foreground">{form.brandGradientFrom}</span>
+                    <span className="text-xs font-mono text-foreground">{form.brandGradientFrom}</span>
                   </div>
                 </div>
                 <div className="space-y-1">
-                  <p className="text-[11px] font-semibold text-muted-foreground">To</p>
+                  <p className="text-xs font-semibold text-muted-foreground">To</p>
                   <div className="flex items-center gap-2 border border-border p-2 bg-background">
                     <input type="color" value={form.brandGradientTo}
                       onChange={e => set("brandGradientTo", e.target.value)}
                       className="w-7 h-7 border-0 bg-transparent cursor-pointer p-0"
                     />
-                    <span className="text-[11px] font-mono text-foreground">{form.brandGradientTo}</span>
+                    <span className="text-xs font-mono text-foreground">{form.brandGradientTo}</span>
                   </div>
                 </div>
               </div>
               {/* Direction */}
               <div className="flex items-center gap-2">
-                <p className="text-[11px] font-semibold text-muted-foreground mr-1">Direction</p>
+                <p className="text-xs font-semibold text-muted-foreground mr-1">Direction</p>
                 {GRADIENT_DIRS.map(d => (
                   <button
                     key={d.value}
@@ -669,8 +669,8 @@ function EndpointFormModal({
               <div className="flex items-start gap-2 px-3 py-2 bg-blue-50 border border-blue-200 text-blue-800">
                 <Info className="w-3.5 h-3.5 mt-0.5 shrink-0" />
                 <div className="space-y-0.5">
-                  <p className="text-[11px] font-semibold">Recommended: 800 × 160 px</p>
-                  <p className="text-[10px] opacity-80">JPG or PNG · max 2 MB · wide banner crops best in the widget header</p>
+                  <p className="text-xs font-semibold">Recommended: 800 × 160 px</p>
+                  <p className="text-xs opacity-80">JPG or PNG · max 2 MB · wide banner crops best in the widget header</p>
                 </div>
               </div>
 
@@ -686,14 +686,14 @@ function EndpointFormModal({
                     <button
                       type="button"
                       onClick={() => headerImgInputRef.current?.click()}
-                      className="px-2.5 py-1 bg-white text-[10px] font-bold text-foreground hover:bg-white/90 transition-colors"
+                      className="px-2.5 py-1 bg-white text-xs font-bold text-foreground hover:bg-white/90 transition-colors"
                     >
                       Replace
                     </button>
                     <button
                       type="button"
                       onClick={() => set("brandHeaderImage", "")}
-                      className="px-2.5 py-1 bg-destructive text-[10px] font-bold text-white hover:bg-destructive/90 transition-colors"
+                      className="px-2.5 py-1 bg-destructive text-xs font-bold text-white hover:bg-destructive/90 transition-colors"
                     >
                       Remove
                     </button>
@@ -709,8 +709,8 @@ function EndpointFormModal({
                     <Plus className="w-4 h-4 text-muted-foreground group-hover:text-primary transition-colors" />
                   </div>
                   <div className="text-center">
-                    <p className="text-[11px] font-semibold text-foreground group-hover:text-primary transition-colors">Click to upload header image</p>
-                    <p className="text-[10px] text-muted-foreground mt-0.5">800 × 160 px recommended</p>
+                    <p className="text-xs font-semibold text-foreground group-hover:text-primary transition-colors">Click to upload header image</p>
+                    <p className="text-xs text-muted-foreground mt-0.5">800 × 160 px recommended</p>
                   </div>
                 </button>
               )}
@@ -725,13 +725,13 @@ function EndpointFormModal({
               {/* Button & Accent Color — independent from header image */}
               <div className="space-y-2 pt-1 border-t border-border">
                 <div className="flex items-center justify-between">
-                  <p className="text-[11px] font-semibold text-foreground">Button &amp; Accent Color</p>
+                  <p className="text-xs font-semibold text-foreground">Button &amp; Accent Color</p>
                   <span
                     className="w-5 h-5 border border-border/60 shrink-0"
                     style={{ backgroundColor: form.brandColor }}
                   />
                 </div>
-                <p className="text-[10px] text-muted-foreground -mt-1">
+                <p className="text-xs text-muted-foreground -mt-1">
                   Used for buttons, send icon, launcher and bot avatar — independent from the header image.
                 </p>
                 {/* Preset swatches */}
@@ -770,8 +770,8 @@ function EndpointFormModal({
                       className="w-9 h-9 border-0 bg-transparent cursor-pointer p-0"
                     />
                     <div className="space-y-0.5">
-                      <p className="text-[11px] font-semibold text-foreground">Custom Color</p>
-                      <p className="text-[11px] font-mono text-muted-foreground">{form.brandColor}</p>
+                      <p className="text-xs font-semibold text-foreground">Custom Color</p>
+                      <p className="text-xs font-mono text-muted-foreground">{form.brandColor}</p>
                     </div>
                   </div>
                 )}
@@ -790,7 +790,7 @@ function EndpointFormModal({
                 type="button"
                 onClick={() => set("position", pos)}
                 className={cn(
-                  "flex flex-col items-center gap-1.5 border p-3 transition-all text-[11px] font-semibold",
+                  "flex flex-col items-center gap-1.5 border p-3 transition-all text-xs font-semibold",
                   form.position === pos
                     ? "border-primary bg-primary/5 text-primary"
                     : "border-border text-muted-foreground hover:border-primary/40 hover:bg-muted/30"
@@ -816,7 +816,7 @@ function EndpointFormModal({
         <div className="space-y-3 border border-border p-4 bg-muted/10">
           <div className="flex items-center justify-between">
             <Label>Corner Radius</Label>
-            <span className="text-[11px] font-mono font-semibold px-2 py-0.5 bg-muted border border-border text-foreground">
+            <span className="text-xs font-mono font-semibold px-2 py-0.5 bg-muted border border-border text-foreground">
               {form.cornerRadius}px
             </span>
           </div>
@@ -833,7 +833,7 @@ function EndpointFormModal({
                 type="button"
                 onClick={() => set("cornerRadius", p.value)}
                 className={cn(
-                  "flex flex-col items-center gap-1.5 border py-2 px-1 transition-all text-[10px] font-semibold",
+                  "flex flex-col items-center gap-1.5 border py-2 px-1 transition-all text-xs font-semibold",
                   form.cornerRadius === p.value
                     ? "border-primary bg-primary/5 text-primary"
                     : "border-border text-muted-foreground hover:border-primary/40 hover:bg-muted/30"
@@ -861,7 +861,7 @@ function EndpointFormModal({
             onChange={e => set("cornerRadius", Number(e.target.value))}
             className="w-full accent-primary h-1.5 cursor-pointer"
           />
-          <div className="flex justify-between text-[9px] text-muted-foreground font-mono">
+          <div className="flex justify-between text-xs text-muted-foreground font-mono">
             <span>0</span><span>6</span><span>12</span><span>18</span><span>24</span>
           </div>
         </div>
@@ -880,7 +880,7 @@ function EndpointFormModal({
                 type="button"
                 onClick={() => { set("widgetWidth", p.w); set("widgetHeight", p.h); }}
                 className={cn(
-                  "flex flex-col items-center gap-1.5 border py-2 px-1 transition-all text-[10px] font-semibold",
+                  "flex flex-col items-center gap-1.5 border py-2 px-1 transition-all text-xs font-semibold",
                   form.widgetWidth === p.w && form.widgetHeight === p.h
                     ? "border-primary bg-primary/5 text-primary"
                     : "border-border text-muted-foreground hover:border-primary/40 hover:bg-muted/30"
@@ -902,8 +902,8 @@ function EndpointFormModal({
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
               <div className="flex items-center justify-between">
-                <span className="text-[11px] font-semibold text-muted-foreground">Width</span>
-                <span className="text-[11px] font-mono font-semibold px-2 py-0.5 bg-muted border border-border text-foreground">{form.widgetWidth}px</span>
+                <span className="text-xs font-semibold text-muted-foreground">Width</span>
+                <span className="text-xs font-mono font-semibold px-2 py-0.5 bg-muted border border-border text-foreground">{form.widgetWidth}px</span>
               </div>
               <input
                 type="range"
@@ -917,8 +917,8 @@ function EndpointFormModal({
             </div>
             <div className="space-y-1.5">
               <div className="flex items-center justify-between">
-                <span className="text-[11px] font-semibold text-muted-foreground">Height</span>
-                <span className="text-[11px] font-mono font-semibold px-2 py-0.5 bg-muted border border-border text-foreground">{form.widgetHeight}px</span>
+                <span className="text-xs font-semibold text-muted-foreground">Height</span>
+                <span className="text-xs font-mono font-semibold px-2 py-0.5 bg-muted border border-border text-foreground">{form.widgetHeight}px</span>
               </div>
               <input
                 type="range"
@@ -958,7 +958,7 @@ function EndpointFormModal({
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-semibold text-foreground">Pre-Chat Form</p>
-              <p className="text-[11px] text-muted-foreground">Collect visitor info before starting chat</p>
+              <p className="text-xs text-muted-foreground">Collect visitor info before starting chat</p>
             </div>
             <Switch checked={form.preChatForm} onCheckedChange={v => set("preChatForm", v)} />
           </div>
@@ -1030,7 +1030,7 @@ function EndpointFormModal({
         <div className="flex items-center justify-between py-3 border-t border-border">
           <div>
             <p className="text-sm font-semibold text-foreground">Status</p>
-            <p className="text-[11px] text-muted-foreground">Enable or disable this widget</p>
+            <p className="text-xs text-muted-foreground">Enable or disable this widget</p>
           </div>
           <div className="flex items-center gap-2">
             <span className={cn("text-xs font-semibold", form.status === "active" ? "text-emerald-600" : "text-muted-foreground")}>
@@ -1080,7 +1080,7 @@ function EndpointFormModal({
         <div className="hidden lg:flex lg:w-[280px] shrink-0 flex-col gap-3 lg:pl-6 lg:border-l border-border">
           <div>
             <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest mb-0.5">Live Preview</p>
-            <p className="text-[11px] text-muted-foreground">Updates as you type</p>
+            <p className="text-xs text-muted-foreground">Updates as you type</p>
           </div>
 
           {/* Browser mockup */}
@@ -1092,7 +1092,7 @@ function EndpointFormModal({
                 <div className="w-2 h-2 rounded-full bg-yellow-400" />
                 <div className="w-2 h-2 rounded-full bg-green-400" />
               </div>
-              <div className="flex-1 bg-muted/60 text-[9px] text-muted-foreground px-2 py-0.5 font-mono truncate">
+              <div className="flex-1 bg-muted/60 text-xs text-muted-foreground px-2 py-0.5 font-mono truncate">
                 yoursite.com
               </div>
             </div>
@@ -1154,7 +1154,7 @@ function EndpointFormModal({
                     </div>
                     {/* Bottom row: name + description */}
                     <div>
-                      <p className="text-white text-[11px] font-bold leading-tight truncate">
+                      <p className="text-white text-xs font-bold leading-tight truncate">
                         {form.name || "Support Chat"}
                       </p>
                       {form.description && (
@@ -1169,10 +1169,10 @@ function EndpointFormModal({
                   <div className="p-2.5 space-y-1.5 min-h-[80px]">
                     {form.preChatForm ? (
                       <div className="space-y-1.5">
-                        <p className="text-[10px] font-semibold text-foreground">Before we start…</p>
+                        <p className="text-xs font-semibold text-foreground">Before we start…</p>
                         {form.preChatFields.name.enabled && (
                           <div
-                            className="border border-border/60 bg-muted/30 px-2 py-1 text-[9px] text-muted-foreground"
+                            className="border border-border/60 bg-muted/30 px-2 py-1 text-xs text-muted-foreground"
                             style={{ borderRadius: Math.round(form.cornerRadius * 0.5) }}
                           >
                             Your name{form.preChatFields.name.required ? " *" : ""}
@@ -1180,14 +1180,14 @@ function EndpointFormModal({
                         )}
                         {form.preChatFields.email.enabled && (
                           <div
-                            className="border border-border/60 bg-muted/30 px-2 py-1 text-[9px] text-muted-foreground"
+                            className="border border-border/60 bg-muted/30 px-2 py-1 text-xs text-muted-foreground"
                             style={{ borderRadius: Math.round(form.cornerRadius * 0.5) }}
                           >
                             Email address{form.preChatFields.email.required ? " *" : ""}
                           </div>
                         )}
                         <div
-                          className="w-full text-center text-[9px] font-semibold text-white py-1"
+                          className="w-full text-center text-xs font-semibold text-white py-1"
                           style={{ ...getButtonStyle(form), borderRadius: form.cornerRadius }}
                         >
                           Start Chat
@@ -1214,7 +1214,7 @@ function EndpointFormModal({
                             borderBottomLeftRadius: form.cornerRadius,
                           }}
                         >
-                          <p className="text-[9px] text-foreground leading-relaxed">
+                          <p className="text-xs text-foreground leading-relaxed">
                             {form.welcomeMessage || "Hi! How can we help you today?"}
                           </p>
                         </div>
@@ -1229,7 +1229,7 @@ function EndpointFormModal({
                       style={{ borderRadius: Math.round(form.cornerRadius * 0.5) }}
                     >
                       <Paperclip className="w-2 h-2 text-muted-foreground shrink-0" />
-                      <span className="flex-1 text-[9px] text-muted-foreground px-1">Type a message…</span>
+                      <span className="flex-1 text-xs text-muted-foreground px-1">Type a message…</span>
                       <Smile className="w-2 h-2 text-muted-foreground shrink-0" />
                     </div>
                     <div
@@ -1243,7 +1243,7 @@ function EndpointFormModal({
 
                 {/* Launcher pill */}
                 <div
-                  className="flex items-center gap-1.5 px-3 py-1.5 shadow-lg text-white text-[10px] font-semibold whitespace-nowrap"
+                  className="flex items-center gap-1.5 px-3 py-1.5 shadow-lg text-white text-xs font-semibold whitespace-nowrap"
                   style={{ ...getButtonStyle(form), borderRadius: Math.max(form.cornerRadius, 4) * 2 }}
                 >
                   <MessageSquare className="w-3 h-3" />
@@ -1254,7 +1254,7 @@ function EndpointFormModal({
           </div>
 
           {/* Hint */}
-          <p className="text-[11px] text-muted-foreground flex items-center gap-1.5">
+          <p className="text-xs text-muted-foreground flex items-center gap-1.5">
             <span className="inline-block w-2 h-2 rounded-full" style={getButtonStyle(form)} />
             Widget anchored to{" "}
             <span className="font-semibold text-foreground">
@@ -1404,7 +1404,7 @@ function RuleFormModal({
               value={form.priority}
               onChange={e => set("priority", Number(e.target.value))}
             />
-            <p className="text-[10px] text-muted-foreground">Lower = evaluated first</p>
+            <p className="text-xs text-muted-foreground">Lower = evaluated first</p>
           </div>
         </div>
 
@@ -1428,7 +1428,7 @@ function RuleFormModal({
             {sourceDropdownOpen && (
               <div className="absolute top-full left-0 right-0 z-50 bg-background border border-border shadow-lg mt-1 max-h-52 overflow-y-auto">
                 <div className="p-1">
-                  <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest px-2 py-1">Channels</p>
+                  <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest px-2 py-1">Channels</p>
                   {CHANNEL_SOURCE_OPTIONS.map(opt => (
                     <label key={opt.id} className="flex items-center gap-2 px-2 py-1.5 hover:bg-muted/40 cursor-pointer text-sm">
                       <input
@@ -1443,7 +1443,7 @@ function RuleFormModal({
                   ))}
                   {chatEndpoints.length > 0 && (
                     <>
-                      <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest px-2 py-1 mt-1 border-t border-border pt-2">
+                      <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest px-2 py-1 mt-1 border-t border-border pt-2">
                         Chat Endpoints
                       </p>
                       {chatEndpoints.map(ep => (
@@ -1472,7 +1472,7 @@ function RuleFormModal({
               {form.sources.map(src => {
                 const s = allSourceOptions.find(o => o.id === src);
                 return s ? (
-                  <span key={src} className="inline-flex items-center gap-1 text-[10px] font-semibold px-1.5 py-0.5 bg-muted border border-border">
+                  <span key={src} className="inline-flex items-center gap-1 text-xs font-semibold px-1.5 py-0.5 bg-muted border border-border">
                     <s.icon className={cn("w-3 h-3", s.color)} />
                     {s.label}
                     <button onClick={() => toggleSource(src)} className="ml-0.5 hover:text-destructive transition-colors">
@@ -1513,7 +1513,7 @@ function RuleFormModal({
                     className="w-3.5 h-3.5 accent-primary"
                   />
                   <span className="text-foreground">{g.name}</span>
-                  <span className="text-muted-foreground text-[10px]">({g.contactCount})</span>
+                  <span className="text-muted-foreground text-xs">({g.contactCount})</span>
                 </label>
               ))}
             </div>
@@ -1547,7 +1547,7 @@ function RuleFormModal({
                       className="w-3.5 h-3.5 accent-primary"
                     />
                     <span className="text-foreground">{u.name}</span>
-                    <span className="text-muted-foreground text-[10px]">{u.email}</span>
+                    <span className="text-muted-foreground text-xs">{u.email}</span>
                   </label>
                 ))}
             </div>
@@ -1576,7 +1576,7 @@ function RuleFormModal({
                 />
                 <div>
                   <p className="text-sm font-semibold capitalize text-foreground">{mode}</p>
-                  <p className="text-[11px] text-muted-foreground">
+                  <p className="text-xs text-muted-foreground">
                     {mode === "auto"
                       ? "Conversation created immediately when a message arrives."
                       : "Inbound messages go to a Pending Messages queue."}
@@ -1609,7 +1609,7 @@ function RuleFormModal({
                 />
                 <div className="min-w-0">
                   <p className="text-sm font-semibold text-foreground">{opt.label}</p>
-                  <p className="text-[11px] text-muted-foreground">{opt.description}</p>
+                  <p className="text-xs text-muted-foreground">{opt.description}</p>
                 </div>
               </label>
             ))}
@@ -1660,7 +1660,7 @@ function RuleFormModal({
         <div className="flex items-center justify-between py-3 border-t border-border">
           <div>
             <p className="text-sm font-semibold text-foreground">Rule Active</p>
-            <p className="text-[11px] text-muted-foreground">Enable or disable this routing rule</p>
+            <p className="text-xs text-muted-foreground">Enable or disable this routing rule</p>
           </div>
           <div className="flex items-center gap-2">
             <span className={cn("text-xs font-semibold", form.active ? "text-emerald-600" : "text-muted-foreground")}>
@@ -1760,7 +1760,7 @@ function WidgetPreviewOverlay({
 
       {/* Hint at bottom */}
       <div className="absolute bottom-0 inset-x-0 pb-3 flex justify-center pointer-events-none">
-        <span className="text-[11px] text-white/40">Click anywhere outside the widget to close</span>
+        <span className="text-xs text-white/40">Click anywhere outside the widget to close</span>
       </div>
 
       {/* Widget — actual size, anchored to the configured corner */}
@@ -2204,7 +2204,7 @@ export const ChatEndpointsView = ({
               stat.active ? "border-blue-500 ring-1 ring-blue-500" : "border-border"
             )}
           >
-            <p className="text-[10px] font-bold text-muted-foreground tracking-widest">{stat.label}</p>
+            <p className="text-xs font-bold text-muted-foreground tracking-widest">{stat.label}</p>
             <p className={cn("text-4xl font-bold mt-1 mb-1", stat.active ? "text-blue-600" : "text-foreground")}>
               {stat.value}
             </p>
@@ -2303,13 +2303,13 @@ export const ChatEndpointsView = ({
                     className="w-4 h-4 accent-blue-600 cursor-pointer"
                   />
                 </th>
-                <th className="px-4 py-3 text-left text-[11px] font-bold text-muted-foreground uppercase tracking-widest">Name</th>
-                <th className="px-4 py-3 text-left text-[11px] font-bold text-muted-foreground uppercase tracking-widest">Color</th>
-                <th className="px-4 py-3 text-left text-[11px] font-bold text-muted-foreground uppercase tracking-widest">Status</th>
-                <th className="px-4 py-3 text-left text-[11px] font-bold text-muted-foreground uppercase tracking-widest">Public Key</th>
-                <th className="px-4 py-3 text-left text-[11px] font-bold text-muted-foreground uppercase tracking-widest">Position</th>
-                <th className="px-4 py-3 text-left text-[11px] font-bold text-muted-foreground uppercase tracking-widest">Created</th>
-                <th className="px-4 py-3 text-right text-[11px] font-bold text-muted-foreground uppercase tracking-widest">Actions</th>
+                <th className="px-4 py-3 text-left text-xs font-bold text-muted-foreground uppercase tracking-widest">Name</th>
+                <th className="px-4 py-3 text-left text-xs font-bold text-muted-foreground uppercase tracking-widest">Color</th>
+                <th className="px-4 py-3 text-left text-xs font-bold text-muted-foreground uppercase tracking-widest">Status</th>
+                <th className="px-4 py-3 text-left text-xs font-bold text-muted-foreground uppercase tracking-widest">Public Key</th>
+                <th className="px-4 py-3 text-left text-xs font-bold text-muted-foreground uppercase tracking-widest">Position</th>
+                <th className="px-4 py-3 text-left text-xs font-bold text-muted-foreground uppercase tracking-widest">Created</th>
+                <th className="px-4 py-3 text-right text-xs font-bold text-muted-foreground uppercase tracking-widest">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-border">
