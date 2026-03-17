@@ -321,7 +321,7 @@ const InboxListItem = React.memo(function InboxListItem({
 
 function ConversationControlBar({
   contact, meta, users, port, openDropdown, setOpenDropdown,
-  onUpdateMeta, onAddSystem, onToggleInfo, isInfoOpen,
+  onUpdateMeta, onAddSystem, onToggleInfo, isInfoOpen, isAgent,
 }: {
   contact:          Contact;
   meta:             ConvMeta;
@@ -333,6 +333,7 @@ function ConversationControlBar({
   onAddSystem:      (content: string) => void;
   onToggleInfo:     () => void;
   isInfoOpen:       boolean;
+  isAgent?:         boolean;
 }) {
   const assignee    = users.find(u => u.id === meta.assigneeId);
   const statusOpt   = STATUS_OPTIONS.find(s => s.id === meta.status)!;
@@ -509,12 +510,12 @@ function ConversationControlBar({
           {openDropdown === "ctrl-more" && (
             <div className="absolute top-full right-0 z-50 mt-1 w-44 bg-background border border-border shadow-xl py-1">
               {[
-                { label: "Mark as unread", fn: () => toast.info("Marked as unread") },
-                { label: "Star conversation", fn: () => toast.info("Starred") },
-                { label: "Export transcript", fn: () => toast.info("Exporting transcript…") },
-                { label: "Merge conversation", fn: () => toast.info("Feature coming soon") },
-                { label: "Delete conversation", fn: () => toast.error("Conversation deleted") },
-              ].map(item => (
+                { label: "Mark as unread", fn: () => toast.info("Marked as unread"), adminOnly: false },
+                { label: "Star conversation", fn: () => toast.info("Starred"), adminOnly: false },
+                { label: "Export transcript", fn: () => toast.info("Exporting transcript…"), adminOnly: true },
+                { label: "Merge conversation", fn: () => toast.info("Feature coming soon"), adminOnly: true },
+                { label: "Delete conversation", fn: () => toast.error("Conversation deleted"), adminOnly: true },
+              ].filter(item => !isAgent || !item.adminOnly).map(item => (
                 <button key={item.label} onClick={() => { item.fn(); setOpenDropdown(null); }}
                   className="w-full text-left px-3 py-2 text-xs font-medium text-foreground hover:bg-muted/50 transition-colors"
                 >
@@ -847,7 +848,14 @@ function ComposeArea({
             </button>
           </div>
         </div>
-        <p className="text-[10px] text-muted-foreground/50 mt-1.5">Enter to send · Shift+Enter for new line</p>
+        <div className="flex items-center justify-between mt-1.5">
+          <p className="text-[10px] text-muted-foreground/50">Enter to send · Shift+Enter for new line</p>
+          {!isNote && (
+            <p className="text-[10px] font-medium text-muted-foreground/70">
+              Replying via <span className="font-bold capitalize">{CHANNEL_LABEL[port] || port}</span>
+            </p>
+          )}
+        </div>
       </form>
     </div>
   );
@@ -1017,13 +1025,16 @@ interface ConversationViewProps {
   onUpdateRule:      (id: string, data: Partial<ConversationRule>) => void;
   onDeleteRule:      (id: string) => void;
   onReorderRules:    (rules: ConversationRule[]) => void;
+  viewMode?:         "super_admin" | "agent";
 }
 
 export const ConversationView = ({
   contacts, messages, notes, users, currentUser, onSendMessage,
   preSelectedContactId, conversationRules, chatEndpoints, groups,
   teamGroups, onAddRule, onUpdateRule, onDeleteRule, onReorderRules,
+  viewMode = "super_admin",
 }: ConversationViewProps) => {
+  const isAgent = viewMode === "agent";
 
   // ── State ────────────────────────────────────────────────────────────────
   const contactsWithMsg = useMemo(() => {
@@ -1175,12 +1186,14 @@ export const ConversationView = ({
           <p className="text-sm text-muted-foreground">{contactsWithMsg.length} active thread{contactsWithMsg.length !== 1 ? "s" : ""}</p>
         </div>
         <div className="flex items-center gap-2">
-          <button onClick={() => setIsRoutingOpen(true)}
-            className="flex items-center gap-2 px-4 py-1.5 bg-background border border-border text-sm font-semibold text-foreground hover:bg-muted/40 transition-colors"
-          >
-            <GitBranch className="w-3.5 h-3.5 text-primary" />
-            Conversation Rules
-          </button>
+          {!isAgent && (
+            <button onClick={() => setIsRoutingOpen(true)}
+              className="flex items-center gap-2 px-4 py-1.5 bg-background border border-border text-sm font-semibold text-foreground hover:bg-muted/40 transition-colors"
+            >
+              <GitBranch className="w-3.5 h-3.5 text-primary" />
+              Conversation Rules
+            </button>
+          )}
           <button onClick={() => setIsComposeOpen(true)}
             className="flex items-center gap-2 px-4 py-1.5 bg-primary text-primary-foreground text-sm font-semibold hover:bg-primary/90 transition-colors"
           >
@@ -1335,6 +1348,7 @@ export const ConversationView = ({
                     onAddSystem={content => addLocalItem({ contactId: selectedId!, type: "system", content })}
                     onToggleInfo={() => setIsInfoOpen(v => !v)}
                     isInfoOpen={isInfoOpen}
+                    isAgent={isAgent}
                   />
                 </div>
 
@@ -1402,13 +1416,15 @@ export const ConversationView = ({
       </div>
 
       {/* Modals */}
-      <RoutingRulesPanel
-        isOpen={isRoutingOpen} onClose={() => setIsRoutingOpen(false)}
-        conversationRules={conversationRules} chatEndpoints={chatEndpoints}
-        groups={groups} teamGroups={teamGroups} users={users}
-        onAddRule={onAddRule} onUpdateRule={onUpdateRule}
-        onDeleteRule={onDeleteRule} onReorderRules={onReorderRules}
-      />
+      {!isAgent && (
+        <RoutingRulesPanel
+          isOpen={isRoutingOpen} onClose={() => setIsRoutingOpen(false)}
+          conversationRules={conversationRules} chatEndpoints={chatEndpoints}
+          groups={groups} teamGroups={teamGroups} users={users}
+          onAddRule={onAddRule} onUpdateRule={onUpdateRule}
+          onDeleteRule={onDeleteRule} onReorderRules={onReorderRules}
+        />
+      )}
       <NewConversationModal
         isOpen={isComposeOpen} onClose={() => setIsComposeOpen(false)}
         contacts={contacts}

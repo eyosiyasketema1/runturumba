@@ -66,6 +66,7 @@ export default function App() {
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
   const [isNewMessageFlowOpen, setIsNewMessageFlowOpen] = useState(false);
+  const [viewMode, setViewMode] = useState<"super_admin" | "agent">("super_admin");
   const [isOnboarding, setIsOnboarding] = useState(() => {
     return localStorage.getItem("turumba_onboarding_complete") !== "true";
   });
@@ -121,6 +122,15 @@ export default function App() {
       ]
     },
   ];
+
+  const isAgent = viewMode === "agent";
+  const AGENT_HIDDEN_IDS = ["channels", "automations", "team", "settings"];
+
+  const filteredNavSections = isAgent
+    ? navSections
+        .map(s => ({ ...s, items: s.items.filter(i => !AGENT_HIDDEN_IDS.includes(i.id)) }))
+        .filter(s => s.items.length > 0)
+    : navSections;
 
   const handleNavigate = (view: string) => {
     setCurrentView(view);
@@ -331,7 +341,7 @@ export default function App() {
         </div>
 
         <nav className="flex-1 px-2 py-3 space-y-4 overflow-y-auto no-scrollbar">
-          {navSections.map((section) => (
+          {filteredNavSections.map((section) => (
             <div key={section.label} className="space-y-0.5">
               {(!isSidebarCollapsed || isMobileSidebarOpen) && (
                 <p className="text-[10px] font-semibold text-slate-500 uppercase tracking-widest px-3 pb-1">{section.label}</p>
@@ -438,8 +448,36 @@ export default function App() {
           </div>
 
           <div className="flex items-center gap-2">
+            {/* View Mode Toggle */}
+            <div className="flex items-center bg-muted border border-border rounded-md p-0.5">
+              <button
+                onClick={() => { setViewMode("super_admin"); if (AGENT_HIDDEN_IDS.includes(currentView)) setCurrentView("dashboard"); }}
+                className={cn(
+                  "flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded transition-all",
+                  viewMode === "super_admin"
+                    ? "bg-primary text-primary-foreground shadow-sm"
+                    : "text-muted-foreground hover:text-foreground"
+                )}
+              >
+                <ShieldCheck className="w-3.5 h-3.5" />
+                <span className="hidden sm:inline">Super Admin</span>
+              </button>
+              <button
+                onClick={() => { setViewMode("agent"); if (AGENT_HIDDEN_IDS.includes(currentView)) setCurrentView("conversations"); }}
+                className={cn(
+                  "flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded transition-all",
+                  viewMode === "agent"
+                    ? "bg-primary text-primary-foreground shadow-sm"
+                    : "text-muted-foreground hover:text-foreground"
+                )}
+              >
+                <UserCheck className="w-3.5 h-3.5" />
+                <span className="hidden sm:inline">Agent</span>
+              </button>
+            </div>
+            <div className="hidden lg:block h-6 w-px bg-border" />
             <div className="relative">
-              <button 
+              <button
                 onClick={() => setIsNotificationsOpen(!isNotificationsOpen)}
                 className="p-2 text-muted-foreground hover:text-foreground hover:bg-muted transition-all relative"
                 aria-label="Notifications"
@@ -515,6 +553,7 @@ export default function App() {
                   chatEndpoints={chatEndpoints}
                   groups={groups}
                   teamGroups={teamGroups}
+                  viewMode={viewMode}
                   onAddRule={(data) => {
                     const newRule: ConversationRule = {
                       ...data as any,
