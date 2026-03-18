@@ -21,7 +21,6 @@ import { RoutingRulesPanel } from "./routing-rules-panel";
 
 type ConvStatus   = "open" | "assigned" | "pending" | "resolved" | "closed";
 type ConvPriority = "low" | "normal" | "high" | "urgent";
-type ComposerMode = "reply" | "note";
 type InboxFilter  = "all" | ConvStatus;
 
 interface ConvMeta {
@@ -690,14 +689,12 @@ function ConversationContextPanel({
 // ─── ComposeArea ──────────────────────────────────────────────────────────────
 
 function ComposeArea({
-  contact, composerMode, setComposerMode, port, setPort, onSend, openDropdown, setOpenDropdown,
+  contact, port, setPort, onSend, openDropdown, setOpenDropdown,
 }: {
   contact:         Contact;
-  composerMode:    ComposerMode;
-  setComposerMode: (m: ComposerMode) => void;
   port:            MessagePort;
   setPort:         (p: MessagePort) => void;
-  onSend:          (content: string, mode: ComposerMode) => void;
+  onSend:          (content: string) => void;
   openDropdown:    string | null;
   setOpenDropdown: (v: string | null) => void;
 }) {
@@ -707,7 +704,7 @@ function ComposeArea({
   const handleSend = (e: React.FormEvent) => {
     e.preventDefault();
     if (!text.trim()) return;
-    onSend(text, composerMode);
+    onSend(text);
     setText("");
     textareaRef.current?.focus();
   };
@@ -718,81 +715,52 @@ function ComposeArea({
     textareaRef.current?.focus();
   };
 
-  const isNote = composerMode === "note";
-
   return (
     <div className="shrink-0 border-t border-border bg-background">
-      {/* Reply / Note toggle */}
-      <div className="flex items-center justify-between px-4 pt-3 pb-2">
-        <div className="flex items-center gap-0.5 bg-muted/40 border border-border p-0.5">
-          {(["reply", "note"] as const).map(mode => (
-            <button key={mode}
-              onClick={() => setComposerMode(mode)}
-              className={cn(
-                "px-3 py-1 text-xs font-bold uppercase tracking-wide transition-colors",
-                composerMode === mode ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
-              )}
+      {/* Channel indicator */}
+      <div className="flex items-center justify-end px-4 pt-3 pb-2">
+        <div className="flex items-center gap-2">
+          <span className="text-xs text-muted-foreground font-medium">Replying via</span>
+          <div className="relative">
+            <button onClick={() => setOpenDropdown(openDropdown === "compose-port" ? null : "compose-port")}
+              className={cn("flex items-center gap-1.5 text-xs font-bold px-2.5 py-1 border transition-colors hover:opacity-80", PORT_COLORS[port] ?? "bg-muted text-muted-foreground border-border")}
             >
-              {mode === "note" && <Lock className="w-3 h-3 inline mr-1 text-amber-500" />}
-              {mode}
+              {channelIcon(port, "w-3 h-3")}
+              {CHANNEL_LABEL[port] ?? port}
+              <ChevronDown className="w-3 h-3 opacity-60" />
             </button>
-          ))}
-        </div>
-
-        {/* Channel indicator (reply mode only) */}
-        {!isNote && (
-          <div className="flex items-center gap-2">
-            <span className="text-xs text-muted-foreground font-medium">Replying via</span>
-            <div className="relative">
-              <button onClick={() => setOpenDropdown(openDropdown === "compose-port" ? null : "compose-port")}
-                className={cn("flex items-center gap-1.5 text-xs font-bold px-2.5 py-1 border transition-colors hover:opacity-80", PORT_COLORS[port] ?? "bg-muted text-muted-foreground border-border")}
-              >
-                {channelIcon(port, "w-3 h-3")}
-                {CHANNEL_LABEL[port] ?? port}
-                <ChevronDown className="w-3 h-3 opacity-60" />
-              </button>
-              {openDropdown === "compose-port" && (
-                <div className="absolute bottom-full right-0 mb-1 z-50 w-44 bg-background border border-border shadow-xl py-1">
-                  <div className="px-3 py-1.5 border-b border-border">
-                    <span className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Send via</span>
-                  </div>
-                  {Object.entries(CHANNEL_LABEL).filter(([k]) => k !== "smpp").map(([k, label]) => (
-                    <button key={k} onClick={() => { setPort(k as MessagePort); setOpenDropdown(null); }}
-                      className={cn("w-full flex items-center gap-2.5 px-3 py-2.5 text-xs font-semibold hover:bg-muted/50 transition-colors", port === k && "bg-muted/30")}
-                    >
-                      <span className={cn("inline-flex items-center justify-center w-6 h-6 border shrink-0", PORT_COLORS[k] ?? "bg-muted text-muted-foreground border-border")}>
-                        {channelIcon(k, "w-3 h-3")}
-                      </span>
-                      <span className={port === k ? "text-primary font-bold" : "text-foreground"}>{label}</span>
-                      {port === k && <Check className="w-3 h-3 text-primary ml-auto" />}
-                    </button>
-                  ))}
+            {openDropdown === "compose-port" && (
+              <div className="absolute bottom-full right-0 mb-1 z-50 w-44 bg-background border border-border shadow-xl py-1">
+                <div className="px-3 py-1.5 border-b border-border">
+                  <span className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Send via</span>
                 </div>
-              )}
-            </div>
+                {Object.entries(CHANNEL_LABEL).filter(([k]) => k !== "smpp").map(([k, label]) => (
+                  <button key={k} onClick={() => { setPort(k as MessagePort); setOpenDropdown(null); }}
+                    className={cn("w-full flex items-center gap-2.5 px-3 py-2.5 text-xs font-semibold hover:bg-muted/50 transition-colors", port === k && "bg-muted/30")}
+                  >
+                    <span className={cn("inline-flex items-center justify-center w-6 h-6 border shrink-0", PORT_COLORS[k] ?? "bg-muted text-muted-foreground border-border")}>
+                      {channelIcon(k, "w-3 h-3")}
+                    </span>
+                    <span className={port === k ? "text-primary font-bold" : "text-foreground"}>{label}</span>
+                    {port === k && <Check className="w-3 h-3 text-primary ml-auto" />}
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
-        )}
-        {isNote && (
-          <span className="flex items-center gap-1.5 text-xs font-semibold text-amber-600">
-            <Lock className="w-3 h-3" />
-            Only visible to agents
-          </span>
-        )}
+        </div>
       </div>
 
       {/* Textarea */}
       <form onSubmit={handleSend} className="px-4 pb-3">
-        <div className={cn("border transition-colors", isNote ? "border-amber-200 bg-amber-50/50" : "border-input bg-background")}>
+        <div className="border border-input bg-background transition-colors">
           <textarea
             ref={textareaRef}
             value={text}
             onChange={e => setText(e.target.value)}
-            placeholder={isNote
-              ? "Write an internal note…"
-              : `Message ${contact.name.split(" ")[0]} via ${CHANNEL_LABEL[port]}…`
-            }
+            placeholder={`Message ${contact.name.split(" ")[0]} via ${CHANNEL_LABEL[port]}…`}
             rows={3}
-            className={cn("w-full px-4 pt-3 pb-2 text-sm outline-none resize-none bg-transparent", isNote ? "placeholder:text-amber-400/70 text-amber-900" : "text-foreground")}
+            className="w-full px-4 pt-3 pb-2 text-sm outline-none resize-none bg-transparent text-foreground"
             onKeyDown={e => {
               if (e.key === "Enter" && !e.shiftKey) {
                 e.preventDefault();
@@ -838,25 +806,18 @@ function ComposeArea({
 
             {/* Send */}
             <button type="submit" disabled={!text.trim()}
-              className={cn(
-                "flex items-center gap-1.5 px-4 py-1.5 text-xs font-bold transition-all disabled:opacity-40 disabled:cursor-not-allowed",
-                isNote
-                  ? "bg-amber-500 text-white hover:bg-amber-600"
-                  : "bg-primary text-primary-foreground hover:bg-primary/90"
-              )}
+              className="flex items-center gap-1.5 px-4 py-1.5 text-xs font-bold transition-all disabled:opacity-40 disabled:cursor-not-allowed bg-primary text-primary-foreground hover:bg-primary/90"
             >
-              {isNote ? <Lock className="w-3 h-3" /> : <Send className="w-3 h-3" />}
-              {isNote ? "Add Note" : "Send"}
+              <Send className="w-3 h-3" />
+              Send
             </button>
           </div>
         </div>
         <div className="flex items-center justify-between mt-1.5">
           <p className="text-xs text-muted-foreground/50">Enter to send · Shift+Enter for new line</p>
-          {!isNote && (
-            <p className="text-xs font-medium text-muted-foreground/70">
-              Replying via <span className="font-bold capitalize">{CHANNEL_LABEL[port] || port}</span>
-            </p>
-          )}
+          <p className="text-xs font-medium text-muted-foreground/70">
+            Replying via <span className="font-bold capitalize">{CHANNEL_LABEL[port] || port}</span>
+          </p>
         </div>
       </form>
     </div>
@@ -1052,7 +1013,6 @@ export const ConversationView = ({
   const [priorityFilter, setPriorityFilter] = useState<ConvPriority | null>(null);
   const [convMeta, setConvMeta]           = useState<Record<string, ConvMeta>>({});
   const [localItems, setLocalItems]       = useState<LocalItem[]>([]);
-  const [composerMode, setComposerMode]   = useState<ComposerMode>("reply");
   const [convPort, setConvPort]           = useState<MessagePort>("whatsapp");
   const [isInfoOpen, setIsInfoOpen]       = useState(false);
   const [isRoutingOpen, setIsRoutingOpen] = useState(false);
@@ -1156,14 +1116,9 @@ export const ConversationView = ({
   const hasFilters = statusFilter !== "all" || !!assigneeFilter || !!channelFilter || !!priorityFilter;
 
   // ── Send handler ───────────────────────────────────────────────────────
-  const handleSend = (content: string, mode: ComposerMode) => {
+  const handleSend = (content: string) => {
     if (!selectedId) return;
-    if (mode === "note") {
-      addLocalItem({ contactId: selectedId, type: "note", content, senderId: currentUser.id });
-      toast.success("Note added");
-    } else {
-      onSendMessage(selectedId, content, undefined, convPort);
-    }
+    onSendMessage(selectedId, content, undefined, convPort);
   };
 
   // ── Close dropdowns on outside click ──────────────────────────────────
@@ -1327,7 +1282,7 @@ export const ConversationView = ({
                 return (
                   <InboxListItem key={c.id} contact={c} lastMsg={lastMsg} meta={getMeta(c.id)}
                     isActive={selectedId === c.id} users={users}
-                    onClick={() => { setSelectedId(c.id); setComposerMode("reply"); }}
+                    onClick={() => { setSelectedId(c.id); }}
                   />
                 );
               })
@@ -1381,8 +1336,6 @@ export const ConversationView = ({
                 <div data-dropdown-host>
                   <ComposeArea
                     contact={selectedContact}
-                    composerMode={composerMode}
-                    setComposerMode={setComposerMode}
                     port={convPort}
                     setPort={setConvPort}
                     onSend={handleSend}
