@@ -60,7 +60,7 @@ import { ConversationView } from "./components/conversation-view";
 import {
   SeekersView, MentorsView, MatchesView, FaithJourneysView,
   ContentLibraryView, GrowthMetricsView, VitalAnalyticsView,
-  ReportingView, ValidationsView
+  ReportingView, ValidationsView, DiscipleshipDashboardView
 } from "./components/discipleship-views";
 
 // --- Role System ---
@@ -92,6 +92,7 @@ export default function App() {
   const [activeTenant, setActiveTenant] = useState<Tenant>(INITIAL_TENANTS[0]);
   const [currentUser, setCurrentUser] = useState<User>(INITIAL_USERS[0]);
   const [currentView, setCurrentView] = useState("dashboard");
+  const [dashboardTab, setDashboardTab] = useState<"main" | "discipleship" | "collective">("discipleship");
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
@@ -610,17 +611,59 @@ export default function App() {
           <AnimatePresence mode="wait">
             {currentView === "dashboard" && (
               <motion.div key="dashboard" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.2 }}>
-                <DashboardView
-                  tenant={activeTenant}
-                  role={currentUser.role}
-                  channels={channels}
-                  auditLog={INITIAL_AUDIT_LOG}
-                  messages={messages}
-                  broadcasts={broadcasts}
-                  contacts={contacts}
-                  groups={groups}
-                  onNavigate={handleNavigate}
-                />
+                {/* Dashboard tab switcher — each tab is a separate dashboard view */}
+                <div className="px-6 pt-6">
+                  <div
+                    role="tablist"
+                    aria-label="Dashboard views"
+                    className="inline-flex items-center gap-1 bg-muted/60 border border-border rounded-full p-1"
+                  >
+                    {([
+                      ["main",         "Main Dashboard",          LayoutDashboard],
+                      ["discipleship", "Discipleship Dashboard",  Users],
+                      ["collective",   "153 Collective Dashboard", Activity],
+                    ] as const).map(([k, label, Icon]) => {
+                      const isActive = dashboardTab === k;
+                      return (
+                        <button
+                          key={k}
+                          role="tab"
+                          aria-selected={isActive}
+                          onClick={() => setDashboardTab(k)}
+                          className={cn(
+                            "flex items-center gap-2 px-4 py-1.5 text-sm font-semibold rounded-full transition-all",
+                            isActive
+                              ? "bg-primary text-primary-foreground shadow-sm"
+                              : "text-muted-foreground hover:text-foreground"
+                          )}
+                        >
+                          <Icon className="w-3.5 h-3.5" />
+                          <span>{label}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {dashboardTab === "main" && (
+                  <DashboardView
+                    tenant={activeTenant}
+                    role={currentUser.role}
+                    channels={channels}
+                    auditLog={INITIAL_AUDIT_LOG}
+                    messages={messages}
+                    broadcasts={broadcasts}
+                    contacts={contacts}
+                    groups={groups}
+                    onNavigate={handleNavigate}
+                  />
+                )}
+                {dashboardTab === "discipleship" && (
+                  <DiscipleshipDashboardView onNavigate={handleNavigate} />
+                )}
+                {dashboardTab === "collective" && (
+                  <VitalAnalyticsView />
+                )}
               </motion.div>
             )}
             {currentView === "messages" && (

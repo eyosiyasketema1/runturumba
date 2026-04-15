@@ -4,7 +4,8 @@ import {
   Sparkles, ShieldCheck, BarChart3, Activity, FileText, CheckCircle2, XCircle,
   Clock, AlertCircle, Heart, BookOpen, HandHeart, Star, Globe, MapPin,
   Calendar, Download, Share2, Bell, ArrowRight, Flame, Droplets, UsersRound,
-  TrendingUp, ChevronUp, MessageCircle, Languages, Filter as FilterIcon
+  TrendingUp, ChevronUp, MessageCircle, Languages, Filter as FilterIcon,
+  GitBranch
 } from "lucide-react";
 import { cn } from "./types";
 
@@ -113,6 +114,89 @@ function ProgressBar({ value, tone = "blue" }: { value: number; tone?: "blue" | 
 function EmptyHint({ children }: { children: React.ReactNode }) {
   return (
     <div className="text-center py-12 text-sm text-muted-foreground">{children}</div>
+  );
+}
+
+// ============================================================================
+// DISCIPLESHIP DASHBOARD (tab inside the main Dashboard page)
+// ============================================================================
+
+export function DiscipleshipDashboardView({ onNavigate }: { onNavigate?: (view: string) => void }) {
+  const activities = [
+    { tone: "bg-emerald-500", text: "Sarah M. completed 'Foundations of Faith' campaign", when: "2m ago" },
+    { tone: "bg-blue-500",    text: "New match proposed: David K. \u2192 Mentor James",     when: "15m ago" },
+    { tone: "bg-rose-500",    text: "12 new seekers completed intake this week",            when: "1h ago" },
+    { tone: "bg-violet-500",  text: "Content 'Finding Peace' assigned to 8 seekers",        when: "3h ago" },
+  ];
+  return (
+    <div className="p-6 space-y-4">
+      <PageHeader
+        title="Dashboard"
+        subtitle="Welcome back — here's your discipleship overview"
+        actions={(
+          <div className="relative">
+            <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+            <input
+              placeholder="Search..."
+              className="pl-8 pr-3 py-1.5 bg-card border border-border rounded-md text-sm focus:ring-1 focus:ring-ring outline-none w-[220px]"
+            />
+          </div>
+        )}
+      />
+
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
+        <StatCard label="Active Seekers"    value={247}   change="+12% from last month" icon={Users}       tone="pink"   />
+        <StatCard label="Active Matches"    value={89}    change="+8% from last month"  icon={GitBranch}   tone="blue"   />
+        <StatCard label="Completion Rate"   value="73%"   change="+5% from last month"  icon={CheckCircle2} tone="green" />
+        <StatCard label="Engagement Score"  value={82}    change="+3 pts this week"     icon={Activity}    tone="purple" />
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-[1fr,300px] gap-4">
+        <div className="bg-card border border-border rounded-lg p-5">
+          <h3 className="text-sm font-bold text-foreground mb-3">Recent Activity</h3>
+          <div className="space-y-2">
+            {activities.map((a, i) => (
+              <div key={i} className="flex items-center justify-between py-1.5">
+                <div className="flex items-center gap-3 min-w-0">
+                  <span className={cn("w-2 h-2 rounded-full shrink-0", a.tone)} />
+                  <span className="text-sm text-foreground truncate">{a.text}</span>
+                </div>
+                <span className="text-xs text-muted-foreground shrink-0 ml-2">{a.when}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div className="bg-card border border-border rounded-lg p-5">
+          <h3 className="text-sm font-bold text-foreground mb-3">Quick Actions</h3>
+          <div className="space-y-2">
+            <QuickAction label="New Seeker Intake" icon={Users}       primary onClick={() => onNavigate?.("seekers")} />
+            <QuickAction label="Review Matches"    icon={GitBranch}            onClick={() => onNavigate?.("matches")} />
+            <QuickAction label="Create Campaign"   icon={Plus}                 onClick={() => onNavigate?.("automations")} />
+            <QuickAction label="Add Content"       icon={FileText}             onClick={() => onNavigate?.("content_library")} />
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function QuickAction({
+  label, icon: Icon, primary, onClick
+}: { label: string; icon: any; primary?: boolean; onClick?: () => void }) {
+  return (
+    <button
+      onClick={onClick}
+      className={cn(
+        "w-full flex items-center gap-2.5 px-3 py-2.5 text-sm font-medium rounded-md transition-all",
+        primary
+          ? "bg-primary text-primary-foreground hover:bg-primary/90 shadow-sm"
+          : "bg-card border border-border text-foreground hover:bg-muted/50"
+      )}
+    >
+      <Icon className="w-4 h-4" />
+      <span>{label}</span>
+    </button>
   );
 }
 
