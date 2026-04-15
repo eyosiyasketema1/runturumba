@@ -186,10 +186,10 @@ export const AutomationView = ({
             exit={{ opacity: 0 }}
             className="grid grid-cols-1 lg:grid-cols-[260px,1fr] gap-5 items-start"
           >
-            {/* Folders sidebar — sticky column, listens for folder changes */}
-            <aside className="bg-card border border-border rounded-xl p-3 lg:sticky lg:top-6 self-start">
-              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider px-2 pt-1 pb-2">Folders</p>
-              <div className="space-y-0.5" role="tablist" aria-label="Automation folders">
+            {/* Folders sidebar — sticky, soft-tint active state */}
+            <aside className="bg-card border border-border rounded-xl p-4 lg:sticky lg:top-6 self-start">
+              <p className="text-sm font-semibold text-foreground px-2 pb-3">Folders</p>
+              <div className="space-y-1" role="tablist" aria-label="Automation folders">
                 {([
                   ["all",      "All Automations", folderCounts.all,      Inbox],
                   ["basic",    "Basic",           folderCounts.basic,    Zap],
@@ -204,26 +204,25 @@ export const AutomationView = ({
                       aria-selected={isActive}
                       onClick={() => setActiveFolder(k as any)}
                       className={cn(
-                        "w-full flex items-center gap-3 px-3 py-2.5 text-sm font-medium rounded-md transition-all",
+                        "w-full flex items-center gap-3 px-3 py-2 text-sm rounded-md transition-colors",
                         isActive
-                          ? "bg-primary text-primary-foreground shadow-sm"
-                          : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                          ? "bg-primary/10 text-primary font-semibold"
+                          : "text-muted-foreground font-medium hover:bg-muted hover:text-foreground"
                       )}
                     >
                       <Icon className="w-4 h-4" />
                       <span className="flex-1 text-left">{label}</span>
                       <span className={cn(
-                        "text-xs tabular-nums font-semibold px-1.5 py-0.5 rounded-md",
-                        isActive ? "bg-white/20 text-primary-foreground" : "bg-muted text-muted-foreground"
+                        "text-xs tabular-nums",
+                        isActive ? "text-primary" : "text-muted-foreground"
                       )}>{count}</span>
                     </button>
                   );
                 })}
-                <div className="h-px bg-border my-2" />
                 <button
                   disabled
                   title="Coming soon"
-                  className="w-full flex items-center gap-3 px-3 py-2.5 text-sm font-medium rounded-md text-muted-foreground/60 hover:bg-muted/30 transition-all cursor-not-allowed"
+                  className="w-full flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-md text-muted-foreground/60 hover:bg-muted/30 transition-colors cursor-not-allowed"
                 >
                   <FolderPlus className="w-4 h-4" />
                   <span className="flex-1 text-left">New Folder</span>
