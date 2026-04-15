@@ -67,6 +67,7 @@ import {
   DropdownMenu, DropdownMenuTrigger, DropdownMenuContent,
   DropdownMenuItem, DropdownMenuSeparator
 } from "./components/ui/dropdown-menu";
+import { AllActivityView } from "./components/all-activity-view";
 
 // --- Role System ---
 // Super Admin is a dev/testing god-mode. The four product roles map to the
@@ -104,6 +105,7 @@ export default function App() {
   const [isNewMessageFlowOpen, setIsNewMessageFlowOpen] = useState(false);
   const [viewMode, setViewMode] = useState<ViewRole>("super_admin");
   const [isRoleMenuOpen, setIsRoleMenuOpen] = useState(false);
+  const [isAllActivityOpen, setIsAllActivityOpen] = useState(false);
   const [isOnboarding, setIsOnboarding] = useState(() => {
     return localStorage.getItem("turumba_onboarding_complete") !== "true";
   });
@@ -189,6 +191,18 @@ export default function App() {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [viewMode]);
+
+  // Esc closes any open transient overlay (activity, role menu, notifications).
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== "Escape") return;
+      if (isAllActivityOpen) { setIsAllActivityOpen(false); return; }
+      if (isRoleMenuOpen)    { setIsRoleMenuOpen(false);    return; }
+      if (isNotificationsOpen) { setIsNotificationsOpen(false); return; }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [isAllActivityOpen, isRoleMenuOpen, isNotificationsOpen]);
 
   const handleNavigate = (view: string) => {
     setCurrentView(view);
@@ -560,6 +574,7 @@ export default function App() {
                 isOpen={isNotificationsOpen}
                 onClose={() => setIsNotificationsOpen(false)}
                 onNavigate={(view) => { handleNavigate(view); setIsNotificationsOpen(false); }}
+                onSeeAll={() => { setIsNotificationsOpen(false); setIsAllActivityOpen(true); }}
               />
             </div>
             <div className="hidden lg:block h-6 w-px bg-border" />
@@ -939,10 +954,20 @@ export default function App() {
         </div>
       </main>
 
+      {/* All Activity slide-over overlay */}
+      <AllActivityView
+        isOpen={isAllActivityOpen}
+        onClose={() => setIsAllActivityOpen(false)}
+        onNavigate={(view) => { setIsAllActivityOpen(false); handleNavigate(view); }}
+        messages={messages}
+        broadcasts={broadcasts}
+        contacts={contacts}
+      />
+
       {/* New Message Flow Modal */}
-      <Modal 
-        isOpen={isNewMessageFlowOpen} 
-        onClose={() => setIsNewMessageFlowOpen(false)} 
+      <Modal
+        isOpen={isNewMessageFlowOpen}
+        onClose={() => setIsNewMessageFlowOpen(false)}
         title="New Message"
         size="3xl"
       >

@@ -343,14 +343,16 @@ export const NotificationDropdown = ({
   contacts,
   isOpen,
   onClose,
-  onNavigate
+  onNavigate,
+  onSeeAll,
 }: {
   messages: Message[],
   broadcasts: Broadcast[],
   contacts: Contact[],
   isOpen: boolean,
   onClose: () => void,
-  onNavigate: (view: string, contactId?: string) => void
+  onNavigate: (view: string, contactId?: string) => void,
+  onSeeAll?: () => void,
 }) => {
   const notifications = React.useMemo(() => {
     const items: { id: string, type: string, icon: any, iconColor: string, title: string, description: string, time: string, read: boolean, action?: () => void }[] = [];
@@ -475,7 +477,13 @@ export const NotificationDropdown = ({
 
         <div className="p-2 border-t border-border bg-muted/20">
           <button
-            onClick={() => { onNavigate("messages"); onClose(); }}
+            onClick={() => {
+              // Prefer the dedicated activity overlay if the host wired one in;
+              // fall back to the messages page for backwards compatibility.
+              if (onSeeAll) onSeeAll();
+              else onNavigate("messages");
+              onClose();
+            }}
             className="w-full py-2 text-xs font-bold uppercase tracking-widest text-primary hover:bg-primary/5 rounded-md transition-colors"
           >
             See all activity
