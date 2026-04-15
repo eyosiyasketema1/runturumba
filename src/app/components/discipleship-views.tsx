@@ -2372,16 +2372,133 @@ function JourneyListInner() {
 // CONTENT LIBRARY
 // ============================================================================
 
-const CONTENT = [
-  { title: "Welcome to Your Faith Journey",         type: "Devotional",   typeTone: "pink"   as const, category: "Salvation",    difficulty: "Beginner",     lang: "English", status: "Published", statusTone: "green" as const },
-  { title: "Finding Peace in His Presence",         type: "Study",        typeTone: "blue"   as const, category: "Prayer",       difficulty: "Intermediate", lang: "English", status: "Published", statusTone: "green" as const },
-  { title: "Understanding the Holy Spirit",         type: "Guide",        typeTone: "purple" as const, category: "Holy Spirit",  difficulty: "Advanced",     lang: "Amharic", status: "Draft",     statusTone: "amber" as const },
-  { title: "Understanding the Bible: A Beginner's Guide", type: "Bible Study",  typeTone: "blue" as const, category: "Bible Basics", difficulty: "Beginner", lang: "English", status: "Published", statusTone: "green" as const },
-  { title: "Daily Prayer Practice",                 type: "Prayer Guide", typeTone: "pink" as const,   category: "Prayer",       difficulty: "Beginner",     lang: "English", status: "Published", statusTone: "green" as const },
-  { title: "7-Day Worship Challenge",               type: "Challenge",    typeTone: "amber" as const,  category: "Worship",      difficulty: "Beginner",     lang: "English", status: "Published", statusTone: "green" as const },
+type ContentStatus = "Draft" | "Published" | "Archived";
+type ContentAuthor = "curated" | "ai_generated";
+
+type ContentRow = {
+  id: string;
+  title: string;
+  type: string;
+  typeTone: any;
+  category: string;
+  difficulty: "Beginner" | "Intermediate" | "Advanced";
+  lang: string;
+  status: ContentStatus;
+  statusTone: any;
+  summary: string;
+  body: string;           // markdown
+  tags: string[];
+  author: ContentAuthor;
+  source?: string;        // bible ref or external
+  readTimeMin: number;
+  variants: { telegram: string; whatsapp: string; sms: string; web: string };
+  stats: { views: number; engagement: number; completion: number };
+  updatedAt: string;
+};
+
+const CONTENT_TYPES = [
+  { id: "Devotional",    tone: "pink"   as const },
+  { id: "Bible Study",   tone: "blue"   as const },
+  { id: "Study",         tone: "blue"   as const },
+  { id: "Prayer Guide",  tone: "pink"   as const },
+  { id: "Guide",         tone: "purple" as const },
+  { id: "Reflection",    tone: "green"  as const },
+  { id: "Testimony",     tone: "amber"  as const },
+  { id: "Challenge",     tone: "amber"  as const },
+  { id: "Quiz",          tone: "purple" as const },
+  { id: "Resource Link", tone: "slate"  as const },
+];
+
+const CONTENT_CATEGORIES = ["Salvation", "Prayer", "Bible Basics", "Community", "Spiritual Growth", "Apologetics", "Worship", "Holy Spirit"];
+const DIFFICULTIES       = ["Beginner", "Intermediate", "Advanced"] as const;
+const CONTENT_LANGS      = ["English", "Amharic", "Afaan Oromoo"];
+
+const toneForType = (t: string) => CONTENT_TYPES.find(x => x.id.toLowerCase() === t.toLowerCase())?.tone ?? "slate";
+
+const makeVariants = (title: string, body: string) => ({
+  telegram: `🙏 *${title}*\n\n${body}\n\n_What spoke to you today? Tap Reply._`,
+  whatsapp: `🙏 *${title}*\n\n${body}\n\n_What spoke to you today? Reply to share._`,
+  sms:      `${title}\n\n${body.replace(/\*\*?/g, "").slice(0, 140)}${body.length > 140 ? "..." : ""}`,
+  web:      `## ${title}\n\n${body}\n\n> Reflect: What spoke to you today?`,
+});
+
+const INITIAL_CONTENT: ContentRow[] = [
+  { id: "c1", title: "Welcome to Your Faith Journey",              type: "Devotional",   typeTone: "pink",   category: "Salvation",    difficulty: "Beginner",     lang: "English", status: "Published", statusTone: "green", summary: "A gentle introduction to beginning a relationship with Jesus.", body: "Stepping into faith can feel like standing at the edge of something vast. The good news is you don't step alone. Today, begin with a simple prayer: 'Jesus, I want to know you. Will you meet me here?'\n\nThat's it. That's the start.", tags: ["salvation", "new_believer", "prayer"], author: "curated",     source: "John 3:16",  readTimeMin: 3, variants: makeVariants("Welcome to Your Faith Journey", "Stepping into faith can feel like standing at the edge of something vast. The good news is you don't step alone."), stats: { views: 1420, engagement: 78, completion: 64 }, updatedAt: "2 days ago" },
+  { id: "c2", title: "Finding Peace in His Presence",              type: "Study",        typeTone: "blue",   category: "Prayer",       difficulty: "Intermediate", lang: "English", status: "Published", statusTone: "green", summary: "An in-depth study on stilling your heart in prayer.",       body: "Peace isn't the absence of chaos — it's the presence of Someone. In Mark 4, Jesus sleeps through a storm because peace lives with him, not around him.\n\nPractise today: sit for 3 quiet minutes. Name what troubles you. Name who is with you.", tags: ["prayer", "peace", "mark_4"], author: "curated", source: "Mark 4:35-41", readTimeMin: 7, variants: makeVariants("Finding Peace in His Presence", "Peace isn't the absence of chaos — it's the presence of Someone."), stats: { views: 890, engagement: 82, completion: 55 }, updatedAt: "1 week ago" },
+  { id: "c3", title: "Understanding the Holy Spirit",              type: "Guide",        typeTone: "purple", category: "Holy Spirit",  difficulty: "Advanced",     lang: "Amharic", status: "Draft",     statusTone: "amber", summary: "A theological overview of the Holy Spirit's role.",          body: "The Holy Spirit is not a force or a feeling. He is the personal presence of God — the one Jesus promised would come after him...\n\nThis guide explores three dimensions: comfort, conviction, and commissioning.", tags: ["holy_spirit", "theology", "john_14"], author: "curated", source: "John 14:15-26", readTimeMin: 12, variants: makeVariants("Understanding the Holy Spirit", "The Holy Spirit is not a force or a feeling — he is the personal presence of God."), stats: { views: 0, engagement: 0, completion: 0 }, updatedAt: "3 days ago" },
+  { id: "c4", title: "Understanding the Bible: A Beginner's Guide", type: "Bible Study", typeTone: "blue",   category: "Bible Basics", difficulty: "Beginner",     lang: "English", status: "Published", statusTone: "green", summary: "How the Bible is organised and a plan for reading it.",     body: "The Bible is a library, not a single book — 66 books written over 1,500 years, held together by one story: God drawing close to his people.\n\nStart here: the Gospel of John. One chapter a day, for 21 days.", tags: ["bible_basics", "reading_plan"], author: "curated",                          readTimeMin: 8, variants: makeVariants("Understanding the Bible: A Beginner's Guide", "The Bible is a library, not a single book — 66 books held together by one story."), stats: { views: 2100, engagement: 74, completion: 70 }, updatedAt: "2 weeks ago" },
+  { id: "c5", title: "Daily Prayer Practice",                      type: "Prayer Guide", typeTone: "pink",   category: "Prayer",       difficulty: "Beginner",     lang: "English", status: "Published", statusTone: "green", summary: "A 5-minute daily prayer rhythm anyone can begin.",          body: "The simplest prayer rhythm: pause, praise, ask, listen.\n\n• Pause (30 seconds of silence)\n• Praise (something you're thankful for)\n• Ask (one real request)\n• Listen (what comes to mind?)\n\nFive minutes. Every day.", tags: ["prayer", "rhythm"], author: "curated", readTimeMin: 4, variants: makeVariants("Daily Prayer Practice", "The simplest prayer rhythm: pause, praise, ask, listen."), stats: { views: 1680, engagement: 85, completion: 72 }, updatedAt: "4 days ago" },
+  { id: "c6", title: "7-Day Worship Challenge",                    type: "Challenge",    typeTone: "amber",  category: "Worship",      difficulty: "Beginner",     lang: "English", status: "Published", statusTone: "green", summary: "A week of small worship practices.",                        body: "Day 1: Sing one song.\nDay 2: Thank someone out loud.\nDay 3: Pray the Lord's Prayer.\nDay 4: Read Psalm 23.\nDay 5: Sit in silence for 5 minutes.\nDay 6: Share a verse with a friend.\nDay 7: Go to a gathering.", tags: ["worship", "challenge", "7-day"], author: "curated", readTimeMin: 2, variants: makeVariants("7-Day Worship Challenge", "A week of small worship practices."), stats: { views: 560, engagement: 69, completion: 41 }, updatedAt: "5 days ago" },
 ];
 
 export function ContentLibraryView({ canEdit = true }: { canEdit?: boolean }) {
+  const [items, setItems]        = useState<ContentRow[]>(INITIAL_CONTENT);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [editingId, setEditingId]   = useState<string | null>(null);
+  const [isAddOpen, setIsAddOpen]   = useState(false);
+  const [isAiOpen, setIsAiOpen]     = useState(false);
+
+  const [query, setQuery]           = useState("");
+  const [typeFilter, setTypeFilter] = useState("all");
+  const [catFilter, setCatFilter]   = useState("all");
+  const [diffFilter, setDiffFilter] = useState("all");
+  const [langFilter, setLangFilter] = useState("all");
+  const [statusFilter, setStatusFilter] = useState("all");
+
+  const selected = items.find(c => c.id === selectedId) || null;
+  const editing  = items.find(c => c.id === editingId) || null;
+
+  const filtered = useMemo(() => {
+    return items.filter(c => {
+      const q = query.toLowerCase();
+      const matchesQ = !q || c.title.toLowerCase().includes(q) || c.summary.toLowerCase().includes(q) || c.tags.some(t => t.includes(q));
+      return matchesQ
+        && (typeFilter === "all" || c.type === typeFilter)
+        && (catFilter === "all" || c.category === catFilter)
+        && (diffFilter === "all" || c.difficulty === diffFilter)
+        && (langFilter === "all" || c.lang === langFilter)
+        && (statusFilter === "all" || c.status === statusFilter);
+    });
+  }, [items, query, typeFilter, catFilter, diffFilter, langFilter, statusFilter]);
+
+  const upsert = (row: ContentRow) => {
+    setItems(list => list.some(x => x.id === row.id) ? list.map(x => x.id === row.id ? row : x) : [row, ...list]);
+  };
+
+  // Drill into detail view
+  if (selected) {
+    return (
+      <ContentDetailView
+        item={selected}
+        canEdit={canEdit}
+        onBack={() => setSelectedId(null)}
+        onEdit={() => { setEditingId(selected.id); setSelectedId(null); }}
+        onPublish={() => {
+          setItems(list => list.map(x => x.id === selected.id ? { ...x, status: "Published", statusTone: "green" } : x));
+          toast.success(`"${selected.title}" published`);
+        }}
+        onArchive={() => {
+          setItems(list => list.map(x => x.id === selected.id ? { ...x, status: "Archived", statusTone: "slate" } : x));
+          toast.success(`"${selected.title}" archived`);
+        }}
+        onDuplicate={() => {
+          const copy: ContentRow = { ...selected, id: `c-${Date.now()}`, title: `${selected.title} (Copy)`, status: "Draft", statusTone: "amber", stats: { views: 0, engagement: 0, completion: 0 } };
+          upsert(copy);
+          toast.success(`Duplicated as "${copy.title}"`);
+        }}
+        onDelete={() => {
+          setItems(list => list.filter(x => x.id !== selected.id));
+          setSelectedId(null);
+          toast.success(`"${selected.title}" deleted`);
+        }}
+      />
+    );
+  }
+
+  const publishedCount = items.filter(i => i.status === "Published").length;
+  const draftCount     = items.filter(i => i.status === "Draft").length;
+  const aiCount        = items.filter(i => i.author === "ai_generated").length;
+
   return (
     <div className="p-6 space-y-4">
       <PageHeader
@@ -2389,21 +2506,82 @@ export function ContentLibraryView({ canEdit = true }: { canEdit?: boolean }) {
         subtitle="Manage devotionals, studies, and resources for automations"
         actions={canEdit && (
           <>
-            <button className="flex items-center gap-1.5 px-4 py-2 text-sm font-semibold bg-violet-50 text-violet-700 rounded-md hover:bg-violet-100 transition-all">
+            <Button
+              variant="outline"
+              className="border-violet-200 bg-violet-50 text-violet-700 hover:bg-violet-100 hover:text-violet-800"
+              onClick={() => setIsAiOpen(true)}
+            >
               <Sparkles className="w-4 h-4" /> AI Generate
-            </button>
-            <button className="flex items-center gap-1.5 px-4 py-2 text-sm font-semibold bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-all shadow-sm">
+            </Button>
+            <Button onClick={() => setIsAddOpen(true)}>
               <Plus className="w-4 h-4" /> Add Content
-            </button>
+            </Button>
           </>
         )}
       />
 
-      <div className="flex items-center gap-2 flex-wrap">
-        <FilterButton label="All Types" />
-        <FilterButton label="Category" />
-        <FilterButton label="Difficulty" />
-        <FilterButton label="Language" />
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
+        <StatCard label="Total Items" value={items.length}      icon={BookOpen}     tone="blue" />
+        <StatCard label="Published"   value={publishedCount}    icon={CheckCircle2} tone="green" />
+        <StatCard label="Drafts"      value={draftCount}        icon={Edit2}        tone="amber" />
+        <StatCard label="AI-generated" value={aiCount}          icon={Sparkles}     tone="purple" />
+      </div>
+
+      <div className="bg-card border border-border rounded-lg p-3 flex items-center gap-2 flex-wrap">
+        <div className="flex-1 min-w-[240px] relative">
+          <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none" />
+          <Input
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Search title, summary, or tag..."
+            className="pl-9 h-9"
+          />
+        </div>
+        <FilterDropdown
+          label="Type"
+          value={typeFilter}
+          onChange={setTypeFilter}
+          options={[{ value: "all", label: "All types" }, ...CONTENT_TYPES.map(t => ({ value: t.id, label: t.id }))]}
+        />
+        <FilterDropdown
+          label="Category"
+          value={catFilter}
+          onChange={setCatFilter}
+          options={[{ value: "all", label: "All categories" }, ...CONTENT_CATEGORIES.map(c => ({ value: c, label: c }))]}
+        />
+        <FilterDropdown
+          label="Difficulty"
+          value={diffFilter}
+          onChange={setDiffFilter}
+          options={[{ value: "all", label: "Any difficulty" }, ...DIFFICULTIES.map(d => ({ value: d, label: d }))]}
+        />
+        <FilterDropdown
+          label="Language"
+          value={langFilter}
+          onChange={setLangFilter}
+          options={[{ value: "all", label: "All languages" }, ...CONTENT_LANGS.map(l => ({ value: l, label: l }))]}
+        />
+        <FilterDropdown
+          label="Status"
+          value={statusFilter}
+          onChange={setStatusFilter}
+          options={[
+            { value: "all",       label: "All statuses" },
+            { value: "Published", label: "Published" },
+            { value: "Draft",     label: "Draft" },
+            { value: "Archived",  label: "Archived" },
+          ]}
+        />
+        {(query || typeFilter !== "all" || catFilter !== "all" || diffFilter !== "all" || langFilter !== "all" || statusFilter !== "all") && (
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => { setQuery(""); setTypeFilter("all"); setCatFilter("all"); setDiffFilter("all"); setLangFilter("all"); setStatusFilter("all"); }}
+          >
+            Clear
+          </Button>
+        )}
+        <span className="text-xs text-muted-foreground ml-auto">{filtered.length} of {items.length}</span>
       </div>
 
       <div className="bg-card border border-border rounded-lg overflow-hidden">
@@ -2416,23 +2594,625 @@ export function ContentLibraryView({ canEdit = true }: { canEdit?: boolean }) {
               <th className="px-4 py-3 text-left font-semibold">Difficulty</th>
               <th className="px-4 py-3 text-left font-semibold">Language</th>
               <th className="px-4 py-3 text-left font-semibold">Status</th>
+              <th className="px-4 py-3 text-right font-semibold w-10">Actions</th>
             </tr>
           </thead>
           <tbody>
-            {CONTENT.map((c, i) => (
-              <tr key={i} className="border-b border-border last:border-0 hover:bg-muted/30 transition-colors cursor-pointer">
-                <td className="px-4 py-3 text-sm font-medium text-foreground">{c.title}</td>
+            {filtered.length === 0 ? (
+              <tr>
+                <td colSpan={7} className="px-4 py-12 text-center text-sm text-muted-foreground">
+                  No content matches your filters.
+                </td>
+              </tr>
+            ) : filtered.map(c => (
+              <tr
+                key={c.id}
+                className="border-b border-border last:border-0 hover:bg-muted/30 transition-colors cursor-pointer"
+                onClick={() => setSelectedId(c.id)}
+              >
+                <td className="px-4 py-3">
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-medium text-foreground">{c.title}</span>
+                    {c.author === "ai_generated" && (
+                      <span title="AI-generated"><Sparkles className="w-3 h-3 text-violet-500" /></span>
+                    )}
+                  </div>
+                  <p className="text-xs text-muted-foreground truncate max-w-[360px]">{c.summary}</p>
+                </td>
                 <td className="px-4 py-3"><Chip tone={c.typeTone}>{c.type}</Chip></td>
                 <td className="px-4 py-3 text-sm text-muted-foreground">{c.category}</td>
                 <td className="px-4 py-3 text-sm text-muted-foreground">{c.difficulty}</td>
                 <td className="px-4 py-3 text-sm text-muted-foreground">{c.lang}</td>
                 <td className="px-4 py-3"><Chip tone={c.statusTone}>{c.status}</Chip></td>
+                <td className="px-4 py-3 text-right" onClick={(e) => e.stopPropagation()}>
+                  <ContentActionsMenu
+                    item={c}
+                    canEdit={canEdit}
+                    onView={() => setSelectedId(c.id)}
+                    onEdit={() => setEditingId(c.id)}
+                    onTogglePublish={() => {
+                      const next: ContentStatus = c.status === "Published" ? "Draft" : "Published";
+                      setItems(list => list.map(x => x.id === c.id ? { ...x, status: next, statusTone: next === "Published" ? "green" : "amber" } : x));
+                      toast.success(`${c.title} ${next === "Published" ? "published" : "unpublished"}`);
+                    }}
+                    onDuplicate={() => {
+                      const copy: ContentRow = { ...c, id: `c-${Date.now()}`, title: `${c.title} (Copy)`, status: "Draft", statusTone: "amber", stats: { views: 0, engagement: 0, completion: 0 } };
+                      upsert(copy);
+                      toast.success(`Duplicated as "${copy.title}"`);
+                    }}
+                    onArchive={() => {
+                      setItems(list => list.map(x => x.id === c.id ? { ...x, status: "Archived", statusTone: "slate" } : x));
+                      toast.success(`${c.title} archived`);
+                    }}
+                    onDelete={() => {
+                      setItems(list => list.filter(x => x.id !== c.id));
+                      toast.success(`${c.title} deleted`);
+                    }}
+                  />
+                </td>
               </tr>
             ))}
           </tbody>
         </table>
       </div>
+
+      {/* Add / Edit modal */}
+      <ContentFormModal
+        key={editing?.id ?? "new"}
+        isOpen={isAddOpen || editing !== null}
+        initial={editing ?? undefined}
+        onClose={() => { setIsAddOpen(false); setEditingId(null); }}
+        onSubmit={(row) => {
+          upsert(row);
+          toast.success(editing ? `"${row.title}" updated` : `"${row.title}" saved as draft`);
+          setIsAddOpen(false);
+          setEditingId(null);
+        }}
+      />
+
+      {/* AI Generate modal */}
+      <AiGenerateModal
+        isOpen={isAiOpen}
+        onClose={() => setIsAiOpen(false)}
+        onSave={(row) => {
+          upsert(row);
+          toast.success(`AI draft "${row.title}" added to your library`);
+          setIsAiOpen(false);
+        }}
+      />
     </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Content actions menu
+// ---------------------------------------------------------------------------
+
+function ContentActionsMenu({
+  item, canEdit, onView, onEdit, onTogglePublish, onDuplicate, onArchive, onDelete,
+}: {
+  item: ContentRow;
+  canEdit: boolean;
+  onView: () => void;
+  onEdit: () => void;
+  onTogglePublish: () => void;
+  onDuplicate: () => void;
+  onArchive: () => void;
+  onDelete: () => void;
+}) {
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger
+        className={cn(
+          "inline-flex items-center justify-center h-8 w-8 rounded-md",
+          "text-muted-foreground hover:text-foreground hover:bg-muted transition-colors outline-none",
+          "focus-visible:ring-2 focus-visible:ring-ring"
+        )}
+        aria-label={`Actions for ${item.title}`}
+      >
+        <MoreHorizontal className="w-4 h-4" />
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" className="w-48">
+        <DropdownMenuItem onSelect={onView}>
+          <Eye className="w-3.5 h-3.5" /> View
+        </DropdownMenuItem>
+        {canEdit && (
+          <>
+            <DropdownMenuItem onSelect={onEdit}>
+              <Edit2 className="w-3.5 h-3.5" /> Edit
+            </DropdownMenuItem>
+            <DropdownMenuItem onSelect={onTogglePublish}>
+              <CheckCircle2 className="w-3.5 h-3.5" />
+              {item.status === "Published" ? "Unpublish" : "Publish"}
+            </DropdownMenuItem>
+            <DropdownMenuItem onSelect={onDuplicate}>
+              <FileText className="w-3.5 h-3.5" /> Duplicate
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem onSelect={onArchive}>
+              <Archive className="w-3.5 h-3.5" /> Archive
+            </DropdownMenuItem>
+            <DropdownMenuItem variant="destructive" onSelect={onDelete}>
+              <Trash2 className="w-3.5 h-3.5" /> Delete
+            </DropdownMenuItem>
+          </>
+        )}
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Content detail view — full page with channel variant preview
+// ---------------------------------------------------------------------------
+
+function ContentDetailView({
+  item, canEdit, onBack, onEdit, onPublish, onArchive, onDuplicate, onDelete,
+}: {
+  item: ContentRow; canEdit: boolean;
+  onBack: () => void; onEdit: () => void;
+  onPublish: () => void; onArchive: () => void;
+  onDuplicate: () => void; onDelete: () => void;
+}) {
+  const [channel, setChannel] = useState<"telegram" | "whatsapp" | "sms" | "web">("telegram");
+  const variant = item.variants[channel];
+
+  return (
+    <div className="p-6 space-y-4">
+      <button
+        onClick={onBack}
+        className="inline-flex items-center gap-1.5 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+      >
+        <ArrowLeft className="w-4 h-4" /> Back to Content Library
+      </button>
+
+      <div className="flex items-start justify-between gap-4 flex-wrap">
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2 mb-1.5 flex-wrap">
+            <Chip tone={item.typeTone}>{item.type}</Chip>
+            <Chip tone={item.statusTone}>{item.status}</Chip>
+            {item.author === "ai_generated" && (
+              <Chip tone="purple"><Sparkles className="w-3 h-3" /> AI-generated</Chip>
+            )}
+          </div>
+          <h1 className="text-2xl font-bold text-foreground tracking-tight">{item.title}</h1>
+          <p className="text-sm text-muted-foreground mt-1 max-w-2xl">{item.summary}</p>
+          <p className="text-xs text-muted-foreground mt-2">
+            {item.category} · {item.difficulty} · {item.lang} · {item.readTimeMin} min read · Updated {item.updatedAt}
+          </p>
+        </div>
+        {canEdit && (
+          <div className="flex items-center gap-2">
+            <Button onClick={onEdit}>
+              <Edit2 className="w-3.5 h-3.5" /> Edit
+            </Button>
+            {item.status !== "Published" ? (
+              <Button variant="outline" onClick={onPublish}>
+                <CheckCircle2 className="w-3.5 h-3.5" /> Publish
+              </Button>
+            ) : (
+              <Button variant="outline" onClick={onArchive}>
+                <Archive className="w-3.5 h-3.5" /> Archive
+              </Button>
+            )}
+            <DropdownMenu>
+              <DropdownMenuTrigger className="inline-flex items-center justify-center h-9 w-9 rounded-md border border-border text-muted-foreground hover:bg-muted transition-colors">
+                <MoreHorizontal className="w-4 h-4" />
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-40">
+                <DropdownMenuItem onSelect={onDuplicate}>
+                  <FileText className="w-3.5 h-3.5" /> Duplicate
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem variant="destructive" onSelect={onDelete}>
+                  <Trash2 className="w-3.5 h-3.5" /> Delete
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+        )}
+      </div>
+
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <StatCard label="Views"            value={item.stats.views.toLocaleString()} icon={Eye}         tone="blue" />
+        <StatCard label="Engagement"       value={`${item.stats.engagement}%`}       icon={Activity}    tone="green" />
+        <StatCard label="Completion Rate"  value={`${item.stats.completion}%`}       icon={CheckCircle2} tone="purple" />
+        <StatCard label="Tags"             value={item.tags.length}                   icon={FileText}   tone="amber" />
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-[1fr,380px] gap-4">
+        {/* Body */}
+        <div className="bg-card border border-border rounded-xl p-5 space-y-3">
+          <h3 className="text-base font-bold text-foreground">Content</h3>
+          <div className="prose prose-sm max-w-none">
+            <p className="text-sm text-foreground whitespace-pre-wrap leading-relaxed">{item.body}</p>
+          </div>
+          {item.source && (
+            <p className="text-xs text-muted-foreground italic border-t border-border pt-3">Source: {item.source}</p>
+          )}
+          {item.tags.length > 0 && (
+            <div className="flex items-center gap-1.5 flex-wrap pt-2 border-t border-border">
+              {item.tags.map(t => <Chip key={t} tone="slate">#{t}</Chip>)}
+            </div>
+          )}
+        </div>
+
+        {/* Channel variant preview */}
+        <div className="bg-card border border-border rounded-xl p-5 h-fit">
+          <h3 className="text-base font-bold text-foreground mb-3">Channel preview</h3>
+          <div className="flex items-center gap-1 bg-muted/60 rounded-md p-0.5 mb-3">
+            {([
+              ["telegram", "Telegram"], ["whatsapp", "WhatsApp"], ["sms", "SMS"], ["web", "Web"],
+            ] as const).map(([k, label]) => (
+              <button
+                key={k}
+                onClick={() => setChannel(k)}
+                className={cn(
+                  "flex-1 px-2.5 py-1.5 text-xs font-semibold rounded transition-all",
+                  channel === k ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
+                )}
+              >{label}</button>
+            ))}
+          </div>
+          <div className="bg-muted rounded-lg p-3 min-h-[220px]">
+            <pre className="text-xs text-foreground whitespace-pre-wrap font-sans leading-relaxed">{variant}</pre>
+          </div>
+          {channel === "sms" && (
+            <p className="text-xs text-muted-foreground mt-2">
+              {variant.length} chars · {Math.max(1, Math.ceil(variant.length / 160))} SMS segment{variant.length > 160 ? "s" : ""}
+            </p>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Add / Edit modal
+// ---------------------------------------------------------------------------
+
+function ContentFormModal({
+  isOpen, initial, onClose, onSubmit,
+}: {
+  isOpen: boolean;
+  initial?: ContentRow;
+  onClose: () => void;
+  onSubmit: (row: ContentRow) => void;
+}) {
+  const isEdit = !!initial;
+  const [title, setTitle]         = useState(initial?.title ?? "");
+  const [type, setType]           = useState<string>(initial?.type ?? "Devotional");
+  const [category, setCategory]   = useState<string>(initial?.category ?? "Salvation");
+  const [difficulty, setDifficulty] = useState<"Beginner" | "Intermediate" | "Advanced">(initial?.difficulty ?? "Beginner");
+  const [lang, setLang]           = useState(initial?.lang ?? "English");
+  const [summary, setSummary]     = useState(initial?.summary ?? "");
+  const [body, setBody]           = useState(initial?.body ?? "");
+  const [tagsText, setTagsText]   = useState((initial?.tags ?? []).join(", "));
+  const [source, setSource]       = useState(initial?.source ?? "");
+
+  const canSave = title.trim().length > 0 && body.trim().length > 0;
+
+  const handleSave = (publish: boolean) => {
+    const tags = tagsText.split(",").map(t => t.trim()).filter(Boolean);
+    const row: ContentRow = {
+      id: initial?.id ?? `c-${Date.now()}`,
+      title: title.trim(),
+      type,
+      typeTone: toneForType(type),
+      category,
+      difficulty,
+      lang,
+      status: publish ? "Published" : (initial?.status ?? "Draft"),
+      statusTone: publish ? "green" : (initial?.statusTone ?? "amber"),
+      summary: summary.trim(),
+      body: body.trim(),
+      tags,
+      author: initial?.author ?? "curated",
+      source: source.trim() || undefined,
+      readTimeMin: Math.max(1, Math.round(body.length / 900)),
+      variants: makeVariants(title.trim(), body.trim()),
+      stats: initial?.stats ?? { views: 0, engagement: 0, completion: 0 },
+      updatedAt: "just now",
+    };
+    onSubmit(row);
+  };
+
+  return (
+    <Modal isOpen={isOpen} onClose={onClose} title={isEdit ? `Edit "${initial?.title}"` : "Add Content"} size="lg">
+      <div className="space-y-4">
+        <div className="grid gap-1.5">
+          <Label className="text-xs font-semibold">Title <span className="text-destructive">*</span></Label>
+          <Input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="e.g. Finding Peace in Prayer" />
+        </div>
+
+        <div className="grid grid-cols-2 gap-3">
+          <div className="grid gap-1.5">
+            <Label className="text-xs font-semibold">Type</Label>
+            <select value={type} onChange={(e) => setType(e.target.value)} className="h-10 px-3 rounded-md border border-input bg-background text-sm">
+              {CONTENT_TYPES.map(t => <option key={t.id}>{t.id}</option>)}
+            </select>
+          </div>
+          <div className="grid gap-1.5">
+            <Label className="text-xs font-semibold">Category</Label>
+            <select value={category} onChange={(e) => setCategory(e.target.value)} className="h-10 px-3 rounded-md border border-input bg-background text-sm">
+              {CONTENT_CATEGORIES.map(c => <option key={c}>{c}</option>)}
+            </select>
+          </div>
+          <div className="grid gap-1.5">
+            <Label className="text-xs font-semibold">Difficulty</Label>
+            <div className="flex items-center gap-1 bg-muted/60 rounded-md p-0.5">
+              {DIFFICULTIES.map(d => (
+                <button
+                  key={d}
+                  onClick={() => setDifficulty(d)}
+                  className={cn(
+                    "flex-1 px-2 py-1.5 text-xs font-semibold rounded transition-all",
+                    difficulty === d ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
+                  )}
+                >{d}</button>
+              ))}
+            </div>
+          </div>
+          <div className="grid gap-1.5">
+            <Label className="text-xs font-semibold">Language</Label>
+            <select value={lang} onChange={(e) => setLang(e.target.value)} className="h-10 px-3 rounded-md border border-input bg-background text-sm">
+              {CONTENT_LANGS.map(l => <option key={l}>{l}</option>)}
+            </select>
+          </div>
+        </div>
+
+        <div className="grid gap-1.5">
+          <Label className="text-xs font-semibold">Summary</Label>
+          <Input value={summary} onChange={(e) => setSummary(e.target.value)} placeholder="One-line preview used in lists and notifications." />
+        </div>
+
+        <div className="grid gap-1.5">
+          <Label className="text-xs font-semibold">Body <span className="text-destructive">*</span></Label>
+          <Textarea
+            value={body}
+            onChange={(e) => setBody(e.target.value)}
+            className="min-h-[180px] text-sm"
+            placeholder="Markdown supported. Channel variants will be generated automatically."
+          />
+        </div>
+
+        <div className="grid grid-cols-2 gap-3">
+          <div className="grid gap-1.5">
+            <Label className="text-xs font-semibold">Tags <span className="text-muted-foreground font-normal">(comma-separated)</span></Label>
+            <Input value={tagsText} onChange={(e) => setTagsText(e.target.value)} placeholder="prayer, grace, john_3_16" />
+          </div>
+          <div className="grid gap-1.5">
+            <Label className="text-xs font-semibold">Source <span className="text-muted-foreground font-normal">(optional)</span></Label>
+            <Input value={source} onChange={(e) => setSource(e.target.value)} placeholder="e.g. John 3:16" />
+          </div>
+        </div>
+
+        <div className="flex items-center justify-between gap-2 pt-3 border-t border-border">
+          <Button variant="outline" size="sm" onClick={onClose}>Cancel</Button>
+          <div className="flex items-center gap-2">
+            <Button variant="outline" size="sm" disabled={!canSave} onClick={() => handleSave(false)}>Save as draft</Button>
+            <Button size="sm" disabled={!canSave} onClick={() => handleSave(true)}>
+              <CheckCircle2 className="w-3.5 h-3.5" /> Save & publish
+            </Button>
+          </div>
+        </div>
+      </div>
+    </Modal>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// AI Generate modal — staged flow: configure -> generating -> preview -> save
+// ---------------------------------------------------------------------------
+
+type AiStage = "configure" | "generating" | "ready";
+
+function AiGenerateModal({
+  isOpen, onClose, onSave,
+}: {
+  isOpen: boolean;
+  onClose: () => void;
+  onSave: (row: ContentRow) => void;
+}) {
+  const [stage, setStage] = useState<AiStage>("configure");
+  const [topic, setTopic] = useState("");
+  const [type, setType]   = useState<string>("Devotional");
+  const [category, setCategory] = useState<string>("Salvation");
+  const [difficulty, setDifficulty] = useState<"Beginner" | "Intermediate" | "Advanced">("Beginner");
+  const [lang, setLang]   = useState("English");
+  const [tone, setTone]   = useState<"warm" | "scholarly" | "challenging" | "poetic">("warm");
+  const [generated, setGenerated] = useState<ContentRow | null>(null);
+
+  const reset = () => {
+    setStage("configure");
+    setTopic("");
+    setGenerated(null);
+  };
+
+  const handleClose = () => { reset(); onClose(); };
+
+  const runGeneration = () => {
+    if (!topic.trim()) return;
+    setStage("generating");
+    // Stubbed generation — in production this hits POST /v1/content-items/generate.
+    // We simulate Claude's output with a templated result so the preview is
+    // realistic enough to evaluate the UX.
+    setTimeout(() => {
+      const title = topic.split(" ").map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(" ");
+      const body =
+        tone === "warm"        ? `Today, as you sit with the idea of ${topic.toLowerCase()}, let it land without hurry.\n\nScripture does not rush us. It invites us closer, one breath at a time.\n\nReflect: Where might God be closer than you've noticed?`
+      : tone === "scholarly"   ? `The idea of ${topic.toLowerCase()} threads through both testaments and has been wrestled with by theologians for centuries.\n\nAt its heart, it is an invitation into a way of seeing — one rooted in the character of God revealed in Christ.\n\nExplore further: consider the Greek root and the New Testament usage.`
+      : tone === "challenging" ? `${topic} will cost you something. Don't skip past that.\n\nFollowing Jesus is not a spectator sport. Today, name one step that actually changes your week — not just your feelings.\n\nChallenge: Do the one thing by Friday.`
+                                : `${title} — a quiet light in the morning.\nA word spoken softly, but true.\n\nWe do not climb to God.\nHe comes down, and stays.`;
+      const summary = `A ${difficulty.toLowerCase()} ${type.toLowerCase()} on ${topic.toLowerCase()} in a ${tone} tone.`;
+      const row: ContentRow = {
+        id: `c-${Date.now()}`,
+        title,
+        type,
+        typeTone: toneForType(type),
+        category,
+        difficulty,
+        lang,
+        status: "Draft",
+        statusTone: "amber",
+        summary,
+        body,
+        tags: [topic.toLowerCase().replace(/\s+/g, "_"), category.toLowerCase().replace(/\s+/g, "_")],
+        author: "ai_generated",
+        readTimeMin: Math.max(1, Math.round(body.length / 900)),
+        variants: makeVariants(title, body),
+        stats: { views: 0, engagement: 0, completion: 0 },
+        updatedAt: "just now",
+      };
+      setGenerated(row);
+      setStage("ready");
+    }, 1600);
+  };
+
+  return (
+    <Modal isOpen={isOpen} onClose={handleClose} title="Generate content with AI" size="lg">
+      {stage === "configure" && (
+        <div className="space-y-4">
+          <div className="flex items-start gap-3">
+            <div className="w-10 h-10 rounded-lg bg-violet-100 text-violet-700 flex items-center justify-center shrink-0">
+              <Sparkles className="w-5 h-5" />
+            </div>
+            <div>
+              <p className="text-sm font-semibold text-foreground">Tell Claude what to write</p>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                Claude will draft the content, channel variants, tags, and suggested tone. Review before publishing.
+              </p>
+            </div>
+          </div>
+
+          <div className="grid gap-1.5">
+            <Label className="text-xs font-semibold">Topic <span className="text-destructive">*</span></Label>
+            <Input value={topic} onChange={(e) => setTopic(e.target.value)} placeholder='e.g. "trusting God in uncertainty"' />
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <div className="grid gap-1.5">
+              <Label className="text-xs font-semibold">Type</Label>
+              <select value={type} onChange={(e) => setType(e.target.value)} className="h-10 px-3 rounded-md border border-input bg-background text-sm">
+                {CONTENT_TYPES.map(t => <option key={t.id}>{t.id}</option>)}
+              </select>
+            </div>
+            <div className="grid gap-1.5">
+              <Label className="text-xs font-semibold">Category</Label>
+              <select value={category} onChange={(e) => setCategory(e.target.value)} className="h-10 px-3 rounded-md border border-input bg-background text-sm">
+                {CONTENT_CATEGORIES.map(c => <option key={c}>{c}</option>)}
+              </select>
+            </div>
+            <div className="grid gap-1.5">
+              <Label className="text-xs font-semibold">Difficulty</Label>
+              <div className="flex items-center gap-1 bg-muted/60 rounded-md p-0.5">
+                {DIFFICULTIES.map(d => (
+                  <button
+                    key={d}
+                    onClick={() => setDifficulty(d)}
+                    className={cn(
+                      "flex-1 px-2 py-1.5 text-xs font-semibold rounded transition-all",
+                      difficulty === d ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
+                    )}
+                  >{d}</button>
+                ))}
+              </div>
+            </div>
+            <div className="grid gap-1.5">
+              <Label className="text-xs font-semibold">Language</Label>
+              <select value={lang} onChange={(e) => setLang(e.target.value)} className="h-10 px-3 rounded-md border border-input bg-background text-sm">
+                {CONTENT_LANGS.map(l => <option key={l}>{l}</option>)}
+              </select>
+            </div>
+          </div>
+
+          <div className="grid gap-1.5">
+            <Label className="text-xs font-semibold">Tone</Label>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+              {([
+                ["warm",         "Warm"],
+                ["scholarly",    "Scholarly"],
+                ["challenging",  "Challenging"],
+                ["poetic",       "Poetic"],
+              ] as const).map(([k, label]) => (
+                <button
+                  key={k}
+                  onClick={() => setTone(k)}
+                  className={cn(
+                    "px-3 py-2 rounded-md text-xs font-semibold border transition-all",
+                    tone === k ? "border-primary bg-primary/10 text-primary" : "border-border text-foreground hover:bg-muted/50"
+                  )}
+                >{label}</button>
+              ))}
+            </div>
+          </div>
+
+          <div className="flex items-center justify-between gap-2 pt-2 border-t border-border">
+            <Button variant="outline" size="sm" onClick={handleClose}>Cancel</Button>
+            <Button size="sm" onClick={runGeneration} disabled={!topic.trim()}>
+              <Sparkles className="w-3.5 h-3.5" /> Generate
+            </Button>
+          </div>
+        </div>
+      )}
+
+      {stage === "generating" && (
+        <div className="space-y-5 py-6">
+          <div className="flex flex-col items-center text-center gap-4">
+            <div className="w-14 h-14 rounded-full bg-violet-100 text-violet-700 flex items-center justify-center">
+              <Sparkles className="w-7 h-7 animate-pulse" />
+            </div>
+            <div>
+              <p className="text-base font-bold text-foreground">Claude is drafting your {type.toLowerCase()}...</p>
+              <p className="text-sm text-muted-foreground mt-1">Usually takes a few seconds. Crafting title, body, tags, and channel variants.</p>
+            </div>
+          </div>
+          <div className="h-1 w-full bg-muted rounded-full overflow-hidden">
+            <div className="h-full bg-violet-500 rounded-full animate-pulse" style={{ width: "70%" }} />
+          </div>
+        </div>
+      )}
+
+      {stage === "ready" && generated && (
+        <div className="space-y-4">
+          <div className="flex items-start gap-3 p-3 rounded-md bg-emerald-50/60 border border-emerald-200">
+            <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0 mt-0.5" />
+            <div>
+              <p className="text-sm font-semibold text-emerald-900">Draft ready for review</p>
+              <p className="text-xs text-emerald-800/80 mt-0.5">Review below, then save as a draft. You can edit it further before publishing.</p>
+            </div>
+          </div>
+
+          <div className="space-y-3">
+            <div>
+              <div className="flex items-center gap-2 flex-wrap mb-1">
+                <Chip tone={generated.typeTone}>{generated.type}</Chip>
+                <Chip tone="purple"><Sparkles className="w-3 h-3" /> AI</Chip>
+                <span className="text-xs text-muted-foreground">{generated.category} · {generated.difficulty} · {generated.lang}</span>
+              </div>
+              <h3 className="text-lg font-bold text-foreground">{generated.title}</h3>
+              <p className="text-sm text-muted-foreground mt-0.5">{generated.summary}</p>
+            </div>
+            <div className="bg-muted rounded-md p-4">
+              <p className="text-sm text-foreground whitespace-pre-wrap leading-relaxed">{generated.body}</p>
+            </div>
+            <div className="flex items-center gap-1.5 flex-wrap">
+              {generated.tags.map(t => <Chip key={t} tone="slate">#{t}</Chip>)}
+            </div>
+          </div>
+
+          <div className="flex items-center justify-between gap-2 pt-2 border-t border-border">
+            <Button variant="outline" size="sm" onClick={() => setStage("configure")}>
+              <RefreshCw className="w-3.5 h-3.5" /> Try again
+            </Button>
+            <Button size="sm" onClick={() => { if (generated) onSave(generated); reset(); }}>
+              <Plus className="w-3.5 h-3.5" /> Save as draft
+            </Button>
+          </div>
+        </div>
+      )}
+    </Modal>
   );
 }
 
