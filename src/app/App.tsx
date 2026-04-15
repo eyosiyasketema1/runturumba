@@ -60,8 +60,13 @@ import { ConversationView } from "./components/conversation-view";
 import {
   SeekersView, MentorsView, MatchesView, FaithJourneysView, MilestonesView,
   ContentLibraryView, GrowthMetricsView, VitalAnalyticsView,
-  ReportingView, ValidationsView, DiscipleshipDashboardView
+  ReportingView, ValidationsView, DiscipleshipDashboardView,
+  MainDashboardView, VitalDashboardView
 } from "./components/discipleship-views";
+import {
+  DropdownMenu, DropdownMenuTrigger, DropdownMenuContent,
+  DropdownMenuItem, DropdownMenuSeparator
+} from "./components/ui/dropdown-menu";
 
 // --- Role System ---
 // Super Admin is a dev/testing god-mode. The four product roles map to the
@@ -436,44 +441,6 @@ export default function App() {
           ))}
         </nav>
 
-        {/* Footer */}
-        <div className="border-t border-sidebar-border">
-          {(!isSidebarCollapsed || isMobileSidebarOpen) && (
-            <div className="px-3 py-2.5 border-b border-sidebar-border">
-              <div className="flex items-center justify-between mb-1.5">
-                <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">Plan</span>
-                <span className="text-xs font-semibold text-primary uppercase">{activeTenant.plan}</span>
-              </div>
-              <div className="h-1 w-full bg-muted rounded-full overflow-hidden mb-1">
-                <div
-                  className="h-full bg-primary rounded-full"
-                  style={{ width: `${Math.min(100, (activeTenant.stats.contacts / PLAN_LIMITS[activeTenant.plan].maxContacts) * 100)}%` }}
-                />
-              </div>
-              <p className="text-xs text-muted-foreground">{activeTenant.stats.contacts.toLocaleString()} / {PLAN_LIMITS[activeTenant.plan].maxContacts.toLocaleString()} contacts</p>
-            </div>
-          )}
-
-          <div className="flex items-center gap-3 px-3 py-3">
-            <div className="w-9 h-9 rounded-full bg-muted border border-border flex items-center justify-center shrink-0 overflow-hidden">
-              <img src={imgAvatar} alt={currentUser.name} className="w-full h-full object-cover" />
-            </div>
-            {(!isSidebarCollapsed || isMobileSidebarOpen) && (
-              <div className="flex flex-col min-w-0 flex-1">
-                <span className="text-sm font-semibold text-sidebar-foreground truncate leading-tight">{currentUser.name}</span>
-                <span className="text-xs text-muted-foreground capitalize">{currentUser.role}</span>
-              </div>
-            )}
-            <button
-              className="p-1.5 text-muted-foreground hover:text-foreground rounded-md hover:bg-sidebar-accent transition-colors"
-              aria-label="Sign out"
-              title="Sign out"
-              onClick={() => setIsLogoutConfirmOpen(true)}
-            >
-              <LogOut className="w-4 h-4" />
-            </button>
-          </div>
-        </div>
       </aside>
 
       {/* Main Content */}
@@ -596,15 +563,38 @@ export default function App() {
               />
             </div>
             <div className="hidden lg:block h-6 w-px bg-border" />
-            <div className="flex items-center gap-2.5">
-              <div className="hidden lg:flex flex-col items-end">
-                <span className="text-sm font-semibold text-foreground leading-tight">{currentUser.name}</span>
-                <span className="text-xs text-muted-foreground capitalize">{currentUser.role}</span>
-              </div>
-              <div className="w-8 h-8 bg-muted border border-border flex items-center justify-center shrink-0 overflow-hidden">
-                <img src={imgAvatar} alt={currentUser.name} className="w-full h-full object-cover" />
-              </div>
-            </div>
+            <DropdownMenu>
+              <DropdownMenuTrigger
+                className="flex items-center gap-2.5 outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-sm p-0.5 hover:bg-muted/50 transition-colors"
+                aria-label="Account menu"
+              >
+                <div className="hidden lg:flex flex-col items-end">
+                  <span className="text-sm font-semibold text-foreground leading-tight">{currentUser.name}</span>
+                  <span className="text-xs text-muted-foreground capitalize">{currentUser.role}</span>
+                </div>
+                <div className="w-8 h-8 rounded-sm bg-muted border border-border flex items-center justify-center shrink-0 overflow-hidden">
+                  <img src={imgAvatar} alt={currentUser.name} className="w-full h-full object-cover" />
+                </div>
+                <ChevronDown className="w-3.5 h-3.5 text-muted-foreground hidden lg:block" />
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-52">
+                <div className="px-2 py-1.5">
+                  <p className="text-sm font-semibold text-foreground truncate">{currentUser.name}</p>
+                  <p className="text-xs text-muted-foreground truncate">{currentUser.email}</p>
+                </div>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onSelect={() => handleNavigate("settings")}>
+                  <Settings className="w-3.5 h-3.5" /> Account settings
+                </DropdownMenuItem>
+                <DropdownMenuItem onSelect={() => handleNavigate("team")}>
+                  <UserCheck className="w-3.5 h-3.5" /> Users
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem variant="destructive" onSelect={() => setIsLogoutConfirmOpen(true)}>
+                  <LogOut className="w-3.5 h-3.5" /> Sign out
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         </header>
 
@@ -622,7 +612,7 @@ export default function App() {
                     {([
                       ["main",         "Main Dashboard",          LayoutDashboard],
                       ["discipleship", "Discipleship Dashboard",  Users],
-                      ["collective",   "153 Collective Dashboard", Activity],
+                      ["collective",   "VITAL Dashboard", Activity],
                     ] as const).map(([k, label, Icon]) => {
                       const isActive = dashboardTab === k;
                       return (
@@ -647,23 +637,13 @@ export default function App() {
                 </div>
 
                 {dashboardTab === "main" && (
-                  <DashboardView
-                    tenant={activeTenant}
-                    role={currentUser.role}
-                    channels={channels}
-                    auditLog={INITIAL_AUDIT_LOG}
-                    messages={messages}
-                    broadcasts={broadcasts}
-                    contacts={contacts}
-                    groups={groups}
-                    onNavigate={handleNavigate}
-                  />
+                  <MainDashboardView onNavigate={handleNavigate} />
                 )}
                 {dashboardTab === "discipleship" && (
                   <DiscipleshipDashboardView onNavigate={handleNavigate} />
                 )}
                 {dashboardTab === "collective" && (
-                  <VitalAnalyticsView />
+                  <VitalDashboardView onNavigate={handleNavigate} />
                 )}
               </motion.div>
             )}

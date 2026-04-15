@@ -123,7 +123,7 @@ export const DashboardView = ({
               <span className="text-xs font-semibold text-emerald-300 uppercase tracking-[0.18em]">Live · Turumba</span>
             </div>
             <h1 className="text-4xl lg:text-5xl font-bold tracking-tight leading-[1.05]">
-              {greeting}, <span className="text-blue-300">{tenant.name}</span>.
+              {greeting}, <span className="text-blue-300">Eyosiyas</span>.
             </h1>
             <p className="text-base text-slate-300 mt-3 max-w-2xl leading-relaxed">
               <span className="font-semibold text-white">{totalSent.toLocaleString()} messages sent</span>

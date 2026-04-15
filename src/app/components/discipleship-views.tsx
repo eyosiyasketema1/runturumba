@@ -206,7 +206,7 @@ export function DiscipleshipDashboardView({ onNavigate }: { onNavigate?: (view: 
               <span className="text-xs font-semibold text-emerald-300 uppercase tracking-[0.18em]">Live · Turumba Discipleship</span>
             </div>
             <h1 className="text-4xl lg:text-5xl font-bold tracking-tight leading-[1.05]">
-              {greeting}, <span className="text-blue-300">Samson</span>.
+              {greeting}, <span className="text-blue-300">Eyosiyas</span>.
             </h1>
             <p className="text-base text-slate-300 mt-3 max-w-2xl leading-relaxed">
               <span className="font-semibold text-white">247 seekers</span> are journeying with you this month.
@@ -5480,5 +5480,523 @@ function AuditTrailModal({ row, onClose }: { row: ValidationRow; onClose: () => 
         </div>
       </div>
     </Modal>
+  );
+}
+
+// ===========================================================================
+// MAIN DASHBOARD — General Turumba overview
+//
+// Pulls one or two signals from every module so admins land here and feel the
+// pulse of the whole platform: people, messaging, discipleship, content,
+// automations. Editorial direction matches the Discipleship dashboard so the
+// switcher pill feels coherent.
+// ===========================================================================
+
+const MAIN_KPIS = [
+  { label: "Total Contacts",   value: "8,420",  delta: "+312",   tone: "blue"   as const, icon: Users,        spark: [3200, 3800, 4500, 5200, 6100, 7400, 8420] },
+  { label: "Active Seekers",   value: "247",    delta: "+12%",   tone: "purple" as const, icon: Sparkles,     spark: [180, 195, 212, 205, 228, 241, 247] },
+  { label: "Messages Sent",    value: "12,940", delta: "+1.2k",  tone: "green"  as const, icon: Send,         spark: [9200, 9800, 10400, 11100, 11800, 12300, 12940] },
+  { label: "Automations Live", value: "12",     delta: "+3",     tone: "amber"  as const, icon: Activity,     spark: [4, 5, 7, 8, 9, 11, 12] },
+];
+
+const MAIN_TODAY = [
+  { label: "Pending validations",      value: "24", tone: "amber" as const, hint: "awaiting confirmation",   action: "validations" },
+  { label: "Match proposals",          value: "5",  tone: "blue"  as const, hint: "ready to review",          action: "matches" },
+  { label: "New seekers this week",    value: "32", tone: "purple" as const, hint: "intake completed",         action: "seekers" },
+  { label: "Drafts in content",        value: "7",  tone: "pink"  as const, hint: "ready to publish",          action: "content_library" },
+];
+
+const MAIN_HEALTH = [
+  { label: "Telegram",  status: "Operational",  uptime: "99.98%", tone: "green" as const },
+  { label: "WhatsApp",  status: "Operational",  uptime: "99.92%", tone: "green" as const },
+  { label: "SMS",       status: "Degraded",     uptime: "97.10%", tone: "amber" as const },
+  { label: "Web",       status: "Operational",  uptime: "100%",   tone: "green" as const },
+  { label: "AI Worker", status: "Operational",  uptime: "99.86%", tone: "green" as const },
+];
+
+const MAIN_ACTIVITY = [
+  { tone: "bg-blue-500",    icon: Send,          text: "Broadcast sent on WhatsApp:",        highlight: "Easter prayer invitation",         when: "10 min ago", meta: "Messaging" },
+  { tone: "bg-emerald-500", icon: CheckCircle2,  text: "Validation confirmed:",              highlight: "Sara Ahmed — Salvation Decision",   when: "32 min ago", meta: "Discipleship" },
+  { tone: "bg-violet-500",  icon: Sparkles,      text: "AI generated draft:",                highlight: "'Trusting God in Uncertainty'",     when: "1h ago",     meta: "Content" },
+  { tone: "bg-amber-500",   icon: Zap,           text: "Automation activated:",              highlight: "New Believer Onboarding",           when: "3h ago",     meta: "Automation" },
+  { tone: "bg-pink-500",    icon: Users,         text: "12 new seekers completed intake",    highlight: "this week",                         when: "Today",      meta: "Intake" },
+];
+
+const MAIN_TREND = [
+  { day: "Mon", contacts: 7400, sent: 1840 },
+  { day: "Tue", contacts: 7610, sent: 2120 },
+  { day: "Wed", contacts: 7820, sent: 1980 },
+  { day: "Thu", contacts: 8050, sent: 2340 },
+  { day: "Fri", contacts: 8240, sent: 2510 },
+  { day: "Sat", contacts: 8330, sent: 1430 },
+  { day: "Sun", contacts: 8420, sent:  720 },
+];
+
+export function MainDashboardView({ onNavigate }: { onNavigate?: (view: string) => void }) {
+  const hour = new Date().getHours();
+  const greeting = hour < 12 ? "Good morning" : hour < 18 ? "Good afternoon" : "Good evening";
+  const today = new Date().toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" });
+
+  return (
+    <div className="p-6 space-y-5 bg-gradient-to-br from-slate-50 via-background to-blue-50/40 min-h-full">
+      {/* Hero */}
+      <section className="relative overflow-hidden rounded-sm bg-slate-950 text-white p-8 shadow-[0_24px_60px_-28px_rgba(15,23,42,0.55)]">
+        <div className="absolute -top-24 -right-20 w-80 h-80 rounded-full bg-gradient-to-br from-blue-500/40 to-emerald-500/10 blur-3xl pointer-events-none" />
+        <div className="absolute -bottom-32 -left-20 w-96 h-96 rounded-full bg-gradient-to-tr from-violet-500/30 to-blue-500/5 blur-3xl pointer-events-none" />
+        <div
+          className="absolute inset-0 opacity-[0.07] pointer-events-none"
+          style={{ backgroundImage: "linear-gradient(to right, #fff 1px, transparent 1px), linear-gradient(to bottom, #fff 1px, transparent 1px)", backgroundSize: "64px 64px" }}
+        />
+        <div className="relative grid grid-cols-1 lg:grid-cols-[1fr,auto] gap-6 items-end">
+          <div>
+            <div className="flex items-center gap-2 mb-3">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+              <span className="text-xs font-semibold text-emerald-300 uppercase tracking-[0.18em]">Live · {today}</span>
+            </div>
+            <h1 className="text-4xl lg:text-5xl font-bold tracking-tight leading-[1.05]">
+              {greeting}, <span className="text-blue-300">Eyosiyas</span>.
+            </h1>
+            <p className="text-base text-slate-300 mt-3 max-w-2xl leading-relaxed">
+              Turumba's pulse today — <span className="font-semibold text-white">8,420 contacts</span>, <span className="font-semibold text-emerald-300">12,940 messages sent</span>, and <span className="font-semibold text-pink-300">247 active seekers</span> moving through their journeys.
+            </p>
+          </div>
+          <div className="flex items-center gap-3 flex-wrap">
+            <Button variant="outline" size="sm" className="border-white/20 bg-white/10 text-white hover:bg-white/20 hover:text-white backdrop-blur-sm" onClick={() => toast.info("Exporting dashboard...")}>
+              <Download className="w-3.5 h-3.5" /> Export
+            </Button>
+            <Button className="bg-white text-slate-900 hover:bg-slate-100 shadow-lg" onClick={() => onNavigate?.("seekers")}>
+              <Plus className="w-3.5 h-3.5" /> New Seeker
+            </Button>
+          </div>
+        </div>
+      </section>
+
+      {/* KPI cards spanning every module */}
+      <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        {MAIN_KPIS.map(kpi => (
+          <HeroStat
+            key={kpi.label}
+            accent={kpi.tone === "blue" ? "from-blue-500 to-blue-600"
+              : kpi.tone === "purple" ? "from-violet-500 to-fuchsia-500"
+              : kpi.tone === "green"  ? "from-emerald-500 to-teal-500"
+              : "from-amber-500 to-orange-500"}
+            tintClass={kpi.tone === "blue" ? "bg-blue-50"
+              : kpi.tone === "purple" ? "bg-violet-50"
+              : kpi.tone === "green"  ? "bg-emerald-50"
+              : "bg-amber-50"}
+            iconBg={kpi.tone === "blue" ? "bg-blue-500"
+              : kpi.tone === "purple" ? "bg-violet-500"
+              : kpi.tone === "green"  ? "bg-emerald-500"
+              : "bg-amber-500"}
+            icon={kpi.icon}
+            label={kpi.label}
+            value={kpi.value}
+            delta={kpi.delta}
+            deltaTone="up"
+            sparkColor={kpi.tone === "blue" ? "#2563eb"
+              : kpi.tone === "purple" ? "#8b5cf6"
+              : kpi.tone === "green"  ? "#10b981"
+              : "#f59e0b"}
+            sparkData={kpi.spark}
+          />
+        ))}
+      </section>
+
+      {/* Today + Trend chart */}
+      <section className="grid grid-cols-1 lg:grid-cols-[1fr,2fr] gap-4">
+        {/* Today's focus */}
+        <div className="relative rounded-sm bg-card border border-border shadow-[0_12px_36px_-22px_rgba(15,23,42,0.25)] overflow-hidden">
+          <div className="absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r from-amber-500 via-pink-500 to-violet-500" />
+          <div className="p-5">
+            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-[0.14em]">Your focus today</p>
+            <h3 className="text-xl font-bold text-foreground mt-1">Needs attention</h3>
+            <div className="mt-4 space-y-2">
+              {MAIN_TODAY.map((t, i) => (
+                <button
+                  key={i}
+                  onClick={() => onNavigate?.(t.action)}
+                  className="w-full flex items-center justify-between gap-3 p-3 rounded-sm border border-border hover:border-primary/40 hover:bg-primary/[0.03] transition-all group text-left"
+                >
+                  <div className="flex items-center gap-3">
+                    <span className={cn(
+                      "w-10 h-10 rounded-sm flex items-center justify-center font-bold text-sm tabular-nums",
+                      t.tone === "amber"  && "bg-amber-100 text-amber-700",
+                      t.tone === "blue"   && "bg-blue-100 text-blue-700",
+                      t.tone === "purple" && "bg-violet-100 text-violet-700",
+                      t.tone === "pink"   && "bg-pink-100 text-pink-700",
+                    )}>{t.value}</span>
+                    <div>
+                      <p className="text-sm font-semibold text-foreground">{t.label}</p>
+                      <p className="text-xs text-muted-foreground">{t.hint}</p>
+                    </div>
+                  </div>
+                  <ArrowRight className="w-4 h-4 text-muted-foreground opacity-0 group-hover:opacity-100 group-hover:translate-x-0.5 transition-all" />
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* Weekly trend */}
+        <div className="relative rounded-sm bg-card border border-border shadow-[0_12px_36px_-22px_rgba(15,23,42,0.25)] overflow-hidden">
+          <div className="absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r from-blue-500 via-emerald-500 to-violet-500" />
+          <div className="p-5 pb-2 flex items-start justify-between flex-wrap gap-3">
+            <div>
+              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-[0.14em]">This week</p>
+              <h3 className="text-xl font-bold text-foreground mt-1">Contact growth & message volume</h3>
+            </div>
+            <div className="flex items-center gap-3 text-xs">
+              <LegendDotBold color="#2563eb" label="Contacts" />
+              <LegendDotBold color="#10b981" label="Sent" />
+            </div>
+          </div>
+          <div className="px-2 pb-4 h-[240px]">
+            <ResponsiveContainer width="100%" height="100%">
+              <AreaChart data={MAIN_TREND} margin={{ top: 8, right: 12, left: 0, bottom: 0 }}>
+                <defs>
+                  <linearGradient id="mainContacts" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%"   stopColor="#2563eb" stopOpacity={0.35} />
+                    <stop offset="100%" stopColor="#2563eb" stopOpacity={0} />
+                  </linearGradient>
+                  <linearGradient id="mainSent" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%"   stopColor="#10b981" stopOpacity={0.35} />
+                    <stop offset="100%" stopColor="#10b981" stopOpacity={0} />
+                  </linearGradient>
+                </defs>
+                <XAxis dataKey="day" stroke="#94a3b8" fontSize={11} tickLine={false} axisLine={false} />
+                <YAxis stroke="#94a3b8" fontSize={11} tickLine={false} axisLine={false} width={48} />
+                <Tooltip
+                  contentStyle={{ background: "#0f172a", border: "none", borderRadius: 2, color: "white", fontSize: 12 }}
+                  labelStyle={{ color: "#cbd5e1", fontSize: 11 }}
+                  cursor={{ stroke: "#cbd5e1", strokeDasharray: 3 }}
+                />
+                <Area type="monotone" dataKey="contacts" stroke="#2563eb" strokeWidth={2.5} fill="url(#mainContacts)" />
+                <Area type="monotone" dataKey="sent"     stroke="#10b981" strokeWidth={2.5} fill="url(#mainSent)" />
+              </AreaChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+      </section>
+
+      {/* Quick actions */}
+      <section>
+        <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-[0.14em] mb-3">Jump back in</h3>
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+          <QuickActionTile icon={MessageSquareIcon} title="Compose Message" description="Reach contacts on any channel" gradient="from-blue-500 to-blue-600"     onClick={() => onNavigate?.("messages")} />
+          <QuickActionTile icon={Sparkles}          title="Run Auto-Match" description="Pair seekers with mentors"   gradient="from-violet-500 to-fuchsia-500" onClick={() => onNavigate?.("matches")} />
+          <QuickActionTile icon={BookOpen}          title="Generate Content" description="Let Claude draft a devotional" gradient="from-pink-500 to-rose-500"  onClick={() => onNavigate?.("content_library")} />
+          <QuickActionTile icon={Zap}               title="Build Automation" description="Welcome, drip, or flow"     gradient="from-amber-500 to-orange-500"   onClick={() => onNavigate?.("automations")} />
+        </div>
+      </section>
+
+      {/* Activity + Channel health */}
+      <section className="grid grid-cols-1 lg:grid-cols-[2fr,1fr] gap-4">
+        {/* Activity */}
+        <div className="relative rounded-sm bg-card border border-border shadow-[0_12px_36px_-22px_rgba(15,23,42,0.25)] overflow-hidden">
+          <div className="absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r from-emerald-500 via-blue-500 to-violet-500" />
+          <div className="p-5 pb-3 flex items-center justify-between">
+            <div>
+              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-[0.14em]">Across the platform</p>
+              <h3 className="text-xl font-bold text-foreground mt-1">Recent activity</h3>
+            </div>
+          </div>
+          <ol className="relative px-5 pb-5 space-y-4">
+            <div className="absolute left-[29px] top-2 bottom-2 w-px bg-border" aria-hidden />
+            {MAIN_ACTIVITY.map((a, i) => {
+              const Icon = a.icon;
+              return (
+                <li key={i} className="relative flex items-start gap-3 pl-0">
+                  <span className={cn("w-6 h-6 rounded-sm flex items-center justify-center text-white shrink-0 ring-4 ring-background relative z-10", a.tone)}>
+                    <Icon className="w-3 h-3" />
+                  </span>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm text-foreground leading-relaxed">
+                      {a.text && <span className="text-muted-foreground">{a.text} </span>}
+                      <span className="font-semibold text-foreground">{a.highlight}</span>
+                    </p>
+                    <div className="flex items-center gap-2 mt-0.5">
+                      <span className="text-xs text-muted-foreground">{a.when}</span>
+                      <span className="w-1 h-1 rounded-full bg-muted-foreground/40" />
+                      <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">{a.meta}</span>
+                    </div>
+                  </div>
+                </li>
+              );
+            })}
+          </ol>
+        </div>
+
+        {/* Channel health */}
+        <div className="relative rounded-sm bg-card border border-border shadow-[0_12px_36px_-22px_rgba(15,23,42,0.25)] overflow-hidden">
+          <div className="absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r from-emerald-500 to-rose-500" />
+          <div className="p-5">
+            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-[0.14em]">System health</p>
+            <h3 className="text-xl font-bold text-foreground mt-1 mb-4">Channels & workers</h3>
+            <div className="space-y-2.5">
+              {MAIN_HEALTH.map((h, i) => (
+                <div key={i} className="flex items-center justify-between py-1.5 border-b border-border last:border-0">
+                  <div className="flex items-center gap-2">
+                    <span className={cn(
+                      "w-2 h-2 rounded-full",
+                      h.tone === "green" ? "bg-emerald-500 animate-pulse" : "bg-amber-500"
+                    )} />
+                    <span className="text-sm font-semibold text-foreground">{h.label}</span>
+                  </div>
+                  <div className="text-right">
+                    <p className={cn("text-xs font-semibold", h.tone === "green" ? "text-emerald-600" : "text-amber-600")}>{h.status}</p>
+                    <p className="text-xs text-muted-foreground tabular-nums">{h.uptime}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+  );
+}
+
+// ===========================================================================
+// VITAL DASHBOARD — Funnel-focused dashboard, NOT a copy of the analytics page
+//
+// Where VITAL Analytics dives into rows and dimensions, this dashboard is the
+// at-a-glance executive summary: 5 funnel stages, conversion deltas,
+// "biggest win this week", and a single insight panel. Designed to be the
+// page someone opens before a leadership meeting.
+// ===========================================================================
+
+const VITAL_DASH_STAGES = [
+  { letter: "V", label: "Volume",      value: 12450, color: "bg-blue-500",    text: "text-blue-600",    light: "bg-blue-50",    delta: "+8.2%",  blurb: "Touchpoints" },
+  { letter: "I", label: "Interaction", value: 3820,  color: "bg-violet-500",  text: "text-violet-600",  light: "bg-violet-50",  delta: "+5.4%",  blurb: "Engaged back" },
+  { letter: "T", label: "Transaction", value: 1247,  color: "bg-pink-500",    text: "text-pink-600",    light: "bg-pink-50",    delta: "+12.1%", blurb: "Started journey" },
+  { letter: "A", label: "Active",      value: 342,   color: "bg-amber-500",   text: "text-amber-600",   light: "bg-amber-50",   delta: "+18.0%", blurb: "Active journeys" },
+  { letter: "L", label: "Loyal",       value: 89,    color: "bg-emerald-500", text: "text-emerald-600", light: "bg-emerald-50", delta: "+22.0%", blurb: "Decision + connected" },
+];
+
+const VITAL_TREND = [
+  { period: "Wk 1", v: 9800,  i: 2900, t: 920,  a: 240, l: 58 },
+  { period: "Wk 2", v: 10500, i: 3100, t: 1010, a: 270, l: 64 },
+  { period: "Wk 3", v: 11200, i: 3350, t: 1100, a: 295, l: 72 },
+  { period: "Wk 4", v: 11800, i: 3580, t: 1180, a: 318, l: 81 },
+  { period: "Now",  v: 12450, i: 3820, t: 1247, a: 342, l: 89 },
+];
+
+export function VitalDashboardView({ onNavigate }: { onNavigate?: (view: string) => void }) {
+  const [period, setPeriod] = useState("q1_2026");
+
+  const conversions = [
+    { from: "V", to: "I", pct: 30.7, delta: "+1.4 pts", tone: "green" as const },
+    { from: "I", to: "T", pct: 32.6, delta: "+0.8 pts", tone: "green" as const },
+    { from: "T", to: "A", pct: 27.4, delta: "+2.1 pts", tone: "green" as const },
+    { from: "A", to: "L", pct: 26.0, delta: "-0.3 pts", tone: "amber" as const },
+  ];
+
+  const e2e = ((89 / 12450) * 100).toFixed(2);
+
+  return (
+    <div className="p-6 space-y-5 bg-gradient-to-br from-slate-50 via-background to-emerald-50/30 min-h-full">
+      {/* Hero */}
+      <section className="relative overflow-hidden rounded-sm bg-slate-950 text-white p-8 shadow-[0_24px_60px_-28px_rgba(15,23,42,0.55)]">
+        <div className="absolute -top-24 -right-20 w-80 h-80 rounded-full bg-gradient-to-br from-emerald-500/40 to-blue-500/10 blur-3xl pointer-events-none" />
+        <div className="absolute -bottom-32 -left-20 w-96 h-96 rounded-full bg-gradient-to-tr from-pink-500/30 to-amber-500/5 blur-3xl pointer-events-none" />
+        <div
+          className="absolute inset-0 opacity-[0.07] pointer-events-none"
+          style={{ backgroundImage: "linear-gradient(to right, #fff 1px, transparent 1px), linear-gradient(to bottom, #fff 1px, transparent 1px)", backgroundSize: "64px 64px" }}
+        />
+        <div className="relative grid grid-cols-1 lg:grid-cols-[1fr,auto] gap-6 items-end">
+          <div>
+            <div className="flex items-center gap-2 mb-3">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+              <span className="text-xs font-semibold text-emerald-300 uppercase tracking-[0.18em]">Live · VITAL Funnel</span>
+            </div>
+            <h1 className="text-4xl lg:text-5xl font-bold tracking-tight leading-[1.05]">
+              The funnel is <span className="text-emerald-300">moving</span>.
+            </h1>
+            <p className="text-base text-slate-300 mt-3 max-w-2xl leading-relaxed">
+              <span className="font-semibold text-white">12,450 touchpoints</span> converted into <span className="font-semibold text-emerald-300">89 loyal disciples</span> — an end-to-end conversion of <span className="font-semibold text-emerald-300">{e2e}%</span>. Loyal is up <span className="font-semibold text-emerald-300">+22%</span> from last quarter.
+            </p>
+          </div>
+          <div className="flex items-center gap-2">
+            <FilterDropdown
+              label="Period"
+              value={period}
+              onChange={setPeriod}
+              options={[
+                { value: "q1_2026", label: "Q1 2026" },
+                { value: "q4_2025", label: "Q4 2025" },
+                { value: "ytd",     label: "Year to date" },
+                { value: "30d",     label: "Last 30 days" },
+              ]}
+            />
+            <Button className="bg-white text-slate-900 hover:bg-slate-100 shadow-lg" onClick={() => onNavigate?.("vital_analytics")}>
+              <Activity className="w-3.5 h-3.5" /> Open Analytics
+            </Button>
+          </div>
+        </div>
+      </section>
+
+      {/* 5-stage pulse — at-a-glance funnel */}
+      <section className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+        {VITAL_DASH_STAGES.map(s => (
+          <div key={s.letter} className="relative rounded-sm bg-card border border-border overflow-hidden shadow-[0_8px_30px_-18px_rgba(15,23,42,0.25)]">
+            <div className={cn("absolute top-0 left-0 right-0 h-0.5", s.color)} />
+            <div className="p-4">
+              <div className="flex items-center gap-2">
+                <span className={cn("w-7 h-7 rounded-sm flex items-center justify-center font-bold text-xs", s.color, "text-white")}>{s.letter}</span>
+                <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">{s.label}</span>
+              </div>
+              <div className="mt-3">
+                <div className="text-2xl font-bold text-foreground tabular-nums tracking-tight">{s.value.toLocaleString()}</div>
+                <div className="flex items-center gap-2 mt-0.5">
+                  <span className={cn("text-xs font-bold", s.text)}>↑ {s.delta}</span>
+                  <span className="text-xs text-muted-foreground">{s.blurb}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        ))}
+      </section>
+
+      {/* Conversion bridge + multi-line trend */}
+      <section className="grid grid-cols-1 lg:grid-cols-[1fr,2fr] gap-4">
+        <div className="relative rounded-sm bg-card border border-border shadow-[0_12px_36px_-22px_rgba(15,23,42,0.25)] overflow-hidden">
+          <div className="absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r from-blue-500 via-violet-500 to-emerald-500" />
+          <div className="p-5">
+            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-[0.14em]">Conversion bridge</p>
+            <h3 className="text-xl font-bold text-foreground mt-1 mb-4">Stage-to-stage</h3>
+            <div className="space-y-3">
+              {conversions.map((c, i) => (
+                <div key={i} className="flex items-center justify-between p-3 rounded-sm border border-border">
+                  <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-xs font-bold text-foreground bg-muted px-1.5 py-0.5 rounded-sm tabular-nums">{c.from}</span>
+                      <ArrowRight className="w-3 h-3 text-muted-foreground" />
+                      <span className="text-xs font-bold text-foreground bg-muted px-1.5 py-0.5 rounded-sm tabular-nums">{c.to}</span>
+                    </div>
+                    <span className={cn("text-xs font-semibold", c.tone === "green" ? "text-emerald-600" : "text-amber-600")}>{c.delta}</span>
+                  </div>
+                  <span className="text-2xl font-bold text-foreground tabular-nums">{c.pct}%</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        <div className="relative rounded-sm bg-card border border-border shadow-[0_12px_36px_-22px_rgba(15,23,42,0.25)] overflow-hidden">
+          <div className="absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r from-blue-500 via-pink-500 to-emerald-500" />
+          <div className="p-5 pb-2 flex items-start justify-between flex-wrap gap-3">
+            <div>
+              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-[0.14em]">Last 5 weeks</p>
+              <h3 className="text-xl font-bold text-foreground mt-1">Funnel progression</h3>
+            </div>
+            <div className="flex items-center gap-3 text-xs flex-wrap">
+              <LegendDotBold color="#2563eb"  label="V Volume" />
+              <LegendDotBold color="#8b5cf6"  label="I Interaction" />
+              <LegendDotBold color="#ec4899"  label="T Transaction" />
+              <LegendDotBold color="#f59e0b"  label="A Active" />
+              <LegendDotBold color="#10b981"  label="L Loyal" />
+            </div>
+          </div>
+          <div className="px-2 pb-4 h-[240px]">
+            <ResponsiveContainer width="100%" height="100%">
+              <AreaChart data={VITAL_TREND} margin={{ top: 8, right: 12, left: 0, bottom: 0 }}>
+                <defs>
+                  {[["v", "#2563eb"], ["i", "#8b5cf6"], ["t", "#ec4899"], ["a", "#f59e0b"], ["l", "#10b981"]].map(([k, c]) => (
+                    <linearGradient key={k} id={`vital-${k}`} x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%"   stopColor={c} stopOpacity={0.25} />
+                      <stop offset="100%" stopColor={c} stopOpacity={0} />
+                    </linearGradient>
+                  ))}
+                </defs>
+                <XAxis dataKey="period" stroke="#94a3b8" fontSize={11} tickLine={false} axisLine={false} />
+                <YAxis stroke="#94a3b8" fontSize={11} tickLine={false} axisLine={false} width={48} />
+                <Tooltip
+                  contentStyle={{ background: "#0f172a", border: "none", borderRadius: 2, color: "white", fontSize: 12 }}
+                  labelStyle={{ color: "#cbd5e1", fontSize: 11 }}
+                  cursor={{ stroke: "#cbd5e1", strokeDasharray: 3 }}
+                />
+                <Area type="monotone" dataKey="v" stroke="#2563eb" strokeWidth={2} fill="url(#vital-v)" />
+                <Area type="monotone" dataKey="i" stroke="#8b5cf6" strokeWidth={2} fill="url(#vital-i)" />
+                <Area type="monotone" dataKey="t" stroke="#ec4899" strokeWidth={2} fill="url(#vital-t)" />
+                <Area type="monotone" dataKey="a" stroke="#f59e0b" strokeWidth={2} fill="url(#vital-a)" />
+                <Area type="monotone" dataKey="l" stroke="#10b981" strokeWidth={2} fill="url(#vital-l)" />
+              </AreaChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+      </section>
+
+      {/* Insights + biggest win */}
+      <section className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        <div className="relative rounded-sm bg-gradient-to-br from-emerald-500 to-teal-600 text-white p-5 shadow-[0_12px_36px_-22px_rgba(16,185,129,0.45)] overflow-hidden">
+          <div className="absolute -bottom-12 -right-12 w-40 h-40 rounded-full bg-white/10 blur-2xl" />
+          <p className="relative text-xs font-semibold uppercase tracking-[0.14em] opacity-90">Biggest win this week</p>
+          <h3 className="relative text-2xl font-bold mt-2 leading-tight">+22 new Loyal disciples</h3>
+          <p className="relative text-sm opacity-90 mt-2 leading-relaxed">Confirmed decisions plus a community connection — driven mostly by the new "Welcome Devotional" automation.</p>
+          <Button variant="outline" size="sm" className="relative mt-4 bg-white text-emerald-700 border-white hover:bg-white/90" onClick={() => onNavigate?.("validations")}>
+            View validations <ArrowRight className="w-3 h-3" />
+          </Button>
+        </div>
+
+        <div className="lg:col-span-2 relative rounded-sm bg-card border border-border shadow-[0_12px_36px_-22px_rgba(15,23,42,0.25)] overflow-hidden">
+          <div className="absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r from-violet-500 to-blue-500" />
+          <div className="p-5">
+            <div className="flex items-center gap-2 mb-3">
+              <Sparkles className="w-4 h-4 text-violet-500" />
+              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-[0.14em]">AI insight · this period</p>
+            </div>
+            <h3 className="text-xl font-bold text-foreground leading-tight">WhatsApp is your strongest converter — 2.3× the Telegram T→A rate.</h3>
+            <p className="text-sm text-muted-foreground mt-2 leading-relaxed">
+              Among the 12,450 touchpoints, WhatsApp seekers reach the Active stage at <span className="font-semibold text-foreground">38.4%</span> vs Telegram's <span className="font-semibold text-foreground">16.7%</span>. Consider rebalancing acquisition spend or seeding a WhatsApp-first welcome flow.
+            </p>
+            <div className="grid grid-cols-3 gap-3 mt-4">
+              <InsightStat value="38.4%" label="WhatsApp T→A" tone="green" />
+              <InsightStat value="16.7%" label="Telegram T→A" tone="amber" />
+              <InsightStat value="2.3×" label="Lift"          tone="blue" />
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Cohort breakdown — quick reference */}
+      <section className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="relative rounded-sm bg-card border border-border shadow-[0_12px_36px_-22px_rgba(15,23,42,0.25)] overflow-hidden">
+          <div className="absolute top-0 left-0 right-0 h-0.5 bg-blue-500" />
+          <div className="p-5">
+            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-[0.14em]">Top platform</p>
+            <h4 className="text-2xl font-bold text-foreground mt-1">Telegram</h4>
+            <p className="text-sm text-muted-foreground">4,230 of 12,450 touchpoints (34%)</p>
+          </div>
+        </div>
+        <div className="relative rounded-sm bg-card border border-border shadow-[0_12px_36px_-22px_rgba(15,23,42,0.25)] overflow-hidden">
+          <div className="absolute top-0 left-0 right-0 h-0.5 bg-violet-500" />
+          <div className="p-5">
+            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-[0.14em]">Top language</p>
+            <h4 className="text-2xl font-bold text-foreground mt-1">Amharic</h4>
+            <p className="text-sm text-muted-foreground">42% of Loyal — Ethiopia 68%</p>
+          </div>
+        </div>
+        <div className="relative rounded-sm bg-card border border-border shadow-[0_12px_36px_-22px_rgba(15,23,42,0.25)] overflow-hidden">
+          <div className="absolute top-0 left-0 right-0 h-0.5 bg-pink-500" />
+          <div className="p-5">
+            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-[0.14em]">Avg journey time</p>
+            <h4 className="text-2xl font-bold text-foreground mt-1">28 days</h4>
+            <p className="text-sm text-muted-foreground">From Volume to Loyal</p>
+          </div>
+        </div>
+      </section>
+    </div>
+  );
+}
+
+function InsightStat({ value, label, tone }: { value: string; label: string; tone: "green" | "amber" | "blue" }) {
+  const toneClass = tone === "green" ? "bg-emerald-50 text-emerald-700"
+    : tone === "amber" ? "bg-amber-50 text-amber-700"
+    : "bg-blue-50 text-blue-700";
+  return (
+    <div className={cn("rounded-sm p-3", toneClass)}>
+      <div className="text-2xl font-bold tabular-nums tracking-tight">{value}</div>
+      <div className="text-xs font-semibold uppercase tracking-wider opacity-90">{label}</div>
+    </div>
   );
 }
