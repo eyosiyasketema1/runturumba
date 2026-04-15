@@ -27,6 +27,10 @@ import {
   DropdownMenuItem, DropdownMenuSeparator
 } from "./ui/dropdown-menu";
 import { FlowBuilder } from "./flow-builder";
+import {
+  BasicAutomationBuilder, SequenceBuilder, AutomationTypePicker,
+  type BasicAutomationDraft, type SequenceDraft,
+} from "./automation-builders";
 
 const TRIGGER_OPTIONS: { id: AutomationTrigger; label: string; icon: any; description: string }[] = [
   { id: "contact_added", label: "Contact Added", icon: Users, description: "When a new contact is created" },
@@ -107,11 +111,15 @@ export const AutomationView = ({
   const [activeFolder, setActiveFolder] = useState<"all" | AutoType>("all");
   const [editingRule, setEditingRule] = useState<AutomationRule | null>(null);
   const [ruleToDelete, setRuleToDelete] = useState<AutomationRule | null>(null);
-  // Flow builder is a full-page overlay. `flowBuilderState` carries either a
-  // rule being edited or a "new" placeholder; `null` means the builder is closed.
-  const [flowBuilderState, setFlowBuilderState] = useState<
-    { mode: "new" } | { mode: "edit"; rule: AutomationRule } | null
+  // Builders are full-page overlays. `builderState` carries the kind + mode;
+  // null means the list view is showing.
+  const [builderState, setBuilderState] = useState<
+    | { kind: "basic";    mode: "new" | "edit"; rule?: AutomationRule }
+    | { kind: "sequence"; mode: "new" | "edit"; rule?: AutomationRule }
+    | { kind: "flow";     mode: "new" | "edit"; rule?: AutomationRule }
+    | null
   >(null);
+  const [isTypePickerOpen, setIsTypePickerOpen] = useState(false);
 
   const handleDuplicateRule = (rule: AutomationRule) => {
     onAddAutomation({
@@ -169,56 +177,70 @@ export const AutomationView = ({
     w.url.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  // Full-page flow builder takes over when active, short-circuiting the list view.
-  if (flowBuilderState) {
-    const isEdit = flowBuilderState.mode === "edit";
-    const rule = isEdit ? flowBuilderState.rule : null;
+  // Full-page builders take over when active, short-circuiting the list view.
+  if (builderState) {
+    const { kind, mode, rule } = builderState;
+    const isEdit = mode === "edit";
+    const close = () => setBuilderState(null);
+
+    // Common persistence helper: route creates / updates through existing handlers.
+    const persist = (opts: { name: string; description?: string; trigger: AutomationTrigger; action: AutomationAction; enabled: boolean }) => {
+      if (isEdit && rule) {
+        onUpdateAutomation(rule.id, { name: opts.name, description: opts.description, trigger: opts.trigger, action: opts.action, enabled: opts.enabled });
+      } else {
+        onAddAutomation({
+          tenantId: "tenant-1",
+          name: opts.name,
+          description: opts.description ?? "",
+          trigger: opts.trigger,
+          triggerConfig: {},
+          action: opts.action,
+          actionConfig: {},
+          enabled: opts.enabled,
+          triggerCount: 0,
+        });
+      }
+    };
+    const statusFor = (r?: AutomationRule) => r ? (r.enabled ? "active" : r.triggerCount === 0 ? "draft" : "stopped") : "draft";
+
+    if (kind === "basic") {
+      return (
+        <BasicAutomationBuilder
+          status={statusFor(rule)}
+          runs={rule?.triggerCount}
+          initial={rule ? { id: rule.id, name: rule.name } : undefined}
+          onBack={close}
+          onSave={(draft) => persist({ name: draft.name, description: `Basic · ${draft.triggerKind}`, trigger: draft.triggerKind === "keyword" ? "message_received" : draft.triggerKind === "event" ? "webhook_received" : "message_received", action: "send_message", enabled: false })}
+          onPublish={(draft) => { persist({ name: draft.name, description: `Basic · ${draft.triggerKind}`, trigger: draft.triggerKind === "keyword" ? "message_received" : draft.triggerKind === "event" ? "webhook_received" : "message_received", action: "send_message", enabled: true }); close(); }}
+        />
+      );
+    }
+    if (kind === "sequence") {
+      return (
+        <SequenceBuilder
+          status={statusFor(rule)}
+          runs={rule?.triggerCount}
+          initial={rule ? { id: rule.id, name: rule.name } : undefined}
+          onBack={close}
+          onSave={(draft) => persist({ name: draft.name, description: `Sequence · ${draft.steps.length} step${draft.steps.length === 1 ? "" : "s"}`, trigger: "scheduled", action: "send_message", enabled: false })}
+          onPublish={(draft) => { persist({ name: draft.name, description: `Sequence · ${draft.steps.length} step${draft.steps.length === 1 ? "" : "s"}`, trigger: "scheduled", action: "send_message", enabled: true }); close(); }}
+        />
+      );
+    }
+    // kind === "flow"
     return (
       <FlowBuilder
         flowName={rule?.name ?? "New Flow"}
-        status={rule ? (rule.enabled ? "active" : rule.triggerCount === 0 ? "draft" : "stopped") : "draft"}
+        status={statusFor(rule)}
         stats={{
           totalRuns: rule?.triggerCount ?? 0,
           avgCtr: rule ? (getAutoCtr(rule) ?? 0) : 0,
-          completionRate: 68, dropoutRate: 7, aiBoost: 18, // derived from flow telemetry; stubbed for now
+          completionRate: 68, dropoutRate: 7, aiBoost: 18,
         }}
         useStarterTemplate={!isEdit}
-        onBack={() => setFlowBuilderState(null)}
-        onSave={({ name }) => {
-          if (isEdit && rule) {
-            onUpdateAutomation(rule.id, { name });
-          } else {
-            onAddAutomation({
-              tenantId: "tenant-1",
-              name,
-              description: "Visual flow created in the builder",
-              trigger: "webhook_received",
-              triggerConfig: {},
-              action: "webhook_call",
-              actionConfig: {},
-              enabled: false,
-              triggerCount: 0,
-            });
-          }
-        }}
-        onPublish={({ name }) => {
-          if (isEdit && rule) {
-            onUpdateAutomation(rule.id, { name, enabled: true });
-          } else {
-            onAddAutomation({
-              tenantId: "tenant-1",
-              name,
-              description: "Visual flow created in the builder",
-              trigger: "webhook_received",
-              triggerConfig: {},
-              action: "webhook_call",
-              actionConfig: {},
-              enabled: true,
-              triggerCount: 0,
-            });
-          }
-          setFlowBuilderState(null);
-        }}
+        onBack={close}
+        onSave={({ name }) => persist({ name, description: "Visual flow", trigger: "webhook_received", action: "webhook_call", enabled: false })}
+        onPublish={({ name }) => { persist({ name, description: "Visual flow", trigger: "webhook_received", action: "webhook_call", enabled: true }); close(); }}
       />
     );
   }
@@ -242,9 +264,12 @@ export const AutomationView = ({
           </div>
           <Button onClick={() => {
             if (activeTab !== "rules") { setIsAddWebhookOpen(true); return; }
-            // Flows get the full drag-and-drop builder; other types use the modal.
-            if (activeFolder === "flow") { setFlowBuilderState({ mode: "new" }); return; }
-            setIsAddRuleOpen(true);
+            // Route the New button to the right full-page builder per folder.
+            if (activeFolder === "basic")    { setBuilderState({ kind: "basic",    mode: "new" }); return; }
+            if (activeFolder === "sequence") { setBuilderState({ kind: "sequence", mode: "new" }); return; }
+            if (activeFolder === "flow")     { setBuilderState({ kind: "flow",     mode: "new" }); return; }
+            // On "all", ask the user which type first.
+            setIsTypePickerOpen(true);
           }}>
             <Plus className="w-4 h-4 mr-1.5" />
             {activeTab === "rules" ? folderCopy.createLabel : "New Webhook"}
@@ -374,7 +399,12 @@ export const AutomationView = ({
                     {searchQuery ? "Try a different keyword or clear your search." : folderCopy.emptyBody}
                   </p>
                   {!searchQuery && (
-                    <Button className="mt-5" onClick={() => setIsAddRuleOpen(true)}>
+                    <Button className="mt-5" onClick={() => {
+                      if (activeFolder === "basic")    setBuilderState({ kind: "basic",    mode: "new" });
+                      else if (activeFolder === "sequence") setBuilderState({ kind: "sequence", mode: "new" });
+                      else if (activeFolder === "flow")     setBuilderState({ kind: "flow",     mode: "new" });
+                      else setIsTypePickerOpen(true);
+                    }}>
                       <Plus className="w-4 h-4 mr-1.5" />
                       {folderCopy.createLabel}
                     </Button>
@@ -435,8 +465,7 @@ export const AutomationView = ({
                               </DropdownMenuTrigger>
                               <DropdownMenuContent align="end" className="w-44">
                                 <DropdownMenuItem onSelect={() => {
-                                  if (rule._type === "flow") setFlowBuilderState({ mode: "edit", rule });
-                                  else setEditingRule(rule);
+                                  setBuilderState({ kind: rule._type, mode: "edit", rule });
                                 }}>
                                   <Edit2 className="w-3.5 h-3.5" />
                                   Edit
@@ -545,7 +574,21 @@ export const AutomationView = ({
         )}
       </AnimatePresence>
 
-      {/* Add Rule Modal */}
+      {/* Type picker — shown when the user clicks New from the All folder */}
+      <Modal
+        isOpen={isTypePickerOpen}
+        onClose={() => setIsTypePickerOpen(false)}
+        title="What do you want to create?"
+        size="lg"
+      >
+        <AutomationTypePicker onPick={(t) => {
+          setIsTypePickerOpen(false);
+          setBuilderState({ kind: t, mode: "new" });
+        }} />
+      </Modal>
+
+      {/* Legacy Add Rule Modal — retained for edit-by-modal compatibility, not
+          reachable from the primary "New" CTAs anymore */}
       <AddRuleModal isOpen={isAddRuleOpen} onClose={() => setIsAddRuleOpen(false)} onAdd={onAddAutomation} />
 
       {/* Edit Rule Modal */}
