@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
 import {
   Users, Search, Filter, Plus, ChevronDown, MoreHorizontal, Send, Edit2,
   Sparkles, ShieldCheck, BarChart3, Activity, FileText, CheckCircle2, XCircle,
@@ -11,6 +11,16 @@ import { cn } from "./types";
 import { Button } from "./ui/button";
 import { Badge } from "./ui/badge";
 import { Input } from "./ui/input";
+import { Textarea } from "./ui/textarea";
+import { Label } from "./ui/label";
+import {
+  DropdownMenu, DropdownMenuTrigger, DropdownMenuContent,
+  DropdownMenuItem, DropdownMenuSeparator, DropdownMenuLabel,
+  DropdownMenuRadioGroup, DropdownMenuRadioItem,
+} from "./ui/dropdown-menu";
+import { Modal } from "./shared-ui";
+import { toast } from "sonner";
+import { ArrowLeft, Eye, Trash2, MessageSquare as MessageSquareIcon, Archive, RefreshCw } from "lucide-react";
 
 // ============================================================================
 // Shared primitives
@@ -222,18 +232,63 @@ const SEEKERS: SeekerRow[] = [
   { id: "s4", name: "Miriam Tadesse",  email: "miriam.t@email.com", maturity: "Interested",  maturityTone: "orange", campaign: "—",                    engagement: 30, engagementTone: "red",   status: "Pending", statusTone: "amber", avatarTone: "green" },
 ];
 
+// Maturity progression per the spec (pre_seeker → leader). Plus "Interested"
+// which appears in the seed data for demo.
+const MATURITY_LEVELS = ["Interested", "Pre-Seeker", "Seeker", "New Believer", "Growing", "Mature", "Leader"] as const;
+const STATUSES        = ["Active", "Pending", "Inactive", "Graduated", "Archived"] as const;
+type SortKey = "newest" | "oldest" | "name" | "engagement_high" | "engagement_low";
+const SORT_OPTIONS: { key: SortKey; label: string }[] = [
+  { key: "newest",          label: "Newest first" },
+  { key: "oldest",          label: "Oldest first" },
+  { key: "name",            label: "Name (A–Z)" },
+  { key: "engagement_high", label: "Engagement (high → low)" },
+  { key: "engagement_low",  label: "Engagement (low → high)" },
+];
+
 export function SeekersView({ canCreate = true }: { canCreate?: boolean }) {
-  const [query, setQuery] = useState("");
-  const filtered = SEEKERS.filter(s => s.name.toLowerCase().includes(query.toLowerCase()) || s.email.toLowerCase().includes(query.toLowerCase()));
+  const [query, setQuery]         = useState("");
+  const [seekers, setSeekers]     = useState<SeekerRow[]>(SEEKERS);
+  const [maturity, setMaturity]   = useState<string>("all");
+  const [status, setStatus]       = useState<string>("all");
+  const [sort, setSort]           = useState<SortKey>("newest");
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [isNewOpen, setIsNewOpen] = useState(false);
+
+  const selected = seekers.find(s => s.id === selectedId) || null;
+
+  // Filter + sort pipeline. Kept local to this component since we drive off
+  // the seed SEEKERS array; swap for API-backed data later without changing
+  // the UI.
+  const filtered = useMemo(() => {
+    let list = seekers.filter(s => {
+      const matchesQ = !query || s.name.toLowerCase().includes(query.toLowerCase()) || s.email.toLowerCase().includes(query.toLowerCase());
+      const matchesM = maturity === "all" || s.maturity === maturity;
+      const matchesS = status === "all" || s.status === status;
+      return matchesQ && matchesM && matchesS;
+    });
+    const byIndex = (a: SeekerRow, b: SeekerRow) => seekers.indexOf(a) - seekers.indexOf(b);
+    if (sort === "newest")          list = [...list].sort(byIndex);
+    else if (sort === "oldest")     list = [...list].sort((a, b) => -byIndex(a, b));
+    else if (sort === "name")       list = [...list].sort((a, b) => a.name.localeCompare(b.name));
+    else if (sort === "engagement_high") list = [...list].sort((a, b) => b.engagement - a.engagement);
+    else if (sort === "engagement_low")  list = [...list].sort((a, b) => a.engagement - b.engagement);
+    return list;
+  }, [seekers, query, maturity, status, sort]);
+
+  // Drill into a single seeker's profile — full-page replacement of the list.
+  if (selected) {
+    return <SeekerDetailView seeker={selected} onBack={() => setSelectedId(null)} />;
+  }
+
   return (
     <div className="p-6 space-y-4">
       <PageHeader
         title="Seekers"
         subtitle="Manage and track seeker journeys"
         actions={canCreate && (
-          <button className="flex items-center gap-1.5 px-4 py-2 text-sm font-semibold bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-all shadow-sm">
+          <Button onClick={() => setIsNewOpen(true)}>
             <Plus className="w-4 h-4" /> New Seeker
-          </button>
+          </Button>
         )}
       />
 
@@ -247,9 +302,25 @@ export function SeekersView({ canCreate = true }: { canCreate?: boolean }) {
             className="pl-9 h-10"
           />
         </div>
-        <FilterButton label="Maturity Level" />
-        <FilterButton label="Status" />
-        <FilterButton label="Newest first" />
+
+        <FilterDropdown
+          label="Maturity"
+          value={maturity}
+          onChange={setMaturity}
+          options={[{ value: "all", label: "All maturity levels" }, ...MATURITY_LEVELS.map(m => ({ value: m, label: m }))]}
+        />
+        <FilterDropdown
+          label="Status"
+          value={status}
+          onChange={setStatus}
+          options={[{ value: "all", label: "All statuses" }, ...STATUSES.map(s => ({ value: s, label: s }))]}
+        />
+        <FilterDropdown
+          label="Sort"
+          value={sort}
+          onChange={(v) => setSort(v as SortKey)}
+          options={SORT_OPTIONS.map(s => ({ value: s.key, label: s.label }))}
+        />
       </div>
 
       <div className="bg-card border border-border rounded-lg overflow-hidden">
@@ -262,13 +333,25 @@ export function SeekersView({ canCreate = true }: { canCreate?: boolean }) {
               <th className="px-4 py-3 text-left font-semibold">Campaign</th>
               <th className="px-4 py-3 text-left font-semibold">Engagement</th>
               <th className="px-4 py-3 text-left font-semibold">Status</th>
-              <th className="px-4 py-3 text-right font-semibold">Actions</th>
+              <th className="px-4 py-3 text-right font-semibold w-10">Actions</th>
             </tr>
           </thead>
           <tbody>
-            {filtered.map(s => (
-              <tr key={s.id} className="border-b border-border last:border-0 hover:bg-muted/30 transition-colors">
-                <td className="px-4 py-3"><input type="checkbox" className="accent-primary" /></td>
+            {filtered.length === 0 ? (
+              <tr>
+                <td colSpan={7} className="px-4 py-12 text-center text-sm text-muted-foreground">
+                  No seekers match your filters.
+                </td>
+              </tr>
+            ) : filtered.map(s => (
+              <tr
+                key={s.id}
+                className="border-b border-border last:border-0 hover:bg-muted/30 transition-colors cursor-pointer"
+                onClick={() => setSelectedId(s.id)}
+              >
+                <td className="px-4 py-3" onClick={(e) => e.stopPropagation()}>
+                  <input type="checkbox" className="accent-primary" />
+                </td>
                 <td className="px-4 py-3">
                   <div className="flex items-center gap-3">
                     <Avatar name={s.name} tone={s.avatarTone} />
@@ -287,17 +370,562 @@ export function SeekersView({ canCreate = true }: { canCreate?: boolean }) {
                   </div>
                 </td>
                 <td className="px-4 py-3"><Chip tone={s.statusTone}>{s.status}</Chip></td>
-                <td className="px-4 py-3 text-right">
-                  <button className="p-1.5 text-muted-foreground hover:text-foreground hover:bg-muted rounded transition-all">
-                    <MoreHorizontal className="w-4 h-4" />
-                  </button>
+                <td className="px-4 py-3 text-right" onClick={(e) => e.stopPropagation()}>
+                  <SeekerActionsMenu
+                    seeker={s}
+                    onView={() => setSelectedId(s.id)}
+                    onMessage={() => toast.success(`Opening chat with ${s.name}`)}
+                    onReclassify={() => toast.success(`Re-running AI classification for ${s.name}`)}
+                    onArchive={() => {
+                      setSeekers(list => list.map(x => x.id === s.id ? { ...x, status: "Archived", statusTone: "slate" } : x));
+                      toast.success(`${s.name} archived`);
+                    }}
+                    onDelete={() => {
+                      setSeekers(list => list.filter(x => x.id !== s.id));
+                      toast.success(`${s.name} deleted`);
+                    }}
+                  />
                 </td>
               </tr>
             ))}
           </tbody>
         </table>
       </div>
+
+      <NewSeekerIntakeModal
+        isOpen={isNewOpen}
+        onClose={() => setIsNewOpen(false)}
+        onSubmit={(draft) => {
+          const newRow: SeekerRow = {
+            id: `s-${Date.now()}`,
+            name: draft.name,
+            email: draft.email || "—",
+            maturity: "Interested",
+            maturityTone: "orange",
+            campaign: "—",
+            engagement: 0,
+            engagementTone: "red",
+            status: "Pending",
+            statusTone: "amber",
+            avatarTone: "blue",
+          };
+          setSeekers(list => [newRow, ...list]);
+          toast.success(`${draft.name} added — AI classification pending`);
+          setIsNewOpen(false);
+        }}
+      />
     </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Seeker detail — AI Classification, AI Summary, Journey Timeline
+// ---------------------------------------------------------------------------
+
+function SeekerDetailView({
+  seeker, onBack,
+}: { seeker: SeekerRow; onBack: () => void }) {
+  // Mock profile derived from the seed row. In production this would be fetched
+  // from the intelligence + classification APIs keyed by seeker.id.
+  const profile = {
+    engagement: seeker.engagement,
+    mentor: seeker.campaign === "—" ? "—" : "Pastor James K.",
+    joined: "Mar 15, 2026",
+    maturityLevel: seeker.maturity,
+    confidence: 92,
+    needs: ["Foundation Building"],
+    interests: ["Prayer", "Bible Study", "Community"] as const,
+    summary: `${seeker.name.split(" ")[0]} is a recently converted new believer who came to faith through a friend's invitation. She shows strong interest in prayer and building a foundational understanding of the Bible. She responds well to community-oriented content and benefits from structured guidance. Recommended focus areas: daily devotionals, prayer guides, and small group connection.`,
+    timeline: [
+      { tone: "bg-emerald-500", text: "Completed intake form",           date: "Mar 15, 2026" },
+      { tone: "bg-emerald-500", text: `AI classified as ${seeker.maturity}`, date: "Mar 15, 2026" },
+      { tone: "bg-blue-500",    text: "Matched with Pastor James K.",    date: "Mar 16, 2026" },
+      { tone: "bg-rose-500",    text: "Enrolled in 'Foundations of Faith'", date: "Mar 17, 2026" },
+      { tone: "bg-violet-500",  text: "Completed Step 3: Prayer Guide",  date: "Mar 22, 2026" },
+    ],
+  };
+
+  const interestTones: Record<string, "pink" | "blue" | "purple" | "amber"> = {
+    Prayer: "pink", "Bible Study": "blue", Community: "purple", Worship: "amber",
+  };
+
+  return (
+    <div className="p-6 space-y-4">
+      {/* Compact back bar so the page still feels like it belongs in the Seekers section */}
+      <button
+        onClick={onBack}
+        className="inline-flex items-center gap-1.5 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+      >
+        <ArrowLeft className="w-4 h-4" /> Back to Seekers
+      </button>
+
+      {/* Header — avatar, name + meta, actions */}
+      <div className="flex items-start justify-between gap-4 flex-wrap">
+        <div className="flex items-center gap-4">
+          <div className="w-16 h-16 rounded-full bg-rose-100 text-rose-700 flex items-center justify-center text-xl font-bold shrink-0">
+            {seeker.name.split(" ").map(n => n[0]).slice(0, 2).join("").toUpperCase()}
+          </div>
+          <div>
+            <div className="flex items-center gap-2 flex-wrap">
+              <h1 className="text-2xl font-bold text-foreground tracking-tight">{seeker.name}</h1>
+              <Chip tone={seeker.maturityTone}>
+                <Star className="w-3 h-3" /> {seeker.maturity}
+              </Chip>
+            </div>
+            <p className="text-sm text-muted-foreground mt-1">
+              <span>Engagement: <span className="font-semibold text-foreground">{profile.engagement}/100</span></span>
+              <span className="mx-2">·</span>
+              <span>Mentor: <span className="font-semibold text-foreground">{profile.mentor}</span></span>
+              <span className="mx-2">·</span>
+              <span>Joined: {profile.joined}</span>
+            </p>
+          </div>
+        </div>
+        <div className="flex items-center gap-2">
+          <Button onClick={() => toast.success(`Opening chat with ${seeker.name}`)}>
+            <Send className="w-3.5 h-3.5" /> Message
+          </Button>
+          <Button variant="outline" onClick={() => toast.info("Edit coming soon")}>
+            <Edit2 className="w-3.5 h-3.5" /> Edit
+          </Button>
+        </div>
+      </div>
+
+      {/* Two-column layout: classification + summary on left, timeline on right */}
+      <div className="grid grid-cols-1 lg:grid-cols-[1fr,360px] gap-4">
+        <div className="space-y-4">
+          {/* AI Classification */}
+          <div className="bg-card border border-border rounded-xl p-5">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-base font-bold text-foreground">AI Classification</h3>
+              <Chip tone="green">
+                <CheckCircle2 className="w-3 h-3" /> {profile.confidence}% confidence
+              </Chip>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+              <div>
+                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1.5">Maturity Level</p>
+                <p className="text-sm font-bold text-foreground">{profile.maturityLevel}</p>
+              </div>
+              <div>
+                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1.5">Identified Needs</p>
+                <div className="flex items-center gap-1.5 flex-wrap">
+                  {profile.needs.map(n => <Chip key={n} tone="amber">{n}</Chip>)}
+                </div>
+              </div>
+              <div className="sm:col-span-2">
+                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1.5">Key Interests</p>
+                <div className="flex items-center gap-1.5 flex-wrap">
+                  {profile.interests.map(i => <Chip key={i} tone={interestTones[i] ?? "slate"}>{i}</Chip>)}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* AI Summary */}
+          <div className="bg-card border border-border rounded-xl p-5">
+            <div className="flex items-center gap-2 mb-3">
+              <Sparkles className="w-4 h-4 text-violet-500" />
+              <h3 className="text-base font-bold text-foreground">AI Summary</h3>
+            </div>
+            <p className="text-sm text-muted-foreground leading-relaxed">{profile.summary}</p>
+          </div>
+
+          {/* Intelligence quick stats */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            <StatCard label="Dropout Risk"   value="Low"        subtitle="Improving trend"         icon={Activity}  tone="green" />
+            <StatCard label="Learning Pace"  value="Moderate"   subtitle="On schedule"              icon={Clock}     tone="blue" />
+            <StatCard label="Sentiment"      value="Improving"  subtitle="Last 3 cycles"            icon={TrendingUp} tone="purple" />
+            <StatCard label="Topic Affinity" value="Prayer"     subtitle="0.9 weight"               icon={Heart}     tone="pink" />
+          </div>
+        </div>
+
+        {/* Journey Timeline */}
+        <div className="bg-card border border-border rounded-xl p-5 h-fit">
+          <h3 className="text-base font-bold text-foreground mb-4">Journey Timeline</h3>
+          <ol className="space-y-4 relative">
+            <div className="absolute left-[5px] top-1 bottom-1 w-px bg-border" aria-hidden />
+            {profile.timeline.map((t, i) => (
+              <li key={i} className="relative flex items-start gap-3 pl-0">
+                <span className={cn("w-2.5 h-2.5 rounded-full mt-1.5 shrink-0 ring-2 ring-background relative z-10", t.tone)} />
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-foreground">{t.text}</p>
+                  <p className="text-xs text-muted-foreground">{t.date}</p>
+                </div>
+              </li>
+            ))}
+          </ol>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Row actions dropdown
+// ---------------------------------------------------------------------------
+
+function SeekerActionsMenu({
+  seeker, onView, onMessage, onReclassify, onArchive, onDelete,
+}: {
+  seeker: SeekerRow;
+  onView: () => void;
+  onMessage: () => void;
+  onReclassify: () => void;
+  onArchive: () => void;
+  onDelete: () => void;
+}) {
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger
+        className={cn(
+          "inline-flex items-center justify-center h-8 w-8 rounded-md",
+          "text-muted-foreground hover:text-foreground hover:bg-muted transition-colors outline-none",
+          "focus-visible:ring-2 focus-visible:ring-ring"
+        )}
+        aria-label={`Actions for ${seeker.name}`}
+      >
+        <MoreHorizontal className="w-4 h-4" />
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" className="w-48">
+        <DropdownMenuItem onSelect={onView}>
+          <Eye className="w-3.5 h-3.5" /> View profile
+        </DropdownMenuItem>
+        <DropdownMenuItem onSelect={onMessage}>
+          <MessageSquareIcon className="w-3.5 h-3.5" /> Message
+        </DropdownMenuItem>
+        <DropdownMenuItem onSelect={onReclassify}>
+          <RefreshCw className="w-3.5 h-3.5" /> Re-classify
+        </DropdownMenuItem>
+        <DropdownMenuSeparator />
+        <DropdownMenuItem onSelect={onArchive}>
+          <Archive className="w-3.5 h-3.5" /> Archive
+        </DropdownMenuItem>
+        <DropdownMenuItem variant="destructive" onSelect={onDelete}>
+          <Trash2 className="w-3.5 h-3.5" /> Delete
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Filter dropdown
+// ---------------------------------------------------------------------------
+
+function FilterDropdown({
+  label, value, onChange, options,
+}: {
+  label: string;
+  value: string;
+  onChange: (v: string) => void;
+  options: { value: string; label: string }[];
+}) {
+  const current = options.find(o => o.value === value)?.label ?? label;
+  const isDefault = value === "all" || value === options[0]?.value;
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger
+        className={cn(
+          "inline-flex items-center gap-1.5 h-10 px-3 rounded-md border text-sm font-medium transition-colors outline-none",
+          "focus-visible:ring-2 focus-visible:ring-ring",
+          isDefault
+            ? "border-border bg-background text-foreground hover:bg-muted/50"
+            : "border-primary/30 bg-primary/5 text-primary hover:bg-primary/10"
+        )}
+      >
+        {isDefault ? label : <span className="font-semibold">{current}</span>}
+        <ChevronDown className="w-3.5 h-3.5" />
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="start" className="w-56">
+        <DropdownMenuLabel className="text-xs text-muted-foreground">{label}</DropdownMenuLabel>
+        <DropdownMenuRadioGroup value={value} onValueChange={onChange}>
+          {options.map(opt => (
+            <DropdownMenuRadioItem key={opt.value} value={opt.value}>
+              {opt.label}
+            </DropdownMenuRadioItem>
+          ))}
+        </DropdownMenuRadioGroup>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// New Seeker — 4-step intake modal per the spec (Welcome · Background · Interests · Preferences)
+// ---------------------------------------------------------------------------
+
+interface IntakeDraft {
+  // Step 1 — Welcome
+  name: string;
+  email: string;
+  consent: boolean;
+  language: "en" | "am" | "om";
+  // Step 2 — Background
+  spiritualBackground: string;
+  location: string;
+  timezone: string;
+  // Step 3 — Interests
+  interests: string[];
+  questions: string;
+  // Step 4 — Preferences
+  preferredChannel: "telegram" | "whatsapp" | "sms" | "web";
+  mentorGender: "any" | "female" | "male";
+  availability: string;
+}
+
+const INTAKE_STEPS = [
+  { id: 1, title: "Welcome",     description: "Let's start with the basics." },
+  { id: 2, title: "Background",  description: "A little about you so we can match you well." },
+  { id: 3, title: "Interests",   description: "What are you curious about?" },
+  { id: 4, title: "Preferences", description: "How would you like to stay in touch?" },
+];
+
+const INTEREST_OPTIONS = ["Prayer", "Bible Study", "Community", "Worship", "Apologetics", "Serving"];
+
+function NewSeekerIntakeModal({
+  isOpen, onClose, onSubmit,
+}: { isOpen: boolean; onClose: () => void; onSubmit: (draft: IntakeDraft) => void }) {
+  const [step, setStep] = useState(1);
+  const [draft, setDraft] = useState<IntakeDraft>({
+    name: "", email: "", consent: false, language: "en",
+    spiritualBackground: "", location: "", timezone: "Africa/Addis_Ababa",
+    interests: [], questions: "",
+    preferredChannel: "telegram", mentorGender: "any", availability: "",
+  });
+  const update = <K extends keyof IntakeDraft>(key: K, value: IntakeDraft[K]) =>
+    setDraft(d => ({ ...d, [key]: value }));
+
+  const toggleInterest = (v: string) => {
+    setDraft(d => ({ ...d, interests: d.interests.includes(v) ? d.interests.filter(i => i !== v) : [...d.interests, v] }));
+  };
+
+  const canAdvance =
+    step === 1 ? draft.name.trim().length > 0 && draft.consent :
+    step === 2 ? draft.spiritualBackground.trim().length > 0 :
+    step === 3 ? draft.interests.length > 0 :
+    true;
+
+  const handleClose = () => {
+    setStep(1);
+    onClose();
+  };
+
+  const handleSubmit = () => {
+    onSubmit(draft);
+    // Reset for next time
+    setStep(1);
+    setDraft({
+      name: "", email: "", consent: false, language: "en",
+      spiritualBackground: "", location: "", timezone: "Africa/Addis_Ababa",
+      interests: [], questions: "",
+      preferredChannel: "telegram", mentorGender: "any", availability: "",
+    });
+  };
+
+  return (
+    <Modal isOpen={isOpen} onClose={handleClose} title="New Seeker Intake" size="lg">
+      <div className="space-y-5">
+        {/* Step indicator — horizontal segmented progress */}
+        <div className="flex items-center gap-2">
+          {INTAKE_STEPS.map((s, i) => {
+            const isDone   = step > s.id;
+            const isActive = step === s.id;
+            return (
+              <div key={s.id} className="flex items-center gap-2 flex-1">
+                <div className="flex items-center gap-2 flex-1">
+                  <div className={cn(
+                    "w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold shrink-0 border",
+                    isDone ? "bg-primary border-primary text-primary-foreground"
+                      : isActive ? "bg-primary/10 border-primary text-primary"
+                      : "bg-muted border-border text-muted-foreground"
+                  )}>
+                    {isDone ? <CheckCircle2 className="w-3.5 h-3.5" /> : s.id}
+                  </div>
+                  <div className="hidden sm:block min-w-0">
+                    <p className={cn("text-xs font-semibold truncate", isActive || isDone ? "text-foreground" : "text-muted-foreground")}>{s.title}</p>
+                  </div>
+                </div>
+                {i < INTAKE_STEPS.length - 1 && <div className={cn("h-px flex-1 min-w-[12px]", isDone ? "bg-primary" : "bg-border")} />}
+              </div>
+            );
+          })}
+        </div>
+
+        <div>
+          <h3 className="text-base font-bold text-foreground">{INTAKE_STEPS[step - 1].title}</h3>
+          <p className="text-xs text-muted-foreground mt-0.5">{INTAKE_STEPS[step - 1].description}</p>
+        </div>
+
+        {/* Step bodies */}
+        {step === 1 && (
+          <div className="space-y-4">
+            <div className="grid gap-1.5">
+              <Label className="text-xs font-semibold">Full name <span className="text-destructive">*</span></Label>
+              <Input value={draft.name} onChange={(e) => update("name", e.target.value)} placeholder="Abigail Johnson" />
+            </div>
+            <div className="grid gap-1.5">
+              <Label className="text-xs font-semibold">Email <span className="text-muted-foreground font-normal">(optional)</span></Label>
+              <Input value={draft.email} onChange={(e) => update("email", e.target.value)} placeholder="abigail@example.com" type="email" />
+            </div>
+            <div className="grid gap-1.5">
+              <Label className="text-xs font-semibold">Preferred language</Label>
+              <div className="flex items-center gap-1 bg-muted/60 rounded-md p-0.5 w-fit">
+                {([["en", "English"], ["am", "Amharic"], ["om", "Afaan Oromoo"]] as const).map(([k, label]) => (
+                  <button
+                    key={k}
+                    onClick={() => update("language", k)}
+                    className={cn(
+                      "px-3 py-1.5 text-xs font-semibold rounded transition-all",
+                      draft.language === k ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
+                    )}
+                  >{label}</button>
+                ))}
+              </div>
+            </div>
+            <label className="flex items-start gap-2 pt-1 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={draft.consent}
+                onChange={(e) => update("consent", e.target.checked)}
+                className="mt-0.5 accent-primary"
+              />
+              <span className="text-xs text-muted-foreground leading-relaxed">
+                I give consent for this person to participate in the discipleship process and receive messages on their preferred channel.
+              </span>
+            </label>
+          </div>
+        )}
+
+        {step === 2 && (
+          <div className="space-y-4">
+            <div className="grid gap-1.5">
+              <Label className="text-xs font-semibold">Spiritual background <span className="text-destructive">*</span></Label>
+              <Textarea
+                value={draft.spiritualBackground}
+                onChange={(e) => update("spiritualBackground", e.target.value)}
+                placeholder="Church history, faith experience, current beliefs..."
+                className="min-h-[90px] text-sm"
+              />
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="grid gap-1.5">
+                <Label className="text-xs font-semibold">Location</Label>
+                <Input value={draft.location} onChange={(e) => update("location", e.target.value)} placeholder="Addis Ababa, Ethiopia" />
+              </div>
+              <div className="grid gap-1.5">
+                <Label className="text-xs font-semibold">Timezone</Label>
+                <Input value={draft.timezone} onChange={(e) => update("timezone", e.target.value)} />
+              </div>
+            </div>
+          </div>
+        )}
+
+        {step === 3 && (
+          <div className="space-y-4">
+            <div className="grid gap-2">
+              <Label className="text-xs font-semibold">Topics of interest <span className="text-destructive">*</span></Label>
+              <div className="flex flex-wrap gap-1.5">
+                {INTEREST_OPTIONS.map(o => {
+                  const isOn = draft.interests.includes(o);
+                  return (
+                    <button
+                      key={o}
+                      type="button"
+                      onClick={() => toggleInterest(o)}
+                      className={cn(
+                        "px-3 py-1.5 rounded-full text-xs font-semibold border transition-all",
+                        isOn ? "border-primary bg-primary/10 text-primary" : "border-border text-muted-foreground hover:bg-muted/50"
+                      )}
+                    >
+                      {isOn && <CheckCircle2 className="inline w-3 h-3 mr-1" />}
+                      {o}
+                    </button>
+                  );
+                })}
+              </div>
+              <p className="text-xs text-muted-foreground">Pick one or more.</p>
+            </div>
+            <div className="grid gap-1.5">
+              <Label className="text-xs font-semibold">Questions they want explored</Label>
+              <Textarea
+                value={draft.questions}
+                onChange={(e) => update("questions", e.target.value)}
+                placeholder="e.g. Who is Jesus? How do I pray? What is the Bible?"
+                className="min-h-[80px] text-sm"
+              />
+            </div>
+          </div>
+        )}
+
+        {step === 4 && (
+          <div className="space-y-4">
+            <div className="grid gap-2">
+              <Label className="text-xs font-semibold">Preferred channel</Label>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                {([
+                  ["telegram", "Telegram"], ["whatsapp", "WhatsApp"], ["sms", "SMS"], ["web", "Web"],
+                ] as const).map(([k, label]) => (
+                  <button
+                    key={k}
+                    type="button"
+                    onClick={() => update("preferredChannel", k)}
+                    className={cn(
+                      "px-3 py-2 rounded-md text-xs font-semibold border transition-all",
+                      draft.preferredChannel === k ? "border-primary bg-primary/10 text-primary" : "border-border text-foreground hover:bg-muted/50"
+                    )}
+                  >{label}</button>
+                ))}
+              </div>
+            </div>
+            <div className="grid gap-2">
+              <Label className="text-xs font-semibold">Mentor gender preference</Label>
+              <div className="flex items-center gap-1 bg-muted/60 rounded-md p-0.5 w-fit">
+                {([["any", "No preference"], ["female", "Female"], ["male", "Male"]] as const).map(([k, label]) => (
+                  <button
+                    key={k}
+                    onClick={() => update("mentorGender", k)}
+                    className={cn(
+                      "px-3 py-1.5 text-xs font-semibold rounded transition-all",
+                      draft.mentorGender === k ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
+                    )}
+                  >{label}</button>
+                ))}
+              </div>
+            </div>
+            <div className="grid gap-1.5">
+              <Label className="text-xs font-semibold">Availability</Label>
+              <Textarea
+                value={draft.availability}
+                onChange={(e) => update("availability", e.target.value)}
+                placeholder="e.g. Monday evenings, Saturday mornings"
+                className="min-h-[60px] text-sm"
+              />
+            </div>
+          </div>
+        )}
+
+        {/* Footer nav */}
+        <div className="flex items-center justify-between gap-2 pt-3 border-t border-border">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => (step === 1 ? handleClose() : setStep(step - 1))}
+          >
+            {step === 1 ? "Cancel" : <><ArrowLeft className="w-3.5 h-3.5" /> Back</>}
+          </Button>
+          {step < INTAKE_STEPS.length ? (
+            <Button size="sm" disabled={!canAdvance} onClick={() => setStep(step + 1)}>
+              Continue
+            </Button>
+          ) : (
+            <Button size="sm" onClick={handleSubmit}>
+              <Sparkles className="w-3.5 h-3.5" /> Submit & classify
+            </Button>
+          )}
+        </div>
+      </div>
+    </Modal>
   );
 }
 
