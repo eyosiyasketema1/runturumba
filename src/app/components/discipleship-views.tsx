@@ -20,7 +20,7 @@ import {
 } from "./ui/dropdown-menu";
 import { Modal } from "./shared-ui";
 import { toast } from "sonner";
-import { ArrowLeft, Eye, Trash2, MessageSquare as MessageSquareIcon, Archive, RefreshCw } from "lucide-react";
+import { ArrowLeft, Eye, Trash2, MessageSquare as MessageSquareIcon, Archive, RefreshCw, Zap } from "lucide-react";
 import {
   AreaChart, Area, PieChart, Pie, Cell, XAxis, YAxis, Tooltip, ResponsiveContainer
 } from "recharts";
