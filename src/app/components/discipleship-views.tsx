@@ -3979,15 +3979,189 @@ export function ReportingView() {
 // VALIDATIONS
 // ============================================================================
 
+// Validation row + audit trail event types
+type ValidationStatus  = "pending" | "confirmed" | "rejected";
+type ValidatorChannel  = "telegram" | "whatsapp" | "sms" | "email";
+type AuditEventKind    = "self_reported" | "notified" | "reminder" | "confirmed" | "rejected" | "comment";
+
+interface AuditEvent {
+  kind: AuditEventKind;
+  by: string;        // who performed the action
+  at: string;        // human readable timestamp
+  channel?: ValidatorChannel;
+  note?: string;
+}
+
+interface ValidationRow {
+  id: string;
+  name: string;
+  email: string;
+  milestone: "Salvation Decision" | "Baptism" | "Community" | "Growth Evidence";
+  milestoneTone: "green" | "blue" | "purple" | "amber";
+  date: string;
+  source: string;
+  validator: string;
+  validatorChannel: ValidatorChannel;
+  status: ValidationStatus;
+  avatarTone: "blue" | "purple" | "rose" | "amber" | "green";
+  remindersSent: number;
+  audit: AuditEvent[];
+}
+
+const INITIAL_VALIDATIONS: ValidationRow[] = [
+  {
+    id: "v1", name: "Sara Ahmed", email: "sara@email.com",
+    milestone: "Salvation Decision", milestoneTone: "green",
+    date: "Mar 28, 2026", source: "via Telegram bot",
+    validator: "Pastor James K.", validatorChannel: "telegram",
+    status: "pending", avatarTone: "rose", remindersSent: 1,
+    audit: [
+      { kind: "self_reported", by: "Sara Ahmed",     at: "Mar 28, 2026 · 10:14",            channel: "telegram", note: "Indicated decision via intake bot" },
+      { kind: "notified",      by: "System",          at: "Mar 28, 2026 · 10:15",            channel: "telegram", note: "Validator notified: Pastor James K." },
+      { kind: "reminder",      by: "System",          at: "Mar 30, 2026 · 09:00",            channel: "telegram", note: "Gentle reminder sent to validator" },
+    ],
+  },
+  {
+    id: "v2", name: "David Kebede", email: "david@email.com",
+    milestone: "Baptism", milestoneTone: "blue",
+    date: "Apr 2, 2026", source: "via WhatsApp",
+    validator: "Mentor Daniel M.", validatorChannel: "whatsapp",
+    status: "pending", avatarTone: "blue", remindersSent: 0,
+    audit: [
+      { kind: "self_reported", by: "David Kebede",   at: "Apr 2, 2026 · 16:42",             channel: "whatsapp", note: "Requested baptism appointment" },
+      { kind: "notified",      by: "System",          at: "Apr 2, 2026 · 16:42",             channel: "whatsapp", note: "Validator notified: Mentor Daniel M." },
+    ],
+  },
+  {
+    id: "v3", name: "Abigail Johnson", email: "abigail@email.com",
+    milestone: "Salvation Decision", milestoneTone: "green",
+    date: "Feb 3, 2026", source: "via Self-guided",
+    validator: "Pastor James K.", validatorChannel: "email",
+    status: "confirmed", avatarTone: "purple", remindersSent: 0,
+    audit: [
+      { kind: "self_reported", by: "Abigail Johnson", at: "Feb 3, 2026 · 09:21",  channel: "telegram", note: "Indicated decision in intake form" },
+      { kind: "notified",      by: "System",          at: "Feb 3, 2026 · 09:21",  channel: "email",    note: "Validator notified: Pastor James K." },
+      { kind: "comment",       by: "Pastor James K.",  at: "Feb 4, 2026 · 14:02",                       note: "Met briefly after Sunday service. Sincere." },
+      { kind: "confirmed",     by: "Pastor James K.",  at: "Feb 5, 2026 · 11:30",                       note: "Decision confirmed by mentor" },
+    ],
+  },
+  {
+    id: "v4", name: "Miriam Haile", email: "miriam@email.com",
+    milestone: "Community", milestoneTone: "purple",
+    date: "Apr 5, 2026", source: "Referred to fellowship",
+    validator: "Sister Ruth B.", validatorChannel: "whatsapp",
+    status: "pending", avatarTone: "amber", remindersSent: 0,
+    audit: [
+      { kind: "self_reported", by: "Miriam Haile",    at: "Apr 5, 2026 · 19:08",                          note: "Joined Tuesday community group" },
+    ],
+  },
+];
+
+const VALIDATION_TABS = ["pending", "confirmed", "rejected", "all"] as const;
+const VALIDATION_MILESTONES = ["Salvation Decision", "Baptism", "Community", "Growth Evidence"] as const;
+
 export function ValidationsView() {
-  const [tab, setTab] = useState<"pending" | "confirmed" | "all">("pending");
-  const rows = [
-    { name: "Sara Ahmed",     email: "sara@email.com",     milestone: "Salvation Decision", milestoneTone: "green" as const, date: "Mar 28, 2026", source: "via Telegram bot",  validator: "Pastor James K.", validatorStatus: "Notified 2 days ago", status: "pending",    avatarTone: "rose" as const },
-    { name: "David Kebede",   email: "david@email.com",    milestone: "Baptism",            milestoneTone: "blue" as const,  date: "Apr 2, 2026",  source: "via WhatsApp",      validator: "Mentor Daniel M.", validatorStatus: "Notified today",       status: "pending",    avatarTone: "blue" as const },
-    { name: "Abigail Johnson",email: "abigail@email.com",  milestone: "Salvation Decision", milestoneTone: "green" as const, date: "Feb 3, 2026",  source: "via Self-guided",   validator: "Pastor James K.", validatorStatus: "Confirmed Feb 5",     status: "confirmed",  avatarTone: "purple" as const },
-    { name: "Miriam Haile",   email: "miriam@email.com",   milestone: "Community",          milestoneTone: "purple" as const, date: "Apr 5, 2026",  source: "Referred to fellowship", validator: "Sister Ruth B.", validatorStatus: "Not yet notified",   status: "pending",    avatarTone: "amber" as const },
-  ];
-  const filtered = tab === "all" ? rows : rows.filter(r => r.status === tab);
+  const [rows, setRows]                 = useState<ValidationRow[]>(INITIAL_VALIDATIONS);
+  const [tab, setTab]                   = useState<typeof VALIDATION_TABS[number]>("pending");
+  const [query, setQuery]               = useState("");
+  const [milestoneF, setMilestoneF]     = useState<string>("all");
+  const [validatorF, setValidatorF]     = useState<string>("all");
+  const [staleF, setStaleF]             = useState<string>("all"); // notified > N days ago
+  const [reminderTarget, setReminderTarget] = useState<ValidationRow[] | null>(null);
+  const [auditFor, setAuditFor]         = useState<ValidationRow | null>(null);
+  const [selectedIds, setSelectedIds]   = useState<Set<string>>(new Set());
+
+  // Validators dropdown is derived from current rows
+  const allValidators = useMemo(() => Array.from(new Set(rows.map(r => r.validator))), [rows]);
+
+  const baseFiltered = useMemo(() => {
+    return rows.filter(r => {
+      const q = query.toLowerCase();
+      const matchesQ = !q || r.name.toLowerCase().includes(q) || r.email.toLowerCase().includes(q) || r.validator.toLowerCase().includes(q);
+      const matchesM = milestoneF === "all" || r.milestone === milestoneF;
+      const matchesV = validatorF === "all" || r.validator === validatorF;
+      const matchesS =
+        staleF === "all" ? true
+        : staleF === "stale_3" ? r.status === "pending" && r.remindersSent >= 1
+        : staleF === "no_reminder" ? r.status === "pending" && r.remindersSent === 0
+        : true;
+      return matchesQ && matchesM && matchesV && matchesS;
+    });
+  }, [rows, query, milestoneF, validatorF, staleF]);
+
+  // Tab narrows further
+  const tabFiltered = useMemo(
+    () => tab === "all" ? baseFiltered : baseFiltered.filter(r => r.status === tab),
+    [baseFiltered, tab]
+  );
+
+  const counts = useMemo(() => ({
+    pending:   rows.filter(r => r.status === "pending").length,
+    confirmed: rows.filter(r => r.status === "confirmed").length,
+    rejected:  rows.filter(r => r.status === "rejected").length,
+    all:       rows.length,
+  }), [rows]);
+
+  const hasFilters = query || milestoneF !== "all" || validatorF !== "all" || staleF !== "all";
+
+  // Selection helpers — only pending rows are selectable
+  const visiblePendingIds = tabFiltered.filter(r => r.status === "pending").map(r => r.id);
+  const allVisibleSelected = visiblePendingIds.length > 0 && visiblePendingIds.every(id => selectedIds.has(id));
+  const toggleSelectAll = () => {
+    setSelectedIds(prev => {
+      const next = new Set(prev);
+      if (allVisibleSelected) visiblePendingIds.forEach(id => next.delete(id));
+      else visiblePendingIds.forEach(id => next.add(id));
+      return next;
+    });
+  };
+  const toggleOne = (id: string) => {
+    setSelectedIds(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  };
+
+  // State mutations + audit trail
+  const recordEvent = (id: string, evt: AuditEvent, statusPatch?: ValidationStatus) => {
+    setRows(list => list.map(r => r.id === id
+      ? { ...r, audit: [evt, ...r.audit], status: statusPatch ?? r.status, ...(evt.kind === "reminder" ? { remindersSent: r.remindersSent + 1 } : {}) }
+      : r
+    ));
+  };
+
+  const handleConfirm = (r: ValidationRow) => {
+    recordEvent(r.id, { kind: "confirmed", by: r.validator, at: nowStamp(), note: "Confirmed via dashboard" }, "confirmed");
+    toast.success(`${r.name}'s ${r.milestone.toLowerCase()} confirmed`);
+  };
+  const handleReject = (r: ValidationRow) => {
+    recordEvent(r.id, { kind: "rejected", by: r.validator, at: nowStamp(), note: "Rejected via dashboard" }, "rejected");
+    toast.success(`${r.name}'s ${r.milestone.toLowerCase()} marked rejected`);
+  };
+
+  // Open the reminder modal — global header click sends to all pending in the
+  // current filter; per-row click sends to that one row.
+  const openHeaderReminder = () => {
+    const targets = baseFiltered.filter(r => r.status === "pending");
+    if (selectedIds.size > 0) {
+      const set = new Set(selectedIds);
+      setReminderTarget(targets.filter(r => set.has(r.id)));
+    } else if (targets.length > 0) {
+      setReminderTarget(targets);
+    } else {
+      toast.error("No pending validations to remind");
+    }
+  };
+
+  const handleRemindersSent = (targets: ValidationRow[], message: string) => {
+    targets.forEach(r => {
+      recordEvent(r.id, { kind: "reminder", by: "System", at: nowStamp(), channel: r.validatorChannel, note: message || "Gentle reminder" });
+    });
+    toast.success(`Reminders sent to ${targets.length} validator${targets.length === 1 ? "" : "s"}`);
+    setReminderTarget(null);
+    setSelectedIds(new Set());
+  };
 
   return (
     <div className="p-6 space-y-4">
@@ -3995,27 +4169,26 @@ export function ValidationsView() {
         title="Decision Validation"
         subtitle="Two-step confirmation: self-reported decisions validated by mentors or community leaders"
         actions={(
-          <>
-            <button className="flex items-center gap-1.5 px-3 py-2 text-sm font-medium bg-card border border-border rounded-md hover:bg-muted/50 transition-all">
-              <Filter className="w-3.5 h-3.5" /> Filter
-            </button>
-            <button className="flex items-center gap-1.5 px-4 py-2 text-sm font-semibold bg-amber-500 text-white rounded-md hover:bg-amber-600 transition-all shadow-sm">
-              <Bell className="w-4 h-4" /> Send Reminders
-            </button>
-          </>
+          <Button
+            onClick={openHeaderReminder}
+            className="bg-amber-500 text-white hover:bg-amber-600"
+          >
+            <Bell className="w-4 h-4" />
+            Send Reminders {selectedIds.size > 0 ? `(${selectedIds.size})` : ""}
+          </Button>
         )}
       />
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
         <div className="bg-amber-50/60 border border-amber-200 rounded-lg p-4">
           <div className="text-xs font-medium text-amber-700 uppercase tracking-wider">Pending Validation</div>
-          <div className="text-3xl font-bold text-amber-900 mt-1">24</div>
+          <div className="text-3xl font-bold text-amber-900 mt-1">{counts.pending}</div>
           <div className="text-xs text-amber-700">awaiting confirmation</div>
         </div>
         <div className="bg-emerald-50/60 border border-emerald-200 rounded-lg p-4">
-          <div className="text-xs font-medium text-emerald-700 uppercase tracking-wider">Confirmed This Month</div>
-          <div className="text-3xl font-bold text-emerald-900 mt-1">18</div>
-          <div className="text-xs text-emerald-700">+6 from last month</div>
+          <div className="text-xs font-medium text-emerald-700 uppercase tracking-wider">Confirmed</div>
+          <div className="text-3xl font-bold text-emerald-900 mt-1">{counts.confirmed}</div>
+          <div className="text-xs text-emerald-700">total confirmed</div>
         </div>
         <div className="bg-card border border-border rounded-lg p-4">
           <div className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Avg. Validation Time</div>
@@ -4024,27 +4197,80 @@ export function ValidationsView() {
         </div>
       </div>
 
+      {/* Filter toolbar — above the queue */}
+      <div className="bg-card border border-border rounded-lg p-3 flex items-center gap-2 flex-wrap">
+        <div className="flex-1 min-w-[240px] relative">
+          <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none" />
+          <Input
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Search person, email, or validator..."
+            className="pl-9 h-9"
+          />
+        </div>
+        <FilterDropdown
+          label="Milestone"
+          value={milestoneF}
+          onChange={setMilestoneF}
+          options={[{ value: "all", label: "All milestones" }, ...VALIDATION_MILESTONES.map(m => ({ value: m, label: m }))]}
+        />
+        <FilterDropdown
+          label="Validator"
+          value={validatorF}
+          onChange={setValidatorF}
+          options={[{ value: "all", label: "All validators" }, ...allValidators.map(v => ({ value: v, label: v }))]}
+        />
+        <FilterDropdown
+          label="Reminders"
+          value={staleF}
+          onChange={setStaleF}
+          options={[
+            { value: "all",         label: "Any reminder state" },
+            { value: "no_reminder", label: "Never reminded (pending)" },
+            { value: "stale_3",     label: "Reminded 1+ time" },
+          ]}
+        />
+        {hasFilters && (
+          <Button variant="ghost" size="sm" onClick={() => { setQuery(""); setMilestoneF("all"); setValidatorF("all"); setStaleF("all"); }}>Clear</Button>
+        )}
+        <span className="text-xs text-muted-foreground ml-auto">{tabFiltered.length} of {baseFiltered.length}</span>
+      </div>
+
       <div className="bg-card border border-border rounded-lg overflow-hidden">
-        <div className="flex items-center justify-between px-4 py-3 border-b border-border">
-          <div className="flex items-center gap-2">
+        {/* Tab strip + selection summary */}
+        <div className="flex items-center justify-between px-4 py-3 border-b border-border flex-wrap gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
             <span className="text-sm font-bold text-foreground">Validation Queue</span>
-            <Chip tone="amber">24 pending</Chip>
+            {selectedIds.size > 0 && <Chip tone="blue">{selectedIds.size} selected</Chip>}
           </div>
           <div className="flex items-center gap-1 text-xs font-semibold">
-            {([
-              ["pending", "Pending"], ["confirmed", "Confirmed"], ["all", "All"]
-            ] as const).map(([k, label]) => (
+            {VALIDATION_TABS.map(k => (
               <button
                 key={k}
                 onClick={() => setTab(k)}
-                className={cn("px-3 py-1 rounded transition-colors", tab === k ? "text-primary" : "text-muted-foreground hover:text-foreground")}
-              >{label}</button>
+                className={cn(
+                  "px-3 py-1 rounded transition-colors capitalize",
+                  tab === k ? "text-primary bg-primary/10" : "text-muted-foreground hover:text-foreground"
+                )}
+              >
+                {k} {k !== "all" && counts[k] > 0 && <span className="text-muted-foreground/70">{counts[k]}</span>}
+              </button>
             ))}
           </div>
         </div>
         <table className="w-full">
           <thead>
             <tr className="bg-muted/40 border-b border-border text-xs uppercase tracking-wider text-muted-foreground">
+              <th className="px-4 py-3 text-left font-semibold w-10">
+                <input
+                  type="checkbox"
+                  checked={allVisibleSelected}
+                  onChange={toggleSelectAll}
+                  disabled={visiblePendingIds.length === 0}
+                  className="accent-primary"
+                  aria-label="Select all visible pending"
+                />
+              </th>
               <th className="px-4 py-3 text-left font-semibold">Person</th>
               <th className="px-4 py-3 text-left font-semibold">Milestone</th>
               <th className="px-4 py-3 text-left font-semibold">Self-Reported</th>
@@ -4054,48 +4280,276 @@ export function ValidationsView() {
             </tr>
           </thead>
           <tbody>
-            {filtered.map((r, i) => (
-              <tr key={i} className={cn("border-b border-border last:border-0 transition-colors", r.status === "pending" ? "bg-amber-50/30 hover:bg-amber-50/60" : "hover:bg-muted/30")}>
-                <td className="px-4 py-3">
-                  <div className="flex items-center gap-3">
-                    <Avatar name={r.name} tone={r.avatarTone} />
-                    <div>
-                      <div className="text-sm font-semibold text-foreground">{r.name}</div>
-                      <div className="text-xs text-muted-foreground">{r.email}</div>
-                    </div>
-                  </div>
-                </td>
-                <td className="px-4 py-3"><Chip tone={r.milestoneTone}><Heart className="w-3 h-3" />{r.milestone}</Chip></td>
-                <td className="px-4 py-3">
-                  <div className="text-sm font-medium text-foreground">{r.date}</div>
-                  <div className="text-xs text-muted-foreground">{r.source}</div>
-                </td>
-                <td className="px-4 py-3">
-                  <div className="text-sm font-medium text-foreground">{r.validator}</div>
-                  <div className={cn("text-xs", r.status === "confirmed" ? "text-emerald-600" : "text-amber-700")}>{r.validatorStatus}</div>
-                </td>
-                <td className="px-4 py-3">
-                  {r.status === "confirmed"
-                    ? <Chip tone="green"><CheckCircle2 className="w-3 h-3" />Confirmed</Chip>
-                    : <Chip tone="amber">Pending</Chip>}
-                </td>
-                <td className="px-4 py-3 text-right">
-                  {r.status === "pending" ? (
-                    <div className="flex items-center justify-end gap-2">
-                      <button className="px-3 py-1.5 text-xs font-semibold bg-emerald-500 text-white rounded hover:bg-emerald-600 transition-all">Confirm</button>
-                      <button className="px-3 py-1.5 text-xs font-semibold bg-card border border-border text-rose-600 rounded hover:bg-rose-50 transition-all">Reject</button>
-                    </div>
-                  ) : (
-                    <button className="inline-flex items-center gap-1 text-xs font-semibold text-primary hover:underline">
-                      <FileText className="w-3 h-3" /> View audit trail
-                    </button>
-                  )}
+            {tabFiltered.length === 0 ? (
+              <tr>
+                <td colSpan={7} className="px-4 py-12 text-center text-sm text-muted-foreground">
+                  No validations match your filters.
                 </td>
               </tr>
-            ))}
+            ) : tabFiltered.map(r => {
+              const lastReminderEvt = r.audit.find(e => e.kind === "reminder");
+              const validatorStatus = r.status === "confirmed"
+                ? `Confirmed ${r.audit.find(e => e.kind === "confirmed")?.at.split(" · ")[0] ?? ""}`
+                : r.status === "rejected"
+                  ? `Rejected ${r.audit.find(e => e.kind === "rejected")?.at.split(" · ")[0] ?? ""}`
+                  : r.remindersSent > 0
+                    ? `Reminded ${lastReminderEvt?.at.split(" · ")[0] ?? "recently"} (${r.remindersSent}x)`
+                    : r.audit.some(e => e.kind === "notified")
+                      ? `Notified ${r.audit.find(e => e.kind === "notified")?.at.split(" · ")[0] ?? ""}`
+                      : "Not yet notified";
+              return (
+                <tr key={r.id} className={cn("border-b border-border last:border-0 transition-colors", r.status === "pending" ? "bg-amber-50/30 hover:bg-amber-50/60" : "hover:bg-muted/30")}>
+                  <td className="px-4 py-3">
+                    <input
+                      type="checkbox"
+                      checked={selectedIds.has(r.id)}
+                      disabled={r.status !== "pending"}
+                      onChange={() => toggleOne(r.id)}
+                      className="accent-primary"
+                      aria-label={`Select ${r.name}`}
+                    />
+                  </td>
+                  <td className="px-4 py-3">
+                    <div className="flex items-center gap-3">
+                      <Avatar name={r.name} tone={r.avatarTone} />
+                      <div>
+                        <div className="text-sm font-semibold text-foreground">{r.name}</div>
+                        <div className="text-xs text-muted-foreground">{r.email}</div>
+                      </div>
+                    </div>
+                  </td>
+                  <td className="px-4 py-3"><Chip tone={r.milestoneTone}><Heart className="w-3 h-3" />{r.milestone}</Chip></td>
+                  <td className="px-4 py-3">
+                    <div className="text-sm font-medium text-foreground">{r.date}</div>
+                    <div className="text-xs text-muted-foreground">{r.source}</div>
+                  </td>
+                  <td className="px-4 py-3">
+                    <div className="text-sm font-medium text-foreground">{r.validator}</div>
+                    <div className={cn(
+                      "text-xs",
+                      r.status === "confirmed" ? "text-emerald-600"
+                      : r.status === "rejected" ? "text-rose-600"
+                      : r.remindersSent > 0    ? "text-amber-700"
+                                                : "text-muted-foreground"
+                    )}>{validatorStatus}</div>
+                  </td>
+                  <td className="px-4 py-3">
+                    {r.status === "confirmed" && <Chip tone="green"><CheckCircle2 className="w-3 h-3" />Confirmed</Chip>}
+                    {r.status === "rejected"  && <Chip tone="red"><XCircle className="w-3 h-3" />Rejected</Chip>}
+                    {r.status === "pending"   && <Chip tone="amber">Pending</Chip>}
+                  </td>
+                  <td className="px-4 py-3 text-right">
+                    {r.status === "pending" ? (
+                      <div className="flex items-center justify-end gap-2">
+                        <Button size="sm" variant="outline" onClick={() => setReminderTarget([r])}>
+                          <Bell className="w-3.5 h-3.5" /> Remind
+                        </Button>
+                        <Button size="sm" className="bg-emerald-500 text-white hover:bg-emerald-600" onClick={() => handleConfirm(r)}>Confirm</Button>
+                        <Button size="sm" variant="outline" className="text-rose-600 hover:text-rose-700" onClick={() => handleReject(r)}>Reject</Button>
+                        <Button size="sm" variant="ghost" onClick={() => setAuditFor(r)} title="View audit trail">
+                          <FileText className="w-3.5 h-3.5" />
+                        </Button>
+                      </div>
+                    ) : (
+                      <Button size="sm" variant="ghost" onClick={() => setAuditFor(r)}>
+                        <FileText className="w-3.5 h-3.5" /> View audit trail
+                      </Button>
+                    )}
+                  </td>
+                </tr>
+              );
+            })}
           </tbody>
         </table>
       </div>
+
+      {reminderTarget && (
+        <SendRemindersModal
+          targets={reminderTarget}
+          onCancel={() => setReminderTarget(null)}
+          onSend={(msg) => handleRemindersSent(reminderTarget, msg)}
+        />
+      )}
+      {auditFor && (
+        <AuditTrailModal row={auditFor} onClose={() => setAuditFor(null)} />
+      )}
     </div>
+  );
+}
+
+// Compact "now" stamp helper for audit events created in the dashboard.
+function nowStamp() {
+  const d = new Date();
+  const date = d.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+  const time = d.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit", hour12: false });
+  return `${date} · ${time}`;
+}
+
+// ---------------------------------------------------------------------------
+// Send Reminders modal — one or many validators at once
+// ---------------------------------------------------------------------------
+
+function SendRemindersModal({
+  targets, onCancel, onSend,
+}: { targets: ValidationRow[]; onCancel: () => void; onSend: (message: string) => void }) {
+  const [message, setMessage] = useState(
+    `Hi! Just a gentle nudge — a decision is awaiting your confirmation in the Turumba dashboard. Whenever you have a moment, your input means a lot.`
+  );
+  // Channel breakdown
+  const byChannel = useMemo(() => {
+    const map: Record<ValidatorChannel, number> = { telegram: 0, whatsapp: 0, sms: 0, email: 0 };
+    targets.forEach(t => { map[t.validatorChannel] = (map[t.validatorChannel] || 0) + 1; });
+    return map;
+  }, [targets]);
+
+  const isOpen = targets.length > 0;
+  const isBatch = targets.length > 1;
+
+  return (
+    <Modal isOpen={isOpen} onClose={onCancel} title={isBatch ? `Send reminders to ${targets.length} validators` : `Send reminder to ${targets[0]?.validator}`} size="lg">
+      <div className="space-y-4">
+        <div className="rounded-md bg-amber-50/60 border border-amber-200 p-3 flex items-start gap-3">
+          <Bell className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+          <div>
+            <p className="text-sm font-semibold text-amber-900">
+              {isBatch ? `Reminding ${targets.length} validators` : "Reminding 1 validator"}
+            </p>
+            <p className="text-xs text-amber-800 mt-0.5">
+              Reminders are delivered on each validator's preferred channel and logged to the audit trail.
+            </p>
+          </div>
+        </div>
+
+        {isBatch && (
+          <div className="grid gap-1.5">
+            <Label className="text-xs font-semibold">Channel breakdown</Label>
+            <div className="flex items-center gap-1.5 flex-wrap">
+              {Object.entries(byChannel).filter(([, n]) => n > 0).map(([k, n]) => (
+                <Chip key={k} tone="slate">
+                  {k === "telegram" ? <Send className="w-3 h-3" />
+                  : k === "whatsapp" ? <MessageCircle className="w-3 h-3" />
+                  : k === "sms" ? <FileText className="w-3 h-3" />
+                  : <FileText className="w-3 h-3" />}
+                  {k} · {n}
+                </Chip>
+              ))}
+            </div>
+          </div>
+        )}
+
+        <div className="grid gap-1.5">
+          <Label className="text-xs font-semibold">Recipients</Label>
+          <div className="rounded-md border border-border max-h-[160px] overflow-y-auto divide-y divide-border">
+            {targets.map(t => (
+              <div key={t.id} className="flex items-center justify-between px-3 py-2 text-sm">
+                <div>
+                  <span className="font-semibold text-foreground">{t.validator}</span>
+                  <span className="text-muted-foreground"> · for {t.name}</span>
+                </div>
+                <Chip tone="slate" className="capitalize">{t.validatorChannel}</Chip>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div className="grid gap-1.5">
+          <Label className="text-xs font-semibold">Message</Label>
+          <Textarea
+            value={message}
+            onChange={(e) => setMessage(e.target.value)}
+            className="min-h-[120px] text-sm"
+          />
+          <p className="text-xs text-muted-foreground">{message.length} characters · sent on each validator's preferred channel</p>
+        </div>
+
+        <div className="flex items-center justify-end gap-2 pt-2 border-t border-border">
+          <Button variant="outline" size="sm" onClick={onCancel}>Cancel</Button>
+          <Button size="sm" className="bg-amber-500 text-white hover:bg-amber-600" onClick={() => onSend(message)} disabled={message.trim().length === 0}>
+            <Bell className="w-3.5 h-3.5" /> Send {isBatch ? `${targets.length} reminders` : "reminder"}
+          </Button>
+        </div>
+      </div>
+    </Modal>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Audit Trail modal — vertical timeline of every event
+// ---------------------------------------------------------------------------
+
+function AuditTrailModal({ row, onClose }: { row: ValidationRow; onClose: () => void }) {
+  const eventMeta = (k: AuditEventKind) => {
+    switch (k) {
+      case "self_reported": return { label: "Self-reported",        Icon: MessageSquareIcon, dot: "bg-blue-500" };
+      case "notified":      return { label: "Validator notified",   Icon: Bell,              dot: "bg-violet-500" };
+      case "reminder":      return { label: "Reminder sent",        Icon: Clock,             dot: "bg-amber-500" };
+      case "comment":       return { label: "Comment",              Icon: FileText,          dot: "bg-slate-400" };
+      case "confirmed":     return { label: "Confirmed",            Icon: CheckCircle2,      dot: "bg-emerald-500" };
+      case "rejected":      return { label: "Rejected",             Icon: XCircle,           dot: "bg-rose-500" };
+    }
+  };
+
+  const handleExport = () => {
+    const header = ["Event", "Actor", "Timestamp", "Channel", "Note"];
+    const body = row.audit.map(e => [eventMeta(e.kind).label, e.by, e.at, e.channel ?? "", e.note ?? ""]);
+    downloadCsv(`audit-${row.name.replace(/\s+/g, "_").toLowerCase()}.csv`, [header, ...body]);
+    toast.success("Audit trail downloaded");
+  };
+
+  return (
+    <Modal isOpen={!!row} onClose={onClose} title="Audit Trail" size="lg">
+      <div className="space-y-4">
+        <div className="flex items-center justify-between flex-wrap gap-2">
+          <div className="flex items-center gap-3">
+            <Avatar name={row.name} tone={row.avatarTone} />
+            <div>
+              <p className="text-sm font-bold text-foreground">{row.name}</p>
+              <p className="text-xs text-muted-foreground">{row.milestone} · self-reported {row.date}</p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            {row.status === "confirmed" && <Chip tone="green"><CheckCircle2 className="w-3 h-3" />Confirmed</Chip>}
+            {row.status === "rejected"  && <Chip tone="red"><XCircle className="w-3 h-3" />Rejected</Chip>}
+            {row.status === "pending"   && <Chip tone="amber">Pending</Chip>}
+          </div>
+        </div>
+
+        <ol className="relative space-y-3">
+          <div className="absolute left-[11px] top-2 bottom-2 w-px bg-border" aria-hidden />
+          {row.audit.map((e, i) => {
+            const meta = eventMeta(e.kind);
+            const Icon = meta.Icon;
+            return (
+              <li key={i} className="relative flex items-start gap-3 pl-0">
+                <span className={cn("w-6 h-6 rounded-full ring-4 ring-background relative z-10 flex items-center justify-center text-white shrink-0", meta.dot)}>
+                  <Icon className="w-3 h-3" />
+                </span>
+                <div className="flex-1 min-w-0 bg-card border border-border rounded-md p-3">
+                  <div className="flex items-center justify-between gap-2 flex-wrap">
+                    <span className="text-sm font-semibold text-foreground">{meta.label}</span>
+                    <span className="text-xs text-muted-foreground">{e.at}</span>
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    by <span className="font-medium text-foreground">{e.by}</span>
+                    {e.channel && <> · <span className="capitalize">{e.channel}</span></>}
+                  </p>
+                  {e.note && <p className="text-sm text-foreground mt-1.5 leading-relaxed">{e.note}</p>}
+                </div>
+              </li>
+            );
+          })}
+        </ol>
+
+        <div className="flex items-center justify-between gap-2 pt-3 border-t border-border">
+          <p className="text-xs text-muted-foreground">{row.audit.length} event{row.audit.length === 1 ? "" : "s"} · {row.remindersSent} reminder{row.remindersSent === 1 ? "" : "s"} sent</p>
+          <div className="flex items-center gap-2">
+            <Button variant="outline" size="sm" onClick={handleExport}>
+              <Download className="w-3.5 h-3.5" /> Export
+            </Button>
+            <Button size="sm" onClick={onClose}>Done</Button>
+          </div>
+        </div>
+      </div>
+    </Modal>
   );
 }
