@@ -2097,8 +2097,117 @@ const PIPELINE_COLS = [
   },
 ];
 
+// Shared utility — kicks off a CSV download for any 2-d array of cells.
+function downloadCsv(filename: string, rows: (string | number)[][]) {
+  const csv = rows
+    .map(r => r.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(","))
+    .join("\n");
+  try {
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    return true;
+  } catch { return false; }
+}
+
+type JourneyStage = "Touchpoint" | "Engaged" | "Active Journey" | "Decision";
+type JourneyType  = "Salvation" | "Baptism" | "Community" | "Growth";
+type JourneySource = "Telegram" | "WhatsApp" | "SMS" | "Self-guided" | "Messenger" | "Conversation";
+type JourneyValidation = "Pending" | "Confirmed" | "N/A";
+
+type Journey = {
+  id: string;
+  name: string;
+  source: JourneySource;
+  type: JourneyType;
+  stage: JourneyStage;
+  indicators: number;
+  total: number;
+  milestone: string;
+  validation: JourneyValidation;
+  avatarTone: "blue" | "purple" | "rose" | "amber" | "green" | "slate";
+  language: "English" | "Amharic" | "Afaan Oromoo";
+  startedAt: string;
+};
+
+const INITIAL_JOURNEYS: Journey[] = [
+  // Touchpoint
+  { id: "j1",  name: "Sara Ahmed",       source: "Telegram",    type: "Salvation", stage: "Touchpoint",     indicators: 1, total: 7, milestone: "First contact",       validation: "N/A",      avatarTone: "rose",   language: "English", startedAt: "2026-04-01" },
+  { id: "j2",  name: "Tadesse M.",       source: "WhatsApp",    type: "Salvation", stage: "Touchpoint",     indicators: 2, total: 7, milestone: "Intake started",      validation: "N/A",      avatarTone: "blue",   language: "Amharic", startedAt: "2026-04-02" },
+  // Engaged
+  { id: "j3",  name: "Abigail Johnson",  source: "Self-guided", type: "Salvation", stage: "Engaged",        indicators: 4, total: 7, milestone: "Prayer guide step 3", validation: "Pending",  avatarTone: "purple", language: "English", startedAt: "2026-03-12" },
+  { id: "j4",  name: "David Kebede",     source: "Conversation",type: "Baptism",   stage: "Engaged",        indicators: 3, total: 7, milestone: "Bible study started", validation: "Confirmed",avatarTone: "rose",   language: "Amharic", startedAt: "2026-02-28" },
+  { id: "j5",  name: "Sara K.",          source: "Self-guided", type: "Salvation", stage: "Engaged",        indicators: 4, total: 7, milestone: "Bible Study Started", validation: "Confirmed",avatarTone: "green",  language: "English", startedAt: "2026-03-18" },
+  // Active Journey
+  { id: "j6",  name: "Miriam Haile",     source: "Conversation",type: "Salvation", stage: "Active Journey", indicators: 6, total: 7, milestone: "Weekly mentor check", validation: "Pending",  avatarTone: "amber",  language: "English", startedAt: "2026-02-10" },
+  { id: "j7",  name: "Daniel M.",        source: "WhatsApp",    type: "Baptism",   stage: "Active Journey", indicators: 3, total: 7, milestone: "Baptism Request",     validation: "Pending",  avatarTone: "blue",   language: "Amharic", startedAt: "2026-03-02" },
+  // Decision
+  { id: "j8",  name: "Samuel B.",        source: "Self-guided", type: "Salvation", stage: "Decision",       indicators: 7, total: 7, milestone: "Confirmed Decision",  validation: "Confirmed",avatarTone: "green",  language: "English", startedAt: "2026-01-22" },
+  { id: "j9",  name: "Fatima A.",        source: "Telegram",    type: "Salvation", stage: "Decision",       indicators: 5, total: 7, milestone: "Salvation Decision",  validation: "Pending",  avatarTone: "rose",   language: "English", startedAt: "2026-03-05" },
+  { id: "j10", name: "Tesfaye W.",       source: "Messenger",   type: "Community", stage: "Touchpoint",     indicators: 1, total: 7, milestone: "First Contact",       validation: "N/A",      avatarTone: "purple", language: "Afaan Oromoo", startedAt: "2026-04-05" },
+];
+
+const JOURNEY_STAGES: JourneyStage[] = ["Touchpoint", "Engaged", "Active Journey", "Decision"];
+const JOURNEY_TYPES:  JourneyType[]  = ["Salvation", "Baptism", "Community", "Growth"];
+const JOURNEY_SOURCES: JourneySource[] = ["Telegram", "WhatsApp", "SMS", "Self-guided", "Messenger", "Conversation"];
+const PERIODS = ["All time", "Q1 2026", "Q4 2025", "Q3 2025", "Last 30 days", "Last 90 days"];
+
+// Keep the old PIPELINE_COLS for back-compat but we no longer use them directly.
+
 export function FaithJourneysView() {
   const [tab, setTab] = useState<"pipeline" | "milestones" | "list">("pipeline");
+  const [journeys, setJourneys] = useState<Journey[]>(INITIAL_JOURNEYS);
+  const [period, setPeriod]   = useState<string>("Q1 2026");
+  const [stageF, setStageF]   = useState<string>("all");
+  const [typeF, setTypeF]     = useState<string>("all");
+  const [valF, setValF]       = useState<string>("all");
+  const [langF, setLangF]     = useState<string>("all");
+  const [sourceF, setSourceF] = useState<string>("all");
+  const [query, setQuery]     = useState("");
+  const [isNewOpen, setIsNewOpen] = useState(false);
+
+  const filtered = useMemo(() => {
+    return journeys.filter(j => {
+      const q = query.toLowerCase();
+      const matchesQ = !q || j.name.toLowerCase().includes(q) || j.milestone.toLowerCase().includes(q);
+      return matchesQ
+        && (stageF  === "all" || j.stage === stageF)
+        && (typeF   === "all" || j.type === typeF)
+        && (valF    === "all" || j.validation === valF)
+        && (langF   === "all" || j.language === langF)
+        && (sourceF === "all" || j.source === sourceF);
+    });
+  }, [journeys, query, stageF, typeF, valF, langF, sourceF]);
+
+  // Pipeline columns are derived from the (filtered) journey list so filters
+  // affect every tab identically.
+  const pipelineCols = useMemo(() => {
+    const byStage: Record<JourneyStage, Journey[]> = { Touchpoint: [], Engaged: [], "Active Journey": [], Decision: [] };
+    filtered.forEach(j => byStage[j.stage].push(j));
+    return [
+      { key: "Touchpoint",     dot: "bg-slate-400",   tone: "slate" as const, journeys: byStage.Touchpoint },
+      { key: "Engaged",        dot: "bg-amber-500",   tone: "amber" as const, journeys: byStage.Engaged },
+      { key: "Active Journey", dot: "bg-blue-500",    tone: "blue"  as const, journeys: byStage["Active Journey"] },
+      { key: "Decision",       dot: "bg-emerald-500", tone: "green" as const, journeys: byStage.Decision },
+    ];
+  }, [filtered]);
+
+  const hasFilters = query || stageF !== "all" || typeF !== "all" || valF !== "all" || langF !== "all" || sourceF !== "all";
+
+  const handleExport = () => {
+    const header = ["Person", "Source", "Journey Type", "Stage", "Indicators", "Last Milestone", "Validation", "Language", "Started"];
+    const body = filtered.map(j => [j.name, j.source, j.type, j.stage, `${j.indicators}/${j.total}`, j.milestone, j.validation, j.language, j.startedAt]);
+    const ok = downloadCsv(`faith-journeys-${new Date().toISOString().split("T")[0]}.csv`, [header, ...body]);
+    if (ok) toast.success(`Exported ${filtered.length} journey${filtered.length === 1 ? "" : "s"}`);
+    else toast.error("Couldn't start the download — your browser may have blocked it.");
+  };
+
   return (
     <div className="p-6 space-y-4">
       <PageHeader
@@ -2106,22 +2215,88 @@ export function FaithJourneysView() {
         subtitle="Track new faith journeys and their progression through indicators"
         actions={(
           <>
-            <FilterButton label="Q1 2026" />
-            <button className="flex items-center gap-1.5 px-3 py-2 text-sm font-medium bg-card border border-border rounded-md hover:bg-muted/50 transition-all">
+            <FilterDropdown
+              label="Period"
+              value={period}
+              onChange={setPeriod}
+              options={PERIODS.map(p => ({ value: p, label: p }))}
+            />
+            <Button variant="outline" onClick={handleExport}>
               <Download className="w-3.5 h-3.5" /> Export
-            </button>
-            <button className="flex items-center gap-1.5 px-4 py-2 text-sm font-semibold bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-all shadow-sm">
+            </Button>
+            <Button onClick={() => setIsNewOpen(true)}>
               <Plus className="w-4 h-4" /> New Journey
-            </button>
+            </Button>
           </>
         )}
       />
 
       <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
-        <StatCard label="New Faith Journeys" value={342}   change="+18% this quarter"   icon={TrendingUp} tone="blue"   />
-        <StatCard label="Active Journeys"    value="1,247" subtitle="across 5 platforms" icon={Activity}   tone="purple" />
-        <StatCard label="Milestone Reached"  value={89}    subtitle="decisions this month" icon={CheckCircle2} tone="green" />
-        <StatCard label="Avg. Indicators Met" value="4.2 / 7" change="+0.6 from last quarter" icon={Star} tone="amber" />
+        <StatCard label="New Faith Journeys"   value={filtered.length}                                                 change="+18% this quarter"        icon={TrendingUp}   tone="blue" />
+        <StatCard label="Active Journeys"      value={filtered.filter(j => j.stage === "Active Journey" || j.stage === "Engaged").length} subtitle="across 5 platforms"     icon={Activity}     tone="purple" />
+        <StatCard label="Milestone Reached"    value={filtered.filter(j => j.stage === "Decision").length}             subtitle="decisions this period" icon={CheckCircle2} tone="green" />
+        <StatCard label="Avg. Indicators Met"  value={filtered.length === 0 ? "0 / 7" : `${(filtered.reduce((s, j) => s + j.indicators, 0) / filtered.length).toFixed(1)} / 7`} change="+0.6 from last quarter" icon={Star} tone="amber" />
+      </div>
+
+      {/* Filter toolbar */}
+      <div className="bg-card border border-border rounded-lg p-3 flex items-center gap-2 flex-wrap">
+        <div className="flex-1 min-w-[240px] relative">
+          <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none" />
+          <Input
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Search by person or milestone..."
+            className="pl-9 h-9"
+          />
+        </div>
+        <FilterDropdown
+          label="Stage"
+          value={stageF}
+          onChange={setStageF}
+          options={[{ value: "all", label: "All stages" }, ...JOURNEY_STAGES.map(s => ({ value: s, label: s }))]}
+        />
+        <FilterDropdown
+          label="Type"
+          value={typeF}
+          onChange={setTypeF}
+          options={[{ value: "all", label: "All types" }, ...JOURNEY_TYPES.map(t => ({ value: t, label: t }))]}
+        />
+        <FilterDropdown
+          label="Validation"
+          value={valF}
+          onChange={setValF}
+          options={[
+            { value: "all",       label: "Any validation" },
+            { value: "Pending",   label: "Pending" },
+            { value: "Confirmed", label: "Confirmed" },
+            { value: "N/A",       label: "N/A" },
+          ]}
+        />
+        <FilterDropdown
+          label="Source"
+          value={sourceF}
+          onChange={setSourceF}
+          options={[{ value: "all", label: "All sources" }, ...JOURNEY_SOURCES.map(s => ({ value: s, label: s }))]}
+        />
+        <FilterDropdown
+          label="Language"
+          value={langF}
+          onChange={setLangF}
+          options={[
+            { value: "all",          label: "All languages" },
+            { value: "English",      label: "English" },
+            { value: "Amharic",      label: "Amharic" },
+            { value: "Afaan Oromoo", label: "Afaan Oromoo" },
+          ]}
+        />
+        {hasFilters && (
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => { setQuery(""); setStageF("all"); setTypeF("all"); setValF("all"); setLangF("all"); setSourceF("all"); }}
+          >Clear</Button>
+        )}
+        <span className="text-xs text-muted-foreground ml-auto">{filtered.length} of {journeys.length}</span>
       </div>
 
       {/* Tabs */}
@@ -2144,18 +2319,20 @@ export function FaithJourneysView() {
 
       {tab === "pipeline" && (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          {PIPELINE_COLS.map(col => (
+          {pipelineCols.map(col => (
             <div key={col.key} className="bg-card border border-border rounded-lg p-3 min-h-[340px]">
               <div className="flex items-center justify-between mb-3 px-1">
                 <div className="flex items-center gap-2">
                   <span className={cn("w-2.5 h-2.5 rounded-full", col.dot)} />
-                  <span className="text-sm font-semibold text-foreground">{col.label}</span>
+                  <span className="text-sm font-semibold text-foreground">{col.key}</span>
                 </div>
-                <span className="text-xs font-semibold text-muted-foreground">{col.count}</span>
+                <span className="text-xs font-semibold text-muted-foreground">{col.journeys.length}</span>
               </div>
               <div className="space-y-2">
-                {col.cards.map((c, i) => (
-                  <div key={i} className="bg-background border border-border rounded-md p-3 hover:border-foreground/10 transition-all cursor-pointer">
+                {col.journeys.length === 0 ? (
+                  <p className="text-xs text-muted-foreground text-center py-6">Nothing here yet.</p>
+                ) : col.journeys.map((c) => (
+                  <div key={c.id} className="bg-background border border-border rounded-md p-3 hover:border-foreground/10 transition-all cursor-pointer">
                     <div className="flex items-center gap-2.5 mb-2">
                       <Avatar name={c.name} tone={c.avatarTone} />
                       <div className="min-w-0">
@@ -2165,12 +2342,12 @@ export function FaithJourneysView() {
                     </div>
                     <div className="flex items-center gap-1 mb-2">
                       {Array.from({ length: c.total }).map((_, idx) => (
-                        <div key={idx} className={cn("h-1.5 flex-1 rounded-full", idx < c.indicators ? (c.tone === "green" ? "bg-emerald-500" : c.tone === "amber" ? "bg-amber-500" : "bg-blue-500") : "bg-muted")} />
+                        <div key={idx} className={cn("h-1.5 flex-1 rounded-full", idx < c.indicators ? (col.tone === "green" ? "bg-emerald-500" : col.tone === "amber" ? "bg-amber-500" : col.tone === "blue" ? "bg-blue-500" : "bg-slate-400") : "bg-muted")} />
                       ))}
                     </div>
                     <div className="flex items-center justify-between">
-                      <Chip tone={c.tone}>{c.stage}</Chip>
-                      <span className="text-xs text-muted-foreground">{c.indicators}/{c.total} indicators</span>
+                      <Chip tone={col.tone}>{c.type}</Chip>
+                      <span className="text-xs text-muted-foreground">{c.indicators}/{c.total}</span>
                     </div>
                   </div>
                 ))}
@@ -2180,44 +2357,221 @@ export function FaithJourneysView() {
         </div>
       )}
 
-      {tab === "milestones" && <MilestonesInner />}
-      {tab === "list" && <JourneyListInner />}
+      {tab === "milestones" && <MilestonesInner journeys={filtered} />}
+      {tab === "list"       && <JourneyListInner journeys={filtered} />}
+
+      <NewJourneyModal
+        isOpen={isNewOpen}
+        onClose={() => setIsNewOpen(false)}
+        onSubmit={(draft) => {
+          setJourneys(list => [{ ...draft, id: `j-${Date.now()}` }, ...list]);
+          toast.success(`${draft.name}'s journey started`);
+          setIsNewOpen(false);
+        }}
+      />
     </div>
   );
 }
 
+// New Journey modal — minimal data needed to start tracking
+function NewJourneyModal({
+  isOpen, onClose, onSubmit,
+}: { isOpen: boolean; onClose: () => void; onSubmit: (j: Omit<Journey, "id">) => void }) {
+  const [name, setName]     = useState("");
+  const [type, setType]     = useState<JourneyType>("Salvation");
+  const [source, setSource] = useState<JourneySource>("Telegram");
+  const [stage, setStage]   = useState<JourneyStage>("Touchpoint");
+  const [language, setLanguage] = useState<Journey["language"]>("English");
+  const canSave = name.trim().length > 0;
+
+  const reset = () => { setName(""); setType("Salvation"); setSource("Telegram"); setStage("Touchpoint"); setLanguage("English"); };
+  const close = () => { reset(); onClose(); };
+
+  const handleSubmit = () => {
+    onSubmit({
+      name: name.trim(),
+      source,
+      type,
+      stage,
+      indicators: stage === "Touchpoint" ? 1 : stage === "Engaged" ? 3 : stage === "Active Journey" ? 5 : 7,
+      total: 7,
+      milestone: stage === "Touchpoint" ? "First contact"
+               : stage === "Engaged"    ? "Engagement confirmed"
+               : stage === "Active Journey" ? "Active mentoring"
+               : "Decision reached",
+      validation: stage === "Decision" ? "Pending" : "N/A",
+      avatarTone: "blue",
+      language,
+      startedAt: new Date().toISOString().split("T")[0],
+    });
+    reset();
+  };
+
+  return (
+    <Modal isOpen={isOpen} onClose={close} title="Start a new faith journey" size="md">
+      <div className="space-y-4">
+        <div className="grid gap-1.5">
+          <Label className="text-xs font-semibold">Person's name <span className="text-destructive">*</span></Label>
+          <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. Hanna Tadesse" autoFocus />
+        </div>
+
+        <div className="grid grid-cols-2 gap-3">
+          <div className="grid gap-1.5">
+            <Label className="text-xs font-semibold">Journey type</Label>
+            <select value={type} onChange={(e) => setType(e.target.value as JourneyType)} className="h-10 px-3 rounded-md border border-input bg-background text-sm">
+              {JOURNEY_TYPES.map(t => <option key={t}>{t}</option>)}
+            </select>
+          </div>
+          <div className="grid gap-1.5">
+            <Label className="text-xs font-semibold">Source channel</Label>
+            <select value={source} onChange={(e) => setSource(e.target.value as JourneySource)} className="h-10 px-3 rounded-md border border-input bg-background text-sm">
+              {JOURNEY_SOURCES.map(s => <option key={s}>{s}</option>)}
+            </select>
+          </div>
+          <div className="grid gap-1.5">
+            <Label className="text-xs font-semibold">Starting stage</Label>
+            <div className="grid grid-cols-2 gap-1.5">
+              {JOURNEY_STAGES.map(s => (
+                <button
+                  key={s}
+                  onClick={() => setStage(s)}
+                  className={cn(
+                    "px-2.5 py-1.5 text-xs font-semibold rounded-md border transition-all",
+                    stage === s ? "border-primary bg-primary/10 text-primary" : "border-border text-muted-foreground hover:bg-muted/50"
+                  )}
+                >{s}</button>
+              ))}
+            </div>
+          </div>
+          <div className="grid gap-1.5">
+            <Label className="text-xs font-semibold">Language</Label>
+            <select value={language} onChange={(e) => setLanguage(e.target.value as Journey["language"])} className="h-10 px-3 rounded-md border border-input bg-background text-sm">
+              <option>English</option>
+              <option>Amharic</option>
+              <option>Afaan Oromoo</option>
+            </select>
+          </div>
+        </div>
+
+        <div className="flex items-center justify-end gap-2 pt-3 border-t border-border">
+          <Button variant="outline" size="sm" onClick={close}>Cancel</Button>
+          <Button size="sm" disabled={!canSave} onClick={handleSubmit}>
+            <Plus className="w-3.5 h-3.5" /> Start journey
+          </Button>
+        </div>
+      </div>
+    </Modal>
+  );
+}
+
 // Standalone Milestones page (also reachable as a tab inside Faith Journeys)
+// Milestones page data — decoupled from the simpler journey list so we can
+// show rich per-person milestone cards. Each row captures the spec's 4-step
+// pipeline (Salvation, Baptism, Community, Growth Evidence).
+type MilestoneState = "done" | "progress" | "pending";
+type MilestonePerson = {
+  id: string;
+  name: string;
+  journeyType: "Self-guided" | "Conversation-based" | "Hybrid";
+  started: string;
+  language: "English" | "Amharic" | "Afaan Oromoo";
+  state: "Active Journey" | "Engaged" | "Touchpoint" | "Decision";
+  stateTone: any;
+  indicators: number;
+  total: number;
+  avatarTone: "blue" | "purple" | "rose" | "amber" | "green" | "slate";
+  milestones: {
+    key: "salvation" | "baptism" | "community" | "growth";
+    label: string;
+    date: string;
+    state: MilestoneState;
+    sub: string[];
+  }[];
+};
+
+const MILESTONE_PEOPLE: MilestonePerson[] = [
+  {
+    id: "mp1", name: "Abigail Johnson", journeyType: "Self-guided", started: "Jan 12, 2026", language: "English",
+    state: "Active Journey", stateTone: "green", indicators: 6, total: 7, avatarTone: "purple",
+    milestones: [
+      { key: "salvation", label: "Salvation Decision", date: "Feb 3, 2026", state: "done",     sub: ["Indicated decision (self-reported)", "Confirmed by Pastor James K."] },
+      { key: "baptism",   label: "Baptism",            date: "Mar 15, 2026", state: "done",     sub: ["Public statement of faith confirmed"] },
+      { key: "community", label: "Community",          date: "In Progress",  state: "progress", sub: ["Referred to local fellowship", "Awaiting connection confirmation"] },
+      { key: "growth",    label: "Growth Evidence",    date: "Not Started",  state: "pending",  sub: ["Prayer (0/7 days)", "Bible engagement (0/7 days)", "Contribution / Serving"] },
+    ]
+  },
+  {
+    id: "mp2", name: "David Kebede", journeyType: "Conversation-based", started: "Feb 28, 2026", language: "Amharic",
+    state: "Engaged", stateTone: "amber", indicators: 3, total: 7, avatarTone: "rose",
+    milestones: [
+      { key: "salvation", label: "Salvation", date: "Indicated only — awaiting confirmation", state: "progress", sub: [] },
+      { key: "baptism",   label: "Baptism",   date: "Not yet", state: "pending", sub: [] },
+      { key: "community", label: "Community", date: "Not yet", state: "pending", sub: [] },
+      { key: "growth",    label: "Growth",    date: "Not yet", state: "pending", sub: [] },
+    ]
+  },
+  {
+    id: "mp3", name: "Samuel Bekele", journeyType: "Self-guided", started: "Jan 22, 2026", language: "English",
+    state: "Decision", stateTone: "green", indicators: 7, total: 7, avatarTone: "green",
+    milestones: [
+      { key: "salvation", label: "Salvation Decision", date: "Feb 1, 2026",  state: "done", sub: ["Confirmed by Elder Susan M."] },
+      { key: "baptism",   label: "Baptism",            date: "Mar 9, 2026",  state: "done", sub: ["Baptized at Addis community gathering"] },
+      { key: "community", label: "Community",          date: "Mar 20, 2026", state: "done", sub: ["Joined Tuesday study group"] },
+      { key: "growth",    label: "Growth Evidence",    date: "Apr 5, 2026",  state: "done", sub: ["Prayer 6/7 days", "Bible 5/7 days", "Serves weekly"] },
+    ]
+  },
+  {
+    id: "mp4", name: "Miriam Haile", journeyType: "Hybrid", started: "Mar 4, 2026", language: "Afaan Oromoo",
+    state: "Active Journey", stateTone: "blue", indicators: 4, total: 7, avatarTone: "amber",
+    milestones: [
+      { key: "salvation", label: "Salvation Decision", date: "Mar 18, 2026", state: "done",     sub: ["Confirmed by Sister Ruth B."] },
+      { key: "baptism",   label: "Baptism",            date: "In Progress",  state: "progress", sub: ["Planning community gathering"] },
+      { key: "community", label: "Community",          date: "Not Started",  state: "pending",  sub: ["Awaiting fellowship match"] },
+      { key: "growth",    label: "Growth Evidence",    date: "Not Started",  state: "pending",  sub: [] },
+    ]
+  },
+];
+
+const MILESTONE_STATES = ["Active Journey", "Engaged", "Touchpoint", "Decision"] as const;
+
 export function MilestonesView() {
+  const [query, setQuery]   = useState("");
+  const [stateF, setStateF] = useState("all");
+  const [langF, setLangF]   = useState("all");
+  const [milestoneF, setMilestoneF] = useState<string>("all"); // filter by a specific milestone status
+  const [typeF, setTypeF]   = useState("all");                 // self-guided / conversation / hybrid
+
+  const filtered = useMemo(() => {
+    return MILESTONE_PEOPLE.filter(p => {
+      const q = query.toLowerCase();
+      const matchesQ = !q || p.name.toLowerCase().includes(q);
+      const matchesState = stateF === "all" || p.state === stateF;
+      const matchesLang  = langF === "all" || p.language === langF;
+      const matchesType  = typeF === "all" || p.journeyType === typeF;
+      // milestoneF is encoded as "<key>:<state>" (e.g. "salvation:done")
+      let matchesMilestone = true;
+      if (milestoneF !== "all") {
+        const [mkey, mstate] = milestoneF.split(":");
+        matchesMilestone = p.milestones.some(m => m.key === mkey && m.state === mstate);
+      }
+      return matchesQ && matchesState && matchesLang && matchesType && matchesMilestone;
+    });
+  }, [query, stateF, langF, milestoneF, typeF]);
+
+  const hasFilters = query || stateF !== "all" || langF !== "all" || milestoneF !== "all" || typeF !== "all";
+
   const handleExport = () => {
-    // Build a CSV from the same data shown in the cards.
-    const rows = [
-      ["Person", "Journey Type", "Started", "Language", "State", "Indicators", "Milestone", "Status", "Date / Note"],
-      ["Abigail Johnson", "Self-guided Journey", "Jan 12, 2026", "English", "Active Journey", "6/7", "Salvation Decision", "Confirmed",   "Feb 3, 2026 — Confirmed by Pastor James K."],
-      ["Abigail Johnson", "Self-guided Journey", "Jan 12, 2026", "English", "Active Journey", "6/7", "Baptism",            "Confirmed",   "Mar 15, 2026 — Public statement of faith"],
-      ["Abigail Johnson", "Self-guided Journey", "Jan 12, 2026", "English", "Active Journey", "6/7", "Community",          "In Progress", "Referred to local fellowship — awaiting confirmation"],
-      ["Abigail Johnson", "Self-guided Journey", "Jan 12, 2026", "English", "Active Journey", "6/7", "Growth Evidence",    "Not Started", "Prayer 0/7; Bible 0/7; Contribution not started"],
-      ["David Kebede",    "Conversation-based",  "Feb 28, 2026", "Amharic", "Engaged",        "3/7", "Salvation",          "In Progress", "Indicated only — awaiting confirmation"],
-      ["David Kebede",    "Conversation-based",  "Feb 28, 2026", "Amharic", "Engaged",        "3/7", "Baptism",            "Not Started", "—"],
-      ["David Kebede",    "Conversation-based",  "Feb 28, 2026", "Amharic", "Engaged",        "3/7", "Community",          "Not Started", "—"],
-      ["David Kebede",    "Conversation-based",  "Feb 28, 2026", "Amharic", "Engaged",        "3/7", "Growth",             "Not Started", "—"],
-    ];
-    const csv = rows
-      .map(r => r.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(","))
-      .join("\n");
-    try {
-      const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      const today = new Date().toISOString().split("T")[0];
-      a.href = url;
-      a.download = `spiritual-milestones-${today}.csv`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
-    } catch {
-      // No-op: browsers in unusual environments may block the download.
-    }
+    const header = ["Person", "Journey Type", "Started", "Language", "State", "Indicators", "Milestone", "Status", "Date / Note"];
+    const body: (string | number)[][] = [];
+    filtered.forEach(p => {
+      p.milestones.forEach(m => {
+        const noteStr = m.sub.join("; ") || m.date;
+        body.push([p.name, p.journeyType, p.started, p.language, p.state, `${p.indicators}/${p.total}`, m.label, m.state, noteStr]);
+      });
+    });
+    const ok = downloadCsv(`spiritual-milestones-${new Date().toISOString().split("T")[0]}.csv`, [header, ...body]);
+    if (ok) toast.success(`Exported ${filtered.length} person${filtered.length === 1 ? "" : "s"}`);
+    else toast.error("Couldn't start the download — your browser may have blocked it.");
   };
 
   return (
@@ -2226,69 +2580,117 @@ export function MilestonesView() {
         title="Spiritual Milestones"
         subtitle="Track salvation decisions, baptism, and community connection for each person"
         actions={(
-          <>
-            <button className="flex items-center gap-1.5 px-3 py-2 text-sm font-medium bg-card border border-border rounded-md hover:bg-muted/50 transition-all">
-              <Filter className="w-3.5 h-3.5" /> Filter
-            </button>
-            <button
-              onClick={handleExport}
-              className="flex items-center gap-1.5 px-4 py-2 text-sm font-semibold bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-all shadow-sm"
-            >
-              <Download className="w-4 h-4" /> Export Report
-            </button>
-          </>
+          <Button onClick={handleExport}>
+            <Download className="w-4 h-4" /> Export Report
+          </Button>
         )}
       />
-      <MilestonesInner />
+
+      {/* Filter toolbar — above the cards */}
+      <div className="bg-card border border-border rounded-lg p-3 flex items-center gap-2 flex-wrap">
+        <div className="flex-1 min-w-[240px] relative">
+          <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none" />
+          <Input
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Search person..."
+            className="pl-9 h-9"
+          />
+        </div>
+        <FilterDropdown
+          label="State"
+          value={stateF}
+          onChange={setStateF}
+          options={[{ value: "all", label: "All states" }, ...MILESTONE_STATES.map(s => ({ value: s, label: s }))]}
+        />
+        <FilterDropdown
+          label="Journey"
+          value={typeF}
+          onChange={setTypeF}
+          options={[
+            { value: "all",                  label: "All journey types" },
+            { value: "Self-guided",          label: "Self-guided" },
+            { value: "Conversation-based",   label: "Conversation-based" },
+            { value: "Hybrid",               label: "Hybrid" },
+          ]}
+        />
+        <FilterDropdown
+          label="Milestone"
+          value={milestoneF}
+          onChange={setMilestoneF}
+          options={[
+            { value: "all",               label: "Any milestone status" },
+            { value: "salvation:done",    label: "Salvation confirmed" },
+            { value: "salvation:progress", label: "Salvation in progress" },
+            { value: "baptism:done",      label: "Baptism confirmed" },
+            { value: "baptism:progress",  label: "Baptism in progress" },
+            { value: "community:done",    label: "Community confirmed" },
+            { value: "community:progress", label: "Community in progress" },
+            { value: "growth:done",       label: "Growth evidence met" },
+            { value: "growth:pending",    label: "Growth not started" },
+          ]}
+        />
+        <FilterDropdown
+          label="Language"
+          value={langF}
+          onChange={setLangF}
+          options={[
+            { value: "all",          label: "All languages" },
+            { value: "English",      label: "English" },
+            { value: "Amharic",      label: "Amharic" },
+            { value: "Afaan Oromoo", label: "Afaan Oromoo" },
+          ]}
+        />
+        {hasFilters && (
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => { setQuery(""); setStateF("all"); setLangF("all"); setMilestoneF("all"); setTypeF("all"); }}
+          >Clear</Button>
+        )}
+        <span className="text-xs text-muted-foreground ml-auto">{filtered.length} of {MILESTONE_PEOPLE.length}</span>
+      </div>
+
+      <MilestonesCards people={filtered} />
     </div>
   );
 }
 
-function MilestonesInner() {
-  const people = [
-    {
-      name: "Abigail Johnson", type: "Self-guided Journey", started: "Jan 12, 2026", lang: "English",
-      state: "Active Journey", stateTone: "green" as const, indicators: "6/7 Indicators", avatarTone: "purple" as const,
-      milestones: [
-        { key: "salvation", label: "Salvation Decision", date: "Feb 3, 2026", state: "done", sub: ["Indicated decision (self-reported)", "Confirmed by Pastor James K."] },
-        { key: "baptism",   label: "Baptism",            date: "Mar 15, 2026", state: "done", sub: ["Public statement of faith confirmed"] },
-        { key: "community", label: "Community",          date: "In Progress",  state: "progress", sub: ["Referred to local fellowship", "Awaiting connection confirmation"] },
-        { key: "growth",    label: "Growth Evidence",    date: "Not Started",  state: "pending", sub: ["Prayer (0/7 days)", "Bible engagement (0/7 days)", "Contribution / Serving"] },
-      ]
-    },
-    {
-      name: "David Kebede", type: "Conversation-based", started: "Feb 28, 2026", lang: "Amharic",
-      state: "Engaged", stateTone: "amber" as const, indicators: "3/7 Indicators", avatarTone: "rose" as const,
-      milestones: [
-        { key: "salvation", label: "Salvation", date: "Indicated only — awaiting confirmation", state: "progress", sub: [] },
-        { key: "baptism",   label: "Baptism",   date: "Not yet", state: "pending", sub: [] },
-        { key: "community", label: "Community", date: "Not yet", state: "pending", sub: [] },
-        { key: "growth",    label: "Growth",    date: "Not yet", state: "pending", sub: [] },
-      ]
-    },
-  ];
-  const stateClass = (s: string) => s === "done"
-    ? "bg-emerald-50 border-emerald-200"
-    : s === "progress" ? "bg-amber-50 border-amber-200" : "bg-muted/30 border-border";
-  const stateIcon = (s: string) => s === "done"
-    ? <CheckCircle2 className="w-4 h-4 text-emerald-600" />
-    : s === "progress" ? <Clock className="w-4 h-4 text-amber-600" /> : <div className="w-4 h-4 rounded-full border-2 border-muted-foreground/30" />;
+// Render the milestone cards given a list of people (shared between the
+// standalone page and the Faith Journeys tab).
+function MilestonesCards({ people }: { people: MilestonePerson[] }) {
+  const stateClass = (s: MilestoneState) =>
+    s === "done"     ? "bg-emerald-50 border-emerald-200"
+  : s === "progress" ? "bg-amber-50 border-amber-200"
+                     : "bg-muted/30 border-border";
+  const stateIcon = (s: MilestoneState) =>
+    s === "done"     ? <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+  : s === "progress" ? <Clock className="w-4 h-4 text-amber-600" />
+                     : <div className="w-4 h-4 rounded-full border-2 border-muted-foreground/30" />;
+
+  if (people.length === 0) {
+    return (
+      <div className="bg-card border border-border rounded-lg p-12 text-center">
+        <p className="text-sm text-muted-foreground">No milestones match your filters.</p>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-4">
-      {people.map((p, pi) => (
-        <div key={pi} className="bg-card border border-border rounded-lg p-4">
+      {people.map((p) => (
+        <div key={p.id} className="bg-card border border-border rounded-lg p-4">
           <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
             <div className="flex items-center gap-3">
               <Avatar name={p.name} tone={p.avatarTone} />
               <div>
                 <div className="text-sm font-bold text-foreground">{p.name}</div>
-                <div className="text-xs text-muted-foreground">{p.type} · Started: {p.started} · {p.lang}</div>
+                <div className="text-xs text-muted-foreground">{p.journeyType} · Started: {p.started} · {p.language}</div>
               </div>
             </div>
             <div className="flex items-center gap-2">
               <Chip tone={p.stateTone}>{p.state}</Chip>
-              <span className="text-xs text-muted-foreground font-medium">{p.indicators}</span>
+              <span className="text-xs text-muted-foreground font-medium">{p.indicators}/{p.total} Indicators</span>
             </div>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
@@ -2316,13 +2718,48 @@ function MilestonesInner() {
   );
 }
 
-function JourneyListInner() {
-  const rows = [
-    { name: "Fatima A.",  source: "Telegram",  type: "Salvation",  stage: "Decision", stageTone: "green" as const, indicators: 5, total: 7, milestone: "Salvation Decision",  validation: "Pending",   validationTone: "amber" as const, avatarTone: "rose" as const },
-    { name: "Daniel M.",  source: "WhatsApp",  type: "Baptism",    stage: "Active",   stageTone: "amber" as const, indicators: 3, total: 7, milestone: "Baptism Request",     validation: "Pending",   validationTone: "amber" as const, avatarTone: "blue" as const },
-    { name: "Sara K.",    source: "Self-guided", type: "Salvation", stage: "Engaged",  stageTone: "blue" as const,  indicators: 4, total: 7, milestone: "Bible Study Started", validation: "Confirmed", validationTone: "green" as const, avatarTone: "green" as const },
-    { name: "Tesfaye W.", source: "Messenger", type: "Community",  stage: "Touchpoint", stageTone: "slate" as const, indicators: 1, total: 7, milestone: "First Contact",      validation: "N/A",      validationTone: "slate" as const, avatarTone: "purple" as const },
-  ];
+// Compact shim for the Faith Journeys "Spiritual Milestones" tab — reuses the
+// same card renderer so both surfaces stay visually consistent. It projects
+// the filtered journey list into MilestonePerson records so filters set on the
+// page also narrow the milestones view.
+function MilestonesInner({ journeys }: { journeys?: Journey[] }) {
+  if (!journeys) {
+    return <MilestonesCards people={MILESTONE_PEOPLE} />;
+  }
+  const nameSet = new Set(journeys.map(j => j.name));
+  // Match on name where possible; fall back to every seeded person when the
+  // journey list doesn't overlap so the tab never shows an empty void.
+  const matched = MILESTONE_PEOPLE.filter(p => nameSet.has(p.name));
+  return <MilestonesCards people={matched.length > 0 ? matched : MILESTONE_PEOPLE} />;
+}
+
+function JourneyListInner({ journeys }: { journeys?: Journey[] }) {
+  const source = journeys ?? INITIAL_JOURNEYS;
+  const stageTone = (s: JourneyStage) =>
+    s === "Touchpoint"     ? "slate"
+  : s === "Engaged"        ? "amber"
+  : s === "Active Journey" ? "blue"
+                           : "green";
+  const validationTone = (v: JourneyValidation) =>
+    v === "Confirmed" ? "green"
+  : v === "Pending"   ? "amber"
+                      : "slate";
+  const rows = source.map(j => ({
+    name: j.name, source: j.source, type: j.type,
+    stage: j.stage === "Active Journey" ? "Active" : j.stage, // shorter chip label
+    stageTone: stageTone(j.stage) as any,
+    indicators: j.indicators, total: j.total, milestone: j.milestone,
+    validation: j.validation,
+    validationTone: validationTone(j.validation) as any,
+    avatarTone: j.avatarTone,
+  }));
+  if (rows.length === 0) {
+    return (
+      <div className="bg-card border border-border rounded-lg p-12 text-center text-sm text-muted-foreground">
+        No journeys match your filters.
+      </div>
+    );
+  }
   return (
     <div className="bg-card border border-border rounded-lg overflow-hidden">
       <table className="w-full">
