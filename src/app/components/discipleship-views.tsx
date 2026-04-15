@@ -1667,29 +1667,143 @@ function MentorFormModal({
 // MATCHES
 // ============================================================================
 
-const MATCHES = [
-  { id: "mt1", score: 94, scoreTone: "green" as const, seeker: "Abigail Johnson", mentor: "Pastor James K.",  factors: [["Lang", 95, "green"], ["Interests", 88, "blue"]], status: "Proposed", statusTone: "amber" as const },
-  { id: "mt2", score: 87, scoreTone: "green" as const, seeker: "David Kebede",    mentor: "Mentor Daniel M.", factors: [["Age", 92, "green"], ["Location", 85, "blue"]],  status: "Proposed", statusTone: "amber" as const },
-  { id: "mt3", score: 72, scoreTone: "amber" as const, seeker: "Miriam Tadesse",  mentor: "Sister Ruth B.",   factors: [["Gender", 100, "red"], ["Lang", 70, "amber"]], status: "Accepted", statusTone: "green" as const },
+type MatchRow = {
+  id: string;
+  score: number;
+  scoreTone: "green" | "amber" | "red";
+  seeker: string;
+  mentor: string;
+  factors: [string, number, "green" | "blue" | "amber" | "red" | "purple"][];
+  status: "Proposed" | "Accepted" | "Active" | "Completed" | "Ended";
+  statusTone: any;
+  reasoning: string;
+};
+
+const INITIAL_MATCHES: MatchRow[] = [
+  { id: "mt1", score: 94, scoreTone: "green", seeker: "Abigail Johnson", mentor: "Pastor James K.",  factors: [["Lang", 95, "green"], ["Interests", 88, "blue"]],      status: "Proposed", statusTone: "amber", reasoning: "Abigail shares strong language alignment (English, 95%) and interest overlap (Prayer, Bible Study) with Pastor James. Both are in the same timezone and James has capacity for 2 more seekers. Confidence: High." },
+  { id: "mt2", score: 87, scoreTone: "green", seeker: "David Kebede",    mentor: "Mentor Daniel M.", factors: [["Age", 92, "green"], ["Location", 85, "blue"]],        status: "Proposed", statusTone: "amber", reasoning: "David is in the young-adult demographic that Daniel specializes in. Shared timezone and strong apologetics interest make this a balanced pairing. Confidence: High." },
+  { id: "mt3", score: 72, scoreTone: "amber", seeker: "Miriam Tadesse",  mentor: "Sister Ruth B.",   factors: [["Gender", 100, "red"], ["Lang", 70, "amber"]],         status: "Accepted", statusTone: "green", reasoning: "Miriam preferred a female mentor and Ruth's prayer-focused ministry aligns with her stated interests. Language overlap is moderate but acceptable. Confidence: Medium." },
 ];
 
+const MATCH_STATUSES = ["Proposed", "Accepted", "Active", "Completed", "Ended"] as const;
+
 export function MatchesView() {
+  const [matches, setMatches] = useState<MatchRow[]>(INITIAL_MATCHES);
+  const [selectedId, setSelectedId] = useState<string | null>(INITIAL_MATCHES[0]?.id ?? null);
+  const [query, setQuery] = useState("");
+  const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [scoreFilter, setScoreFilter] = useState<string>("all");
+  const [sort, setSort] = useState<"score_high" | "score_low" | "newest">("score_high");
+  const [isAutoMatchOpen, setIsAutoMatchOpen] = useState(false);
+
+  const filtered = useMemo(() => {
+    let list = matches.filter(m => {
+      const q = query.toLowerCase();
+      const matchesQ = !q || m.seeker.toLowerCase().includes(q) || m.mentor.toLowerCase().includes(q);
+      const matchesS = statusFilter === "all" || m.status === statusFilter;
+      const matchesScore =
+        scoreFilter === "all" ? true
+        : scoreFilter === "excellent" ? m.score >= 90
+        : scoreFilter === "good"      ? m.score >= 80 && m.score < 90
+        : scoreFilter === "fair"      ? m.score >= 70 && m.score < 80
+        : scoreFilter === "low"       ? m.score < 70
+        : true;
+      return matchesQ && matchesS && matchesScore;
+    });
+    if (sort === "score_high")     list = [...list].sort((a, b) => b.score - a.score);
+    else if (sort === "score_low") list = [...list].sort((a, b) => a.score - b.score);
+    return list;
+  }, [matches, query, statusFilter, scoreFilter, sort]);
+
+  const selected = matches.find(m => m.id === selectedId) || filtered[0] || null;
+
+  const proposedCount = matches.filter(m => m.status === "Proposed").length;
+  const activeCount   = matches.filter(m => m.status === "Active" || m.status === "Accepted").length;
+  const avgScore      = matches.length === 0 ? 0 : Math.round(matches.reduce((s, m) => s + m.score, 0) / matches.length);
+
+  const handleAccept = (id: string) => {
+    setMatches(list => list.map(m => m.id === id ? { ...m, status: "Accepted", statusTone: "green" } : m));
+    const m = matches.find(x => x.id === id);
+    toast.success(`${m?.seeker} + ${m?.mentor} — match accepted`);
+  };
+  const handleReject = (id: string) => {
+    setMatches(list => list.map(m => m.id === id ? { ...m, status: "Ended", statusTone: "slate" } : m));
+    const m = matches.find(x => x.id === id);
+    toast.success(`${m?.seeker} + ${m?.mentor} — match rejected`);
+  };
+
   return (
     <div className="p-6 space-y-4">
       <PageHeader
         title="AI Match Proposals"
         subtitle="Review and approve AI-suggested mentor-seeker matches"
         actions={(
-          <>
-            <button className="flex items-center gap-1.5 px-4 py-2 text-sm font-semibold bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-all shadow-sm">
-              <Sparkles className="w-4 h-4" /> Run Auto-Match
-            </button>
-            <button className="flex items-center gap-1.5 px-3 py-2 text-sm font-medium bg-card border border-border rounded-md hover:bg-muted/50 transition-all">
-              <Filter className="w-3.5 h-3.5" /> Filter
-            </button>
-          </>
+          <Button onClick={() => setIsAutoMatchOpen(true)}>
+            <Sparkles className="w-4 h-4" /> Run Auto-Match
+          </Button>
         )}
       />
+
+      {/* Stats */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
+        <StatCard label="Total Proposed"  value={proposedCount}    icon={Clock}       tone="amber"  subtitle="awaiting review" />
+        <StatCard label="Active"          value={activeCount}      icon={CheckCircle2} tone="green" />
+        <StatCard label="Avg. Score"      value={`${avgScore}/100`} icon={Star}        tone="blue" />
+        <StatCard label="Total Matches"   value={matches.length}   icon={Users}        tone="purple" />
+      </div>
+
+      {/* Filter row — above the table, fully functional */}
+      <div className="bg-card border border-border rounded-lg p-3 flex items-center gap-2 flex-wrap">
+        <div className="flex-1 min-w-[240px] relative">
+          <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none" />
+          <Input
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Search seeker or mentor..."
+            className="pl-9 h-9"
+          />
+        </div>
+        <FilterDropdown
+          label="Status"
+          value={statusFilter}
+          onChange={setStatusFilter}
+          options={[{ value: "all", label: "All statuses" }, ...MATCH_STATUSES.map(s => ({ value: s, label: s }))]}
+        />
+        <FilterDropdown
+          label="Score"
+          value={scoreFilter}
+          onChange={setScoreFilter}
+          options={[
+            { value: "all",       label: "Any score" },
+            { value: "excellent", label: "Excellent (90+)" },
+            { value: "good",      label: "Good (80–89)" },
+            { value: "fair",      label: "Fair (70–79)" },
+            { value: "low",       label: "Low (< 70)" },
+          ]}
+        />
+        <FilterDropdown
+          label="Sort"
+          value={sort}
+          onChange={(v) => setSort(v as typeof sort)}
+          options={[
+            { value: "score_high", label: "Score (high → low)" },
+            { value: "score_low",  label: "Score (low → high)" },
+            { value: "newest",     label: "Newest first" },
+          ]}
+        />
+        {(query || statusFilter !== "all" || scoreFilter !== "all") && (
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => { setQuery(""); setStatusFilter("all"); setScoreFilter("all"); }}
+          >
+            Clear filters
+          </Button>
+        )}
+        <span className="text-xs text-muted-foreground ml-auto">
+          {filtered.length} of {matches.length}
+        </span>
+      </div>
 
       <div className="bg-card border border-border rounded-lg overflow-hidden">
         <table className="w-full">
@@ -1704,51 +1818,253 @@ export function MatchesView() {
             </tr>
           </thead>
           <tbody>
-            {MATCHES.map(m => (
-              <tr key={m.id} className="border-b border-border last:border-0 hover:bg-muted/30 transition-colors">
-                <td className="px-4 py-3">
-                  <span className={cn(
-                    "inline-flex items-center justify-center w-10 h-8 rounded-full text-sm font-bold",
-                    m.scoreTone === "green" ? "bg-emerald-50 text-emerald-700" : "bg-amber-50 text-amber-700"
-                  )}>{m.score}</span>
-                </td>
-                <td className="px-4 py-3 text-sm font-medium text-foreground">{m.seeker}</td>
-                <td className="px-4 py-3 text-sm text-foreground">{m.mentor}</td>
-                <td className="px-4 py-3">
-                  <div className="flex items-center gap-1.5 flex-wrap">
-                    {m.factors.map(([k, v, tone]: any, i: number) => (
-                      <Chip key={i} tone={tone}>{k} {v}%</Chip>
-                    ))}
-                  </div>
-                </td>
-                <td className="px-4 py-3"><Chip tone={m.statusTone}>{m.status}</Chip></td>
-                <td className="px-4 py-3 text-right">
-                  {m.status === "Proposed" ? (
-                    <div className="flex items-center justify-end gap-2">
-                      <button className="px-3 py-1.5 text-xs font-semibold bg-emerald-500 text-white rounded hover:bg-emerald-600 transition-all">Accept</button>
-                      <button className="px-3 py-1.5 text-xs font-semibold bg-card border border-border rounded hover:bg-muted/50 transition-all">Reject</button>
-                    </div>
-                  ) : (
-                    <span className="text-xs text-muted-foreground">Matched</span>
-                  )}
+            {filtered.length === 0 ? (
+              <tr>
+                <td colSpan={6} className="px-4 py-12 text-center text-sm text-muted-foreground">
+                  No matches found with the current filters.
                 </td>
               </tr>
-            ))}
+            ) : filtered.map(m => {
+              const isSelected = selected?.id === m.id;
+              return (
+                <tr
+                  key={m.id}
+                  className={cn(
+                    "border-b border-border last:border-0 transition-colors cursor-pointer",
+                    isSelected ? "bg-primary/5" : "hover:bg-muted/30"
+                  )}
+                  onClick={() => setSelectedId(m.id)}
+                >
+                  <td className="px-4 py-3">
+                    <span className={cn(
+                      "inline-flex items-center justify-center w-10 h-8 rounded-full text-sm font-bold tabular-nums",
+                      m.scoreTone === "green" ? "bg-emerald-50 text-emerald-700"
+                      : m.scoreTone === "amber" ? "bg-amber-50 text-amber-700"
+                      : "bg-rose-50 text-rose-700"
+                    )}>{m.score}</span>
+                  </td>
+                  <td className="px-4 py-3 text-sm font-medium text-foreground">{m.seeker}</td>
+                  <td className="px-4 py-3 text-sm text-foreground">{m.mentor}</td>
+                  <td className="px-4 py-3">
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      {m.factors.map(([k, v, tone], i) => (
+                        <Chip key={i} tone={tone}>{k} {v}%</Chip>
+                      ))}
+                    </div>
+                  </td>
+                  <td className="px-4 py-3"><Chip tone={m.statusTone}>{m.status}</Chip></td>
+                  <td className="px-4 py-3 text-right" onClick={(e) => e.stopPropagation()}>
+                    {m.status === "Proposed" ? (
+                      <div className="flex items-center justify-end gap-2">
+                        <Button
+                          size="sm"
+                          className="bg-emerald-500 text-white hover:bg-emerald-600"
+                          onClick={() => handleAccept(m.id)}
+                        >Accept</Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleReject(m.id)}
+                        >Reject</Button>
+                      </div>
+                    ) : m.status === "Accepted" || m.status === "Active" ? (
+                      <span className="text-xs font-semibold text-emerald-600">Matched</span>
+                    ) : (
+                      <span className="text-xs text-muted-foreground">{m.status}</span>
+                    )}
+                  </td>
+                </tr>
+              );
+            })}
           </tbody>
         </table>
       </div>
 
-      <div className="bg-violet-50/50 border border-violet-200 rounded-lg p-4">
-        <div className="flex items-center gap-2 mb-2">
-          <Sparkles className="w-4 h-4 text-violet-600" />
-          <span className="text-sm font-semibold text-violet-900">AI Match Reasoning</span>
+      {/* AI reasoning panel — always reflects the selected row */}
+      {selected && (
+        <div className="bg-violet-50/50 border border-violet-200 rounded-xl p-4">
+          <div className="flex items-center justify-between mb-2 flex-wrap gap-2">
+            <div className="flex items-center gap-2">
+              <Sparkles className="w-4 h-4 text-violet-600" />
+              <span className="text-sm font-semibold text-violet-900">AI Match Reasoning · {selected.seeker} → {selected.mentor}</span>
+            </div>
+            <span className={cn(
+              "text-xs font-bold tabular-nums",
+              selected.scoreTone === "green" ? "text-emerald-700"
+              : selected.scoreTone === "amber" ? "text-amber-700" : "text-rose-700"
+            )}>Score: {selected.score}/100</span>
+          </div>
+          <p className="text-sm text-slate-700 leading-relaxed">{selected.reasoning}</p>
         </div>
-        <p className="text-sm text-slate-700 leading-relaxed">
-          Abigail shares strong language alignment (English, 95%) and interest overlap (Prayer, Bible Study) with Pastor James.
-          Both are in the same timezone and James has capacity for 2 more seekers. Confidence: High.
-        </p>
-      </div>
+      )}
+
+      <RunAutoMatchDialog
+        isOpen={isAutoMatchOpen}
+        onClose={() => setIsAutoMatchOpen(false)}
+        existingMatches={matches}
+        onComplete={(newMatches) => {
+          setMatches(list => [...newMatches, ...list]);
+          setSelectedId(newMatches[0]?.id ?? selectedId);
+          toast.success(`${newMatches.length} new match${newMatches.length === 1 ? "" : "es"} proposed`);
+        }}
+      />
     </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Run Auto-Match dialog — staged progress with Claude pre-filter + scoring
+// ---------------------------------------------------------------------------
+
+type AutoMatchStage = "idle" | "scanning" | "prefilter" | "scoring" | "done";
+
+function RunAutoMatchDialog({
+  isOpen, onClose, existingMatches, onComplete,
+}: {
+  isOpen: boolean;
+  onClose: () => void;
+  existingMatches: MatchRow[];
+  onComplete: (matches: MatchRow[]) => void;
+}) {
+  const [stage, setStage] = useState<AutoMatchStage>("idle");
+  const [generated, setGenerated] = useState<MatchRow[]>([]);
+
+  // Mock pipeline — in production each stage hits a worker/API. We step through
+  // them with setTimeouts so the UX feels right.
+  const run = () => {
+    setStage("scanning");
+    setTimeout(() => setStage("prefilter"), 900);
+    setTimeout(() => setStage("scoring"), 1800);
+    setTimeout(() => {
+      // Produce two plausible new proposals that don't overlap existing seekers.
+      const existingSeekers = new Set(existingMatches.map(m => m.seeker));
+      const candidates: MatchRow[] = [
+        { id: `mt-${Date.now()}-1`, score: 91, scoreTone: "green", seeker: "Sarah Abebe",    mentor: "Elder Susan M.",   factors: [["Interests", 94, "blue"], ["Lang", 92, "green"]], status: "Proposed", statusTone: "amber", reasoning: "Sarah is new in faith and responds well to structured Bible study. Susan's patient teaching style and schedule overlap make this a strong pairing. Confidence: High." },
+        { id: `mt-${Date.now()}-2`, score: 83, scoreTone: "green", seeker: "Samuel Bekele",  mentor: "Mentor Daniel M.", factors: [["Age", 88, "green"], ["Interests", 80, "blue"]], status: "Proposed", statusTone: "amber", reasoning: "Samuel is a young adult wrestling with apologetics questions. Daniel specializes in this area and has capacity for one more mentee. Confidence: Medium-High." },
+      ].filter(c => !existingSeekers.has(c.seeker));
+      setGenerated(candidates);
+      setStage("done");
+    }, 2900);
+  };
+
+  const handleClose = () => {
+    if (stage === "done" && generated.length > 0) onComplete(generated);
+    setStage("idle");
+    setGenerated([]);
+    onClose();
+  };
+
+  // Kick off automatically when the dialog opens so there's no blank state.
+  React.useEffect(() => {
+    if (isOpen && stage === "idle") run();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isOpen]);
+
+  const stepState = (s: AutoMatchStage): "done" | "active" | "pending" => {
+    const order: AutoMatchStage[] = ["scanning", "prefilter", "scoring", "done"];
+    const current = order.indexOf(stage);
+    const target  = order.indexOf(s);
+    if (current > target) return "done";
+    if (current === target) return "active";
+    return "pending";
+  };
+
+  return (
+    <Modal isOpen={isOpen} onClose={handleClose} title="Run Auto-Match" size="lg">
+      <div className="space-y-5">
+        <div className="flex items-start gap-3">
+          <div className="w-10 h-10 rounded-lg bg-violet-100 text-violet-700 flex items-center justify-center shrink-0">
+            <Sparkles className="w-5 h-5" />
+          </div>
+          <div>
+            <p className="text-sm font-semibold text-foreground">AI matching pipeline</p>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              Scan unmatched seekers, filter compatible mentors, and score each pair with Claude. Top matches are proposed for your review.
+            </p>
+          </div>
+        </div>
+
+        {/* Staged progress */}
+        <div className="space-y-2">
+          {([
+            ["scanning",  "Scan unmatched seekers",   "Looking for seekers without an active mentor."],
+            ["prefilter", "Rules pre-filter",         "Language, gender preference, availability overlap, capacity."],
+            ["scoring",   "Claude AI scoring",        "Evaluate shortlisted mentors on 5 dimensions and rank."],
+            ["done",      "Propose matches",          "Write top matches to the list with AI reasoning."],
+          ] as const).map(([key, title, desc], i) => {
+            const s = stepState(key);
+            return (
+              <div
+                key={key}
+                className={cn(
+                  "flex items-start gap-3 rounded-md border p-3 transition-colors",
+                  s === "active" ? "border-primary bg-primary/5"
+                    : s === "done" ? "border-emerald-200 bg-emerald-50/40"
+                    : "border-border bg-muted/30"
+                )}
+              >
+                <div className={cn(
+                  "w-7 h-7 rounded-full flex items-center justify-center shrink-0 border text-xs font-bold",
+                  s === "done" ? "bg-emerald-500 border-emerald-500 text-white"
+                  : s === "active" ? "bg-primary/10 border-primary text-primary"
+                  : "bg-muted border-border text-muted-foreground"
+                )}>
+                  {s === "done" ? <CheckCircle2 className="w-4 h-4" /> : s === "active" ? <Clock className="w-3.5 h-3.5 animate-pulse" /> : i + 1}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className={cn("text-sm font-semibold", s === "done" ? "text-emerald-900" : s === "active" ? "text-primary" : "text-foreground")}>
+                    {title}
+                  </p>
+                  <p className="text-xs text-muted-foreground leading-snug">{desc}</p>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+
+        {/* Result preview */}
+        {stage === "done" && (
+          <div className="rounded-md bg-emerald-50/60 border border-emerald-200 p-4">
+            <div className="flex items-center gap-2 mb-2">
+              <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+              <p className="text-sm font-semibold text-emerald-900">
+                {generated.length === 0
+                  ? "No new matches to propose — everyone is already matched."
+                  : `${generated.length} new match${generated.length === 1 ? "" : "es"} ready for your review`}
+              </p>
+            </div>
+            {generated.length > 0 && (
+              <ul className="space-y-1.5 mt-2">
+                {generated.map(m => (
+                  <li key={m.id} className="flex items-center justify-between text-sm">
+                    <span className="text-slate-700">
+                      <span className="font-semibold">{m.seeker}</span>
+                      <span className="mx-1.5 text-slate-400">→</span>
+                      <span>{m.mentor}</span>
+                    </span>
+                    <span className="font-bold text-emerald-700 tabular-nums">{m.score}/100</span>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+        )}
+
+        <div className="flex items-center justify-between gap-2 pt-2 border-t border-border">
+          <p className="text-xs text-muted-foreground">
+            {stage === "done" ? "Matches will be added to your list in Proposed state." : "Runs against all unmatched seekers in your account."}
+          </p>
+          <div className="flex items-center gap-2">
+            {stage !== "done" && <Button variant="outline" size="sm" onClick={handleClose}>Cancel</Button>}
+            {stage === "done" && (
+              <Button size="sm" onClick={handleClose}>
+                {generated.length > 0 ? <><Plus className="w-3.5 h-3.5" /> Add {generated.length} to list</> : "Close"}
+              </Button>
+            )}
+          </div>
+        </div>
+      </div>
+    </Modal>
   );
 }
 
