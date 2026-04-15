@@ -21,6 +21,9 @@ import {
 import { Modal } from "./shared-ui";
 import { toast } from "sonner";
 import { ArrowLeft, Eye, Trash2, MessageSquare as MessageSquareIcon, Archive, RefreshCw } from "lucide-react";
+import {
+  AreaChart, Area, PieChart, Pie, Cell, XAxis, YAxis, Tooltip, ResponsiveContainer
+} from "recharts";
 
 // ============================================================================
 // Shared primitives
@@ -136,66 +139,439 @@ function EmptyHint({ children }: { children: React.ReactNode }) {
 // DISCIPLESHIP DASHBOARD (tab inside the main Dashboard page)
 // ============================================================================
 
+// ---------------------------------------------------------------------------
+// Discipleship Dashboard — bold editorial layout
+//
+// Aesthetic direction: "Editorial modern" — DM Sans paired with a 2px corner
+// system reads sharper and more designed than typical SaaS rounding. Each
+// surface uses a layered gradient + soft shadow rather than flat white, and
+// every metric card carries a 2px color accent bar so the eye can scan the
+// palette instantly. Charts use recharts with custom gradient fills. Quick
+// actions become tile cards instead of list rows for visual weight.
+// ---------------------------------------------------------------------------
+
+const ENGAGEMENT_30D = [
+  { day: "W1 Mon", active: 180, decisions: 4  },
+  { day: "W1 Thu", active: 195, decisions: 7  },
+  { day: "W2 Mon", active: 212, decisions: 9  },
+  { day: "W2 Thu", active: 205, decisions: 11 },
+  { day: "W3 Mon", active: 228, decisions: 14 },
+  { day: "W3 Thu", active: 241, decisions: 16 },
+  { day: "W4 Mon", active: 247, decisions: 19 },
+  { day: "W4 Thu", active: 247, decisions: 22 },
+];
+
+const JOURNEY_DIST = [
+  { name: "Self-guided bots", value: 58, fill: "#2563eb" },
+  { name: "Human-led",        value: 30, fill: "#8b5cf6" },
+  { name: "Web-based",        value: 12, fill: "#f59e0b" },
+];
+
+const PLATFORM_MIX = [
+  { label: "Telegram",  pct: 34, dot: "bg-sky-500",     color: "bg-sky-500" },
+  { label: "WhatsApp",  pct: 31, dot: "bg-emerald-500", color: "bg-emerald-500" },
+  { label: "SMS",       pct: 17, dot: "bg-violet-500",  color: "bg-violet-500" },
+  { label: "Web",       pct: 11, dot: "bg-amber-500",   color: "bg-amber-500" },
+  { label: "Messenger", pct:  7, dot: "bg-pink-500",    color: "bg-pink-500" },
+];
+
 export function DiscipleshipDashboardView({ onNavigate }: { onNavigate?: (view: string) => void }) {
   const activities = [
-    { tone: "bg-emerald-500", text: "Sarah M. completed 'Foundations of Faith' campaign", when: "2m ago" },
-    { tone: "bg-blue-500",    text: "New match proposed: David K. \u2192 Mentor James",     when: "15m ago" },
-    { tone: "bg-rose-500",    text: "12 new seekers completed intake this week",            when: "1h ago" },
-    { tone: "bg-violet-500",  text: "Content 'Finding Peace' assigned to 8 seekers",        when: "3h ago" },
+    { tone: "bg-emerald-500", icon: CheckCircle2, text: "Sarah M. completed", highlight: "'Foundations of Faith' campaign", when: "2m ago",  meta: "Milestone" },
+    { tone: "bg-blue-500",    icon: GitBranch,    text: "New match proposed:", highlight: "David K. → Mentor James",        when: "15m ago", meta: "94 score" },
+    { tone: "bg-pink-500",    icon: Users,        text: "",                     highlight: "12 new seekers completed intake this week", when: "1h ago", meta: "Intake" },
+    { tone: "bg-violet-500",  icon: Sparkles,     text: "AI assigned",          highlight: "'Finding Peace' to 8 seekers",  when: "3h ago",  meta: "Content" },
   ];
+
+  const hour = new Date().getHours();
+  const greeting = hour < 12 ? "Good morning" : hour < 18 ? "Good afternoon" : "Good evening";
+
   return (
-    <div className="p-6 space-y-4">
-      <PageHeader
-        title="Dashboard"
-        subtitle="Welcome back — here's your discipleship overview"
-        actions={(
-          <div className="relative">
-            <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none" />
-            <Input
-              placeholder="Search..."
-              className="pl-8 h-9 w-[220px]"
-            />
+    <div className="p-6 space-y-5 bg-gradient-to-br from-slate-50 via-background to-violet-50/40 min-h-full">
+      {/* ---------- HERO ---------- */}
+      <section className="relative overflow-hidden rounded-sm bg-slate-950 text-white p-8 shadow-[0_24px_60px_-28px_rgba(15,23,42,0.55)]">
+        {/* Decorative gradient blobs */}
+        <div className="absolute -top-24 -right-20 w-80 h-80 rounded-full bg-gradient-to-br from-blue-500/40 to-violet-500/10 blur-3xl pointer-events-none" />
+        <div className="absolute -bottom-32 -left-20 w-96 h-96 rounded-full bg-gradient-to-tr from-pink-500/30 to-violet-500/5 blur-3xl pointer-events-none" />
+        {/* Fine grid overlay for texture */}
+        <div
+          className="absolute inset-0 opacity-[0.07] pointer-events-none"
+          style={{ backgroundImage: "linear-gradient(to right, #fff 1px, transparent 1px), linear-gradient(to bottom, #fff 1px, transparent 1px)", backgroundSize: "64px 64px" }}
+        />
+
+        <div className="relative grid grid-cols-1 lg:grid-cols-[1fr,auto] gap-6 items-end">
+          <div>
+            <div className="flex items-center gap-2 mb-3">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+              <span className="text-xs font-semibold text-emerald-300 uppercase tracking-[0.18em]">Live · Turumba Discipleship</span>
+            </div>
+            <h1 className="text-4xl lg:text-5xl font-bold tracking-tight leading-[1.05]">
+              {greeting}, <span className="text-blue-300">Samson</span>.
+            </h1>
+            <p className="text-base text-slate-300 mt-3 max-w-2xl leading-relaxed">
+              <span className="font-semibold text-white">247 seekers</span> are journeying with you this month.
+              <span className="mx-2 text-slate-500">·</span>
+              <span className="font-semibold text-emerald-300">22</span> decisions confirmed.
+              <span className="mx-2 text-slate-500">·</span>
+              <span className="font-semibold text-pink-300">+18%</span> this quarter.
+            </p>
           </div>
-        )}
-      />
+          <div className="flex flex-wrap items-end gap-3">
+            <div className="relative">
+              <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+              <input
+                placeholder="Search seekers, mentors..."
+                className="pl-8 pr-3 py-2 text-sm bg-white/10 text-white placeholder:text-slate-400 border border-white/10 rounded-sm focus:outline-none focus:ring-2 focus:ring-blue-400/60 w-[260px] backdrop-blur-sm"
+              />
+            </div>
+            <Button
+              className="bg-white text-slate-900 hover:bg-slate-100 shadow-lg"
+              onClick={() => onNavigate?.("seekers")}
+            >
+              <Plus className="w-3.5 h-3.5" /> New Seeker Intake
+            </Button>
+          </div>
+        </div>
+      </section>
 
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
-        <StatCard label="Active Seekers"    value={247}   change="+12% from last month" icon={Users}       tone="pink"   />
-        <StatCard label="Active Matches"    value={89}    change="+8% from last month"  icon={GitBranch}   tone="blue"   />
-        <StatCard label="Completion Rate"   value="73%"   change="+5% from last month"  icon={CheckCircle2} tone="green" />
-        <StatCard label="Engagement Score"  value={82}    change="+3 pts this week"     icon={Activity}    tone="purple" />
-      </div>
+      {/* ---------- HEADLINE METRICS ---------- */}
+      <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <HeroStat
+          accent="from-blue-500 to-blue-600"
+          tintClass="bg-blue-50"
+          iconBg="bg-blue-500"
+          icon={Users}
+          label="Active Seekers"
+          value="247"
+          delta="+12%"
+          deltaTone="up"
+          sparkColor="#2563eb"
+          sparkData={[180, 195, 212, 205, 228, 241, 247]}
+        />
+        <HeroStat
+          accent="from-violet-500 to-fuchsia-500"
+          tintClass="bg-violet-50"
+          iconBg="bg-violet-500"
+          icon={GitBranch}
+          label="Active Matches"
+          value="89"
+          delta="+8%"
+          deltaTone="up"
+          sparkColor="#8b5cf6"
+          sparkData={[65, 68, 74, 76, 81, 85, 89]}
+        />
+        <HeroStat
+          accent="from-emerald-500 to-teal-500"
+          tintClass="bg-emerald-50"
+          iconBg="bg-emerald-500"
+          icon={CheckCircle2}
+          label="Completion Rate"
+          value="73%"
+          delta="+5%"
+          deltaTone="up"
+          sparkColor="#10b981"
+          sparkData={[62, 64, 66, 68, 70, 71, 73]}
+        />
+        <HeroStat
+          accent="from-pink-500 to-rose-500"
+          tintClass="bg-pink-50"
+          iconBg="bg-pink-500"
+          icon={Activity}
+          label="Engagement Score"
+          value="82"
+          delta="+3 pts"
+          deltaTone="up"
+          sparkColor="#ec4899"
+          sparkData={[74, 76, 78, 79, 80, 81, 82]}
+        />
+      </section>
 
-      <div className="grid grid-cols-1 lg:grid-cols-[1fr,300px] gap-4">
-        <div className="bg-card border border-border rounded-lg p-5">
-          <h3 className="text-sm font-bold text-foreground mb-3">Recent Activity</h3>
-          <div className="space-y-2">
-            {activities.map((a, i) => (
-              <div key={i} className="flex items-center justify-between py-1.5">
-                <div className="flex items-center gap-3 min-w-0">
-                  <span className={cn("w-2 h-2 rounded-full shrink-0", a.tone)} />
-                  <span className="text-sm text-foreground truncate">{a.text}</span>
+      {/* ---------- CHARTS ROW ---------- */}
+      <section className="grid grid-cols-1 lg:grid-cols-[2fr,1fr] gap-4">
+        {/* Line / area chart — engagement trend */}
+        <div className="relative rounded-sm bg-card border border-border shadow-[0_12px_36px_-22px_rgba(15,23,42,0.25)] overflow-hidden">
+          <div className="absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r from-blue-500 via-violet-500 to-pink-500" />
+          <div className="p-5 pb-2 flex items-start justify-between flex-wrap gap-3">
+            <div>
+              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-[0.14em]">Engagement · 30 days</p>
+              <h3 className="text-xl font-bold text-foreground mt-1">Seekers active across the journey</h3>
+            </div>
+            <div className="flex items-center gap-3 text-xs">
+              <LegendDotBold color="#2563eb" label="Active seekers" />
+              <LegendDotBold color="#10b981" label="Decisions" />
+            </div>
+          </div>
+          <div className="px-2 pb-4 h-[240px]">
+            <ResponsiveContainer width="100%" height="100%">
+              <AreaChart data={ENGAGEMENT_30D} margin={{ top: 8, right: 12, left: 0, bottom: 0 }}>
+                <defs>
+                  <linearGradient id="activeArea" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%"   stopColor="#2563eb" stopOpacity={0.35} />
+                    <stop offset="100%" stopColor="#2563eb" stopOpacity={0} />
+                  </linearGradient>
+                  <linearGradient id="decisionArea" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%"   stopColor="#10b981" stopOpacity={0.35} />
+                    <stop offset="100%" stopColor="#10b981" stopOpacity={0} />
+                  </linearGradient>
+                </defs>
+                <XAxis
+                  dataKey="day"
+                  stroke="#94a3b8"
+                  fontSize={11}
+                  tickLine={false}
+                  axisLine={false}
+                />
+                <YAxis stroke="#94a3b8" fontSize={11} tickLine={false} axisLine={false} width={36} />
+                <Tooltip
+                  contentStyle={{ background: "#0f172a", border: "none", borderRadius: 2, color: "white", fontSize: 12 }}
+                  labelStyle={{ color: "#cbd5e1", fontSize: 11 }}
+                  cursor={{ stroke: "#cbd5e1", strokeDasharray: 3 }}
+                />
+                <Area type="monotone" dataKey="active"    stroke="#2563eb" strokeWidth={2.5} fill="url(#activeArea)" />
+                <Area type="monotone" dataKey="decisions" stroke="#10b981" strokeWidth={2.5} fill="url(#decisionArea)" />
+              </AreaChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+
+        {/* Donut chart — journey type */}
+        <div className="relative rounded-sm bg-card border border-border shadow-[0_12px_36px_-22px_rgba(15,23,42,0.25)] overflow-hidden">
+          <div className="absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r from-violet-500 to-amber-500" />
+          <div className="p-5 pb-2">
+            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-[0.14em]">Journey mix</p>
+            <h3 className="text-xl font-bold text-foreground mt-1">How seekers engage</h3>
+          </div>
+          <div className="flex items-center gap-4 px-5 pb-5">
+            <div className="relative w-[140px] h-[140px] shrink-0">
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie data={JOURNEY_DIST} cx="50%" cy="50%" innerRadius={42} outerRadius={66} paddingAngle={2} dataKey="value" stroke="none">
+                    {JOURNEY_DIST.map((e, i) => <Cell key={i} fill={e.fill} />)}
+                  </Pie>
+                </PieChart>
+              </ResponsiveContainer>
+              <div className="absolute inset-0 flex flex-col items-center justify-center">
+                <span className="text-2xl font-bold tracking-tight text-foreground tabular-nums leading-none">1,247</span>
+                <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-widest mt-0.5">Active</span>
+              </div>
+            </div>
+            <div className="flex-1 space-y-2 min-w-0">
+              {JOURNEY_DIST.map((j, i) => (
+                <div key={i}>
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <span className="w-2.5 h-2.5 rounded-sm shrink-0" style={{ background: j.fill }} />
+                      <span className="text-xs text-foreground truncate">{j.name}</span>
+                    </div>
+                    <span className="text-xs font-bold text-foreground tabular-nums">{j.value}%</span>
+                  </div>
+                  <div className="h-0.5 bg-muted rounded-full overflow-hidden mt-1">
+                    <div className="h-full rounded-full" style={{ width: `${j.value}%`, background: j.fill }} />
+                  </div>
                 </div>
-                <span className="text-xs text-muted-foreground shrink-0 ml-2">{a.when}</span>
+              ))}
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ---------- QUICK ACTIONS ---------- */}
+      <section>
+        <div className="flex items-center justify-between mb-3">
+          <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-[0.14em]">Quick Actions</h3>
+        </div>
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+          <QuickActionTile
+            icon={Users}
+            title="New Seeker"
+            description="Start an intake"
+            gradient="from-blue-500 to-blue-600"
+            onClick={() => onNavigate?.("seekers")}
+          />
+          <QuickActionTile
+            icon={GitBranch}
+            title="Review Matches"
+            description="5 proposals pending"
+            gradient="from-violet-500 to-fuchsia-500"
+            onClick={() => onNavigate?.("matches")}
+          />
+          <QuickActionTile
+            icon={Sparkles}
+            title="Create Campaign"
+            description="Automate your drip"
+            gradient="from-amber-500 to-orange-500"
+            onClick={() => onNavigate?.("automations")}
+          />
+          <QuickActionTile
+            icon={BookOpen}
+            title="Add Content"
+            description="Devotionals, studies"
+            gradient="from-emerald-500 to-teal-500"
+            onClick={() => onNavigate?.("content_library")}
+          />
+        </div>
+      </section>
+
+      {/* ---------- RECENT ACTIVITY + PLATFORM MIX ---------- */}
+      <section className="grid grid-cols-1 lg:grid-cols-[2fr,1fr] gap-4">
+        <div className="relative rounded-sm bg-card border border-border shadow-[0_12px_36px_-22px_rgba(15,23,42,0.25)] overflow-hidden">
+          <div className="absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r from-emerald-500 via-blue-500 to-violet-500" />
+          <div className="p-5 pb-3 flex items-center justify-between">
+            <div>
+              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-[0.14em]">The last few hours</p>
+              <h3 className="text-xl font-bold text-foreground mt-1">Recent activity</h3>
+            </div>
+            <button className="text-xs font-semibold text-primary hover:underline">View all →</button>
+          </div>
+          <ol className="relative px-5 pb-5 space-y-4">
+            <div className="absolute left-[29px] top-2 bottom-2 w-px bg-border" aria-hidden />
+            {activities.map((a, i) => {
+              const Icon = a.icon;
+              return (
+                <li key={i} className="relative flex items-start gap-3 pl-0">
+                  <span className={cn("w-6 h-6 rounded-sm flex items-center justify-center text-white shrink-0 ring-4 ring-background relative z-10", a.tone)}>
+                    <Icon className="w-3 h-3" />
+                  </span>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm text-foreground leading-relaxed">
+                      {a.text && <span className="text-muted-foreground">{a.text} </span>}
+                      <span className="font-semibold text-foreground">{a.highlight}</span>
+                    </p>
+                    <div className="flex items-center gap-2 mt-0.5">
+                      <span className="text-xs text-muted-foreground">{a.when}</span>
+                      <span className="w-1 h-1 rounded-full bg-muted-foreground/40" />
+                      <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">{a.meta}</span>
+                    </div>
+                  </div>
+                </li>
+              );
+            })}
+          </ol>
+        </div>
+
+        <div className="relative rounded-sm bg-card border border-border shadow-[0_12px_36px_-22px_rgba(15,23,42,0.25)] overflow-hidden">
+          <div className="absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r from-sky-500 via-emerald-500 to-pink-500" />
+          <div className="p-5 pb-3">
+            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-[0.14em]">Where they come from</p>
+            <h3 className="text-xl font-bold text-foreground mt-1">Platforms</h3>
+          </div>
+          <div className="px-5 pb-5 space-y-3">
+            {PLATFORM_MIX.map((p, i) => (
+              <div key={i}>
+                <div className="flex items-center justify-between mb-1">
+                  <div className="flex items-center gap-2">
+                    <span className={cn("w-2 h-2 rounded-sm", p.dot)} />
+                    <span className="text-sm text-foreground">{p.label}</span>
+                  </div>
+                  <span className="text-sm font-bold text-foreground tabular-nums">{p.pct}%</span>
+                </div>
+                <div className="h-1 bg-muted rounded-full overflow-hidden">
+                  <div className={cn("h-full rounded-full", p.color)} style={{ width: `${p.pct}%` }} />
+                </div>
               </div>
             ))}
           </div>
         </div>
+      </section>
+    </div>
+  );
+}
 
-        <div className="bg-card border border-border rounded-lg p-5">
-          <h3 className="text-sm font-bold text-foreground mb-3">Quick Actions</h3>
-          <div className="space-y-2">
-            <QuickAction label="New Seeker Intake" icon={Users}       primary onClick={() => onNavigate?.("seekers")} />
-            <QuickAction label="Review Matches"    icon={GitBranch}            onClick={() => onNavigate?.("matches")} />
-            <QuickAction label="Create Campaign"   icon={Plus}                 onClick={() => onNavigate?.("automations")} />
-            <QuickAction label="Add Content"       icon={FileText}             onClick={() => onNavigate?.("content_library")} />
-          </div>
+// ---------------------------------------------------------------------------
+// Helper components for the dashboard
+// ---------------------------------------------------------------------------
+
+function HeroStat({
+  accent, tintClass, iconBg, icon: Icon, label, value, delta, deltaTone, sparkColor, sparkData,
+}: {
+  accent: string;
+  tintClass: string;
+  iconBg: string;
+  icon: any;
+  label: string;
+  value: string;
+  delta: string;
+  deltaTone: "up" | "down";
+  sparkColor: string;
+  sparkData: number[];
+}) {
+  const data = sparkData.map((v, i) => ({ i, v }));
+  return (
+    <div className="relative rounded-sm bg-card border border-border overflow-hidden shadow-[0_8px_30px_-18px_rgba(15,23,42,0.25)] hover:shadow-[0_18px_40px_-18px_rgba(15,23,42,0.35)] transition-all group">
+      {/* 2px color accent strip */}
+      <div className={cn("absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r", accent)} />
+      {/* Soft tinted wash */}
+      <div className={cn("absolute inset-0 opacity-50 pointer-events-none", tintClass)} style={{ maskImage: "linear-gradient(to bottom right, black, transparent 60%)", WebkitMaskImage: "linear-gradient(to bottom right, black, transparent 60%)" }} />
+
+      <div className="relative p-5">
+        <div className="flex items-start justify-between mb-4">
+          <span className="text-xs font-semibold text-muted-foreground uppercase tracking-[0.12em]">{label}</span>
+          <span className={cn("w-8 h-8 rounded-sm flex items-center justify-center text-white shadow-md", iconBg)}>
+            <Icon className="w-4 h-4" />
+          </span>
+        </div>
+        <div className="flex items-baseline gap-2">
+          <span className="text-4xl font-bold text-foreground tracking-tight tabular-nums">{value}</span>
+          <span className={cn(
+            "text-xs font-bold px-1.5 py-0.5 rounded-sm",
+            deltaTone === "up" ? "bg-emerald-500/10 text-emerald-700" : "bg-rose-500/10 text-rose-700"
+          )}>{deltaTone === "up" ? "↑" : "↓"} {delta}</span>
+        </div>
+        {/* Sparkline */}
+        <div className="h-10 -mx-1 mt-3">
+          <ResponsiveContainer width="100%" height="100%">
+            <AreaChart data={data}>
+              <defs>
+                <linearGradient id={`spark-${label}`} x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%"   stopColor={sparkColor} stopOpacity={0.4} />
+                  <stop offset="100%" stopColor={sparkColor} stopOpacity={0} />
+                </linearGradient>
+              </defs>
+              <Area type="monotone" dataKey="v" stroke={sparkColor} strokeWidth={2} fill={`url(#spark-${label})`} />
+            </AreaChart>
+          </ResponsiveContainer>
         </div>
       </div>
     </div>
   );
 }
 
+function QuickActionTile({
+  icon: Icon, title, description, gradient, onClick,
+}: {
+  icon: any; title: string; description: string; gradient: string; onClick?: () => void;
+}) {
+  return (
+    <button
+      onClick={onClick}
+      className="group relative rounded-sm bg-card border border-border p-4 text-left shadow-[0_8px_24px_-18px_rgba(15,23,42,0.25)] hover:shadow-[0_18px_40px_-18px_rgba(15,23,42,0.4)] hover:-translate-y-0.5 transition-all overflow-hidden"
+    >
+      {/* gradient backdrop that only shows on hover */}
+      <div className={cn("absolute inset-0 bg-gradient-to-br opacity-0 group-hover:opacity-[0.04] transition-opacity", gradient)} />
+      <div className="relative">
+        <span className={cn("inline-flex w-10 h-10 rounded-sm items-center justify-center text-white mb-3 shadow-md bg-gradient-to-br", gradient)}>
+          <Icon className="w-4 h-4" />
+        </span>
+        <p className="text-base font-bold text-foreground tracking-tight">{title}</p>
+        <p className="text-xs text-muted-foreground mt-0.5">{description}</p>
+        <div className="flex items-center gap-1 mt-3 text-xs font-semibold text-primary opacity-0 group-hover:opacity-100 transition-opacity">
+          Open <ArrowRight className="w-3 h-3" />
+        </div>
+      </div>
+    </button>
+  );
+}
+
+function LegendDotBold({ color, label }: { color: string; label: string }) {
+  return (
+    <span className="inline-flex items-center gap-1.5">
+      <span className="w-2 h-2 rounded-sm" style={{ background: color }} />
+      <span className="text-muted-foreground font-medium">{label}</span>
+    </span>
+  );
+}
+
+// Legacy helper kept for older callers.
 function QuickAction({
   label, icon: Icon, primary, onClick
 }: { label: string; icon: any; primary?: boolean; onClick?: () => void }) {

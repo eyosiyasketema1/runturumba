@@ -103,19 +103,47 @@ export const DashboardView = ({
       });
   }, [messages, contacts]);
 
+  const hour = new Date().getHours();
+  const greeting = hour < 12 ? "Good morning" : hour < 18 ? "Good afternoon" : "Good evening";
+
   return (
-    <div className="space-y-8 p-6 lg:p-10 animate-in fade-in duration-500">
-      {/* Header */}
-      <header className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight text-foreground">Dashboard</h1>
-          <p className="text-muted-foreground text-sm">Welcome back to Turumba. Here's what's happening today.</p>
-        </div>
-        <div className="flex items-center gap-3">
-          <Button variant="outline" size="sm" onClick={() => toast.info("Exporting dashboard data...")}>
-            <Download className="w-3.5 h-3.5 mr-1.5" />
-            Export
-          </Button>
+    <div className="space-y-6 p-6 lg:p-8 animate-in fade-in duration-500 bg-gradient-to-br from-slate-50 via-background to-blue-50/30 min-h-full">
+      {/* Hero banner — dark, layered, with greeting + quick summary */}
+      <header className="relative overflow-hidden rounded-sm bg-slate-950 text-white p-8 shadow-[0_24px_60px_-28px_rgba(15,23,42,0.55)]">
+        <div className="absolute -top-24 -right-20 w-80 h-80 rounded-full bg-gradient-to-br from-blue-500/40 to-violet-500/10 blur-3xl pointer-events-none" />
+        <div className="absolute -bottom-32 -left-20 w-96 h-96 rounded-full bg-gradient-to-tr from-emerald-500/20 to-blue-500/10 blur-3xl pointer-events-none" />
+        <div
+          className="absolute inset-0 opacity-[0.06] pointer-events-none"
+          style={{ backgroundImage: "linear-gradient(to right, #fff 1px, transparent 1px), linear-gradient(to bottom, #fff 1px, transparent 1px)", backgroundSize: "64px 64px" }}
+        />
+        <div className="relative flex flex-col md:flex-row md:items-end justify-between gap-4">
+          <div>
+            <div className="flex items-center gap-2 mb-3">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+              <span className="text-xs font-semibold text-emerald-300 uppercase tracking-[0.18em]">Live · Turumba</span>
+            </div>
+            <h1 className="text-4xl lg:text-5xl font-bold tracking-tight leading-[1.05]">
+              {greeting}, <span className="text-blue-300">{tenant.name}</span>.
+            </h1>
+            <p className="text-base text-slate-300 mt-3 max-w-2xl leading-relaxed">
+              <span className="font-semibold text-white">{totalSent.toLocaleString()} messages sent</span>
+              <span className="mx-2 text-slate-500">·</span>
+              <span className="font-semibold text-emerald-300">{deliveryRate}% delivered</span>
+              <span className="mx-2 text-slate-500">·</span>
+              <span className="font-semibold text-pink-300">{connectedChannels} channels live</span>
+            </p>
+          </div>
+          <div className="flex items-center gap-3">
+            <Button
+              variant="outline"
+              size="sm"
+              className="border-white/20 bg-white/10 text-white hover:bg-white/20 hover:text-white backdrop-blur-sm"
+              onClick={() => toast.info("Exporting dashboard data...")}
+            >
+              <Download className="w-3.5 h-3.5 mr-1.5" />
+              Export
+            </Button>
+          </div>
         </div>
       </header>
 
