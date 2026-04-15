@@ -129,6 +129,15 @@ export const AutomationView = ({
     setRuleToDelete(null);
   };
 
+  // Contextual copy per folder so the create button, modal, and empty state
+  // feel native to whichever category the user is in.
+  const folderCopy = {
+    all:      { createLabel: "New Automation", singular: "Automation", emptyTitle: "Create your first Automation", emptyBody: "Automate interactions with your contacts by creating rules, sequences, and flows so you have more time to handle meaningful conversations." },
+    basic:    { createLabel: "New Basic",      singular: "Basic rule", emptyTitle: "Create your first Basic rule", emptyBody: "Basic rules pair a single trigger with a single action — perfect for welcome messages, keyword replies, and quick automations." },
+    sequence: { createLabel: "New Sequence",   singular: "Sequence",   emptyTitle: "Create your first Sequence", emptyBody: "Automate interactions with your contacts by creating a series of automatic messages so you have more time to handle meaningful conversations." },
+    flow:     { createLabel: "New Flow",       singular: "Flow",       emptyTitle: "Create your first Flow",     emptyBody: "Flows let you build branching, multi-step automations triggered by events or webhooks — ideal for complex journeys." },
+  }[activeTab === "rules" ? activeFolder : "all"];
+
   const activeAutomations = automations.filter(a => a.enabled).length;
   const totalTriggers = automations.reduce((sum, a) => sum + a.triggerCount, 0);
   const activeWebhooks = webhooks.filter(w => w.enabled).length;
@@ -173,7 +182,7 @@ export const AutomationView = ({
           </div>
           <Button onClick={() => activeTab === "rules" ? setIsAddRuleOpen(true) : setIsAddWebhookOpen(true)}>
             <Plus className="w-4 h-4 mr-1.5" />
-            {activeTab === "rules" ? "New Automation" : "New Webhook"}
+            {activeTab === "rules" ? folderCopy.createLabel : "New Webhook"}
           </Button>
         </div>
       </header>
@@ -284,18 +293,25 @@ export const AutomationView = ({
                 )}
               </div>
               {filteredRules.length === 0 ? (
-                <div className="p-12 text-center">
-                  <Zap className="w-10 h-10 text-muted-foreground/30 mx-auto mb-3" />
-                  <p className="text-sm font-medium text-muted-foreground">
-                    {searchQuery ? "No automations match your search" : "No automations yet"}
-                  </p>
-                  <p className="text-xs text-muted-foreground/70 mt-1">
-                    {searchQuery ? "Try a different keyword." : "Create your first automation to get started."}
+                <div className="px-6 py-16 text-center max-w-md mx-auto">
+                  <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">
+                    {(() => {
+                      const EmptyIcon = activeFolder === "sequence" ? ListOrdered
+                        : activeFolder === "flow" ? GitBranch
+                        : activeFolder === "basic" ? Zap : Inbox;
+                      return <EmptyIcon className="w-5 h-5 text-primary" />;
+                    })()}
+                  </div>
+                  <h3 className="text-base font-semibold text-foreground">
+                    {searchQuery ? "No automations match your search" : folderCopy.emptyTitle}
+                  </h3>
+                  <p className="text-sm text-muted-foreground mt-1.5 leading-relaxed">
+                    {searchQuery ? "Try a different keyword or clear your search." : folderCopy.emptyBody}
                   </p>
                   {!searchQuery && (
-                    <Button size="sm" className="mt-4" onClick={() => setIsAddRuleOpen(true)}>
-                      <Plus className="w-3.5 h-3.5 mr-1.5" />
-                      New Automation
+                    <Button className="mt-5" onClick={() => setIsAddRuleOpen(true)}>
+                      <Plus className="w-4 h-4 mr-1.5" />
+                      {folderCopy.createLabel}
                     </Button>
                   )}
                 </div>
