@@ -363,41 +363,41 @@ export default function App() {
       </AnimatePresence>
       
       {/* Sidebar */}
-      <aside 
+      <aside
         className={cn(
-          "h-full bg-sidebar border-r border-sidebar-border transition-all duration-300 flex flex-col z-50",
+          "h-full bg-sidebar border-r border-sidebar-border transition-all duration-300 flex flex-col z-50 text-sidebar-foreground",
           "fixed lg:relative",
           isMobileSidebarOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0",
-          isSidebarCollapsed ? "lg:w-[68px] w-72" : "w-64"
+          isSidebarCollapsed ? "lg:w-[72px] w-72" : "w-60"
         )}
       >
         {/* Logo */}
-        <div className="flex items-center justify-between border-b border-sidebar-border h-[60px] px-4">
-          <div className="flex items-center gap-3 min-w-0">
-            <div className="w-8 h-8 bg-blue-600 flex items-center justify-center shrink-0">
-              <Globe className="w-4 h-4 text-white" />
+        <div className="flex items-center justify-between h-[64px] px-4">
+          <div className="flex items-center gap-2.5 min-w-0">
+            <div className="w-9 h-9 rounded-lg bg-primary flex items-center justify-center shrink-0 shadow-sm">
+              <Globe className="w-4 h-4 text-primary-foreground" />
             </div>
             {(!isSidebarCollapsed || isMobileSidebarOpen) && (
               <div className="flex flex-col min-w-0">
-                <span className="text-sm font-bold text-sidebar-foreground tracking-tight truncate">Turumba</span>
-                <span className="text-xs font-medium text-slate-500 truncate">{activeTenant.name}</span>
+                <span className="text-sm font-bold text-sidebar-foreground tracking-tight truncate">{activeTenant.name}</span>
+                <span className="text-xs text-muted-foreground truncate">Workspace</span>
               </div>
             )}
           </div>
           <button
             onClick={() => setIsMobileSidebarOpen(false)}
-            className="lg:hidden p-1.5 text-slate-400 hover:text-white transition-colors"
+            className="lg:hidden p-1.5 text-muted-foreground hover:text-foreground transition-colors"
             aria-label="Close menu"
           >
             <X className="w-4 h-4" />
           </button>
         </div>
 
-        <nav className="flex-1 px-2 py-3 space-y-4 overflow-y-auto no-scrollbar">
+        <nav className="flex-1 px-3 py-2 space-y-4 overflow-y-auto no-scrollbar">
           {filteredNavSections.map((section) => (
             <div key={section.label} className="space-y-0.5">
               {(!isSidebarCollapsed || isMobileSidebarOpen) && (
-                <p className="text-xs font-semibold text-slate-500 uppercase tracking-widest px-3 pb-1">{section.label}</p>
+                <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider px-2 pb-1.5 pt-2">{section.label}</p>
               )}
               {isSidebarCollapsed && !isMobileSidebarOpen && <div className="h-px bg-sidebar-border mx-2 mb-2" />}
               {section.items.map((item) => {
@@ -409,10 +409,10 @@ export default function App() {
                     title={isSidebarCollapsed && !isMobileSidebarOpen ? item.name : undefined}
                     aria-label={item.name}
                     className={cn(
-                      "w-full flex items-center gap-3 px-3 py-2 text-sm font-medium transition-all",
+                      "w-full flex items-center gap-3 px-2.5 py-2 rounded-md text-sm font-medium transition-all",
                       isActive
-                        ? "bg-blue-600 text-white"
-                        : "text-slate-400 hover:bg-sidebar-accent hover:text-sidebar-foreground"
+                        ? "bg-primary text-primary-foreground shadow-sm"
+                        : "text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
                     )}
                   >
                     <item.icon className="w-4 h-4 shrink-0" />
@@ -421,8 +421,8 @@ export default function App() {
                         <span className="flex-1 text-left">{item.name}</span>
                         {item.badge && (
                           <span className={cn(
-                            "px-1.5 py-0.5 text-xs font-bold",
-                            isActive ? "bg-white/20 text-white" : "bg-blue-600/20 text-blue-400"
+                            "px-1.5 py-0.5 text-xs font-semibold rounded-md",
+                            isActive ? "bg-white/20 text-white" : "bg-primary/10 text-primary"
                           )}>
                             {item.badge}
                           </span>
@@ -441,31 +441,31 @@ export default function App() {
           {(!isSidebarCollapsed || isMobileSidebarOpen) && (
             <div className="px-3 py-2.5 border-b border-sidebar-border">
               <div className="flex items-center justify-between mb-1.5">
-                <span className="text-xs font-semibold text-slate-500 uppercase tracking-widest">Plan</span>
-                <span className="text-xs font-bold text-blue-400 uppercase">{activeTenant.plan}</span>
+                <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">Plan</span>
+                <span className="text-xs font-semibold text-primary uppercase">{activeTenant.plan}</span>
               </div>
-              <div className="h-1 w-full bg-slate-700 overflow-hidden mb-1">
+              <div className="h-1 w-full bg-muted rounded-full overflow-hidden mb-1">
                 <div
-                  className="h-full bg-blue-500"
+                  className="h-full bg-primary rounded-full"
                   style={{ width: `${Math.min(100, (activeTenant.stats.contacts / PLAN_LIMITS[activeTenant.plan].maxContacts) * 100)}%` }}
                 />
               </div>
-              <p className="text-xs text-slate-500">{activeTenant.stats.contacts.toLocaleString()} / {PLAN_LIMITS[activeTenant.plan].maxContacts.toLocaleString()} contacts</p>
+              <p className="text-xs text-muted-foreground">{activeTenant.stats.contacts.toLocaleString()} / {PLAN_LIMITS[activeTenant.plan].maxContacts.toLocaleString()} contacts</p>
             </div>
           )}
 
           <div className="flex items-center gap-3 px-3 py-3">
-            <div className="w-8 h-8 bg-slate-700 border border-slate-600 flex items-center justify-center shrink-0 overflow-hidden">
+            <div className="w-9 h-9 rounded-full bg-muted border border-border flex items-center justify-center shrink-0 overflow-hidden">
               <img src={imgAvatar} alt={currentUser.name} className="w-full h-full object-cover" />
             </div>
             {(!isSidebarCollapsed || isMobileSidebarOpen) && (
               <div className="flex flex-col min-w-0 flex-1">
                 <span className="text-sm font-semibold text-sidebar-foreground truncate leading-tight">{currentUser.name}</span>
-                <span className="text-xs text-slate-500 capitalize">{currentUser.role}</span>
+                <span className="text-xs text-muted-foreground capitalize">{currentUser.role}</span>
               </div>
             )}
             <button
-              className="p-1.5 text-slate-500 hover:text-slate-300 transition-colors"
+              className="p-1.5 text-muted-foreground hover:text-foreground rounded-md hover:bg-sidebar-accent transition-colors"
               aria-label="Sign out"
               title="Sign out"
               onClick={() => setIsLogoutConfirmOpen(true)}

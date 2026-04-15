@@ -1,7 +1,7 @@
 @custom-variant dark (&:is(.dark *));
 
 :root {
-  --font-size: 15px;
+  --font-size: 14px;
   --background: #ffffff;
   --foreground: #0f172a;
   --card: #ffffff;
@@ -12,7 +12,7 @@
   --primary-foreground: #ffffff;
   --secondary: #f1f5f9;
   --secondary-foreground: #1e293b;
-  --muted: #f1f5f9;
+  --muted: #f8fafc;
   --muted-foreground: #64748b;
   --accent: #eff6ff;
   --accent-foreground: #1e40af;
@@ -21,21 +21,21 @@
   --border: #e2e8f0;
   --input: #e2e8f0;
   --ring: #2563eb;
-  --radius: 0rem;
+  --radius: 0.625rem;
   --chart-1: #2563eb;
   --chart-2: #10b981;
   --chart-3: #f59e0b;
   --chart-4: #8b5cf6;
   --chart-5: #ef4444;
 
-  /* Sidebar — dark navy */
-  --sidebar: #0f172a;
-  --sidebar-foreground: #f1f5f9;
+  /* Sidebar — clean light surface */
+  --sidebar: #ffffff;
+  --sidebar-foreground: #334155;
   --sidebar-primary: #2563eb;
   --sidebar-primary-foreground: #ffffff;
-  --sidebar-accent: #1e293b;
-  --sidebar-accent-foreground: #f1f5f9;
-  --sidebar-border: #1e293b;
+  --sidebar-accent: #f1f5f9;
+  --sidebar-accent-foreground: #0f172a;
+  --sidebar-border: #e2e8f0;
   --sidebar-ring: #2563eb;
 }
 

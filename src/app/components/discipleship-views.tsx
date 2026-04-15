@@ -8,6 +8,9 @@ import {
   GitBranch
 } from "lucide-react";
 import { cn } from "./types";
+import { Button } from "./ui/button";
+import { Badge } from "./ui/badge";
+import { Input } from "./ui/input";
 
 // ============================================================================
 // Shared primitives
@@ -72,10 +75,12 @@ export function Chip({
     slate:   "bg-slate-100 text-slate-700",
     orange:  "bg-orange-50 text-orange-700",
   }[tone];
+  // Thin wrapper around shadcn Badge so we keep the tone API but inherit the
+  // shadcn sizing, radius, and focus ring system.
   return (
-    <span className={cn("inline-flex items-center gap-1 px-2 py-0.5 text-xs font-semibold rounded-full", tones, className)}>
+    <Badge variant="outline" className={cn("border-transparent font-semibold", tones, className)}>
       {children}
-    </span>
+    </Badge>
   );
 }
 
@@ -135,10 +140,10 @@ export function DiscipleshipDashboardView({ onNavigate }: { onNavigate?: (view: 
         subtitle="Welcome back — here's your discipleship overview"
         actions={(
           <div className="relative">
-            <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-            <input
+            <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none" />
+            <Input
               placeholder="Search..."
-              className="pl-8 pr-3 py-1.5 bg-card border border-border rounded-md text-sm focus:ring-1 focus:ring-ring outline-none w-[220px]"
+              className="pl-8 h-9 w-[220px]"
             />
           </div>
         )}
@@ -234,12 +239,12 @@ export function SeekersView({ canCreate = true }: { canCreate?: boolean }) {
 
       <div className="flex items-center gap-2 flex-wrap">
         <div className="flex-1 min-w-[240px] relative">
-          <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-          <input
+          <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none" />
+          <Input
             value={query}
             onChange={e => setQuery(e.target.value)}
             placeholder="Search seekers by name or email..."
-            className="w-full pl-9 pr-3 py-2.5 bg-card border border-border rounded-md text-sm focus:ring-1 focus:ring-ring outline-none"
+            className="pl-9 h-10"
           />
         </div>
         <FilterButton label="Maturity Level" />
@@ -298,10 +303,10 @@ export function SeekersView({ canCreate = true }: { canCreate?: boolean }) {
 
 function FilterButton({ label }: { label: string }) {
   return (
-    <button className="flex items-center gap-1.5 px-3 py-2 text-sm font-medium bg-card border border-border rounded-md hover:bg-muted/50 transition-all">
+    <Button variant="outline" size="sm" className="font-medium">
       {label}
       <ChevronDown className="w-3.5 h-3.5 text-muted-foreground" />
-    </button>
+    </Button>
   );
 }
 
