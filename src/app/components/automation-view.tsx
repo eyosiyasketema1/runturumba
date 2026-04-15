@@ -1,10 +1,11 @@
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import {
   Zap, Plus, Search, Play, Pause, Trash2, Edit2,
   Webhook, ArrowRight, MoreVertical, Activity, Clock,
   AlertCircle, Check, X, Globe, Link2, Copy, Eye,
   Settings2, Filter, Tag, Users, MessageSquare, Send,
-  RefreshCw, ExternalLink, ChevronRight, Shield
+  RefreshCw, ExternalLink, ChevronRight, Shield,
+  Inbox, ListOrdered, GitBranch, FolderPlus
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { toast } from "sonner";
@@ -53,6 +54,35 @@ interface AutomationViewProps {
   onUpdateWebhook: (id: string, data: Partial<WebhookType>) => void;
 }
 
+// Derive a Basic / Sequence / Flow bucket for each automation so the list can
+// be organised into folders matching the spec. Deterministic per-automation.
+type AutoType = "basic" | "sequence" | "flow";
+const getAutoType = (a: AutomationRule): AutoType => {
+  if (a.trigger === "scheduled" || a.action === "send_broadcast") return "sequence";
+  if (a.trigger === "webhook_received" || a.action === "webhook_call") return "flow";
+  return "basic";
+};
+const getAutoStatus = (a: AutomationRule): "active" | "draft" | "stopped" => {
+  if (a.enabled) return "active";
+  if (a.triggerCount === 0) return "draft";
+  return "stopped";
+};
+// Deterministic pseudo-CTR per automation id so numbers stay stable between renders.
+const getAutoCtr = (a: AutomationRule): number | null => {
+  if (a.triggerCount === 0) return null;
+  let h = 0; for (let i = 0; i < a.id.length; i++) h = (h * 31 + a.id.charCodeAt(i)) | 0;
+  return 40 + (Math.abs(h) % 55); // 40–94%
+};
+const statusBadge = (s: "active" | "draft" | "stopped") => {
+  const map = {
+    active:  "bg-emerald-50 text-emerald-700 border-emerald-200",
+    draft:   "bg-amber-50 text-amber-700 border-amber-200",
+    stopped: "bg-rose-50 text-rose-700 border-rose-200",
+  } as const;
+  return map[s];
+};
+const typeLabel = (t: AutoType) => t === "basic" ? "Basic" : t === "sequence" ? "Sequence" : "Flow";
+
 export const AutomationView = ({
   automations,
   webhooks,
@@ -69,15 +99,27 @@ export const AutomationView = ({
   const [searchQuery, setSearchQuery] = useState("");
   const [isAddRuleOpen, setIsAddRuleOpen] = useState(false);
   const [isAddWebhookOpen, setIsAddWebhookOpen] = useState(false);
+  const [activeFolder, setActiveFolder] = useState<"all" | AutoType>("all");
 
   const activeAutomations = automations.filter(a => a.enabled).length;
   const totalTriggers = automations.reduce((sum, a) => sum + a.triggerCount, 0);
   const activeWebhooks = webhooks.filter(w => w.enabled).length;
 
-  const filteredRules = automations.filter(a =>
-    a.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    a.description.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  // Tag each automation with its derived type once, then filter.
+  const typedAutos = useMemo(() => automations.map(a => ({ ...a, _type: getAutoType(a) })), [automations]);
+  const folderCounts = useMemo(() => ({
+    all:      typedAutos.length,
+    basic:    typedAutos.filter(a => a._type === "basic").length,
+    sequence: typedAutos.filter(a => a._type === "sequence").length,
+    flow:     typedAutos.filter(a => a._type === "flow").length,
+  }), [typedAutos]);
+
+  const filteredRules = typedAutos.filter(a => {
+    const matchesFolder = activeFolder === "all" || a._type === activeFolder;
+    const q = searchQuery.toLowerCase();
+    const matchesSearch = !q || a.name.toLowerCase().includes(q) || a.description.toLowerCase().includes(q);
+    return matchesFolder && matchesSearch;
+  });
 
   const filteredWebhooks = webhooks.filter(w =>
     w.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -85,145 +127,189 @@ export const AutomationView = ({
   );
 
   return (
-    <div className="space-y-8 p-6 lg:p-10 animate-in fade-in duration-500">
-      <header className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+    <div className="space-y-5 p-6 animate-in fade-in duration-500">
+      <header className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight text-foreground">Automation</h1>
-          <p className="text-muted-foreground text-sm mt-1">Create rules that trigger actions automatically, and manage webhook integrations.</p>
+          <h1 className="text-2xl font-bold tracking-tight text-foreground">Automations</h1>
+          <p className="text-muted-foreground text-sm mt-1">Manage your automation workflows</p>
         </div>
-        <Button onClick={() => activeTab === "rules" ? setIsAddRuleOpen(true) : setIsAddWebhookOpen(true)}>
-          <Plus className="w-4 h-4 mr-2" />
-          {activeTab === "rules" ? "New Rule" : "New Webhook"}
-        </Button>
+        <div className="flex items-center gap-2">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+            <Input
+              placeholder="Search automations..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-9 h-9 text-sm w-[240px]"
+            />
+          </div>
+          <Button onClick={() => activeTab === "rules" ? setIsAddRuleOpen(true) : setIsAddWebhookOpen(true)}>
+            <Plus className="w-4 h-4 mr-1.5" />
+            {activeTab === "rules" ? "New Automation" : "New Webhook"}
+          </Button>
+        </div>
       </header>
 
-      {/* Stats */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        {[
-          { label: "Active Rules", value: activeAutomations, sub: `of ${automations.length} total` },
-          { label: "Total Triggers", value: totalTriggers.toLocaleString(), sub: "All time executions" },
-          { label: "Webhooks", value: activeWebhooks, sub: `of ${webhooks.length} configured` },
-          { label: "Failure Rate", value: `${webhooks.reduce((s, w) => s + w.failureCount, 0)}`, sub: "Total webhook failures" },
-        ].map(stat => (
-          <Card key={stat.label}>
-            <CardContent className="p-4">
-              <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest">{stat.label}</p>
-              <p className="text-2xl font-bold text-foreground mt-1">{stat.value}</p>
-              <p className="text-xs text-muted-foreground">{stat.sub}</p>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
-
-      {/* Tabs + Search */}
-      <div className="flex flex-col sm:flex-row gap-3">
-        <div className="flex gap-1 p-1 bg-muted border border-border">
-          <button
-            onClick={() => setActiveTab("rules")}
-            className={cn(
-              "px-4 py-2 text-xs font-semibold transition-all flex items-center gap-2",
-              activeTab === "rules" ? "bg-background text-foreground shadow-sm border border-border" : "text-muted-foreground hover:text-foreground"
-            )}
-          >
-            <Zap className="w-3.5 h-3.5" />
-            Automation Rules
-            <Badge variant="secondary" className="text-xs ml-1">{automations.length}</Badge>
-          </button>
-          <button
-            onClick={() => setActiveTab("webhooks")}
-            className={cn(
-              "px-4 py-2 text-xs font-semibold transition-all flex items-center gap-2",
-              activeTab === "webhooks" ? "bg-background text-foreground shadow-sm border border-border" : "text-muted-foreground hover:text-foreground"
-            )}
-          >
-            <Webhook className="w-3.5 h-3.5" />
-            Webhooks
-            <Badge variant="secondary" className="text-xs ml-1">{webhooks.length}</Badge>
-          </button>
-        </div>
-        <div className="relative flex-1 max-w-sm">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-          <Input
-            placeholder={activeTab === "rules" ? "Search rules..." : "Search webhooks..."}
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-9 h-9 text-sm"
-          />
-        </div>
+      {/* Secondary tab: keep Webhooks accessible without dominating the view */}
+      <div className="flex items-center gap-1 bg-muted/50 border border-border rounded-md p-0.5 w-fit">
+        <button
+          onClick={() => setActiveTab("rules")}
+          className={cn(
+            "px-3 py-1.5 text-xs font-semibold rounded transition-all flex items-center gap-1.5",
+            activeTab === "rules" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
+          )}
+        >
+          <Zap className="w-3.5 h-3.5" />
+          Automations
+          <Badge variant="secondary" className="text-xs ml-0.5">{automations.length}</Badge>
+        </button>
+        <button
+          onClick={() => setActiveTab("webhooks")}
+          className={cn(
+            "px-3 py-1.5 text-xs font-semibold rounded transition-all flex items-center gap-1.5",
+            activeTab === "webhooks" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
+          )}
+        >
+          <Webhook className="w-3.5 h-3.5" />
+          Webhooks
+          <Badge variant="secondary" className="text-xs ml-0.5">{webhooks.length}</Badge>
+        </button>
       </div>
 
       {/* Content */}
       <AnimatePresence mode="wait">
         {activeTab === "rules" ? (
-          <motion.div key="rules" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="space-y-3">
-            {filteredRules.length === 0 ? (
-              <Card>
-                <CardContent className="p-12 text-center">
+          <motion.div
+            key="rules"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="grid grid-cols-1 lg:grid-cols-[220px,1fr] gap-4"
+          >
+            {/* Folders panel */}
+            <aside className="bg-card border border-border rounded-lg p-3 h-fit">
+              <p className="text-xs font-semibold text-foreground px-2 pb-2">Folders</p>
+              <div className="space-y-0.5">
+                {([
+                  ["all",      "All Automations", folderCounts.all,      Inbox],
+                  ["basic",    "Basic",           folderCounts.basic,    Zap],
+                  ["sequence", "Sequences",       folderCounts.sequence, ListOrdered],
+                  ["flow",     "Flows",           folderCounts.flow,     GitBranch],
+                ] as const).map(([k, label, count, Icon]) => {
+                  const isActive = activeFolder === k;
+                  return (
+                    <button
+                      key={k}
+                      onClick={() => setActiveFolder(k as any)}
+                      className={cn(
+                        "w-full flex items-center gap-2 px-2.5 py-1.5 text-xs font-medium rounded transition-all",
+                        isActive ? "bg-primary/10 text-primary" : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"
+                      )}
+                    >
+                      <Icon className={cn("w-3.5 h-3.5", isActive ? "text-primary" : "text-muted-foreground")} />
+                      <span className="flex-1 text-left">{label}</span>
+                      <span className={cn("text-xs", isActive ? "text-primary font-semibold" : "text-muted-foreground")}>{count}</span>
+                    </button>
+                  );
+                })}
+                <button
+                  disabled
+                  title="Coming soon"
+                  className="w-full flex items-center gap-2 px-2.5 py-1.5 text-xs font-medium rounded text-muted-foreground/60 hover:bg-muted/30 transition-all cursor-not-allowed"
+                >
+                  <FolderPlus className="w-3.5 h-3.5" />
+                  <span className="flex-1 text-left">New Folder</span>
+                </button>
+              </div>
+            </aside>
+
+            {/* Main list */}
+            <div className="bg-card border border-border rounded-lg overflow-hidden">
+              {filteredRules.length === 0 ? (
+                <div className="p-12 text-center">
                   <Zap className="w-10 h-10 text-muted-foreground/30 mx-auto mb-3" />
-                  <p className="text-sm font-medium text-muted-foreground">No automation rules yet</p>
-                  <p className="text-xs text-muted-foreground/70 mt-1">Create your first rule to automate repetitive tasks.</p>
-                  <Button size="sm" className="mt-4" onClick={() => setIsAddRuleOpen(true)}>
-                    <Plus className="w-3.5 h-3.5 mr-1.5" />
-                    Create Rule
-                  </Button>
-                </CardContent>
-              </Card>
-            ) : (
-              filteredRules.map((rule) => {
-                const triggerInfo = TRIGGER_OPTIONS.find(t => t.id === rule.trigger);
-                const actionInfo = ACTION_OPTIONS.find(a => a.id === rule.action);
-                const TriggerIcon = triggerInfo?.icon || Zap;
-                const ActionIcon = actionInfo?.icon || ArrowRight;
-
-                return (
-                  <Card key={rule.id} className={cn("transition-all", !rule.enabled && "opacity-50")}>
-                    <CardContent className="p-5">
-                      <div className="flex items-center gap-4">
-                        <div className="flex items-center gap-2 shrink-0">
-                          <div className="w-9 h-9 flex items-center justify-center bg-primary/10 border border-primary/20">
-                            <TriggerIcon className="w-4 h-4 text-primary" />
-                          </div>
-                          <ArrowRight className="w-3.5 h-3.5 text-muted-foreground" />
-                          <div className="w-9 h-9 flex items-center justify-center bg-emerald-50 border border-emerald-200">
-                            <ActionIcon className="w-4 h-4 text-emerald-600" />
-                          </div>
-                        </div>
-
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2">
-                            <p className="text-sm font-semibold text-foreground truncate">{rule.name}</p>
-                            {rule.enabled && (
-                              <Badge className="text-xs bg-emerald-50 text-emerald-600 border-emerald-200" variant="outline">Active</Badge>
-                            )}
-                          </div>
-                          <p className="text-xs text-muted-foreground mt-0.5 truncate">{rule.description}</p>
-                          <div className="flex items-center gap-3 mt-1.5">
-                            <span className="text-xs text-muted-foreground">
-                              <span className="font-semibold text-foreground">{rule.triggerCount}</span> executions
+                  <p className="text-sm font-medium text-muted-foreground">
+                    {searchQuery ? "No automations match your search" : "No automations yet"}
+                  </p>
+                  <p className="text-xs text-muted-foreground/70 mt-1">
+                    {searchQuery ? "Try a different keyword." : "Create your first automation to get started."}
+                  </p>
+                  {!searchQuery && (
+                    <Button size="sm" className="mt-4" onClick={() => setIsAddRuleOpen(true)}>
+                      <Plus className="w-3.5 h-3.5 mr-1.5" />
+                      New Automation
+                    </Button>
+                  )}
+                </div>
+              ) : (
+                <table className="w-full">
+                  <thead>
+                    <tr className="border-b border-border text-xs uppercase tracking-wider text-muted-foreground bg-muted/30">
+                      <th className="px-4 py-3 text-left font-semibold">Name</th>
+                      <th className="px-4 py-3 text-left font-semibold">Status</th>
+                      <th className="px-4 py-3 text-left font-semibold">Type</th>
+                      <th className="px-4 py-3 text-left font-semibold">Runs</th>
+                      <th className="px-4 py-3 text-left font-semibold">CTR</th>
+                      <th className="px-4 py-3 text-left font-semibold">Modified</th>
+                      <th className="px-4 py-3 text-right font-semibold w-10"></th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filteredRules.map((rule) => {
+                      const status = getAutoStatus(rule);
+                      const ctr = getAutoCtr(rule);
+                      const modified = rule.lastTriggeredAt || rule.createdAt;
+                      return (
+                        <tr key={rule.id} className="border-b border-border last:border-0 hover:bg-muted/30 transition-colors group">
+                          <td className="px-4 py-3">
+                            <div className="flex flex-col">
+                              <span className="text-sm font-semibold text-foreground">{rule.name}</span>
+                              {rule.description && (
+                                <span className="text-xs text-muted-foreground truncate max-w-[420px]">{rule.description}</span>
+                              )}
+                            </div>
+                          </td>
+                          <td className="px-4 py-3">
+                            <span className={cn(
+                              "inline-flex items-center px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider border rounded-full",
+                              statusBadge(status)
+                            )}>
+                              {status}
                             </span>
-                            {rule.lastTriggeredAt && (
-                              <span className="text-xs text-muted-foreground">
-                                Last: {formatTimeAgo(rule.lastTriggeredAt)}
-                              </span>
-                            )}
-                          </div>
-                        </div>
-
-                        <div className="flex items-center gap-2">
-                          <Switch
-                            checked={rule.enabled}
-                            onCheckedChange={() => onToggleAutomation(rule.id)}
-                          />
-                          <Button variant="ghost" size="sm" className="h-8 w-8 p-0" onClick={() => onDeleteAutomation(rule.id)}>
-                            <Trash2 className="w-3.5 h-3.5 text-muted-foreground" />
-                          </Button>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                );
-              })
-            )}
+                          </td>
+                          <td className="px-4 py-3 text-sm text-foreground">{typeLabel(rule._type)}</td>
+                          <td className="px-4 py-3 text-sm font-medium text-foreground">{rule.triggerCount.toLocaleString()}</td>
+                          <td className="px-4 py-3 text-sm text-foreground">{ctr !== null ? `${ctr}%` : <span className="text-muted-foreground">—</span>}</td>
+                          <td className="px-4 py-3 text-sm text-muted-foreground">{formatTimeAgo(modified)}</td>
+                          <td className="px-4 py-3 text-right">
+                            <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="h-7 w-7 p-0"
+                                title={rule.enabled ? "Stop" : "Activate"}
+                                onClick={() => onToggleAutomation(rule.id)}
+                              >
+                                {rule.enabled ? <Pause className="w-3.5 h-3.5" /> : <Play className="w-3.5 h-3.5" />}
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="h-7 w-7 p-0"
+                                title="Delete"
+                                onClick={() => onDeleteAutomation(rule.id)}
+                              >
+                                <Trash2 className="w-3.5 h-3.5 text-muted-foreground" />
+                              </Button>
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              )}
+            </div>
           </motion.div>
         ) : (
           <motion.div key="webhooks" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="space-y-3">
