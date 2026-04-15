@@ -357,26 +357,27 @@ export const AutomationView = ({
                           <td className="px-5 py-4 text-sm text-muted-foreground">{formatTimeAgo(modified)}</td>
                           <td className="px-5 py-4 text-right">
                             <DropdownMenu>
-                              <DropdownMenuTrigger asChild>
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  className="h-8 w-8 p-0"
-                                  aria-label={`Actions for ${rule.name}`}
-                                >
-                                  <MoreVertical className="w-4 h-4 text-muted-foreground" />
-                                </Button>
+                              <DropdownMenuTrigger
+                                className={cn(
+                                  "inline-flex items-center justify-center h-8 w-8 rounded-md",
+                                  "text-muted-foreground hover:text-foreground hover:bg-muted",
+                                  "transition-colors outline-none",
+                                  "focus-visible:ring-2 focus-visible:ring-ring"
+                                )}
+                                aria-label={`Actions for ${rule.name}`}
+                              >
+                                <MoreVertical className="w-4 h-4" />
                               </DropdownMenuTrigger>
                               <DropdownMenuContent align="end" className="w-44">
-                                <DropdownMenuItem onClick={() => setEditingRule(rule)}>
+                                <DropdownMenuItem onSelect={() => setEditingRule(rule)}>
                                   <Edit2 className="w-3.5 h-3.5" />
                                   Edit
                                 </DropdownMenuItem>
-                                <DropdownMenuItem onClick={() => handleDuplicateRule(rule)}>
+                                <DropdownMenuItem onSelect={() => handleDuplicateRule(rule)}>
                                   <Copy className="w-3.5 h-3.5" />
                                   Duplicate
                                 </DropdownMenuItem>
-                                <DropdownMenuItem onClick={() => onToggleAutomation(rule.id)}>
+                                <DropdownMenuItem onSelect={() => onToggleAutomation(rule.id)}>
                                   {rule.enabled
                                     ? <><Pause className="w-3.5 h-3.5" />Stop</>
                                     : <><Play className="w-3.5 h-3.5" />Activate</>}
@@ -384,7 +385,7 @@ export const AutomationView = ({
                                 <DropdownMenuSeparator />
                                 <DropdownMenuItem
                                   variant="destructive"
-                                  onClick={() => setRuleToDelete(rule)}
+                                  onSelect={() => setRuleToDelete(rule)}
                                 >
                                   <Trash2 className="w-3.5 h-3.5" />
                                   Delete
