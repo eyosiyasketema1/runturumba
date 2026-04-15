@@ -942,31 +942,135 @@ function FilterButton({ label }: { label: string }) {
 // MENTORS
 // ============================================================================
 
-const MENTORS = [
-  { id: "m1", name: "Pastor James K.",   email: "james@email.com",   specialty: "New Believers, Grief", languages: "EN, AM", capacity: "4/5",  load: 80, status: "Active",      statusTone: "green", avatarTone: "blue" as const,    experience: "Senior" },
-  { id: "m2", name: "Mentor Daniel M.",  email: "daniel@email.com",  specialty: "Youth, Apologetics",   languages: "EN, AM", capacity: "3/5",  load: 60, status: "Active",      statusTone: "green", avatarTone: "purple" as const,  experience: "Experienced" },
-  { id: "m3", name: "Sister Ruth B.",    email: "ruth@email.com",    specialty: "Women, Prayer",        languages: "EN, OM", capacity: "5/5",  load: 100, status: "Unavailable", statusTone: "amber", avatarTone: "rose" as const,    experience: "Experienced" },
-  { id: "m4", name: "Elder Susan M.",    email: "susan@email.com",   specialty: "Bible Study",          languages: "EN",     capacity: "2/6",  load: 33, status: "Active",      statusTone: "green", avatarTone: "amber" as const,   experience: "Senior" },
+type MentorRow = {
+  id: string; name: string; email: string;
+  specialty: string;        // comma-separated string shown in the table
+  languages: string;        // comma-separated short codes: EN, AM, OM
+  capacity: string;         // "4/5"
+  load: number;             // 0-100 percentage
+  status: "Active" | "Unavailable" | "On leave" | "Retired";
+  statusTone: any;
+  avatarTone: "blue" | "purple" | "rose" | "amber" | "green" | "slate";
+  experience: "Beginner" | "Intermediate" | "Experienced" | "Senior";
+  gender: "female" | "male";
+  strengths: string[];      // eg ["Empathy", "Bible knowledge", "Prayer"]
+  bio: string;
+  joined: string;
+};
+
+const INITIAL_MENTORS_DATA: MentorRow[] = [
+  { id: "m1", name: "Pastor James K.",   email: "james@email.com",   specialty: "New Believers, Grief", languages: "EN, AM", capacity: "4/5", load: 80,  status: "Active",       statusTone: "green", avatarTone: "blue",   experience: "Senior",       gender: "male",   strengths: ["Empathy", "Bible knowledge", "Prayer"],  bio: "20+ years walking alongside new believers and those in grief. Passionate about foundational discipleship and the quiet work of scripture.", joined: "Jan 10, 2024" },
+  { id: "m2", name: "Mentor Daniel M.",  email: "daniel@email.com",  specialty: "Youth, Apologetics",   languages: "EN, AM", capacity: "3/5", load: 60,  status: "Active",       statusTone: "green", avatarTone: "purple", experience: "Experienced",  gender: "male",   strengths: ["Patience", "Apologetics", "Storytelling"], bio: "Loves wrestling through hard questions with curious young adults. Former youth pastor.", joined: "Mar 2, 2024" },
+  { id: "m3", name: "Sister Ruth B.",    email: "ruth@email.com",    specialty: "Women, Prayer",        languages: "EN, OM", capacity: "5/5", load: 100, status: "Unavailable",  statusTone: "amber", avatarTone: "rose",   experience: "Experienced",  gender: "female", strengths: ["Prayer", "Counseling", "Pastoral care"], bio: "Women's ministry leader. Specialises in prayer accompaniment and seasons of transition.", joined: "May 18, 2024" },
+  { id: "m4", name: "Elder Susan M.",    email: "susan@email.com",   specialty: "Bible Study",          languages: "EN",     capacity: "2/6", load: 33,  status: "Active",       statusTone: "green", avatarTone: "amber",  experience: "Senior",       gender: "female", strengths: ["Bible knowledge", "Teaching", "Study planning"], bio: "Retired teacher who now leads small groups. Equips seekers to read scripture themselves.", joined: "Feb 5, 2024" },
 ];
 
+const MENTOR_STATUSES = ["Active", "Unavailable", "On leave", "Retired"] as const;
+const EXPERIENCE_LEVELS = ["Beginner", "Intermediate", "Experienced", "Senior"] as const;
+const ALL_LANGUAGES = [
+  { code: "EN", label: "English" }, { code: "AM", label: "Amharic" }, { code: "OM", label: "Afaan Oromoo" },
+];
+const ALL_SPECIALTIES = ["New Believers", "Youth", "Women", "Men", "Grief", "Prayer", "Apologetics", "Bible Study", "Marriage", "Addiction recovery"];
+const ALL_STRENGTHS  = ["Empathy", "Bible knowledge", "Prayer", "Patience", "Counseling", "Apologetics", "Teaching", "Storytelling", "Pastoral care", "Study planning"];
+
 export function MentorsView({ canCreate = true }: { canCreate?: boolean }) {
+  const [mentors, setMentors] = useState<MentorRow[]>(INITIAL_MENTORS_DATA);
+  const [query, setQuery]     = useState("");
+  const [status, setStatus]   = useState<string>("all");
+  const [exp, setExp]         = useState<string>("all");
+  const [sort, setSort]       = useState<"name" | "load_low" | "load_high" | "newest">("newest");
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [isNewOpen, setIsNewOpen] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
+
+  const selected = mentors.find(m => m.id === selectedId) || null;
+  const editing  = mentors.find(m => m.id === editingId) || null;
+
+  const filtered = useMemo(() => {
+    let list = mentors.filter(m => {
+      const q = query.toLowerCase();
+      const matchesQ = !q || m.name.toLowerCase().includes(q) || m.email.toLowerCase().includes(q) || m.specialty.toLowerCase().includes(q);
+      const matchesS = status === "all" || m.status === status;
+      const matchesE = exp === "all" || m.experience === exp;
+      return matchesQ && matchesS && matchesE;
+    });
+    if (sort === "name")       list = [...list].sort((a, b) => a.name.localeCompare(b.name));
+    else if (sort === "load_low")  list = [...list].sort((a, b) => a.load - b.load);
+    else if (sort === "load_high") list = [...list].sort((a, b) => b.load - a.load);
+    return list;
+  }, [mentors, query, status, exp, sort]);
+
+  // Drill into a profile — full-page replacement.
+  if (selected) {
+    return (
+      <MentorDetailView
+        mentor={selected}
+        onBack={() => setSelectedId(null)}
+        onEdit={() => { setEditingId(selected.id); setSelectedId(null); }}
+        onStatusChange={(s) => setMentors(list => list.map(x => x.id === selected.id ? { ...x, status: s, statusTone: s === "Active" ? "green" : s === "Retired" ? "slate" : "amber" } : x))}
+      />
+    );
+  }
+
+  const totalActive     = mentors.filter(m => m.status === "Active").length;
+  const avgLoad         = mentors.length === 0 ? 0 : Math.round(mentors.reduce((s, m) => s + m.load, 0) / mentors.length);
+  const availableSlots  = mentors.reduce((acc, m) => {
+    const [cur, max] = m.capacity.split("/").map(Number);
+    return acc + Math.max(0, (max || 0) - (cur || 0));
+  }, 0);
+
   return (
     <div className="p-6 space-y-4">
       <PageHeader
         title="Mentors"
         subtitle="Manage mentor profiles, availability, and capacity"
         actions={canCreate && (
-          <button className="flex items-center gap-1.5 px-4 py-2 text-sm font-semibold bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-all shadow-sm">
+          <Button onClick={() => setIsNewOpen(true)}>
             <Plus className="w-4 h-4" /> New Mentor
-          </button>
+          </Button>
         )}
       />
 
       <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
-        <StatCard label="Total Mentors"  value={18} icon={ShieldCheck} tone="blue"  />
-        <StatCard label="Active"         value={14} icon={CheckCircle2} tone="green" />
-        <StatCard label="Avg. Load"      value="68%" icon={Activity}    tone="amber" />
-        <StatCard label="Available Slots" value={22} icon={Users}       tone="purple" />
+        <StatCard label="Total Mentors"   value={mentors.length} icon={ShieldCheck}  tone="blue" />
+        <StatCard label="Active"          value={totalActive}    icon={CheckCircle2} tone="green" />
+        <StatCard label="Avg. Load"       value={`${avgLoad}%`}  icon={Activity}     tone="amber" />
+        <StatCard label="Available Slots" value={availableSlots} icon={Users}        tone="purple" />
+      </div>
+
+      <div className="flex items-center gap-2 flex-wrap">
+        <div className="flex-1 min-w-[240px] relative">
+          <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none" />
+          <Input
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Search by name, email, or specialty..."
+            className="pl-9 h-10"
+          />
+        </div>
+        <FilterDropdown
+          label="Status"
+          value={status}
+          onChange={setStatus}
+          options={[{ value: "all", label: "All statuses" }, ...MENTOR_STATUSES.map(s => ({ value: s, label: s }))]}
+        />
+        <FilterDropdown
+          label="Experience"
+          value={exp}
+          onChange={setExp}
+          options={[{ value: "all", label: "All experience" }, ...EXPERIENCE_LEVELS.map(s => ({ value: s, label: s }))]}
+        />
+        <FilterDropdown
+          label="Sort"
+          value={sort}
+          onChange={(v) => setSort(v as typeof sort)}
+          options={[
+            { value: "newest",    label: "Newest first" },
+            { value: "name",      label: "Name (A–Z)" },
+            { value: "load_low",  label: "Load (low → high)" },
+            { value: "load_high", label: "Load (high → low)" },
+          ]}
+        />
       </div>
 
       <div className="bg-card border border-border rounded-lg overflow-hidden">
@@ -979,12 +1083,22 @@ export function MentorsView({ canCreate = true }: { canCreate?: boolean }) {
               <th className="px-4 py-3 text-left font-semibold">Experience</th>
               <th className="px-4 py-3 text-left font-semibold">Capacity</th>
               <th className="px-4 py-3 text-left font-semibold">Status</th>
-              <th className="px-4 py-3 text-right font-semibold">Actions</th>
+              <th className="px-4 py-3 text-right font-semibold w-10">Actions</th>
             </tr>
           </thead>
           <tbody>
-            {MENTORS.map(m => (
-              <tr key={m.id} className="border-b border-border last:border-0 hover:bg-muted/30 transition-colors">
+            {filtered.length === 0 ? (
+              <tr>
+                <td colSpan={7} className="px-4 py-12 text-center text-sm text-muted-foreground">
+                  No mentors match your filters.
+                </td>
+              </tr>
+            ) : filtered.map(m => (
+              <tr
+                key={m.id}
+                className="border-b border-border last:border-0 hover:bg-muted/30 transition-colors cursor-pointer"
+                onClick={() => setSelectedId(m.id)}
+              >
                 <td className="px-4 py-3">
                   <div className="flex items-center gap-3">
                     <Avatar name={m.name} tone={m.avatarTone} />
@@ -1004,17 +1118,548 @@ export function MentorsView({ canCreate = true }: { canCreate?: boolean }) {
                   </div>
                 </td>
                 <td className="px-4 py-3"><Chip tone={m.statusTone}>{m.status}</Chip></td>
-                <td className="px-4 py-3 text-right">
-                  <button className="p-1.5 text-muted-foreground hover:text-foreground hover:bg-muted rounded transition-all">
-                    <MoreHorizontal className="w-4 h-4" />
-                  </button>
+                <td className="px-4 py-3 text-right" onClick={(e) => e.stopPropagation()}>
+                  <MentorActionsMenu
+                    mentor={m}
+                    onView={() => setSelectedId(m.id)}
+                    onEdit={() => setEditingId(m.id)}
+                    onMessage={() => toast.success(`Messaging ${m.name}`)}
+                    onToggleStatus={() => {
+                      setMentors(list => list.map(x => x.id === m.id
+                        ? { ...x, status: x.status === "Active" ? "Unavailable" : "Active", statusTone: x.status === "Active" ? "amber" : "green" }
+                        : x
+                      ));
+                      toast.success(`${m.name} is now ${m.status === "Active" ? "Unavailable" : "Active"}`);
+                    }}
+                    onDelete={() => {
+                      setMentors(list => list.filter(x => x.id !== m.id));
+                      toast.success(`${m.name} removed`);
+                    }}
+                  />
                 </td>
               </tr>
             ))}
           </tbody>
         </table>
       </div>
+
+      {/* Create + Edit share the same modal to keep the form logic in one place */}
+      <MentorFormModal
+        key={editing?.id ?? "new"}
+        isOpen={isNewOpen || editing !== null}
+        initial={editing ?? undefined}
+        onClose={() => { setIsNewOpen(false); setEditingId(null); }}
+        onSubmit={(draft) => {
+          if (editing) {
+            setMentors(list => list.map(x => x.id === editing.id ? { ...x, ...draft } : x));
+            toast.success(`${draft.name} updated`);
+          } else {
+            setMentors(list => [{ ...draft, id: `m-${Date.now()}` }, ...list]);
+            toast.success(`${draft.name} added`);
+          }
+          setIsNewOpen(false);
+          setEditingId(null);
+        }}
+      />
     </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Mentor actions menu
+// ---------------------------------------------------------------------------
+
+function MentorActionsMenu({
+  mentor, onView, onEdit, onMessage, onToggleStatus, onDelete,
+}: {
+  mentor: MentorRow;
+  onView: () => void;
+  onEdit: () => void;
+  onMessage: () => void;
+  onToggleStatus: () => void;
+  onDelete: () => void;
+}) {
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger
+        className={cn(
+          "inline-flex items-center justify-center h-8 w-8 rounded-md",
+          "text-muted-foreground hover:text-foreground hover:bg-muted transition-colors outline-none",
+          "focus-visible:ring-2 focus-visible:ring-ring"
+        )}
+        aria-label={`Actions for ${mentor.name}`}
+      >
+        <MoreHorizontal className="w-4 h-4" />
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" className="w-48">
+        <DropdownMenuItem onSelect={onView}>
+          <Eye className="w-3.5 h-3.5" /> View profile
+        </DropdownMenuItem>
+        <DropdownMenuItem onSelect={onEdit}>
+          <Edit2 className="w-3.5 h-3.5" /> Edit
+        </DropdownMenuItem>
+        <DropdownMenuItem onSelect={onMessage}>
+          <MessageSquareIcon className="w-3.5 h-3.5" /> Message
+        </DropdownMenuItem>
+        <DropdownMenuSeparator />
+        <DropdownMenuItem onSelect={onToggleStatus}>
+          <Clock className="w-3.5 h-3.5" />
+          {mentor.status === "Active" ? "Mark unavailable" : "Mark active"}
+        </DropdownMenuItem>
+        <DropdownMenuItem variant="destructive" onSelect={onDelete}>
+          <Trash2 className="w-3.5 h-3.5" /> Remove mentor
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Mentor profile detail
+// ---------------------------------------------------------------------------
+
+function MentorDetailView({
+  mentor, onBack, onEdit, onStatusChange,
+}: {
+  mentor: MentorRow;
+  onBack: () => void;
+  onEdit: () => void;
+  onStatusChange: (s: MentorRow["status"]) => void;
+}) {
+  const [curLoad, maxCap] = mentor.capacity.split("/").map(Number);
+  const availSlots = Math.max(0, (maxCap || 0) - (curLoad || 0));
+  const aiSummary = `${mentor.name.split(" ").slice(-1)[0]} brings ${mentor.experience.toLowerCase()} experience with particular strength in ${mentor.strengths.slice(0, 2).join(" and ")}. Best suited for seekers seeking ${mentor.specialty.toLowerCase()}. Culturally fluent in ${mentor.languages}.`;
+  const weeklySchedule = [
+    { day: "Mon", slots: ["9:00 – 12:00"] },
+    { day: "Tue", slots: [] },
+    { day: "Wed", slots: ["14:00 – 17:00"] },
+    { day: "Thu", slots: [] },
+    { day: "Fri", slots: [] },
+    { day: "Sat", slots: ["10:00 – 15:00"] },
+    { day: "Sun", slots: [] },
+  ];
+  const activeMentees = [
+    { name: "Abigail Johnson", maturity: "New Believer", maturityTone: "green" as const, engagement: 78, avatarTone: "purple" as const },
+    { name: "David Kebede",    maturity: "Seeker",       maturityTone: "amber" as const, engagement: 58, avatarTone: "blue" as const },
+    { name: "Miriam Tadesse",  maturity: "Interested",   maturityTone: "orange" as const, engagement: 30, avatarTone: "green" as const },
+  ].slice(0, curLoad || 0);
+
+  return (
+    <div className="p-6 space-y-4">
+      <button
+        onClick={onBack}
+        className="inline-flex items-center gap-1.5 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+      >
+        <ArrowLeft className="w-4 h-4" /> Back to Mentors
+      </button>
+
+      {/* Header */}
+      <div className="flex items-start justify-between gap-4 flex-wrap">
+        <div className="flex items-center gap-4">
+          <div className="w-16 h-16 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center text-xl font-bold shrink-0">
+            {mentor.name.split(" ").map(n => n[0]).slice(0, 2).join("").toUpperCase()}
+          </div>
+          <div>
+            <div className="flex items-center gap-2 flex-wrap">
+              <h1 className="text-2xl font-bold text-foreground tracking-tight">{mentor.name}</h1>
+              <Chip tone={mentor.statusTone}>{mentor.status}</Chip>
+              <Chip tone="slate">{mentor.experience}</Chip>
+            </div>
+            <p className="text-sm text-muted-foreground mt-1">
+              <span>{mentor.email}</span>
+              <span className="mx-2">·</span>
+              <span>{mentor.gender === "female" ? "Female" : "Male"}</span>
+              <span className="mx-2">·</span>
+              <span>Joined {mentor.joined}</span>
+            </p>
+          </div>
+        </div>
+        <div className="flex items-center gap-2">
+          <Button onClick={() => toast.success(`Messaging ${mentor.name}`)}>
+            <Send className="w-3.5 h-3.5" /> Message
+          </Button>
+          <Button variant="outline" onClick={onEdit}>
+            <Edit2 className="w-3.5 h-3.5" /> Edit
+          </Button>
+          <DropdownMenu>
+            <DropdownMenuTrigger className="inline-flex items-center justify-center h-9 w-9 rounded-md border border-border text-muted-foreground hover:bg-muted transition-colors">
+              <MoreHorizontal className="w-4 h-4" />
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-44">
+              <DropdownMenuLabel className="text-xs text-muted-foreground">Change status</DropdownMenuLabel>
+              <DropdownMenuRadioGroup value={mentor.status} onValueChange={(v) => onStatusChange(v as MentorRow["status"])}>
+                {MENTOR_STATUSES.map(s => (
+                  <DropdownMenuRadioItem key={s} value={s}>{s}</DropdownMenuRadioItem>
+                ))}
+              </DropdownMenuRadioGroup>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+      </div>
+
+      {/* Quick stats */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <StatCard label="Active Mentees" value={curLoad || 0}          subtitle={`of ${maxCap || 0} capacity`} icon={Users}        tone="blue" />
+        <StatCard label="Available Slots" value={availSlots}           subtitle={`${Math.round(mentor.load)}% load`}             icon={Activity}     tone="green" />
+        <StatCard label="Completed"       value={12}                   subtitle="seekers graduated"                              icon={CheckCircle2} tone="purple" />
+        <StatCard label="Avg. Response"   value="2.4h"                 subtitle="rolling 30 days"                                icon={Clock}        tone="amber" />
+      </div>
+
+      {/* Body: bio + expertise + availability on left, AI summary + mentees on right */}
+      <div className="grid grid-cols-1 lg:grid-cols-[1fr,360px] gap-4">
+        <div className="space-y-4">
+          <div className="bg-card border border-border rounded-xl p-5">
+            <h3 className="text-base font-bold text-foreground mb-2">Bio</h3>
+            <p className="text-sm text-muted-foreground leading-relaxed">{mentor.bio}</p>
+          </div>
+
+          <div className="bg-card border border-border rounded-xl p-5 space-y-4">
+            <h3 className="text-base font-bold text-foreground">Expertise</h3>
+            <div>
+              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1.5">Specialty areas</p>
+              <div className="flex items-center gap-1.5 flex-wrap">
+                {mentor.specialty.split(",").map(s => <Chip key={s} tone="blue">{s.trim()}</Chip>)}
+              </div>
+            </div>
+            <div>
+              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1.5">Strengths</p>
+              <div className="flex items-center gap-1.5 flex-wrap">
+                {mentor.strengths.map(s => <Chip key={s} tone="purple">{s}</Chip>)}
+              </div>
+            </div>
+            <div>
+              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1.5">Languages</p>
+              <div className="flex items-center gap-1.5 flex-wrap">
+                {mentor.languages.split(",").map(l => {
+                  const code = l.trim();
+                  const label = ALL_LANGUAGES.find(x => x.code === code)?.label ?? code;
+                  return <Chip key={code} tone="green">{label}</Chip>;
+                })}
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-card border border-border rounded-xl p-5">
+            <h3 className="text-base font-bold text-foreground mb-4">Weekly availability</h3>
+            <div className="grid grid-cols-7 gap-2">
+              {weeklySchedule.map(d => (
+                <div key={d.day} className="text-center">
+                  <p className="text-xs font-semibold text-muted-foreground uppercase mb-1.5">{d.day}</p>
+                  <div className={cn(
+                    "rounded-md py-2 px-1 text-xs font-medium min-h-[56px] flex flex-col items-center justify-center gap-0.5",
+                    d.slots.length > 0 ? "bg-primary/10 text-primary" : "bg-muted text-muted-foreground"
+                  )}>
+                    {d.slots.length > 0 ? d.slots.map(s => <span key={s}>{s}</span>) : <span>—</span>}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        <div className="space-y-4">
+          <div className="bg-card border border-border rounded-xl p-5">
+            <div className="flex items-center gap-2 mb-3">
+              <Sparkles className="w-4 h-4 text-violet-500" />
+              <h3 className="text-base font-bold text-foreground">AI Profile Summary</h3>
+            </div>
+            <p className="text-sm text-muted-foreground leading-relaxed">{aiSummary}</p>
+            <p className="text-xs text-muted-foreground mt-3 italic">Used by the matching algorithm to pair with the right seekers.</p>
+          </div>
+
+          <div className="bg-card border border-border rounded-xl p-5">
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="text-base font-bold text-foreground">Active Mentees</h3>
+              <span className="text-xs font-semibold text-muted-foreground">{activeMentees.length}/{maxCap || 0}</span>
+            </div>
+            {activeMentees.length === 0 ? (
+              <p className="text-sm text-muted-foreground">No active mentees right now.</p>
+            ) : (
+              <ul className="space-y-2">
+                {activeMentees.map((am, i) => (
+                  <li key={i} className="flex items-center gap-3">
+                    <Avatar name={am.name} tone={am.avatarTone} />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-semibold text-foreground truncate">{am.name}</p>
+                      <div className="flex items-center gap-2 mt-0.5">
+                        <Chip tone={am.maturityTone}>{am.maturity}</Chip>
+                        <span className="text-xs text-muted-foreground">{am.engagement}% engaged</span>
+                      </div>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Mentor form modal — 3-step onboarding (reused for edit)
+// ---------------------------------------------------------------------------
+
+const MENTOR_STEPS = [
+  { id: 1, title: "Identity",     description: "Who is this mentor?" },
+  { id: 2, title: "Expertise",    description: "Strengths, specialties, and languages." },
+  { id: 3, title: "Availability", description: "Capacity and weekly schedule." },
+];
+
+function MentorFormModal({
+  isOpen, initial, onClose, onSubmit,
+}: {
+  isOpen: boolean;
+  initial?: MentorRow;
+  onClose: () => void;
+  onSubmit: (draft: Omit<MentorRow, "id">) => void;
+}) {
+  const isEdit = !!initial;
+  const [step, setStep] = useState(1);
+
+  const [name, setName]             = useState(initial?.name ?? "");
+  const [email, setEmail]           = useState(initial?.email ?? "");
+  const [gender, setGender]         = useState<MentorRow["gender"]>(initial?.gender ?? "female");
+  const [experience, setExperience] = useState<MentorRow["experience"]>(initial?.experience ?? "Intermediate");
+  const [bio, setBio]               = useState(initial?.bio ?? "");
+  const [specialties, setSpecialties] = useState<string[]>(initial?.specialty ? initial.specialty.split(",").map(s => s.trim()) : []);
+  const [strengths, setStrengths]     = useState<string[]>(initial?.strengths ?? []);
+  const [languages, setLanguages]     = useState<string[]>(initial?.languages ? initial.languages.split(",").map(s => s.trim()) : ["EN"]);
+  const [maxCap, setMaxCap]           = useState<number>(initial ? parseInt(initial.capacity.split("/")[1], 10) : 5);
+
+  const toggle = <T extends string>(list: T[], setList: (v: T[]) => void, v: T) =>
+    setList(list.includes(v) ? list.filter(x => x !== v) : [...list, v]);
+
+  const canAdvance =
+    step === 1 ? name.trim().length > 0 && email.trim().length > 0 :
+    step === 2 ? specialties.length > 0 && strengths.length > 0 && languages.length > 0 :
+    maxCap > 0;
+
+  const handleClose = () => { setStep(1); onClose(); };
+
+  const handleSubmit = () => {
+    const curLoad = initial ? parseInt(initial.capacity.split("/")[0], 10) : 0;
+    const load = maxCap > 0 ? Math.round((curLoad / maxCap) * 100) : 0;
+    const draft: Omit<MentorRow, "id"> = {
+      name: name.trim(),
+      email: email.trim(),
+      specialty: specialties.join(", "),
+      languages: languages.join(", "),
+      capacity: `${curLoad}/${maxCap}`,
+      load,
+      status: initial?.status ?? "Active",
+      statusTone: initial?.statusTone ?? "green",
+      avatarTone: initial?.avatarTone ?? "blue",
+      experience,
+      gender,
+      strengths,
+      bio: bio.trim(),
+      joined: initial?.joined ?? new Date().toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }),
+    };
+    onSubmit(draft);
+    setStep(1);
+  };
+
+  return (
+    <Modal isOpen={isOpen} onClose={handleClose} title={isEdit ? `Edit ${initial?.name}` : "New Mentor"} size="lg">
+      <div className="space-y-5">
+        {/* Progress */}
+        <div className="flex items-center gap-2">
+          {MENTOR_STEPS.map((s, i) => {
+            const isDone   = step > s.id;
+            const isActive = step === s.id;
+            return (
+              <div key={s.id} className="flex items-center gap-2 flex-1">
+                <div className="flex items-center gap-2 flex-1">
+                  <div className={cn(
+                    "w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold shrink-0 border",
+                    isDone ? "bg-primary border-primary text-primary-foreground"
+                      : isActive ? "bg-primary/10 border-primary text-primary"
+                      : "bg-muted border-border text-muted-foreground"
+                  )}>
+                    {isDone ? <CheckCircle2 className="w-3.5 h-3.5" /> : s.id}
+                  </div>
+                  <p className={cn("text-xs font-semibold hidden sm:block truncate", isActive || isDone ? "text-foreground" : "text-muted-foreground")}>{s.title}</p>
+                </div>
+                {i < MENTOR_STEPS.length - 1 && <div className={cn("h-px flex-1 min-w-[12px]", isDone ? "bg-primary" : "bg-border")} />}
+              </div>
+            );
+          })}
+        </div>
+
+        <div>
+          <h3 className="text-base font-bold text-foreground">{MENTOR_STEPS[step - 1].title}</h3>
+          <p className="text-xs text-muted-foreground mt-0.5">{MENTOR_STEPS[step - 1].description}</p>
+        </div>
+
+        {step === 1 && (
+          <div className="space-y-4">
+            <div className="grid gap-1.5">
+              <Label className="text-xs font-semibold">Full name <span className="text-destructive">*</span></Label>
+              <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="Pastor James Kalu" />
+            </div>
+            <div className="grid gap-1.5">
+              <Label className="text-xs font-semibold">Email <span className="text-destructive">*</span></Label>
+              <Input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="james@example.com" />
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="grid gap-1.5">
+                <Label className="text-xs font-semibold">Gender</Label>
+                <div className="flex items-center gap-1 bg-muted/60 rounded-md p-0.5 w-fit">
+                  {(["female", "male"] as const).map(g => (
+                    <button
+                      key={g}
+                      onClick={() => setGender(g)}
+                      className={cn(
+                        "px-3 py-1.5 text-xs font-semibold rounded transition-all capitalize",
+                        gender === g ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
+                      )}
+                    >{g}</button>
+                  ))}
+                </div>
+              </div>
+              <div className="grid gap-1.5">
+                <Label className="text-xs font-semibold">Experience level</Label>
+                <div className="grid grid-cols-2 gap-1.5">
+                  {EXPERIENCE_LEVELS.map(lvl => (
+                    <button
+                      key={lvl}
+                      onClick={() => setExperience(lvl)}
+                      className={cn(
+                        "px-2.5 py-1.5 text-xs font-semibold rounded-md border transition-all",
+                        experience === lvl ? "border-primary bg-primary/10 text-primary" : "border-border text-muted-foreground hover:bg-muted/50"
+                      )}
+                    >{lvl}</button>
+                  ))}
+                </div>
+              </div>
+            </div>
+            <div className="grid gap-1.5">
+              <Label className="text-xs font-semibold">Bio</Label>
+              <Textarea
+                value={bio}
+                onChange={(e) => setBio(e.target.value)}
+                placeholder="A short description shown on the mentor's profile."
+                className="min-h-[80px] text-sm"
+              />
+            </div>
+          </div>
+        )}
+
+        {step === 2 && (
+          <div className="space-y-4">
+            <div className="grid gap-2">
+              <Label className="text-xs font-semibold">Specialty areas <span className="text-destructive">*</span></Label>
+              <div className="flex flex-wrap gap-1.5">
+                {ALL_SPECIALTIES.map(s => {
+                  const isOn = specialties.includes(s);
+                  return (
+                    <button
+                      key={s}
+                      type="button"
+                      onClick={() => toggle(specialties, setSpecialties, s)}
+                      className={cn(
+                        "px-3 py-1.5 rounded-full text-xs font-semibold border transition-all",
+                        isOn ? "border-primary bg-primary/10 text-primary" : "border-border text-muted-foreground hover:bg-muted/50"
+                      )}
+                    >
+                      {isOn && <CheckCircle2 className="inline w-3 h-3 mr-1" />}
+                      {s}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+            <div className="grid gap-2">
+              <Label className="text-xs font-semibold">Strengths <span className="text-destructive">*</span></Label>
+              <div className="flex flex-wrap gap-1.5">
+                {ALL_STRENGTHS.map(s => {
+                  const isOn = strengths.includes(s);
+                  return (
+                    <button
+                      key={s}
+                      type="button"
+                      onClick={() => toggle(strengths, setStrengths, s)}
+                      className={cn(
+                        "px-3 py-1.5 rounded-full text-xs font-semibold border transition-all",
+                        isOn ? "border-primary bg-primary/10 text-primary" : "border-border text-muted-foreground hover:bg-muted/50"
+                      )}
+                    >
+                      {isOn && <CheckCircle2 className="inline w-3 h-3 mr-1" />}
+                      {s}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+            <div className="grid gap-2">
+              <Label className="text-xs font-semibold">Languages <span className="text-destructive">*</span></Label>
+              <div className="flex flex-wrap gap-1.5">
+                {ALL_LANGUAGES.map(l => {
+                  const isOn = languages.includes(l.code);
+                  return (
+                    <button
+                      key={l.code}
+                      type="button"
+                      onClick={() => toggle(languages, setLanguages, l.code)}
+                      className={cn(
+                        "px-3 py-1.5 rounded-full text-xs font-semibold border transition-all",
+                        isOn ? "border-primary bg-primary/10 text-primary" : "border-border text-muted-foreground hover:bg-muted/50"
+                      )}
+                    >
+                      {isOn && <CheckCircle2 className="inline w-3 h-3 mr-1" />}
+                      {l.label}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {step === 3 && (
+          <div className="space-y-4">
+            <div className="grid gap-1.5">
+              <Label className="text-xs font-semibold">Maximum mentees (capacity) <span className="text-destructive">*</span></Label>
+              <div className="flex items-center gap-2">
+                <Input
+                  type="number"
+                  min={1}
+                  max={20}
+                  value={maxCap}
+                  onChange={(e) => setMaxCap(Math.max(1, parseInt(e.target.value || "1", 10)))}
+                  className="w-28 h-10"
+                />
+                <span className="text-xs text-muted-foreground">Mentors at capacity are excluded from new matches.</span>
+              </div>
+            </div>
+            <div className="rounded-md bg-muted/40 border border-border p-4 text-sm text-muted-foreground">
+              <p className="font-semibold text-foreground mb-1">Weekly schedule</p>
+              <p>The mentor can edit their own weekly time slots from their profile. This form just creates the mentor; the schedule is filled in afterwards.</p>
+            </div>
+          </div>
+        )}
+
+        {/* Footer */}
+        <div className="flex items-center justify-between gap-2 pt-3 border-t border-border">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => (step === 1 ? handleClose() : setStep(step - 1))}
+          >
+            {step === 1 ? "Cancel" : <><ArrowLeft className="w-3.5 h-3.5" /> Back</>}
+          </Button>
+          {step < MENTOR_STEPS.length ? (
+            <Button size="sm" disabled={!canAdvance} onClick={() => setStep(step + 1)}>Continue</Button>
+          ) : (
+            <Button size="sm" disabled={!canAdvance} onClick={handleSubmit}>
+              {isEdit ? "Save changes" : <><Plus className="w-3.5 h-3.5" /> Add mentor</>}
+            </Button>
+          )}
+        </div>
+      </div>
+    </Modal>
   );
 }
 
