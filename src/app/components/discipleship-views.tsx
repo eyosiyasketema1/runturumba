@@ -3657,13 +3657,82 @@ function AiGenerateModal({
 // GROWTH METRICS
 // ============================================================================
 
+// Period presets for time-windowed analytics. Each preset returns plausible
+// numbers so the page reacts visibly to filter changes even without a backend.
+type GrowthPeriod = "7d" | "30d" | "90d" | "qtd" | "ytd";
+const GROWTH_PERIODS: { value: GrowthPeriod; label: string }[] = [
+  { value: "7d",  label: "Last 7 days" },
+  { value: "30d", label: "Last 30 days" },
+  { value: "90d", label: "Last 90 days" },
+  { value: "qtd", label: "Quarter to date" },
+  { value: "ytd", label: "Year to date" },
+];
+
+const GROWERS = [
+  { id: "g1", name: "Abigail J.", prayer: 6, bible: 5, serve: "Weekly",  avatarTone: "purple" as const, language: "English" },
+  { id: "g2", name: "Samuel B.",  prayer: 7, bible: 6, serve: "Daily",   avatarTone: "green"  as const, language: "English" },
+  { id: "g3", name: "David K.",   prayer: 3, bible: 2, serve: "Monthly", avatarTone: "rose"   as const, language: "Amharic" },
+  { id: "g4", name: "Miriam H.",  prayer: 5, bible: 4, serve: "Weekly",  avatarTone: "amber"  as const, language: "Afaan Oromoo" },
+  { id: "g5", name: "Sara A.",    prayer: 6, bible: 5, serve: "Weekly",  avatarTone: "blue"   as const, language: "English" },
+];
+
 export function GrowthMetricsView() {
-  const growers = [
-    { name: "Abigail J.", prayer: "6/7", bible: "5/7", serve: "Weekly",  avatarTone: "purple" as const },
-    { name: "Samuel B.",  prayer: "7/7", bible: "6/7", serve: "Daily",   avatarTone: "green" as const },
-    { name: "David K.",   prayer: "3/7", bible: "2/7", serve: "Monthly", avatarTone: "rose" as const },
-    { name: "Miriam H.",  prayer: "5/7", bible: "4/7", serve: "Weekly",  avatarTone: "amber" as const },
-  ];
+  const [period, setPeriod] = useState<GrowthPeriod>("30d");
+  const [language, setLanguage] = useState("all");
+  const [serveFreq, setServeFreq] = useState("all");
+
+  // Period multipliers — fake but deterministic so filters feel real.
+  const stats = useMemo(() => {
+    const m = period === "7d" ? 0.8 : period === "30d" ? 1 : period === "90d" ? 1.05 : period === "qtd" ? 1.1 : 1.2;
+    return {
+      prayer:        (4.3 * m).toFixed(1),
+      bible:         (3.7 * m).toFixed(1),
+      contribution:  Math.round(62 * m),
+      testimonies:   Math.round(38 * m),
+      prayerDelta:   period === "7d" ? "+0.2 from prev. week" : period === "30d" ? "+0.8 from last month" : period === "90d" ? "+1.4 from last quarter" : "+1.9 vs benchmark",
+      bibleDelta:    period === "7d" ? "+0.4 from prev. week" : period === "30d" ? "+1.2 from last month" : period === "90d" ? "+1.7 from last quarter" : "+2.1 vs benchmark",
+      newTestimonies: period === "7d" ? "+3 this week" : period === "30d" ? "+12 this month" : "+34 this quarter",
+    };
+  }, [period]);
+
+  const filteredGrowers = useMemo(() => {
+    return GROWERS.filter(g => {
+      const matchesL = language === "all" || g.language === language;
+      const matchesS = serveFreq === "all" || g.serve === serveFreq;
+      return matchesL && matchesS;
+    });
+  }, [language, serveFreq]);
+
+  // Trend bars react to the period — different shape per window.
+  const weeklyTrend = useMemo(() => {
+    if (period === "7d")  return [[80, 65, 50], [82, 68, 55], [85, 70, 58], [88, 72, 60]];
+    if (period === "30d") return [[85, 70, 55], [90, 75, 50], [78, 82, 60], [92, 80, 65]];
+    if (period === "90d") return [[70, 60, 45], [78, 65, 50], [85, 72, 58], [92, 80, 65]];
+    return [[60, 55, 40], [72, 65, 50], [85, 75, 60], [95, 85, 70]];
+  }, [period]);
+
+  const handleExport = () => {
+    const meta = [
+      [`Growth Metrics export — ${GROWTH_PERIODS.find(p => p.value === period)?.label}`],
+      [`Generated ${new Date().toISOString()}`],
+      [],
+      ["Aggregate metric", "Value", "Trend"],
+      ["Prayer days/week",     stats.prayer,        stats.prayerDelta],
+      ["Bible engagement days/week", stats.bible,    stats.bibleDelta],
+      ["Weekly contribution participation %", stats.contribution, ""],
+      ["Fruit of the Spirit testimonies", stats.testimonies, stats.newTestimonies],
+      [],
+      ["Individual growth"],
+      ["Person", "Language", "Prayer (days/7)", "Bible (days/7)", "Serve frequency"],
+      ...filteredGrowers.map(g => [g.name, g.language, `${g.prayer}/7`, `${g.bible}/7`, g.serve]),
+    ];
+    const ok = downloadCsv(`growth-metrics-${period}-${new Date().toISOString().split("T")[0]}.csv`, meta);
+    if (ok) toast.success(`Exported growth metrics (${filteredGrowers.length} people)`);
+    else toast.error("Couldn't start the download");
+  };
+
+  const hasFilters = language !== "all" || serveFreq !== "all";
+
   return (
     <div className="p-6 space-y-4">
       <PageHeader
@@ -3671,19 +3740,54 @@ export function GrowthMetricsView() {
         subtitle="Track prayer, Bible engagement, contribution, and spiritual fruit across all journeys"
         actions={(
           <>
-            <FilterButton label="Last 30 Days" />
-            <button className="flex items-center gap-1.5 px-4 py-2 text-sm font-semibold bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-all shadow-sm">
+            <FilterDropdown
+              label="Period"
+              value={period}
+              onChange={(v) => setPeriod(v as GrowthPeriod)}
+              options={GROWTH_PERIODS.map(p => ({ value: p.value, label: p.label }))}
+            />
+            <Button onClick={handleExport}>
               <Download className="w-4 h-4" /> Export
-            </button>
+            </Button>
           </>
         )}
       />
 
       <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
-        <StatCard label="Prayer"           value="4.3 days/week" change="+0.8 from last month"  icon={Heart}      tone="pink" />
-        <StatCard label="Bible Engagement" value="3.7 days/week" change="+1.2 from last month"  icon={BookOpen}   tone="blue" />
-        <StatCard label="Contribution"     value="Weekly"        subtitle="62% participate weekly" icon={HandHeart} tone="amber" />
-        <StatCard label="Fruit of the Spirit" value="38 testimonies" change="+12 this month"    icon={Star}       tone="purple" />
+        <StatCard label="Prayer"               value={`${stats.prayer} days/week`} change={stats.prayerDelta}                  icon={Heart}     tone="pink" />
+        <StatCard label="Bible Engagement"     value={`${stats.bible} days/week`}  change={stats.bibleDelta}                   icon={BookOpen}  tone="blue" />
+        <StatCard label="Contribution"         value="Weekly"                       subtitle={`${stats.contribution}% participate weekly`} icon={HandHeart} tone="amber" />
+        <StatCard label="Fruit of the Spirit"  value={`${stats.testimonies} testimonies`} change={stats.newTestimonies}        icon={Star}      tone="purple" />
+      </div>
+
+      {/* Filter toolbar — narrows the individual growth table */}
+      <div className="bg-card border border-border rounded-lg p-3 flex items-center gap-2 flex-wrap">
+        <FilterDropdown
+          label="Language"
+          value={language}
+          onChange={setLanguage}
+          options={[
+            { value: "all",          label: "All languages" },
+            { value: "English",      label: "English" },
+            { value: "Amharic",      label: "Amharic" },
+            { value: "Afaan Oromoo", label: "Afaan Oromoo" },
+          ]}
+        />
+        <FilterDropdown
+          label="Serving"
+          value={serveFreq}
+          onChange={setServeFreq}
+          options={[
+            { value: "all",     label: "Any frequency" },
+            { value: "Daily",   label: "Daily" },
+            { value: "Weekly",  label: "Weekly" },
+            { value: "Monthly", label: "Monthly" },
+          ]}
+        />
+        {hasFilters && (
+          <Button variant="ghost" size="sm" onClick={() => { setLanguage("all"); setServeFreq("all"); }}>Clear</Button>
+        )}
+        <span className="text-xs text-muted-foreground ml-auto">{filteredGrowers.length} of {GROWERS.length} people</span>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
@@ -3697,7 +3801,7 @@ export function GrowthMetricsView() {
             </div>
           </div>
           <div className="flex items-end justify-around gap-6 h-52 px-4">
-            {[[85, 70, 55], [90, 75, 50], [78, 82, 60], [92, 80, 65]].map((vals, wi) => (
+            {weeklyTrend.map((vals, wi) => (
               <div key={wi} className="flex items-end gap-1.5 h-full">
                 <div className="w-6 bg-violet-500 rounded-t-md" style={{ height: `${vals[0]}%` }} />
                 <div className="w-6 bg-blue-500 rounded-t-md"   style={{ height: `${vals[1]}%` }} />
@@ -3719,14 +3823,16 @@ export function GrowthMetricsView() {
             <span>Person</span><span>Prayer</span><span>Bible</span><span>Serve</span>
           </div>
           <div className="space-y-2">
-            {growers.map((g, i) => (
-              <div key={i} className="grid grid-cols-4 gap-2 items-center py-1.5">
+            {filteredGrowers.length === 0 ? (
+              <p className="text-sm text-muted-foreground py-6 text-center">No people match your filters.</p>
+            ) : filteredGrowers.map((g) => (
+              <div key={g.id} className="grid grid-cols-4 gap-2 items-center py-1.5">
                 <div className="flex items-center gap-2">
                   <Avatar name={g.name} tone={g.avatarTone} />
                   <span className="text-sm font-medium text-foreground truncate">{g.name}</span>
                 </div>
-                <span className="text-sm text-violet-600 font-semibold">{g.prayer}</span>
-                <span className="text-sm text-blue-600 font-semibold">{g.bible}</span>
+                <span className="text-sm text-violet-600 font-semibold tabular-nums">{g.prayer}/7</span>
+                <span className="text-sm text-blue-600 font-semibold tabular-nums">{g.bible}/7</span>
                 <span className="text-sm text-amber-600 font-semibold">{g.serve}</span>
               </div>
             ))}
@@ -3750,99 +3856,201 @@ function LegendDot({ color, label }: { color: string; label: string }) {
 // VITAL ANALYTICS
 // ============================================================================
 
+// VITAL framework — descriptive metadata for each stage so the page reads as
+// an explainer + dashboard rather than a wall of numbers.
+const VITAL_STAGES = [
+  { key: "V", letter: "Volume",      title: "V — Volume",      color: "bg-blue-500",    text: "text-blue-600",    light: "bg-blue-50",    blurb: "How many people we reached. Counts every unique touchpoint across all platforms — passive views, link clicks, ad impressions that landed." },
+  { key: "I", letter: "Interaction", title: "I — Interaction", color: "bg-violet-500",  text: "text-violet-600",  light: "bg-violet-50",  blurb: "How many of those people engaged back. A reply, a button tap, a form started — anything that says 'I'm listening.'" },
+  { key: "T", letter: "Transaction", title: "T — Transaction", color: "bg-pink-500",    text: "text-pink-600",    light: "bg-pink-50",    blurb: "People who started a faith journey. Completed intake, entered the discipleship pipeline, accepted a mentor match." },
+  { key: "A", letter: "Active",      title: "A — Active",      color: "bg-amber-500",   text: "text-amber-600",   light: "bg-amber-50",   blurb: "People with continuing engagement — opening drips, replying to mentors, completing campaign steps." },
+  { key: "L", letter: "Loyal",       title: "L — Loyal",       color: "bg-emerald-500", text: "text-emerald-600", light: "bg-emerald-50", blurb: "Confirmed decisions + connected to a local fellowship. The full transition from seeker to disciple within community." },
+] as const;
+
+const VITAL_BASE = { V: 12450, I: 3820, T: 1247, A: 342, L: 89 };
+
+const VITAL_PERIODS = [
+  { value: "ytd",     label: "Year to date" },
+  { value: "q1_2026", label: "Q1 2026" },
+  { value: "q4_2025", label: "Q4 2025" },
+  { value: "30d",     label: "Last 30 days" },
+  { value: "90d",     label: "Last 90 days" },
+];
+
 export function VitalAnalyticsView() {
-  const funnel = [
-    { key: "V", label: "V — Volume",      value: "12,450", hint: "Touchpoints",      color: "bg-blue-500"   },
-    { key: "I", label: "I — Interaction", value: "3,820",  hint: "Engaged back",     color: "bg-violet-500" },
-    { key: "T", label: "T — Transaction", value: "1,247",  hint: "Faith Journey started", color: "bg-pink-500"   },
-    { key: "A", label: "A — Active",      value: "342",    hint: "Active journeys",  color: "bg-amber-500"  },
-    { key: "L", label: "L — Loyal",       value: "89",     hint: "Decision + connected", color: "bg-emerald-500" },
-  ];
+  const [period, setPeriod] = useState("ytd");
+  const [platform, setPlatform] = useState("all");
+  const [country, setCountry] = useState("all");
+  const [isShareOpen, setIsShareOpen] = useState(false);
+
+  // Period multiplier — narrower windows shrink the funnel proportionally.
+  const m = period === "30d" ? 0.18 : period === "90d" ? 0.45 : period === "q4_2025" ? 0.7 : period === "q1_2026" ? 0.8 : 1;
+  const numbers: Record<keyof typeof VITAL_BASE, number> = {
+    V: Math.round(VITAL_BASE.V * m),
+    I: Math.round(VITAL_BASE.I * m),
+    T: Math.round(VITAL_BASE.T * m),
+    A: Math.round(VITAL_BASE.A * m),
+    L: Math.round(VITAL_BASE.L * m),
+  };
   const conversions = [
-    { from: "V", to: "I", pct: "30.7%" },
-    { from: "I", to: "T", pct: "32.6%" },
-    { from: "T", to: "A", pct: "27.4%" },
-    { from: "A", to: "L", pct: "26.0%" },
+    { from: "V", to: "I", pct: numbers.V === 0 ? 0 : +(numbers.I / numbers.V * 100).toFixed(1) },
+    { from: "I", to: "T", pct: numbers.I === 0 ? 0 : +(numbers.T / numbers.I * 100).toFixed(1) },
+    { from: "T", to: "A", pct: numbers.T === 0 ? 0 : +(numbers.A / numbers.T * 100).toFixed(1) },
+    { from: "A", to: "L", pct: numbers.A === 0 ? 0 : +(numbers.L / numbers.A * 100).toFixed(1) },
   ];
+
+  // Largest stage drives the relative bar width — gives the funnel a real
+  // sense of attrition between stages.
+  const widths = useMemo(() => {
+    const max = Math.max(numbers.V, 1);
+    return {
+      V: 100,
+      I: Math.round((numbers.I / max) * 100),
+      T: Math.round((numbers.T / max) * 100),
+      A: Math.round((numbers.A / max) * 100),
+      L: Math.round((numbers.L / max) * 100),
+    };
+  }, [numbers]);
+
+  const periodLabel = VITAL_PERIODS.find(p => p.value === period)?.label ?? period;
+
   return (
     <div className="p-6 space-y-4">
       <PageHeader
         title="VITAL Framework Analytics"
-        subtitle="Volume → Interaction → Transaction → Active → Loyal — track progression from touchpoints to committed journeys"
+        subtitle="A 5-stage funnel that follows people from first touch to a community-rooted disciple."
         actions={(
           <>
-            <FilterButton label="2026" />
-            <button className="flex items-center gap-1.5 px-4 py-2 text-sm font-semibold bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-all shadow-sm">
+            <FilterDropdown label="Period"   value={period}   onChange={setPeriod}   options={VITAL_PERIODS} />
+            <FilterDropdown label="Platform" value={platform} onChange={setPlatform} options={[
+              { value: "all",       label: "All platforms" },
+              { value: "telegram",  label: "Telegram" },
+              { value: "whatsapp",  label: "WhatsApp" },
+              { value: "sms",       label: "SMS" },
+              { value: "web",       label: "Web" },
+              { value: "messenger", label: "Messenger" },
+            ]} />
+            <FilterDropdown label="Country" value={country} onChange={setCountry} options={[
+              { value: "all",      label: "All countries" },
+              { value: "ethiopia", label: "Ethiopia" },
+              { value: "kenya",    label: "Kenya" },
+              { value: "other",    label: "Other" },
+            ]} />
+            <Button onClick={() => setIsShareOpen(true)}>
               <Share2 className="w-4 h-4" /> Share Report
-            </button>
+            </Button>
           </>
         )}
       />
 
-      <div className="bg-card border border-border rounded-lg p-5">
-        <h3 className="text-sm font-bold text-foreground mb-4">VITAL Funnel — People Progression</h3>
-        <div className="grid grid-cols-5 gap-2">
-          {funnel.map(f => (
-            <div key={f.key} className={cn("relative text-white rounded-lg p-4 flex flex-col items-center justify-center min-h-[110px]", f.color)}>
-              <div className="text-3xl font-bold tracking-tight">{f.value}</div>
-              <div className="text-xs font-semibold mt-1 opacity-95">{f.label}</div>
-              <div className="text-xs opacity-80">{f.hint}</div>
-            </div>
-          ))}
+      {/* Explainer banner — answers "what is VITAL?" up front */}
+      <div className="bg-gradient-to-br from-blue-50 to-violet-50 border border-blue-100 rounded-xl p-5">
+        <div className="flex items-start gap-3">
+          <div className="w-10 h-10 rounded-md bg-primary text-primary-foreground flex items-center justify-center shrink-0">
+            <Activity className="w-5 h-5" />
+          </div>
+          <div>
+            <p className="text-sm font-bold text-foreground">VITAL — Volume → Interaction → Transaction → Active → Loyal</p>
+            <p className="text-sm text-muted-foreground mt-1 leading-relaxed max-w-3xl">
+              Each letter is a discipleship stage. The funnel reveals where people drop off, where ministry effort pays off, and where to invest next.
+              <span className="font-semibold text-foreground"> {periodLabel}</span> shows {numbers.V.toLocaleString()} touchpoints converted into {numbers.L.toLocaleString()} loyal disciples — a {((numbers.L / numbers.V) * 100).toFixed(2)}% end-to-end conversion rate.
+            </p>
+          </div>
         </div>
-        <div className="grid grid-cols-4 gap-2 mt-3 px-8">
-          {conversions.map((c, i) => (
-            <div key={i} className="text-center">
-              <div className="text-lg font-bold text-blue-600">{c.pct}</div>
-              <div className="text-xs text-muted-foreground">{c.from} → {c.to}</div>
-            </div>
-          ))}
+      </div>
+
+      {/* Funnel — visually tapered by relative widths */}
+      <div className="bg-card border border-border rounded-xl p-5">
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-sm font-bold text-foreground">VITAL Funnel — People Progression</h3>
+          <span className="text-xs text-muted-foreground">{periodLabel}</span>
+        </div>
+        <div className="space-y-2.5">
+          {VITAL_STAGES.map((s, i) => {
+            const value = numbers[s.key as keyof typeof numbers];
+            const width = widths[s.key as keyof typeof widths];
+            const conv = i > 0 ? conversions[i - 1] : null;
+            return (
+              <div key={s.key}>
+                {conv && (
+                  <div className="flex items-center gap-2 px-2 mb-1">
+                    <ArrowRight className="w-3 h-3 text-muted-foreground" />
+                    <span className="text-xs text-muted-foreground">{conv.pct}% converted from {conv.from} → {conv.to}</span>
+                  </div>
+                )}
+                <div
+                  style={{ width: `${Math.max(width, 12)}%` }}
+                  className={cn("rounded-lg p-4 text-white relative transition-all", s.color)}
+                >
+                  <div className="flex items-center justify-between gap-3">
+                    <div>
+                      <div className="text-xs font-bold uppercase tracking-wider opacity-90">{s.title}</div>
+                      <div className="text-3xl font-bold tracking-tight tabular-nums mt-0.5">{value.toLocaleString()}</div>
+                    </div>
+                  </div>
+                </div>
+                <p className="text-xs text-muted-foreground px-2 mt-1.5 max-w-2xl leading-snug">{s.blurb}</p>
+              </div>
+            );
+          })}
         </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div className="bg-card border border-border rounded-lg p-5">
-          <h3 className="text-sm font-bold text-foreground mb-3">Platform Breakdown</h3>
+        <div className="bg-card border border-border rounded-xl p-5">
+          <h3 className="text-sm font-bold text-foreground mb-1">Platform Breakdown</h3>
+          <p className="text-xs text-muted-foreground mb-3">Where Volume comes from. Helps you double down on what's working.</p>
           <div className="space-y-2.5">
             {[
-              { label: "Telegram",  value: "4,230", dot: "bg-blue-500" },
-              { label: "WhatsApp",  value: "3,810", dot: "bg-emerald-500" },
-              { label: "SMS",       value: "2,150", dot: "bg-violet-500" },
-              { label: "Web",       value: "1,420", dot: "bg-amber-500" },
-              { label: "Messenger", value: "840",   dot: "bg-pink-500" },
+              { label: "Telegram",  value: 4230, dot: "bg-blue-500" },
+              { label: "WhatsApp",  value: 3810, dot: "bg-emerald-500" },
+              { label: "SMS",       value: 2150, dot: "bg-violet-500" },
+              { label: "Web",       value: 1420, dot: "bg-amber-500" },
+              { label: "Messenger", value:  840, dot: "bg-pink-500" },
             ].map((p, i) => (
-              <div key={i} className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <span className={cn("w-2 h-2 rounded-full", p.dot)} />
-                  <span className="text-sm text-foreground">{p.label}</span>
+              <div key={i}>
+                <div className="flex items-center justify-between mb-1">
+                  <div className="flex items-center gap-2">
+                    <span className={cn("w-2 h-2 rounded-full", p.dot)} />
+                    <span className="text-sm text-foreground">{p.label}</span>
+                  </div>
+                  <span className="text-sm font-semibold text-foreground tabular-nums">{Math.round(p.value * m).toLocaleString()}</span>
                 </div>
-                <span className="text-sm font-semibold text-foreground">{p.value}</span>
+                <div className="h-1 bg-muted rounded-full overflow-hidden">
+                  <div className={cn("h-full rounded-full", p.dot)} style={{ width: `${Math.min(100, (p.value / 4230) * 100)}%` }} />
+                </div>
               </div>
             ))}
           </div>
         </div>
 
-        <div className="bg-card border border-border rounded-lg p-5">
-          <h3 className="text-sm font-bold text-foreground mb-3">Journey Type Distribution</h3>
+        <div className="bg-card border border-border rounded-xl p-5">
+          <h3 className="text-sm font-bold text-foreground mb-1">Journey Type Distribution</h3>
+          <p className="text-xs text-muted-foreground mb-3">How the Active cohort entered discipleship — bot-led, human-led, or self-directed.</p>
           <div className="space-y-2.5">
             {[
-              { chip: "Bot",          chipTone: "blue"  as const, label: "Self-guided bots",   value: "58%" },
-              { chip: "Conversation", chipTone: "green" as const, label: "Human-led",          value: "30%" },
-              { chip: "Self-guided",  chipTone: "amber" as const, label: "Web-based",          value: "12%" },
+              { chip: "Bot",          chipTone: "blue"  as const, label: "Self-guided bots",   value: 58 },
+              { chip: "Conversation", chipTone: "green" as const, label: "Human-led",          value: 30 },
+              { chip: "Self-guided",  chipTone: "amber" as const, label: "Web-based",          value: 12 },
             ].map((p, i) => (
-              <div key={i} className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <Chip tone={p.chipTone}>{p.chip}</Chip>
-                  <span className="text-sm text-muted-foreground">{p.label}</span>
+              <div key={i}>
+                <div className="flex items-center justify-between mb-1">
+                  <div className="flex items-center gap-2">
+                    <Chip tone={p.chipTone}>{p.chip}</Chip>
+                    <span className="text-sm text-muted-foreground">{p.label}</span>
+                  </div>
+                  <span className="text-sm font-semibold text-foreground tabular-nums">{p.value}%</span>
                 </div>
-                <span className="text-sm font-semibold text-foreground">{p.value}</span>
+                <div className="h-1 bg-muted rounded-full overflow-hidden">
+                  <div className={cn("h-full rounded-full", p.chipTone === "blue" ? "bg-blue-500" : p.chipTone === "green" ? "bg-emerald-500" : "bg-amber-500")} style={{ width: `${p.value}%` }} />
+                </div>
               </div>
             ))}
           </div>
         </div>
 
-        <div className="bg-card border border-border rounded-lg p-5">
-          <h3 className="text-sm font-bold text-foreground mb-3">Demographics</h3>
+        <div className="bg-card border border-border rounded-xl p-5">
+          <h3 className="text-sm font-bold text-foreground mb-1">Demographics</h3>
+          <p className="text-xs text-muted-foreground mb-3">Who the Loyal cohort is — language, geography, and age signal targeting wins.</p>
           <div className="space-y-2.5">
             {[
               { label: "Top Language", value: "Amharic (42%)" },
@@ -3858,7 +4066,112 @@ export function VitalAnalyticsView() {
           </div>
         </div>
       </div>
+
+      <ShareReportModal
+        isOpen={isShareOpen}
+        onClose={() => setIsShareOpen(false)}
+        reportName={`VITAL Analytics — ${periodLabel}`}
+        summary={`${numbers.V.toLocaleString()} touchpoints, ${numbers.L.toLocaleString()} loyal disciples, ${((numbers.L / numbers.V) * 100).toFixed(2)}% end-to-end conversion.`}
+      />
     </div>
+  );
+}
+
+// Shared share-report modal — used by VITAL Analytics and Reporting page.
+function ShareReportModal({
+  isOpen, onClose, reportName, summary,
+}: { isOpen: boolean; onClose: () => void; reportName: string; summary: string }) {
+  const [recipients, setRecipients] = useState("");
+  const [note, setNote] = useState(`Sharing the latest ${reportName} for your review.`);
+  const [include, setInclude] = useState({ summary: true, charts: true, raw: false });
+
+  const link = useMemo(() => {
+    const slug = reportName.toLowerCase().replace(/[^a-z0-9]+/g, "-");
+    return `https://turumba.app/reports/${slug}`;
+  }, [reportName]);
+
+  const handleCopyLink = async () => {
+    try {
+      await navigator.clipboard.writeText(link);
+      toast.success("Link copied to clipboard");
+    } catch {
+      toast.error("Couldn't copy — copy it manually");
+    }
+  };
+
+  const handleSend = () => {
+    const list = recipients.split(/[,\s]+/).filter(Boolean);
+    if (list.length === 0) {
+      toast.error("Add at least one recipient");
+      return;
+    }
+    toast.success(`Report shared with ${list.length} recipient${list.length === 1 ? "" : "s"}`);
+    onClose();
+  };
+
+  return (
+    <Modal isOpen={isOpen} onClose={onClose} title={`Share — ${reportName}`} size="lg">
+      <div className="space-y-4">
+        <div className="bg-muted/40 border border-border rounded-md p-3">
+          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Snapshot</p>
+          <p className="text-sm text-foreground mt-1 leading-relaxed">{summary}</p>
+        </div>
+
+        <div className="grid gap-1.5">
+          <Label className="text-xs font-semibold">Shareable link</Label>
+          <div className="flex items-center gap-2">
+            <Input value={link} readOnly className="font-mono text-xs" />
+            <Button variant="outline" size="sm" onClick={handleCopyLink}>Copy</Button>
+          </div>
+        </div>
+
+        <div className="grid gap-1.5">
+          <Label className="text-xs font-semibold">Email recipients</Label>
+          <Input
+            value={recipients}
+            onChange={(e) => setRecipients(e.target.value)}
+            placeholder="email1@example.com, email2@example.com"
+          />
+        </div>
+
+        <div className="grid gap-1.5">
+          <Label className="text-xs font-semibold">Message</Label>
+          <Textarea
+            value={note}
+            onChange={(e) => setNote(e.target.value)}
+            className="min-h-[80px] text-sm"
+          />
+        </div>
+
+        <div className="grid gap-2">
+          <Label className="text-xs font-semibold">Include</Label>
+          <div className="space-y-1.5">
+            {[
+              ["summary", "Headline summary"],
+              ["charts",  "Charts and visualisations"],
+              ["raw",     "Raw data attachment (CSV)"],
+            ].map(([k, label]) => (
+              <label key={k} className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  className="accent-primary"
+                  checked={(include as any)[k]}
+                  onChange={(e) => setInclude(prev => ({ ...prev, [k]: e.target.checked }))}
+                />
+                <span className="text-sm text-foreground">{label}</span>
+              </label>
+            ))}
+          </div>
+        </div>
+
+        <div className="flex items-center justify-between gap-2 pt-3 border-t border-border">
+          <Button variant="outline" size="sm" onClick={onClose}>Cancel</Button>
+          <Button size="sm" onClick={handleSend}>
+            <Share2 className="w-3.5 h-3.5" /> Send
+          </Button>
+        </div>
+      </div>
+    </Modal>
   );
 }
 
@@ -3866,34 +4179,110 @@ export function VitalAnalyticsView() {
 // REPORTING (153 Collective)
 // ============================================================================
 
+type ReportDim = "language" | "country" | "platform" | "gender" | "journey";
+const REPORT_PERIODS = [
+  { value: "q1_2026", label: "Q1 2026", year: 2026, q: 1 },
+  { value: "q4_2025", label: "Q4 2025", year: 2025, q: 4 },
+  { value: "q3_2025", label: "Q3 2025", year: 2025, q: 3 },
+  { value: "ytd",     label: "Year to date", year: 2026, q: 0 },
+];
+
+const REPORT_DATA: Record<ReportDim, { label: string; cols: number[]; pct: number }[]> = {
+  language: [
+    { label: "Amharic",       cols: [144, 38, 29, 14], pct: 26.4 },
+    { label: "English",       cols: [118, 31, 24, 11], pct: 26.3 },
+    { label: "Afaan Oromoo",  cols: [80,  20, 14, 8],  pct: 25.0 },
+  ],
+  country: [
+    { label: "Ethiopia",      cols: [232, 62, 48, 23], pct: 26.7 },
+    { label: "Kenya",         cols: [75,  19, 14, 7],  pct: 25.3 },
+    { label: "Other",         cols: [35,  8,  5,  3],  pct: 22.8 },
+  ],
+  platform: [
+    { label: "Telegram",      cols: [142, 36, 28, 14], pct: 25.3 },
+    { label: "WhatsApp",      cols: [128, 35, 25, 12], pct: 27.3 },
+    { label: "SMS",           cols: [72,  18, 12, 6],  pct: 25.0 },
+  ],
+  gender: [
+    { label: "Female",        cols: [185, 50, 38, 18], pct: 27.0 },
+    { label: "Male",          cols: [157, 39, 29, 15], pct: 24.8 },
+  ],
+  journey: [
+    { label: "Salvation",     cols: [210, 60, 45, 22], pct: 28.6 },
+    { label: "Baptism",       cols: [70,  17, 13, 6],  pct: 24.3 },
+    { label: "Community",     cols: [62,  12, 9,  5],  pct: 19.4 },
+  ],
+};
+
 export function ReportingView() {
-  const [dim, setDim] = useState<"language" | "country" | "platform" | "gender" | "journey">("language");
-  const rows = {
-    language: [
-      { label: "Amharic",     cols: ["144", "38", "29", "14"], pct: 26.4 },
-      { label: "English",     cols: ["118", "31", "24", "11"], pct: 26.3 },
-      { label: "Afaan Oromo", cols: ["80",  "20", "14", "8"],  pct: 25.0 },
-    ],
-    country: [
-      { label: "Ethiopia",    cols: ["232", "62", "48", "23"], pct: 26.7 },
-      { label: "Kenya",       cols: ["75",  "19", "14", "7"],  pct: 25.3 },
-      { label: "Other",       cols: ["35",  "8",  "5",  "3"],  pct: 22.8 },
-    ],
-    platform: [
-      { label: "Telegram",    cols: ["142", "36", "28", "14"], pct: 25.3 },
-      { label: "WhatsApp",    cols: ["128", "35", "25", "12"], pct: 27.3 },
-      { label: "SMS",         cols: ["72",  "18", "12", "6"],  pct: 25.0 },
-    ],
-    gender: [
-      { label: "Female",      cols: ["185", "50", "38", "18"], pct: 27.0 },
-      { label: "Male",        cols: ["157", "39", "29", "15"], pct: 24.8 },
-    ],
-    journey: [
-      { label: "Salvation",   cols: ["210", "60", "45", "22"], pct: 28.6 },
-      { label: "Baptism",     cols: ["70",  "17", "13", "6"],  pct: 24.3 },
-      { label: "Community",   cols: ["62",  "12", "9",  "5"],  pct: 19.4 },
-    ],
-  }[dim];
+  const [period, setPeriod] = useState("q1_2026");
+  const [dim, setDim]       = useState<ReportDim>("language");
+  const [country, setCountry] = useState("all");
+  const [platform, setPlatform] = useState("all");
+  const [language, setLanguage] = useState("all");
+  const [isGenerateOpen, setIsGenerateOpen] = useState(false);
+  const [isShareOpen, setIsShareOpen]       = useState(false);
+
+  const periodMeta = REPORT_PERIODS.find(p => p.value === period)!;
+
+  // Period scales the data so cards + tables visibly change when period changes
+  const m = period === "ytd" ? 1.4 : period === "q4_2025" ? 0.85 : period === "q3_2025" ? 0.65 : 1;
+
+  const baseRows = REPORT_DATA[dim];
+  const filteredRows = useMemo(() => {
+    return baseRows.filter(r => {
+      if (dim === "country"  && country  !== "all" && r.label.toLowerCase() !== country)  return false;
+      if (dim === "platform" && platform !== "all" && r.label.toLowerCase() !== platform) return false;
+      if (dim === "language" && language !== "all" && r.label !== language)              return false;
+      return true;
+    }).map(r => ({
+      ...r,
+      cols: r.cols.map(c => Math.round(c * m)),
+    }));
+  }, [baseRows, dim, country, platform, language, m]);
+
+  // Aggregate from current dimension for the hero banner so it is always
+  // self-consistent.
+  const totals = useMemo(() => {
+    const rows = REPORT_DATA.platform.map(r => ({ ...r, cols: r.cols.map(c => Math.round(c * m)) }));
+    return {
+      newJourneys: rows.reduce((s, r) => s + r.cols[0], 0),
+      decisions:   rows.reduce((s, r) => s + r.cols[1], 0),
+      active:      rows.reduce((s, r) => s + r.cols[2], 0),
+      connected:   rows.reduce((s, r) => s + r.cols[3], 0),
+      platforms:   5,
+      languages:   3,
+      countries:   3,
+    };
+  }, [m]);
+
+  const handleExportCsv = () => {
+    const meta: (string | number)[][] = [
+      [`153 Collective Standard Report`],
+      [`Period: ${periodMeta.label}`],
+      [`Generated: ${new Date().toISOString()}`],
+      [],
+      ["Headline summary"],
+      ["New Faith Journeys", totals.newJourneys],
+      ["Decisions",          totals.decisions],
+      ["Active",             totals.active],
+      ["Connected",          totals.connected],
+      [],
+      [`Breakdown by ${dim}`],
+      [dim, "New Journeys", "Decisions", "Active", "Connected", "Conversion %"],
+      ...filteredRows.map(r => [r.label, ...r.cols, `${r.pct}%`]),
+    ];
+    downloadCsv(`153-collective-${period}-${dim}-${new Date().toISOString().split("T")[0]}.csv`, meta);
+    toast.success(`Report exported`);
+  };
+
+  const handleExportPdf = () => {
+    // Stub: real implementation would server-render a PDF; we surface intent
+    // via toast and the same CSV download.
+    toast.success("PDF export queued — emailed to you shortly");
+  };
+
+  const hasFilters = country !== "all" || platform !== "all" || language !== "all";
 
   return (
     <div className="p-6 space-y-4">
@@ -3902,33 +4291,75 @@ export function ReportingView() {
         subtitle="Generate standardized reports for cross-ministry comparison"
         actions={(
           <>
-            <FilterButton label="Q1 2026" />
-            <button className="flex items-center gap-1.5 px-4 py-2 text-sm font-semibold bg-violet-600 text-white rounded-md hover:bg-violet-700 transition-all shadow-sm">
+            <FilterDropdown label="Period" value={period} onChange={setPeriod} options={REPORT_PERIODS.map(p => ({ value: p.value, label: p.label }))} />
+            <Button
+              variant="outline"
+              className="border-violet-200 bg-violet-50 text-violet-700 hover:bg-violet-100 hover:text-violet-800"
+              onClick={() => setIsGenerateOpen(true)}
+            >
               <Sparkles className="w-4 h-4" /> Generate Report
-            </button>
-            <button className="flex items-center gap-1.5 px-4 py-2 text-sm font-semibold bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-all shadow-sm">
+            </Button>
+            <Button onClick={handleExportPdf}>
               <Download className="w-4 h-4" /> Export PDF
-            </button>
+            </Button>
           </>
         )}
       />
 
-      <div className="bg-slate-900 text-white rounded-lg p-6">
-        <div className="flex items-center gap-4 mb-3 flex-wrap">
-          <Chip tone="blue" className="uppercase tracking-widest bg-blue-500/20 text-blue-200">153 Collective Standard</Chip>
-          <span className="text-xs text-slate-300 font-semibold uppercase tracking-wider">Q1 2026 Report</span>
+      <div className="bg-slate-900 text-white rounded-xl p-6">
+        <div className="flex items-center justify-between gap-4 flex-wrap mb-3">
+          <div className="flex items-center gap-3 flex-wrap">
+            <Chip tone="blue" className="uppercase tracking-widest bg-blue-500/20 text-blue-200">153 Collective Standard</Chip>
+            <span className="text-xs text-slate-300 font-semibold uppercase tracking-wider">{periodMeta.label} Report</span>
+          </div>
+          <Button
+            variant="outline"
+            size="sm"
+            className="border-slate-700 bg-slate-800 text-slate-200 hover:bg-slate-700 hover:text-white"
+            onClick={() => setIsShareOpen(true)}
+          >
+            <Share2 className="w-3.5 h-3.5" /> Share
+          </Button>
         </div>
         <p className="text-lg font-semibold leading-snug">
-          Turumba had 342 new faith journeys across its platforms in Q1 2026, with 89 confirmed decisions and 67 active journeys progressing through spiritual milestones.
+          Turumba had {totals.newJourneys.toLocaleString()} new faith journeys across its platforms in {periodMeta.label}, with {totals.decisions.toLocaleString()} confirmed decisions and {totals.active.toLocaleString()} active journeys progressing through spiritual milestones.
         </p>
         <div className="flex items-center gap-5 mt-4 text-sm text-slate-300 flex-wrap">
-          <span className="inline-flex items-center gap-1.5"><Globe className="w-4 h-4" /> 5 Platforms</span>
-          <span className="inline-flex items-center gap-1.5"><Languages className="w-4 h-4" /> 3 Languages</span>
-          <span className="inline-flex items-center gap-1.5"><MapPin className="w-4 h-4" /> 4 Countries</span>
+          <span className="inline-flex items-center gap-1.5"><Globe className="w-4 h-4" /> {totals.platforms} Platforms</span>
+          <span className="inline-flex items-center gap-1.5"><Languages className="w-4 h-4" /> {totals.languages} Languages</span>
+          <span className="inline-flex items-center gap-1.5"><MapPin className="w-4 h-4" /> {totals.countries} Countries</span>
         </div>
       </div>
 
-      <div className="bg-card border border-border rounded-lg p-5">
+      {/* Filter toolbar — narrows the breakdown table */}
+      <div className="bg-card border border-border rounded-lg p-3 flex items-center gap-2 flex-wrap">
+        <FilterDropdown label="Country" value={country} onChange={setCountry} options={[
+          { value: "all",      label: "All countries" },
+          { value: "ethiopia", label: "Ethiopia" },
+          { value: "kenya",    label: "Kenya" },
+          { value: "other",    label: "Other" },
+        ]} />
+        <FilterDropdown label="Platform" value={platform} onChange={setPlatform} options={[
+          { value: "all",      label: "All platforms" },
+          { value: "telegram", label: "Telegram" },
+          { value: "whatsapp", label: "WhatsApp" },
+          { value: "sms",      label: "SMS" },
+        ]} />
+        <FilterDropdown label="Language" value={language} onChange={setLanguage} options={[
+          { value: "all",          label: "All languages" },
+          { value: "Amharic",      label: "Amharic" },
+          { value: "English",      label: "English" },
+          { value: "Afaan Oromoo", label: "Afaan Oromoo" },
+        ]} />
+        {hasFilters && (
+          <Button variant="ghost" size="sm" onClick={() => { setCountry("all"); setPlatform("all"); setLanguage("all"); }}>Clear</Button>
+        )}
+        <Button variant="outline" size="sm" onClick={handleExportCsv} className="ml-auto">
+          <Download className="w-3.5 h-3.5" /> Export CSV
+        </Button>
+      </div>
+
+      <div className="bg-card border border-border rounded-xl p-5">
         <div className="flex items-center justify-between mb-4 flex-wrap gap-3">
           <h3 className="text-sm font-bold text-foreground">Breakdown by Dimension</h3>
           <div className="flex items-center gap-1 bg-muted/60 rounded-md p-0.5">
@@ -3952,26 +4383,148 @@ export function ReportingView() {
         </div>
         <div className="overflow-hidden">
           <div className="grid grid-cols-6 gap-2 px-3 py-2 bg-muted/40 rounded text-xs uppercase tracking-wider text-muted-foreground font-semibold">
-            <span>Dimension</span>
+            <span className="capitalize">{dim}</span>
             <span>New Journeys</span>
             <span>Decisions</span>
             <span>Active</span>
             <span>Connected</span>
             <span>Conversion %</span>
           </div>
-          {rows.map((r, i) => (
+          {filteredRows.length === 0 ? (
+            <div className="px-3 py-12 text-center text-sm text-muted-foreground">No rows match the current filters.</div>
+          ) : filteredRows.map((r, i) => (
             <div key={i} className="grid grid-cols-6 gap-2 px-3 py-3 items-center border-b border-border last:border-0">
               <span className="text-sm font-medium text-foreground">{r.label}</span>
-              {r.cols.map((c, ci) => <span key={ci} className="text-sm text-foreground">{c}</span>)}
+              {r.cols.map((c, ci) => <span key={ci} className="text-sm text-foreground tabular-nums">{c.toLocaleString()}</span>)}
               <div className="flex items-center gap-2">
                 <div className="flex-1"><ProgressBar value={r.pct * 3} tone="green" /></div>
-                <span className="text-sm font-semibold text-emerald-600">{r.pct}%</span>
+                <span className="text-sm font-semibold text-emerald-600 tabular-nums">{r.pct}%</span>
               </div>
             </div>
           ))}
         </div>
       </div>
+
+      <GenerateReportModal
+        isOpen={isGenerateOpen}
+        period={periodMeta.label}
+        onClose={() => setIsGenerateOpen(false)}
+        onDone={() => {
+          setIsGenerateOpen(false);
+          toast.success("Report generated and saved to your reports");
+        }}
+      />
+
+      <ShareReportModal
+        isOpen={isShareOpen}
+        onClose={() => setIsShareOpen(false)}
+        reportName={`153 Collective ${periodMeta.label}`}
+        summary={`${totals.newJourneys.toLocaleString()} new journeys, ${totals.decisions.toLocaleString()} decisions, ${totals.active.toLocaleString()} active across ${totals.platforms} platforms.`}
+      />
     </div>
+  );
+}
+
+// Generate report — staged dialog showing the AI compiling the report.
+function GenerateReportModal({
+  isOpen, period, onClose, onDone,
+}: { isOpen: boolean; period: string; onClose: () => void; onDone: () => void }) {
+  const [stage, setStage] = useState<"configure" | "running" | "done">("configure");
+  const [includeCharts, setIncludeCharts] = useState(true);
+  const [includeNarrative, setIncludeNarrative] = useState(true);
+  const [includeRaw, setIncludeRaw] = useState(false);
+
+  // Reset stage when modal opens so reopening always starts fresh.
+  React.useEffect(() => { if (isOpen) setStage("configure"); }, [isOpen]);
+
+  const run = () => {
+    setStage("running");
+    setTimeout(() => setStage("done"), 1800);
+  };
+
+  const close = () => {
+    setStage("configure");
+    onClose();
+  };
+
+  return (
+    <Modal isOpen={isOpen} onClose={close} title="Generate 153 Collective Report" size="lg">
+      {stage === "configure" && (
+        <div className="space-y-4">
+          <div className="flex items-start gap-3">
+            <div className="w-10 h-10 rounded-lg bg-violet-100 text-violet-700 flex items-center justify-center shrink-0">
+              <Sparkles className="w-5 h-5" />
+            </div>
+            <div>
+              <p className="text-sm font-semibold text-foreground">Compile a 153 Collective standard report</p>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                Period: <span className="font-semibold text-foreground">{period}</span>. Claude will pull metrics from your account, compose a narrative summary, and assemble the dimension breakdowns.
+              </p>
+            </div>
+          </div>
+
+          <div className="grid gap-2 pt-1">
+            <Label className="text-xs font-semibold">Include in report</Label>
+            <div className="space-y-1.5">
+              {[
+                ["narrative", "AI narrative summary",      includeNarrative, setIncludeNarrative],
+                ["charts",    "Charts and visualisations", includeCharts,    setIncludeCharts],
+                ["raw",       "Raw data tables (CSV)",     includeRaw,       setIncludeRaw],
+              ].map(([k, label, val, setVal]: any) => (
+                <label key={k} className="flex items-center gap-2 cursor-pointer">
+                  <input type="checkbox" className="accent-primary" checked={val} onChange={(e) => setVal(e.target.checked)} />
+                  <span className="text-sm text-foreground">{label}</span>
+                </label>
+              ))}
+            </div>
+          </div>
+
+          <div className="flex items-center justify-end gap-2 pt-3 border-t border-border">
+            <Button variant="outline" size="sm" onClick={close}>Cancel</Button>
+            <Button size="sm" onClick={run}>
+              <Sparkles className="w-3.5 h-3.5" /> Generate
+            </Button>
+          </div>
+        </div>
+      )}
+
+      {stage === "running" && (
+        <div className="space-y-5 py-6">
+          <div className="flex flex-col items-center text-center gap-4">
+            <div className="w-14 h-14 rounded-full bg-violet-100 text-violet-700 flex items-center justify-center">
+              <Sparkles className="w-7 h-7 animate-pulse" />
+            </div>
+            <div>
+              <p className="text-base font-bold text-foreground">Compiling your report...</p>
+              <p className="text-sm text-muted-foreground mt-1">Aggregating metrics, drafting narrative, formatting tables.</p>
+            </div>
+          </div>
+          <div className="h-1 w-full bg-muted rounded-full overflow-hidden">
+            <div className="h-full bg-violet-500 rounded-full animate-pulse" style={{ width: "70%" }} />
+          </div>
+        </div>
+      )}
+
+      {stage === "done" && (
+        <div className="space-y-4">
+          <div className="flex items-start gap-3 p-3 rounded-md bg-emerald-50/60 border border-emerald-200">
+            <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0 mt-0.5" />
+            <div>
+              <p className="text-sm font-semibold text-emerald-900">Report ready</p>
+              <p className="text-xs text-emerald-800/80 mt-0.5">Saved to your reports archive. You can share, export, or open it now.</p>
+            </div>
+          </div>
+          <div className="rounded-md border border-border p-4">
+            <p className="text-sm font-bold text-foreground">153 Collective — {period}</p>
+            <p className="text-xs text-muted-foreground mt-0.5">Includes: {[includeNarrative && "narrative", includeCharts && "charts", includeRaw && "raw data"].filter(Boolean).join(" · ")}</p>
+          </div>
+          <div className="flex items-center justify-end gap-2 pt-3 border-t border-border">
+            <Button variant="outline" size="sm" onClick={close}>Done</Button>
+            <Button size="sm" onClick={onDone}>Open report</Button>
+          </div>
+        </div>
+      )}
+    </Modal>
   );
 }
 

@@ -92,7 +92,7 @@ export default function App() {
   const [activeTenant, setActiveTenant] = useState<Tenant>(INITIAL_TENANTS[0]);
   const [currentUser, setCurrentUser] = useState<User>(INITIAL_USERS[0]);
   const [currentView, setCurrentView] = useState("dashboard");
-  const [dashboardTab, setDashboardTab] = useState<"main" | "discipleship" | "collective">("discipleship");
+  const [dashboardTab, setDashboardTab] = useState<"main" | "discipleship" | "collective">("main");
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
