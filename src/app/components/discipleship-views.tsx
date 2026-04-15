@@ -592,6 +592,64 @@ export function FaithJourneysView() {
   );
 }
 
+// Standalone Milestones page (also reachable as a tab inside Faith Journeys)
+export function MilestonesView() {
+  const handleExport = () => {
+    // Build a CSV from the same data shown in the cards.
+    const rows = [
+      ["Person", "Journey Type", "Started", "Language", "State", "Indicators", "Milestone", "Status", "Date / Note"],
+      ["Abigail Johnson", "Self-guided Journey", "Jan 12, 2026", "English", "Active Journey", "6/7", "Salvation Decision", "Confirmed",   "Feb 3, 2026 — Confirmed by Pastor James K."],
+      ["Abigail Johnson", "Self-guided Journey", "Jan 12, 2026", "English", "Active Journey", "6/7", "Baptism",            "Confirmed",   "Mar 15, 2026 — Public statement of faith"],
+      ["Abigail Johnson", "Self-guided Journey", "Jan 12, 2026", "English", "Active Journey", "6/7", "Community",          "In Progress", "Referred to local fellowship — awaiting confirmation"],
+      ["Abigail Johnson", "Self-guided Journey", "Jan 12, 2026", "English", "Active Journey", "6/7", "Growth Evidence",    "Not Started", "Prayer 0/7; Bible 0/7; Contribution not started"],
+      ["David Kebede",    "Conversation-based",  "Feb 28, 2026", "Amharic", "Engaged",        "3/7", "Salvation",          "In Progress", "Indicated only — awaiting confirmation"],
+      ["David Kebede",    "Conversation-based",  "Feb 28, 2026", "Amharic", "Engaged",        "3/7", "Baptism",            "Not Started", "—"],
+      ["David Kebede",    "Conversation-based",  "Feb 28, 2026", "Amharic", "Engaged",        "3/7", "Community",          "Not Started", "—"],
+      ["David Kebede",    "Conversation-based",  "Feb 28, 2026", "Amharic", "Engaged",        "3/7", "Growth",             "Not Started", "—"],
+    ];
+    const csv = rows
+      .map(r => r.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(","))
+      .join("\n");
+    try {
+      const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      const today = new Date().toISOString().split("T")[0];
+      a.href = url;
+      a.download = `spiritual-milestones-${today}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } catch {
+      // No-op: browsers in unusual environments may block the download.
+    }
+  };
+
+  return (
+    <div className="p-6 space-y-4">
+      <PageHeader
+        title="Spiritual Milestones"
+        subtitle="Track salvation decisions, baptism, and community connection for each person"
+        actions={(
+          <>
+            <button className="flex items-center gap-1.5 px-3 py-2 text-sm font-medium bg-card border border-border rounded-md hover:bg-muted/50 transition-all">
+              <Filter className="w-3.5 h-3.5" /> Filter
+            </button>
+            <button
+              onClick={handleExport}
+              className="flex items-center gap-1.5 px-4 py-2 text-sm font-semibold bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-all shadow-sm"
+            >
+              <Download className="w-4 h-4" /> Export Report
+            </button>
+          </>
+        )}
+      />
+      <MilestonesInner />
+    </div>
+  );
+}
+
 function MilestonesInner() {
   const people = [
     {

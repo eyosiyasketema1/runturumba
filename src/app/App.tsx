@@ -8,7 +8,7 @@ import {
   Zap, Settings2, ListFilter,
   Phone, Mail, StickyNote, BarChart3, Send,
   Globe, CreditCard, UserPlus, Info, Radio,
-  UserSearch, Shield, GitBranch, Route, Library,
+  UserSearch, Shield, GitBranch, Route, Library, Flag,
   Activity, TrendingUp, HelpCircle, Sparkles, PenTool, ChevronUp
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
@@ -58,7 +58,7 @@ import { OnboardingFlow } from "./components/onboarding-flow";
 
 import { ConversationView } from "./components/conversation-view";
 import {
-  SeekersView, MentorsView, MatchesView, FaithJourneysView,
+  SeekersView, MentorsView, MatchesView, FaithJourneysView, MilestonesView,
   ContentLibraryView, GrowthMetricsView, VitalAnalyticsView,
   ReportingView, ValidationsView, DiscipleshipDashboardView
 } from "./components/discipleship-views";
@@ -79,11 +79,11 @@ const ROLE_OPTIONS: { id: ViewRole; label: string; description: string; icon: an
 // Which views each role can access. Views omitted from a role's list are
 // hidden from the sidebar and blocked from being navigated to.
 const ROLE_VIEW_ACCESS: Record<ViewRole, string[]> = {
-  super_admin:     ["dashboard", "contacts", "messages", "conversations", "seekers", "mentors", "matches", "faith_journeys", "channels", "automations", "content_library", "growth_metrics", "vital_analytics", "reporting", "validations", "team", "settings"],
-  admin:           ["dashboard", "contacts", "messages", "conversations", "seekers", "mentors", "matches", "faith_journeys", "channels", "automations", "content_library", "growth_metrics", "vital_analytics", "reporting", "validations", "team", "settings"],
-  mentor_coach:    ["dashboard", "messages", "conversations", "seekers", "mentors", "matches", "faith_journeys", "content_library", "growth_metrics", "vital_analytics", "reporting", "validations"],
+  super_admin:     ["dashboard", "contacts", "messages", "conversations", "seekers", "mentors", "matches", "faith_journeys", "milestones", "channels", "automations", "content_library", "growth_metrics", "vital_analytics", "reporting", "validations", "team", "settings"],
+  admin:           ["dashboard", "contacts", "messages", "conversations", "seekers", "mentors", "matches", "faith_journeys", "milestones", "channels", "automations", "content_library", "growth_metrics", "vital_analytics", "reporting", "validations", "team", "settings"],
+  mentor_coach:    ["dashboard", "messages", "conversations", "seekers", "mentors", "matches", "faith_journeys", "milestones", "content_library", "growth_metrics", "vital_analytics", "reporting", "validations"],
   content_creator: ["dashboard", "content_library"],
-  mentor:          ["dashboard", "contacts", "messages", "conversations", "seekers", "matches", "faith_journeys", "content_library"],
+  mentor:          ["dashboard", "contacts", "messages", "conversations", "seekers", "matches", "faith_journeys", "milestones", "content_library"],
 };
 
 // --- App Component ---
@@ -141,6 +141,7 @@ export default function App() {
         { id: "mentors",        name: "Mentors",        icon: Shield },
         { id: "matches",        name: "Matches",        icon: GitBranch },
         { id: "faith_journeys", name: "Faith Journeys", icon: Route },
+        { id: "milestones",     name: "Milestones",     icon: Flag },
       ]
     },
     {
@@ -871,6 +872,11 @@ export default function App() {
             {currentView === "faith_journeys" && (
               <motion.div key="faith_journeys" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.2 }}>
                 <FaithJourneysView />
+              </motion.div>
+            )}
+            {currentView === "milestones" && (
+              <motion.div key="milestones" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.2 }}>
+                <MilestonesView />
               </motion.div>
             )}
             {currentView === "content_library" && (
