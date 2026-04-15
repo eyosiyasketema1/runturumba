@@ -22,6 +22,10 @@ import { Separator } from "./ui/separator";
 import { Switch } from "./ui/switch";
 import { Textarea } from "./ui/textarea";
 import { Modal } from "./shared-ui";
+import {
+  DropdownMenu, DropdownMenuTrigger, DropdownMenuContent,
+  DropdownMenuItem, DropdownMenuSeparator
+} from "./ui/dropdown-menu";
 
 const TRIGGER_OPTIONS: { id: AutomationTrigger; label: string; icon: any; description: string }[] = [
   { id: "contact_added", label: "Contact Added", icon: Users, description: "When a new contact is created" },
@@ -100,6 +104,30 @@ export const AutomationView = ({
   const [isAddRuleOpen, setIsAddRuleOpen] = useState(false);
   const [isAddWebhookOpen, setIsAddWebhookOpen] = useState(false);
   const [activeFolder, setActiveFolder] = useState<"all" | AutoType>("all");
+  const [editingRule, setEditingRule] = useState<AutomationRule | null>(null);
+  const [ruleToDelete, setRuleToDelete] = useState<AutomationRule | null>(null);
+
+  const handleDuplicateRule = (rule: AutomationRule) => {
+    onAddAutomation({
+      tenantId: rule.tenantId,
+      name: `${rule.name} (Copy)`,
+      description: rule.description,
+      trigger: rule.trigger,
+      triggerConfig: rule.triggerConfig,
+      action: rule.action,
+      actionConfig: rule.actionConfig,
+      enabled: false,
+      triggerCount: 0,
+    });
+    toast.success(`"${rule.name}" duplicated`);
+  };
+
+  const handleConfirmDelete = () => {
+    if (!ruleToDelete) return;
+    onDeleteAutomation(ruleToDelete.id);
+    toast.success(`"${ruleToDelete.name}" deleted`);
+    setRuleToDelete(null);
+  };
 
   const activeAutomations = automations.filter(a => a.enabled).length;
   const totalTriggers = automations.reduce((sum, a) => sum + a.triggerCount, 0);
@@ -312,26 +340,41 @@ export const AutomationView = ({
                           <td className="px-5 py-4 text-sm text-foreground tabular-nums">{ctr !== null ? `${ctr}%` : <span className="text-muted-foreground">—</span>}</td>
                           <td className="px-5 py-4 text-sm text-muted-foreground">{formatTimeAgo(modified)}</td>
                           <td className="px-5 py-4 text-right">
-                            <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                className="h-7 w-7 p-0"
-                                title={rule.enabled ? "Stop" : "Activate"}
-                                onClick={() => onToggleAutomation(rule.id)}
-                              >
-                                {rule.enabled ? <Pause className="w-3.5 h-3.5" /> : <Play className="w-3.5 h-3.5" />}
-                              </Button>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                className="h-7 w-7 p-0"
-                                title="Delete"
-                                onClick={() => onDeleteAutomation(rule.id)}
-                              >
-                                <Trash2 className="w-3.5 h-3.5 text-muted-foreground" />
-                              </Button>
-                            </div>
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  className="h-8 w-8 p-0"
+                                  aria-label={`Actions for ${rule.name}`}
+                                >
+                                  <MoreVertical className="w-4 h-4 text-muted-foreground" />
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end" className="w-44">
+                                <DropdownMenuItem onClick={() => setEditingRule(rule)}>
+                                  <Edit2 className="w-3.5 h-3.5" />
+                                  Edit
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => handleDuplicateRule(rule)}>
+                                  <Copy className="w-3.5 h-3.5" />
+                                  Duplicate
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => onToggleAutomation(rule.id)}>
+                                  {rule.enabled
+                                    ? <><Pause className="w-3.5 h-3.5" />Stop</>
+                                    : <><Play className="w-3.5 h-3.5" />Activate</>}
+                                </DropdownMenuItem>
+                                <DropdownMenuSeparator />
+                                <DropdownMenuItem
+                                  variant="destructive"
+                                  onClick={() => setRuleToDelete(rule)}
+                                >
+                                  <Trash2 className="w-3.5 h-3.5" />
+                                  Delete
+                                </DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
                           </td>
                         </tr>
                       );
@@ -420,9 +463,140 @@ export const AutomationView = ({
       {/* Add Rule Modal */}
       <AddRuleModal isOpen={isAddRuleOpen} onClose={() => setIsAddRuleOpen(false)} onAdd={onAddAutomation} />
 
+      {/* Edit Rule Modal */}
+      <EditRuleModal
+        rule={editingRule}
+        onClose={() => setEditingRule(null)}
+        onUpdate={(id, data) => { onUpdateAutomation(id, data); toast.success("Automation updated"); }}
+      />
+
+      {/* Delete confirmation */}
+      <Modal
+        isOpen={ruleToDelete !== null}
+        onClose={() => setRuleToDelete(null)}
+        title="Delete Automation"
+        size="sm"
+      >
+        <div className="space-y-4">
+          <div className="flex items-start gap-3">
+            <div className="w-10 h-10 bg-destructive/10 rounded-lg flex items-center justify-center shrink-0">
+              <AlertCircle className="w-5 h-5 text-destructive" />
+            </div>
+            <div>
+              <p className="text-sm font-semibold text-foreground">Delete "{ruleToDelete?.name}"?</p>
+              <p className="text-xs text-muted-foreground mt-1">
+                This automation will be permanently removed. Any active enrollments will stop. This action cannot be undone.
+              </p>
+            </div>
+          </div>
+          <div className="flex items-center justify-end gap-2">
+            <Button variant="outline" size="sm" onClick={() => setRuleToDelete(null)}>Cancel</Button>
+            <Button variant="destructive" size="sm" onClick={handleConfirmDelete}>
+              <Trash2 className="w-3.5 h-3.5" />
+              Delete
+            </Button>
+          </div>
+        </div>
+      </Modal>
+
       {/* Add Webhook Modal */}
       <AddWebhookModal isOpen={isAddWebhookOpen} onClose={() => setIsAddWebhookOpen(false)} onAdd={onAddWebhook} />
     </div>
+  );
+};
+
+// --- Edit Rule Modal ---
+const EditRuleModal = ({
+  rule, onClose, onUpdate
+}: { rule: AutomationRule | null; onClose: () => void; onUpdate: (id: string, data: Partial<AutomationRule>) => void }) => {
+  const [name, setName] = useState("");
+  const [description, setDescription] = useState("");
+  const [trigger, setTrigger] = useState<AutomationTrigger | "">("");
+  const [action, setAction] = useState<AutomationAction | "">("");
+
+  // Rehydrate form whenever a new rule is passed in for editing.
+  React.useEffect(() => {
+    if (rule) {
+      setName(rule.name);
+      setDescription(rule.description);
+      setTrigger(rule.trigger);
+      setAction(rule.action);
+    }
+  }, [rule]);
+
+  const handleUpdate = () => {
+    if (!rule || !name.trim() || !trigger || !action) return;
+    onUpdate(rule.id, {
+      name: name.trim(),
+      description: description.trim(),
+      trigger: trigger as AutomationTrigger,
+      action: action as AutomationAction,
+    });
+    onClose();
+  };
+
+  return (
+    <Modal isOpen={rule !== null} onClose={onClose} title="Edit Automation" size="lg">
+      <div className="space-y-5">
+        <div className="grid gap-2">
+          <Label className="text-xs font-semibold">Name</Label>
+          <Input value={name} onChange={(e) => setName(e.target.value)} className="h-9 text-sm" />
+        </div>
+        <div className="grid gap-2">
+          <Label className="text-xs font-semibold">Description</Label>
+          <Textarea value={description} onChange={(e) => setDescription(e.target.value)} className="text-sm min-h-[60px]" />
+        </div>
+
+        <div className="grid gap-2">
+          <Label className="text-xs font-semibold">Trigger</Label>
+          <div className="grid grid-cols-2 gap-2">
+            {TRIGGER_OPTIONS.map((t) => (
+              <button
+                key={t.id}
+                onClick={() => setTrigger(t.id)}
+                className={cn(
+                  "flex items-center gap-2 p-3 border rounded-md text-left transition-all text-xs",
+                  trigger === t.id ? "border-primary bg-primary/5" : "hover:bg-muted/30"
+                )}
+              >
+                <t.icon className={cn("w-4 h-4 shrink-0", trigger === t.id ? "text-primary" : "text-muted-foreground")} />
+                <div>
+                  <p className="font-semibold">{t.label}</p>
+                  <p className="text-xs text-muted-foreground">{t.description}</p>
+                </div>
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className="grid gap-2">
+          <Label className="text-xs font-semibold">Action</Label>
+          <div className="grid grid-cols-2 gap-2">
+            {ACTION_OPTIONS.map((a) => (
+              <button
+                key={a.id}
+                onClick={() => setAction(a.id)}
+                className={cn(
+                  "flex items-center gap-2 p-3 border rounded-md text-left transition-all text-xs",
+                  action === a.id ? "border-emerald-500 bg-emerald-50" : "hover:bg-muted/30"
+                )}
+              >
+                <a.icon className={cn("w-4 h-4 shrink-0", action === a.id ? "text-emerald-600" : "text-muted-foreground")} />
+                <div>
+                  <p className="font-semibold">{a.label}</p>
+                  <p className="text-xs text-muted-foreground">{a.description}</p>
+                </div>
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className="flex justify-end gap-2 pt-2">
+          <Button variant="outline" size="sm" onClick={onClose}>Cancel</Button>
+          <Button size="sm" disabled={!name.trim() || !trigger || !action} onClick={handleUpdate}>Save Changes</Button>
+        </div>
+      </div>
+    </Modal>
   );
 };
 
