@@ -184,10 +184,10 @@ export const AutomationView = ({
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="grid grid-cols-1 lg:grid-cols-[260px,1fr] gap-5 items-start"
+            className="flex flex-col md:flex-row gap-5 items-start"
           >
             {/* Folders sidebar — sticky, soft-tint active state */}
-            <aside className="bg-card border border-border rounded-xl p-4 lg:sticky lg:top-6 self-start">
+            <aside className="bg-card border border-border rounded-xl p-4 md:sticky md:top-6 self-start w-full md:w-[260px] md:shrink-0">
               <p className="text-sm font-semibold text-foreground px-2 pb-3">Folders</p>
               <div className="space-y-1" role="tablist" aria-label="Automation folders">
                 {([
@@ -231,7 +231,7 @@ export const AutomationView = ({
             </aside>
 
             {/* Right panel — content of the selected folder */}
-            <div className="bg-card border border-border rounded-xl overflow-hidden">
+            <div className="bg-card border border-border rounded-xl overflow-hidden flex-1 min-w-0 w-full">
               {/* Folder header — makes it clear which folder's content is shown */}
               <div className="flex items-center justify-between gap-3 px-5 py-3 border-b border-border">
                 <div className="flex items-center gap-2.5">
