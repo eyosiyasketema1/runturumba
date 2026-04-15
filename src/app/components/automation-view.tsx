@@ -184,12 +184,12 @@ export const AutomationView = ({
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="grid grid-cols-1 lg:grid-cols-[280px,1fr] gap-5"
+            className="grid grid-cols-1 lg:grid-cols-[260px,1fr] gap-5 items-start"
           >
-            {/* Folders panel */}
-            <aside className="bg-card border border-border rounded-xl p-4 h-fit">
-              <p className="text-sm font-semibold text-foreground px-2 pb-3">Folders</p>
-              <div className="space-y-1">
+            {/* Folders sidebar — sticky column, listens for folder changes */}
+            <aside className="bg-card border border-border rounded-xl p-3 lg:sticky lg:top-6 self-start">
+              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider px-2 pt-1 pb-2">Folders</p>
+              <div className="space-y-0.5" role="tablist" aria-label="Automation folders">
                 {([
                   ["all",      "All Automations", folderCounts.all,      Inbox],
                   ["basic",    "Basic",           folderCounts.basic,    Zap],
@@ -200,18 +200,26 @@ export const AutomationView = ({
                   return (
                     <button
                       key={k}
+                      role="tab"
+                      aria-selected={isActive}
                       onClick={() => setActiveFolder(k as any)}
                       className={cn(
                         "w-full flex items-center gap-3 px-3 py-2.5 text-sm font-medium rounded-md transition-all",
-                        isActive ? "bg-primary/10 text-primary" : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                        isActive
+                          ? "bg-primary text-primary-foreground shadow-sm"
+                          : "text-muted-foreground hover:bg-muted hover:text-foreground"
                       )}
                     >
-                      <Icon className={cn("w-4 h-4", isActive ? "text-primary" : "text-muted-foreground")} />
+                      <Icon className="w-4 h-4" />
                       <span className="flex-1 text-left">{label}</span>
-                      <span className={cn("text-sm tabular-nums", isActive ? "text-primary font-semibold" : "text-muted-foreground")}>{count}</span>
+                      <span className={cn(
+                        "text-xs tabular-nums font-semibold px-1.5 py-0.5 rounded-md",
+                        isActive ? "bg-white/20 text-primary-foreground" : "bg-muted text-muted-foreground"
+                      )}>{count}</span>
                     </button>
                   );
                 })}
+                <div className="h-px bg-border my-2" />
                 <button
                   disabled
                   title="Coming soon"
@@ -223,8 +231,31 @@ export const AutomationView = ({
               </div>
             </aside>
 
-            {/* Main list */}
+            {/* Right panel — content of the selected folder */}
             <div className="bg-card border border-border rounded-xl overflow-hidden">
+              {/* Folder header — makes it clear which folder's content is shown */}
+              <div className="flex items-center justify-between gap-3 px-5 py-3 border-b border-border">
+                <div className="flex items-center gap-2.5">
+                  {(() => {
+                    const Icon = activeFolder === "all" ? Inbox
+                      : activeFolder === "basic" ? Zap
+                      : activeFolder === "sequence" ? ListOrdered : GitBranch;
+                    const label = activeFolder === "all" ? "All Automations"
+                      : activeFolder === "basic" ? "Basic"
+                      : activeFolder === "sequence" ? "Sequences" : "Flows";
+                    return (
+                      <>
+                        <Icon className="w-4 h-4 text-primary" />
+                        <h3 className="text-sm font-semibold text-foreground">{label}</h3>
+                        <Badge variant="secondary" className="text-xs">{filteredRules.length}</Badge>
+                      </>
+                    );
+                  })()}
+                </div>
+                {searchQuery && (
+                  <span className="text-xs text-muted-foreground">Filtered by "{searchQuery}"</span>
+                )}
+              </div>
               {filteredRules.length === 0 ? (
                 <div className="p-12 text-center">
                   <Zap className="w-10 h-10 text-muted-foreground/30 mx-auto mb-3" />
