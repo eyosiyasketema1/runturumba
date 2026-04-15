@@ -184,12 +184,12 @@ export const AutomationView = ({
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="grid grid-cols-1 lg:grid-cols-[220px,1fr] gap-4"
+            className="grid grid-cols-1 lg:grid-cols-[280px,1fr] gap-5"
           >
             {/* Folders panel */}
-            <aside className="bg-card border border-border rounded-lg p-3 h-fit">
-              <p className="text-xs font-semibold text-foreground px-2 pb-2">Folders</p>
-              <div className="space-y-0.5">
+            <aside className="bg-card border border-border rounded-xl p-4 h-fit">
+              <p className="text-sm font-semibold text-foreground px-2 pb-3">Folders</p>
+              <div className="space-y-1">
                 {([
                   ["all",      "All Automations", folderCounts.all,      Inbox],
                   ["basic",    "Basic",           folderCounts.basic,    Zap],
@@ -202,29 +202,29 @@ export const AutomationView = ({
                       key={k}
                       onClick={() => setActiveFolder(k as any)}
                       className={cn(
-                        "w-full flex items-center gap-2 px-2.5 py-1.5 text-sm font-medium rounded-md transition-all",
-                        isActive ? "bg-primary/10 text-primary" : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"
+                        "w-full flex items-center gap-3 px-3 py-2.5 text-sm font-medium rounded-md transition-all",
+                        isActive ? "bg-primary/10 text-primary" : "text-muted-foreground hover:bg-muted hover:text-foreground"
                       )}
                     >
-                      <Icon className={cn("w-3.5 h-3.5", isActive ? "text-primary" : "text-muted-foreground")} />
+                      <Icon className={cn("w-4 h-4", isActive ? "text-primary" : "text-muted-foreground")} />
                       <span className="flex-1 text-left">{label}</span>
-                      <span className={cn("text-xs tabular-nums", isActive ? "text-primary font-semibold" : "text-muted-foreground")}>{count}</span>
+                      <span className={cn("text-sm tabular-nums", isActive ? "text-primary font-semibold" : "text-muted-foreground")}>{count}</span>
                     </button>
                   );
                 })}
                 <button
                   disabled
                   title="Coming soon"
-                  className="w-full flex items-center gap-2 px-2.5 py-1.5 text-sm font-medium rounded-md text-muted-foreground/60 hover:bg-muted/30 transition-all cursor-not-allowed"
+                  className="w-full flex items-center gap-3 px-3 py-2.5 text-sm font-medium rounded-md text-muted-foreground/60 hover:bg-muted/30 transition-all cursor-not-allowed"
                 >
-                  <FolderPlus className="w-3.5 h-3.5" />
+                  <FolderPlus className="w-4 h-4" />
                   <span className="flex-1 text-left">New Folder</span>
                 </button>
               </div>
             </aside>
 
             {/* Main list */}
-            <div className="bg-card border border-border rounded-lg overflow-hidden">
+            <div className="bg-card border border-border rounded-xl overflow-hidden">
               {filteredRules.length === 0 ? (
                 <div className="p-12 text-center">
                   <Zap className="w-10 h-10 text-muted-foreground/30 mx-auto mb-3" />
@@ -244,14 +244,14 @@ export const AutomationView = ({
               ) : (
                 <table className="w-full">
                   <thead>
-                    <tr className="border-b border-border text-xs uppercase tracking-wider text-muted-foreground bg-muted/30">
-                      <th className="px-4 py-3 text-left font-semibold">Name</th>
-                      <th className="px-4 py-3 text-left font-semibold">Status</th>
-                      <th className="px-4 py-3 text-left font-semibold">Type</th>
-                      <th className="px-4 py-3 text-left font-semibold">Runs</th>
-                      <th className="px-4 py-3 text-left font-semibold">CTR</th>
-                      <th className="px-4 py-3 text-left font-semibold">Modified</th>
-                      <th className="px-4 py-3 text-right font-semibold w-10"></th>
+                    <tr className="border-b border-border text-xs font-medium text-muted-foreground bg-muted/30">
+                      <th className="px-5 py-3 text-left">Name</th>
+                      <th className="px-5 py-3 text-left">Status</th>
+                      <th className="px-5 py-3 text-left">Type</th>
+                      <th className="px-5 py-3 text-left">Runs</th>
+                      <th className="px-5 py-3 text-left">CTR</th>
+                      <th className="px-5 py-3 text-left">Modified</th>
+                      <th className="px-5 py-3 text-right w-10"></th>
                     </tr>
                   </thead>
                   <tbody>
@@ -261,27 +261,27 @@ export const AutomationView = ({
                       const modified = rule.lastTriggeredAt || rule.createdAt;
                       return (
                         <tr key={rule.id} className="border-b border-border last:border-0 hover:bg-muted/30 transition-colors group">
-                          <td className="px-4 py-3">
-                            <div className="flex flex-col">
+                          <td className="px-5 py-4">
+                            <div className="flex flex-col gap-0.5">
                               <span className="text-sm font-semibold text-foreground">{rule.name}</span>
                               {rule.description && (
                                 <span className="text-xs text-muted-foreground truncate max-w-[420px]">{rule.description}</span>
                               )}
                             </div>
                           </td>
-                          <td className="px-4 py-3">
+                          <td className="px-5 py-4">
                             <span className={cn(
-                              "inline-flex items-center px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider border rounded-full",
+                              "inline-flex items-center px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider border rounded-full",
                               statusBadge(status)
                             )}>
                               {status}
                             </span>
                           </td>
-                          <td className="px-4 py-3 text-sm text-foreground">{typeLabel(rule._type)}</td>
-                          <td className="px-4 py-3 text-sm font-medium text-foreground">{rule.triggerCount.toLocaleString()}</td>
-                          <td className="px-4 py-3 text-sm text-foreground">{ctr !== null ? `${ctr}%` : <span className="text-muted-foreground">—</span>}</td>
-                          <td className="px-4 py-3 text-sm text-muted-foreground">{formatTimeAgo(modified)}</td>
-                          <td className="px-4 py-3 text-right">
+                          <td className="px-5 py-4 text-sm text-foreground">{typeLabel(rule._type)}</td>
+                          <td className="px-5 py-4 text-sm font-medium text-foreground tabular-nums">{rule.triggerCount.toLocaleString()}</td>
+                          <td className="px-5 py-4 text-sm text-foreground tabular-nums">{ctr !== null ? `${ctr}%` : <span className="text-muted-foreground">—</span>}</td>
+                          <td className="px-5 py-4 text-sm text-muted-foreground">{formatTimeAgo(modified)}</td>
+                          <td className="px-5 py-4 text-right">
                             <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                               <Button
                                 variant="ghost"
