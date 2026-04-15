@@ -1,13 +1,15 @@
 import React, { useState, useEffect, useMemo } from "react";
-import { 
-  LayoutDashboard, Users, MessageSquare, Database, Settings, 
+import {
+  LayoutDashboard, Users, MessageSquare, Database, Settings,
   ChevronDown, Plus, LogOut, Bell, Search, Menu, X,
   Trash2, Edit2, Check, Building2,
   ShieldCheck, UserCheck, ArrowRight, Download, Tag,
   FileText, FileSpreadsheet, AlertTriangle, Crown,
   Zap, Settings2, ListFilter,
   Phone, Mail, StickyNote, BarChart3, Send,
-  Globe, CreditCard, UserPlus, Info, Radio
+  Globe, CreditCard, UserPlus, Info, Radio,
+  UserSearch, Shield, GitBranch, Route, Library,
+  Activity, TrendingUp, HelpCircle, Sparkles, PenTool, ChevronUp
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { toast, Toaster } from "sonner";
@@ -55,6 +57,34 @@ import { AutomationView } from "./components/automation-view";
 import { OnboardingFlow } from "./components/onboarding-flow";
 
 import { ConversationView } from "./components/conversation-view";
+import {
+  SeekersView, MentorsView, MatchesView, FaithJourneysView,
+  ContentLibraryView, GrowthMetricsView, VitalAnalyticsView,
+  ReportingView, ValidationsView
+} from "./components/discipleship-views";
+
+// --- Role System ---
+// Super Admin is a dev/testing god-mode. The four product roles map to the
+// Turumba Roles & Permissions spec. "Mentor" replaces the legacy "agent".
+type ViewRole = "super_admin" | "admin" | "mentor_coach" | "content_creator" | "mentor";
+
+const ROLE_OPTIONS: { id: ViewRole; label: string; description: string; icon: any }[] = [
+  { id: "super_admin",     label: "Super Admin",     description: "Full developer view — all features",    icon: ShieldCheck },
+  { id: "admin",           label: "Admin",           description: "Account administrator — full CRUD",    icon: Crown },
+  { id: "mentor_coach",    label: "Mentor Coach",    description: "Oversees mentors and matches",         icon: UserCheck },
+  { id: "content_creator", label: "Content Creator", description: "Creates devotionals and studies",      icon: PenTool },
+  { id: "mentor",          label: "Mentor",          description: "Mentors assigned seekers (was Agent)", icon: Users },
+];
+
+// Which views each role can access. Views omitted from a role's list are
+// hidden from the sidebar and blocked from being navigated to.
+const ROLE_VIEW_ACCESS: Record<ViewRole, string[]> = {
+  super_admin:     ["dashboard", "contacts", "messages", "conversations", "seekers", "mentors", "matches", "faith_journeys", "channels", "automations", "content_library", "growth_metrics", "vital_analytics", "reporting", "validations", "team", "settings"],
+  admin:           ["dashboard", "contacts", "messages", "conversations", "seekers", "mentors", "matches", "faith_journeys", "channels", "automations", "content_library", "growth_metrics", "vital_analytics", "reporting", "validations", "team", "settings"],
+  mentor_coach:    ["dashboard", "messages", "conversations", "seekers", "mentors", "matches", "faith_journeys", "content_library", "growth_metrics", "vital_analytics", "reporting", "validations"],
+  content_creator: ["dashboard", "content_library"],
+  mentor:          ["dashboard", "contacts", "messages", "conversations", "seekers", "matches", "faith_journeys", "content_library"],
+};
 
 // --- App Component ---
 
@@ -66,7 +96,8 @@ export default function App() {
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
   const [isNewMessageFlowOpen, setIsNewMessageFlowOpen] = useState(false);
-  const [viewMode, setViewMode] = useState<"super_admin" | "agent">("super_admin");
+  const [viewMode, setViewMode] = useState<ViewRole>("super_admin");
+  const [isRoleMenuOpen, setIsRoleMenuOpen] = useState(false);
   const [isOnboarding, setIsOnboarding] = useState(() => {
     return localStorage.getItem("turumba_onboarding_complete") !== "true";
   });
@@ -96,41 +127,61 @@ export default function App() {
     {
       label: "Main",
       items: [
-        { id: "dashboard", name: "Dashboard", icon: LayoutDashboard },
+        { id: "dashboard",     name: "Dashboard",     icon: LayoutDashboard },
+        { id: "contacts",      name: "Contacts",      icon: UserSearch },
+        { id: "messages",      name: "Messages",      icon: MessageSquare, badge: 35 },
+        { id: "conversations", name: "Conversations", icon: Send },
       ]
     },
     {
-      label: "Messaging",
+      label: "Discipleship",
       items: [
-        { id: "messages",       name: "Messages",       icon: MessageSquare, badge: 35 },
-        { id: "conversations",  name: "Conversations",  icon: Send },
-        { id: "contacts",       name: "Contacts",       icon: Users },
-        { id: "channels",       name: "Channels",       icon: Radio },
+        { id: "seekers",        name: "Seekers",        icon: Users },
+        { id: "mentors",        name: "Mentors",        icon: Shield },
+        { id: "matches",        name: "Matches",        icon: GitBranch },
+        { id: "faith_journeys", name: "Faith Journeys", icon: Route },
       ]
     },
     {
-      label: "Automation",
+      label: "Engage",
       items: [
-        { id: "automations", name: "Automation", icon: Zap },
+        { id: "channels",        name: "Channels",        icon: Radio },
+        { id: "automations",     name: "Automations",     icon: Zap },
+        { id: "content_library", name: "Content Library", icon: Library },
       ]
     },
     {
-      label: "Management",
+      label: "153 Collective",
       items: [
-        { id: "team", name: "Team", icon: UserCheck },
+        { id: "growth_metrics",  name: "Growth Metrics",   icon: TrendingUp },
+        { id: "vital_analytics", name: "VITAL Analytics",  icon: Activity },
+        { id: "reporting",       name: "Reporting",        icon: HelpCircle },
+        { id: "validations",     name: "Validations",      icon: HelpCircle },
+      ]
+    },
+    {
+      label: "System",
+      items: [
+        { id: "team",     name: "Users",    icon: UserCheck },
         { id: "settings", name: "Settings", icon: Settings },
       ]
     },
   ];
 
-  const isAgent = viewMode === "agent";
-  const AGENT_HIDDEN_IDS = ["channels", "automations", "team", "settings"];
+  const allowedViewIds = ROLE_VIEW_ACCESS[viewMode];
+  const filteredNavSections = navSections
+    .map(s => ({ ...s, items: s.items.filter(i => allowedViewIds.includes(i.id)) }))
+    .filter(s => s.items.length > 0);
 
-  const filteredNavSections = isAgent
-    ? navSections
-        .map(s => ({ ...s, items: s.items.filter(i => !AGENT_HIDDEN_IDS.includes(i.id)) }))
-        .filter(s => s.items.length > 0)
-    : navSections;
+  const currentRole = ROLE_OPTIONS.find(r => r.id === viewMode) || ROLE_OPTIONS[0];
+
+  // If the current view becomes disallowed after a role switch, fall back to dashboard.
+  useEffect(() => {
+    if (!allowedViewIds.includes(currentView)) {
+      setCurrentView("dashboard");
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [viewMode]);
 
   const handleNavigate = (view: string) => {
     setCurrentView(view);
@@ -448,32 +499,80 @@ export default function App() {
           </div>
 
           <div className="flex items-center gap-2">
-            {/* View Mode Toggle */}
-            <div className="flex items-center bg-muted border border-border rounded-md p-0.5">
+            {/* Role Switcher Dropdown — preview each role's effect on the sidebar */}
+            <div className="relative">
               <button
-                onClick={() => { setViewMode("super_admin"); if (AGENT_HIDDEN_IDS.includes(currentView)) setCurrentView("dashboard"); }}
+                onClick={() => setIsRoleMenuOpen(v => !v)}
+                aria-haspopup="listbox"
+                aria-expanded={isRoleMenuOpen}
                 className={cn(
-                  "flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded transition-all",
-                  viewMode === "super_admin"
-                    ? "bg-primary text-primary-foreground shadow-sm"
-                    : "text-muted-foreground hover:text-foreground"
+                  "flex items-center gap-2 pl-2.5 pr-2 py-1.5 text-xs font-semibold rounded-md border transition-all",
+                  isRoleMenuOpen
+                    ? "border-primary/40 bg-primary/5 text-foreground"
+                    : "border-border bg-muted/40 text-foreground hover:bg-muted"
                 )}
+                title="Switch role to preview its view"
               >
-                <ShieldCheck className="w-3.5 h-3.5" />
-                <span className="hidden sm:inline">Super Admin</span>
+                <span className="hidden sm:inline text-[10px] font-bold uppercase tracking-wider text-muted-foreground">View as</span>
+                <currentRole.icon className="w-3.5 h-3.5 text-primary" />
+                <span className="max-w-[120px] truncate">{currentRole.label}</span>
+                {isRoleMenuOpen
+                  ? <ChevronUp className="w-3.5 h-3.5 text-muted-foreground" />
+                  : <ChevronDown className="w-3.5 h-3.5 text-muted-foreground" />}
               </button>
-              <button
-                onClick={() => { setViewMode("agent"); if (AGENT_HIDDEN_IDS.includes(currentView)) setCurrentView("conversations"); }}
-                className={cn(
-                  "flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded transition-all",
-                  viewMode === "agent"
-                    ? "bg-primary text-primary-foreground shadow-sm"
-                    : "text-muted-foreground hover:text-foreground"
+
+              <AnimatePresence>
+                {isRoleMenuOpen && (
+                  <>
+                    <div className="fixed inset-0 z-30" onClick={() => setIsRoleMenuOpen(false)} />
+                    <motion.div
+                      initial={{ opacity: 0, y: -4 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -4 }}
+                      transition={{ duration: 0.15 }}
+                      className="absolute right-0 mt-2 w-72 bg-popover border border-border rounded-md shadow-lg z-40 overflow-hidden"
+                      role="listbox"
+                    >
+                      <div className="px-3 py-2 border-b border-border bg-muted/30">
+                        <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Preview Role</p>
+                        <p className="text-xs text-muted-foreground mt-0.5">Switch to see what each role sees</p>
+                      </div>
+                      <div className="py-1">
+                        {ROLE_OPTIONS.map(role => {
+                          const isSelected = role.id === viewMode;
+                          const RoleIcon = role.icon;
+                          return (
+                            <button
+                              key={role.id}
+                              role="option"
+                              aria-selected={isSelected}
+                              onClick={() => { setViewMode(role.id); setIsRoleMenuOpen(false); }}
+                              className={cn(
+                                "w-full flex items-start gap-3 px-3 py-2.5 text-left transition-colors",
+                                isSelected ? "bg-primary/5" : "hover:bg-muted/50"
+                              )}
+                            >
+                              <div className={cn(
+                                "w-8 h-8 rounded-md flex items-center justify-center shrink-0",
+                                isSelected ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"
+                              )}>
+                                <RoleIcon className="w-4 h-4" />
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center justify-between gap-2">
+                                  <span className={cn("text-sm font-semibold truncate", isSelected ? "text-primary" : "text-foreground")}>{role.label}</span>
+                                  {isSelected && <Check className="w-4 h-4 text-primary shrink-0" />}
+                                </div>
+                                <p className="text-xs text-muted-foreground leading-snug">{role.description}</p>
+                              </div>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </motion.div>
+                  </>
                 )}
-              >
-                <UserCheck className="w-3.5 h-3.5" />
-                <span className="hidden sm:inline">Agent</span>
-              </button>
+              </AnimatePresence>
             </div>
             <div className="hidden lg:block h-6 w-px bg-border" />
             <div className="relative">
@@ -709,6 +808,51 @@ export default function App() {
                     setConversationRules(rules);
                   }}
                 />
+              </motion.div>
+            )}
+            {currentView === "seekers" && (
+              <motion.div key="seekers" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.2 }}>
+                <SeekersView canCreate={viewMode === "super_admin" || viewMode === "admin"} />
+              </motion.div>
+            )}
+            {currentView === "mentors" && (
+              <motion.div key="mentors" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.2 }}>
+                <MentorsView canCreate={viewMode === "super_admin" || viewMode === "admin"} />
+              </motion.div>
+            )}
+            {currentView === "matches" && (
+              <motion.div key="matches" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.2 }}>
+                <MatchesView />
+              </motion.div>
+            )}
+            {currentView === "faith_journeys" && (
+              <motion.div key="faith_journeys" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.2 }}>
+                <FaithJourneysView />
+              </motion.div>
+            )}
+            {currentView === "content_library" && (
+              <motion.div key="content_library" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.2 }}>
+                <ContentLibraryView canEdit={viewMode === "super_admin" || viewMode === "admin" || viewMode === "content_creator"} />
+              </motion.div>
+            )}
+            {currentView === "growth_metrics" && (
+              <motion.div key="growth_metrics" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.2 }}>
+                <GrowthMetricsView />
+              </motion.div>
+            )}
+            {currentView === "vital_analytics" && (
+              <motion.div key="vital_analytics" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.2 }}>
+                <VitalAnalyticsView />
+              </motion.div>
+            )}
+            {currentView === "reporting" && (
+              <motion.div key="reporting" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.2 }}>
+                <ReportingView />
+              </motion.div>
+            )}
+            {currentView === "validations" && (
+              <motion.div key="validations" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.2 }}>
+                <ValidationsView />
               </motion.div>
             )}
             {currentView === "automations" && (
