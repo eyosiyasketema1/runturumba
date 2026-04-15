@@ -26,6 +26,7 @@ import {
   DropdownMenu, DropdownMenuTrigger, DropdownMenuContent,
   DropdownMenuItem, DropdownMenuSeparator
 } from "./ui/dropdown-menu";
+import { FlowBuilder } from "./flow-builder";
 
 const TRIGGER_OPTIONS: { id: AutomationTrigger; label: string; icon: any; description: string }[] = [
   { id: "contact_added", label: "Contact Added", icon: Users, description: "When a new contact is created" },
@@ -106,6 +107,11 @@ export const AutomationView = ({
   const [activeFolder, setActiveFolder] = useState<"all" | AutoType>("all");
   const [editingRule, setEditingRule] = useState<AutomationRule | null>(null);
   const [ruleToDelete, setRuleToDelete] = useState<AutomationRule | null>(null);
+  // Flow builder is a full-page overlay. `flowBuilderState` carries either a
+  // rule being edited or a "new" placeholder; `null` means the builder is closed.
+  const [flowBuilderState, setFlowBuilderState] = useState<
+    { mode: "new" } | { mode: "edit"; rule: AutomationRule } | null
+  >(null);
 
   const handleDuplicateRule = (rule: AutomationRule) => {
     onAddAutomation({
@@ -163,6 +169,60 @@ export const AutomationView = ({
     w.url.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
+  // Full-page flow builder takes over when active, short-circuiting the list view.
+  if (flowBuilderState) {
+    const isEdit = flowBuilderState.mode === "edit";
+    const rule = isEdit ? flowBuilderState.rule : null;
+    return (
+      <FlowBuilder
+        flowName={rule?.name ?? "New Flow"}
+        status={rule ? (rule.enabled ? "active" : rule.triggerCount === 0 ? "draft" : "stopped") : "draft"}
+        stats={{
+          totalRuns: rule?.triggerCount ?? 0,
+          avgCtr: rule ? (getAutoCtr(rule) ?? 0) : 0,
+          completionRate: 68, dropoutRate: 7, aiBoost: 18, // derived from flow telemetry; stubbed for now
+        }}
+        useStarterTemplate={!isEdit}
+        onBack={() => setFlowBuilderState(null)}
+        onSave={({ name }) => {
+          if (isEdit && rule) {
+            onUpdateAutomation(rule.id, { name });
+          } else {
+            onAddAutomation({
+              tenantId: "tenant-1",
+              name,
+              description: "Visual flow created in the builder",
+              trigger: "webhook_received",
+              triggerConfig: {},
+              action: "webhook_call",
+              actionConfig: {},
+              enabled: false,
+              triggerCount: 0,
+            });
+          }
+        }}
+        onPublish={({ name }) => {
+          if (isEdit && rule) {
+            onUpdateAutomation(rule.id, { name, enabled: true });
+          } else {
+            onAddAutomation({
+              tenantId: "tenant-1",
+              name,
+              description: "Visual flow created in the builder",
+              trigger: "webhook_received",
+              triggerConfig: {},
+              action: "webhook_call",
+              actionConfig: {},
+              enabled: true,
+              triggerCount: 0,
+            });
+          }
+          setFlowBuilderState(null);
+        }}
+      />
+    );
+  }
+
   return (
     <div className="space-y-5 p-6 animate-in fade-in duration-500">
       <header className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
@@ -180,7 +240,12 @@ export const AutomationView = ({
               className="pl-9 h-9 text-sm w-[240px]"
             />
           </div>
-          <Button onClick={() => activeTab === "rules" ? setIsAddRuleOpen(true) : setIsAddWebhookOpen(true)}>
+          <Button onClick={() => {
+            if (activeTab !== "rules") { setIsAddWebhookOpen(true); return; }
+            // Flows get the full drag-and-drop builder; other types use the modal.
+            if (activeFolder === "flow") { setFlowBuilderState({ mode: "new" }); return; }
+            setIsAddRuleOpen(true);
+          }}>
             <Plus className="w-4 h-4 mr-1.5" />
             {activeTab === "rules" ? folderCopy.createLabel : "New Webhook"}
           </Button>
@@ -369,7 +434,10 @@ export const AutomationView = ({
                                 <MoreVertical className="w-4 h-4" />
                               </DropdownMenuTrigger>
                               <DropdownMenuContent align="end" className="w-44">
-                                <DropdownMenuItem onSelect={() => setEditingRule(rule)}>
+                                <DropdownMenuItem onSelect={() => {
+                                  if (rule._type === "flow") setFlowBuilderState({ mode: "edit", rule });
+                                  else setEditingRule(rule);
+                                }}>
                                   <Edit2 className="w-3.5 h-3.5" />
                                   Edit
                                 </DropdownMenuItem>
