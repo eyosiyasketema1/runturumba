@@ -502,10 +502,7 @@ function HeroStat({
 }) {
   const data = sparkData.map((v, i) => ({ i, v }));
   return (
-    <div className={cn(
-      "relative rounded-sm border border-border overflow-hidden shadow-[0_8px_30px_-18px_rgba(15,23,42,0.25)] hover:shadow-[0_18px_40px_-18px_rgba(15,23,42,0.35)] transition-all group",
-      tintClass,
-    )}>
+    <div className="relative rounded-sm bg-card border border-border overflow-hidden shadow-[0_8px_30px_-18px_rgba(15,23,42,0.25)] hover:shadow-[0_18px_40px_-18px_rgba(15,23,42,0.35)] transition-all group">
       {/* 2px color accent strip */}
       <div className={cn("absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r", accent)} />
 
@@ -5624,14 +5621,7 @@ export function MainDashboardView({ onNavigate }: { onNavigate?: (view: string) 
             <button
               key={i}
               onClick={() => onNavigate?.(t.action)}
-              className={cn(
-                "relative overflow-hidden rounded-sm border border-border p-4 text-left transition-all group",
-                "hover:border-primary/40 hover:-translate-y-0.5 hover:shadow-[0_16px_36px_-22px_rgba(15,23,42,0.35)]",
-                t.tone === "amber"  && "bg-amber-50/70",
-                t.tone === "blue"   && "bg-blue-50/70",
-                t.tone === "purple" && "bg-violet-50/70",
-                t.tone === "pink"   && "bg-pink-50/70",
-              )}
+              className="relative overflow-hidden rounded-sm border border-border bg-card p-4 text-left transition-all group hover:border-primary/40 hover:-translate-y-0.5 hover:shadow-[0_16px_36px_-22px_rgba(15,23,42,0.35)]"
             >
               <div className={cn(
                 "absolute top-0 left-0 right-0 h-0.5",
@@ -5805,7 +5795,6 @@ const VITAL_TREND = [
 
 export function VitalDashboardView({ onNavigate }: { onNavigate?: (view: string) => void }) {
   const [period, setPeriod] = useState("q1_2026");
-  const [openStage, setOpenStage] = useState<string | null>(null);
 
   const conversions = [
     { from: "V", to: "I", pct: 30.7, delta: "+1.4 pts", tone: "green" as const },
@@ -5860,55 +5849,50 @@ export function VitalDashboardView({ onNavigate }: { onNavigate?: (view: string)
 
       {/* 5-stage pulse — at-a-glance funnel */}
       <section className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
-        {VITAL_DASH_STAGES.map(s => {
-          const isOpen = openStage === s.letter;
-          return (
-            <div key={s.letter} className="relative rounded-sm bg-card border border-border overflow-hidden shadow-[0_8px_30px_-18px_rgba(15,23,42,0.25)]">
-              <div className={cn("absolute top-0 left-0 right-0 h-0.5", s.color)} />
+        {VITAL_DASH_STAGES.map(s => (
+          <div key={s.letter} className="relative rounded-sm bg-card border border-border overflow-visible shadow-[0_8px_30px_-18px_rgba(15,23,42,0.25)]">
+            <div className={cn("absolute top-0 left-0 right-0 h-0.5 rounded-t-sm", s.color)} />
 
-              {/* Help toggle — low opacity question mark, top-right */}
-              <button
-                type="button"
-                onClick={() => setOpenStage(isOpen ? null : s.letter)}
-                aria-label={isOpen ? `Hide ${s.label} definition` : `What is ${s.label}?`}
-                aria-expanded={isOpen}
-                className={cn(
-                  "absolute top-2.5 right-2.5 z-10 w-5 h-5 rounded-sm flex items-center justify-center transition-opacity",
-                  isOpen ? "opacity-100 text-foreground bg-muted" : "opacity-30 hover:opacity-90 text-muted-foreground",
-                )}
+            {/* Help affordance — low opacity question mark with hover tooltip */}
+            <div className="absolute top-2.5 right-2.5 z-20 group/tip">
+              <span
+                role="img"
+                aria-label={`What is ${s.label}?`}
+                tabIndex={0}
+                className="w-5 h-5 rounded-sm flex items-center justify-center text-muted-foreground opacity-30 group-hover/tip:opacity-90 focus:opacity-90 transition-opacity cursor-help outline-none"
               >
-                {isOpen ? <X className="w-3 h-3" /> : <HelpCircle className="w-3.5 h-3.5" />}
-              </button>
-
-              <div className="p-4">
-                <div className="flex items-center gap-2">
-                  <span className={cn("w-7 h-7 rounded-sm flex items-center justify-center font-bold text-xs text-white", s.color)}>{s.letter}</span>
-                  <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">{s.label}</span>
+                <HelpCircle className="w-3.5 h-3.5" />
+              </span>
+              {/* Tooltip */}
+              <div
+                role="tooltip"
+                className="pointer-events-none absolute right-0 top-full mt-2 w-[240px] rounded-sm border border-border bg-slate-950 text-white p-3 shadow-[0_16px_40px_-18px_rgba(15,23,42,0.6)] opacity-0 -translate-y-1 group-hover/tip:opacity-100 group-hover/tip:translate-y-0 group-focus-within/tip:opacity-100 group-focus-within/tip:translate-y-0 transition-all duration-150 z-30"
+              >
+                <div className="flex items-center gap-1.5 mb-1.5">
+                  <span className={cn("w-5 h-5 rounded-sm flex items-center justify-center font-bold text-[10px] text-white", s.color)}>{s.letter}</span>
+                  <span className="text-[10px] font-semibold uppercase tracking-wider text-slate-300">{s.label}</span>
                 </div>
-                <div className="mt-3">
-                  <div className="text-2xl font-bold text-foreground tabular-nums tracking-tight">{s.value.toLocaleString()}</div>
-                  <div className="flex items-center gap-2 mt-0.5">
-                    <span className={cn("text-xs font-bold", s.text)}>↑ {s.delta}</span>
-                    <span className="text-xs text-muted-foreground">{s.blurb}</span>
-                  </div>
+                <p className="text-[11px] leading-snug text-slate-100">{s.definition}</p>
+                {/* Arrow */}
+                <span className="absolute -top-1 right-2 w-2 h-2 rotate-45 bg-slate-950 border-l border-t border-border" />
+              </div>
+            </div>
+
+            <div className="p-4">
+              <div className="flex items-center gap-2">
+                <span className={cn("w-7 h-7 rounded-sm flex items-center justify-center font-bold text-xs text-white", s.color)}>{s.letter}</span>
+                <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">{s.label}</span>
+              </div>
+              <div className="mt-3">
+                <div className="text-2xl font-bold text-foreground tabular-nums tracking-tight">{s.value.toLocaleString()}</div>
+                <div className="flex items-center gap-2 mt-0.5">
+                  <span className={cn("text-xs font-bold", s.text)}>↑ {s.delta}</span>
+                  <span className="text-xs text-muted-foreground">{s.blurb}</span>
                 </div>
               </div>
-
-              {/* Definition reveal */}
-              {isOpen && (
-                <div className={cn("absolute inset-0 z-20 flex flex-col p-4 backdrop-blur-[2px]", s.light)}>
-                  <div className="flex items-center gap-2 mb-2">
-                    <span className={cn("w-7 h-7 rounded-sm flex items-center justify-center font-bold text-xs text-white", s.color)}>{s.letter}</span>
-                    <span className={cn("text-xs font-semibold uppercase tracking-wider", s.text)}>{s.label}</span>
-                  </div>
-                  <p className="text-[11px] leading-snug text-foreground/80">
-                    {s.definition}
-                  </p>
-                </div>
-              )}
             </div>
-          );
-        })}
+          </div>
+        ))}
       </section>
 
       {/* Conversion bridge + multi-line trend */}
