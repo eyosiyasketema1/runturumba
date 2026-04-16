@@ -375,16 +375,16 @@ export const INITIAL_GROUPS: Group[] = [
 ];
 
 export const INITIAL_CONTACTS: Contact[] = [
-  { id: "contact-1", name: "John Smith", phone: "+1 555-0101", email: "john@example.com", tags: ["vip", "q1-sale"], groupIds: ["group-1", "group-3"], tenantId: "tenant-1", createdAt: "2025-02-01T10:00:00Z" },
-  { id: "contact-2", name: "Jane Doe", phone: "+1 555-0102", email: "jane@example.com", tags: ["newsletter"], groupIds: ["group-1", "group-2", "group-4"], tenantId: "tenant-1", createdAt: "2025-02-02T11:00:00Z" },
-  { id: "contact-3", name: "Bob Wilson", phone: "+1 555-0103", email: "bob@example.com", tags: ["vip"], groupIds: ["group-3"], tenantId: "tenant-1", createdAt: "2025-02-03T12:00:00Z" },
-  { id: "contact-4", name: "Emily Turner", phone: "+1 555-0104", email: "emily@acmeclient.com", tags: ["newsletter", "premium"], groupIds: ["group-1", "group-4"], tenantId: "tenant-1", createdAt: "2025-02-04T09:30:00Z" },
-  { id: "contact-5", name: "David Kim", phone: "+1 555-0105", email: "david.kim@outlook.com", tags: ["vip", "q1-sale"], groupIds: ["group-2", "group-3"], tenantId: "tenant-1", createdAt: "2025-02-05T14:15:00Z" },
-  { id: "contact-6", name: "Maria Garcia", phone: "+1 555-0106", email: "maria.g@gmail.com", tags: ["q1-sale", "newsletter"], groupIds: ["group-1", "group-2", "group-4"], tenantId: "tenant-1", createdAt: "2025-02-06T16:45:00Z" },
-  { id: "contact-7", name: "Chris Patel", phone: "+1 555-0107", email: "chris.patel@corp.io", tags: ["newsletter"], groupIds: ["group-4", "group-5"], tenantId: "tenant-1", createdAt: "2025-02-07T11:20:00Z" },
-  { id: "contact-8", name: "Lisa Anderson", phone: "+1 555-0108", email: "lisa.a@techfirm.com", tags: ["vip", "premium"], groupIds: ["group-1", "group-3", "group-4"], tenantId: "tenant-1", createdAt: "2025-02-08T08:00:00Z" },
-  { id: "contact-9", name: "Ahmed Hassan", phone: "+1 555-0109", email: "ahmed.h@startup.co", tags: ["premium"], groupIds: ["group-2", "group-5"], tenantId: "tenant-1", createdAt: "2025-02-09T13:00:00Z" },
-  { id: "contact-10", name: "Sophie Chen", phone: "+1 555-0110", email: "sophie.c@design.io", tags: ["newsletter", "premium"], groupIds: ["group-4"], tenantId: "tenant-1", createdAt: "2025-02-10T10:30:00Z" },
+  { id: "contact-1",  name: "Eyosiyas Ketema", phone: "+251988683325", email: "eyosiyasketema@gmail.com", tags: [],              groupIds: [],                  tenantId: "tenant-1", createdAt: "2026-04-15T09:30:00Z" },
+  { id: "contact-2",  name: "Eyosiyas Ketema", phone: "+251988683325", email: "eyosiyasketema@gmail.com", tags: [],              groupIds: [],                  tenantId: "tenant-1", createdAt: "2026-04-14T09:30:00Z" },
+  { id: "contact-3",  name: "Eyosiyas Ketema", phone: "+251988683325", email: "eyosiyasketema@gmail.com", tags: [],              groupIds: [],                  tenantId: "tenant-1", createdAt: "2026-04-13T09:30:00Z" },
+  { id: "contact-4",  name: "Eyosiyas Ketema", phone: "+251988683325", email: "eyosiyasketema@gmail.com", tags: [],              groupIds: [],                  tenantId: "tenant-1", createdAt: "2026-04-12T09:30:00Z" },
+  { id: "contact-5",  name: "Eyosiyas Ketema", phone: "+251988683325", email: "eyosiyasketema@gmail.com", tags: [],              groupIds: [],                  tenantId: "tenant-1", createdAt: "2026-04-11T09:30:00Z" },
+  { id: "contact-6",  name: "Eyosiyas Ketema", phone: "+251988683325", email: "eyosiyasketema@gmail.com", tags: [],              groupIds: [],                  tenantId: "tenant-1", createdAt: "2026-04-10T09:30:00Z" },
+  { id: "contact-7",  name: "Eyosiyas Ketema", phone: "+251988683325", email: "eyosiyasketema@gmail.com", tags: [],              groupIds: [],                  tenantId: "tenant-1", createdAt: "2026-04-09T09:30:00Z" },
+  { id: "contact-8",  name: "Eyosiyas Ketema", phone: "+251988683325", email: "eyosiyasketema@gmail.com", tags: [],              groupIds: [],                  tenantId: "tenant-1", createdAt: "2026-04-08T09:30:00Z" },
+  { id: "contact-9",  name: "Eyosiyas Ketema", phone: "+251988683325", email: "eyosiyasketema@gmail.com", tags: [],              groupIds: [],                  tenantId: "tenant-1", createdAt: "2026-04-07T09:30:00Z" },
+  { id: "contact-10", name: "Eyosiyas Ketema", phone: "+251988683325", email: "eyosiyasketema@gmail.com", tags: [],              groupIds: [],                  tenantId: "tenant-1", createdAt: "2026-04-06T09:30:00Z" },
 ];
 
 export const INITIAL_MESSAGES: Message[] = [

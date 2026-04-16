@@ -994,7 +994,7 @@ function SeekerActionsMenu({
 // Filter dropdown
 // ---------------------------------------------------------------------------
 
-function FilterDropdown({
+export function FilterDropdown({
   label, value, onChange, options,
 }: {
   label: string;
