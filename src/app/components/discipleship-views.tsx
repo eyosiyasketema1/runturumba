@@ -20,7 +20,7 @@ import {
 } from "./ui/dropdown-menu";
 import { Modal } from "./shared-ui";
 import { toast } from "sonner";
-import { ArrowLeft, Eye, Trash2, MessageSquare as MessageSquareIcon, Archive, RefreshCw, Zap } from "lucide-react";
+import { ArrowLeft, Eye, Trash2, MessageSquare as MessageSquareIcon, Archive, RefreshCw, Zap, HelpCircle, UserPlus, X } from "lucide-react";
 import {
   AreaChart, Area, PieChart, Pie, Cell, XAxis, YAxis, Tooltip, ResponsiveContainer
 } from "recharts";
@@ -238,8 +238,9 @@ export function DiscipleshipDashboardView({ onNavigate }: { onNavigate?: (view: 
       <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <HeroStat
           accent="from-blue-500 to-blue-600"
-          tintClass="bg-blue-50"
+          tintClass="bg-blue-50/70"
           iconBg="bg-blue-500"
+          deltaChip="bg-blue-500/10 text-blue-700"
           icon={Users}
           label="Active Seekers"
           value="247"
@@ -250,8 +251,9 @@ export function DiscipleshipDashboardView({ onNavigate }: { onNavigate?: (view: 
         />
         <HeroStat
           accent="from-violet-500 to-fuchsia-500"
-          tintClass="bg-violet-50"
+          tintClass="bg-violet-50/70"
           iconBg="bg-violet-500"
+          deltaChip="bg-violet-500/10 text-violet-700"
           icon={GitBranch}
           label="Active Matches"
           value="89"
@@ -262,8 +264,9 @@ export function DiscipleshipDashboardView({ onNavigate }: { onNavigate?: (view: 
         />
         <HeroStat
           accent="from-emerald-500 to-teal-500"
-          tintClass="bg-emerald-50"
+          tintClass="bg-emerald-50/70"
           iconBg="bg-emerald-500"
+          deltaChip="bg-emerald-500/10 text-emerald-700"
           icon={CheckCircle2}
           label="Completion Rate"
           value="73%"
@@ -274,8 +277,9 @@ export function DiscipleshipDashboardView({ onNavigate }: { onNavigate?: (view: 
         />
         <HeroStat
           accent="from-pink-500 to-rose-500"
-          tintClass="bg-pink-50"
+          tintClass="bg-pink-50/70"
           iconBg="bg-pink-500"
+          deltaChip="bg-pink-500/10 text-pink-700"
           icon={Activity}
           label="Engagement Score"
           value="82"
@@ -482,7 +486,7 @@ export function DiscipleshipDashboardView({ onNavigate }: { onNavigate?: (view: 
 // ---------------------------------------------------------------------------
 
 function HeroStat({
-  accent, tintClass, iconBg, icon: Icon, label, value, delta, deltaTone, sparkColor, sparkData,
+  accent, tintClass, iconBg, icon: Icon, label, value, delta, deltaTone, sparkColor, sparkData, deltaChip,
 }: {
   accent: string;
   tintClass: string;
@@ -494,14 +498,16 @@ function HeroStat({
   deltaTone: "up" | "down";
   sparkColor: string;
   sparkData: number[];
+  deltaChip?: string;
 }) {
   const data = sparkData.map((v, i) => ({ i, v }));
   return (
-    <div className="relative rounded-sm bg-card border border-border overflow-hidden shadow-[0_8px_30px_-18px_rgba(15,23,42,0.25)] hover:shadow-[0_18px_40px_-18px_rgba(15,23,42,0.35)] transition-all group">
+    <div className={cn(
+      "relative rounded-sm border border-border overflow-hidden shadow-[0_8px_30px_-18px_rgba(15,23,42,0.25)] hover:shadow-[0_18px_40px_-18px_rgba(15,23,42,0.35)] transition-all group",
+      tintClass,
+    )}>
       {/* 2px color accent strip */}
       <div className={cn("absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r", accent)} />
-      {/* Soft tinted wash */}
-      <div className={cn("absolute inset-0 opacity-50 pointer-events-none", tintClass)} style={{ maskImage: "linear-gradient(to bottom right, black, transparent 60%)", WebkitMaskImage: "linear-gradient(to bottom right, black, transparent 60%)" }} />
 
       <div className="relative p-5">
         <div className="flex items-start justify-between mb-4">
@@ -514,7 +520,9 @@ function HeroStat({
           <span className="text-4xl font-bold text-foreground tracking-tight tabular-nums">{value}</span>
           <span className={cn(
             "text-xs font-bold px-1.5 py-0.5 rounded-sm",
-            deltaTone === "up" ? "bg-emerald-500/10 text-emerald-700" : "bg-rose-500/10 text-rose-700"
+            deltaChip
+              ? deltaChip
+              : deltaTone === "up" ? "bg-emerald-500/10 text-emerald-700" : "bg-rose-500/10 text-rose-700"
           )}>{deltaTone === "up" ? "↑" : "↓"} {delta}</span>
         </div>
         {/* Sparkline */}
@@ -5560,12 +5568,9 @@ export function MainDashboardView({ onNavigate }: { onNavigate?: (view: string) 
               Turumba's pulse today — <span className="font-semibold text-white">8,420 contacts</span>, <span className="font-semibold text-emerald-300">12,940 messages sent</span>, and <span className="font-semibold text-pink-300">247 active seekers</span> moving through their journeys.
             </p>
           </div>
-          <div className="flex items-center gap-3 flex-wrap">
+          <div className="flex items-center justify-end lg:ml-auto">
             <Button variant="outline" size="sm" className="border-white/20 bg-white/10 text-white hover:bg-white/20 hover:text-white backdrop-blur-sm" onClick={() => toast.info("Exporting dashboard...")}>
               <Download className="w-3.5 h-3.5" /> Export
-            </Button>
-            <Button className="bg-white text-slate-900 hover:bg-slate-100 shadow-lg" onClick={() => onNavigate?.("seekers")}>
-              <Plus className="w-3.5 h-3.5" /> New Seeker
             </Button>
           </div>
         </div>
@@ -5580,14 +5585,18 @@ export function MainDashboardView({ onNavigate }: { onNavigate?: (view: string) 
               : kpi.tone === "purple" ? "from-violet-500 to-fuchsia-500"
               : kpi.tone === "green"  ? "from-emerald-500 to-teal-500"
               : "from-amber-500 to-orange-500"}
-            tintClass={kpi.tone === "blue" ? "bg-blue-50"
-              : kpi.tone === "purple" ? "bg-violet-50"
-              : kpi.tone === "green"  ? "bg-emerald-50"
-              : "bg-amber-50"}
+            tintClass={kpi.tone === "blue" ? "bg-blue-50/70"
+              : kpi.tone === "purple" ? "bg-violet-50/70"
+              : kpi.tone === "green"  ? "bg-emerald-50/70"
+              : "bg-amber-50/70"}
             iconBg={kpi.tone === "blue" ? "bg-blue-500"
               : kpi.tone === "purple" ? "bg-violet-500"
               : kpi.tone === "green"  ? "bg-emerald-500"
               : "bg-amber-500"}
+            deltaChip={kpi.tone === "blue" ? "bg-blue-500/10 text-blue-700"
+              : kpi.tone === "purple" ? "bg-violet-500/10 text-violet-700"
+              : kpi.tone === "green"  ? "bg-emerald-500/10 text-emerald-700"
+              : "bg-amber-500/10 text-amber-700"}
             icon={kpi.icon}
             label={kpi.label}
             value={kpi.value}
@@ -5602,42 +5611,54 @@ export function MainDashboardView({ onNavigate }: { onNavigate?: (view: string) 
         ))}
       </section>
 
-      {/* Today + Trend chart */}
-      <section className="grid grid-cols-1 lg:grid-cols-[1fr,2fr] gap-4">
-        {/* Today's focus */}
-        <div className="relative rounded-sm bg-card border border-border shadow-[0_12px_36px_-22px_rgba(15,23,42,0.25)] overflow-hidden">
-          <div className="absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r from-amber-500 via-pink-500 to-violet-500" />
-          <div className="p-5">
+      {/* Today's focus — single row of cards */}
+      <section>
+        <div className="flex items-end justify-between mb-3 flex-wrap gap-2">
+          <div>
             <p className="text-xs font-semibold text-muted-foreground uppercase tracking-[0.14em]">Your focus today</p>
-            <h3 className="text-xl font-bold text-foreground mt-1">Needs attention</h3>
-            <div className="mt-4 space-y-2">
-              {MAIN_TODAY.map((t, i) => (
-                <button
-                  key={i}
-                  onClick={() => onNavigate?.(t.action)}
-                  className="w-full flex items-center justify-between gap-3 p-3 rounded-sm border border-border hover:border-primary/40 hover:bg-primary/[0.03] transition-all group text-left"
-                >
-                  <div className="flex items-center gap-3">
-                    <span className={cn(
-                      "w-10 h-10 rounded-sm flex items-center justify-center font-bold text-sm tabular-nums",
-                      t.tone === "amber"  && "bg-amber-100 text-amber-700",
-                      t.tone === "blue"   && "bg-blue-100 text-blue-700",
-                      t.tone === "purple" && "bg-violet-100 text-violet-700",
-                      t.tone === "pink"   && "bg-pink-100 text-pink-700",
-                    )}>{t.value}</span>
-                    <div>
-                      <p className="text-sm font-semibold text-foreground">{t.label}</p>
-                      <p className="text-xs text-muted-foreground">{t.hint}</p>
-                    </div>
-                  </div>
-                  <ArrowRight className="w-4 h-4 text-muted-foreground opacity-0 group-hover:opacity-100 group-hover:translate-x-0.5 transition-all" />
-                </button>
-              ))}
-            </div>
+            <h3 className="text-xl font-bold text-foreground mt-0.5">Needs attention</h3>
           </div>
         </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+          {MAIN_TODAY.map((t, i) => (
+            <button
+              key={i}
+              onClick={() => onNavigate?.(t.action)}
+              className={cn(
+                "relative overflow-hidden rounded-sm border border-border p-4 text-left transition-all group",
+                "hover:border-primary/40 hover:-translate-y-0.5 hover:shadow-[0_16px_36px_-22px_rgba(15,23,42,0.35)]",
+                t.tone === "amber"  && "bg-amber-50/70",
+                t.tone === "blue"   && "bg-blue-50/70",
+                t.tone === "purple" && "bg-violet-50/70",
+                t.tone === "pink"   && "bg-pink-50/70",
+              )}
+            >
+              <div className={cn(
+                "absolute top-0 left-0 right-0 h-0.5",
+                t.tone === "amber"  && "bg-amber-500",
+                t.tone === "blue"   && "bg-blue-500",
+                t.tone === "purple" && "bg-violet-500",
+                t.tone === "pink"   && "bg-pink-500",
+              )} />
+              <div className="flex items-start justify-between gap-2">
+                <span className={cn(
+                  "w-9 h-9 rounded-sm flex items-center justify-center font-bold text-sm tabular-nums shrink-0",
+                  t.tone === "amber"  && "bg-amber-100 text-amber-700",
+                  t.tone === "blue"   && "bg-blue-100 text-blue-700",
+                  t.tone === "purple" && "bg-violet-100 text-violet-700",
+                  t.tone === "pink"   && "bg-pink-100 text-pink-700",
+                )}>{t.value}</span>
+                <ArrowRight className="w-4 h-4 text-muted-foreground opacity-0 group-hover:opacity-100 group-hover:translate-x-0.5 transition-all" />
+              </div>
+              <p className="text-sm font-semibold text-foreground mt-3 leading-tight">{t.label}</p>
+              <p className="text-xs text-muted-foreground mt-0.5">{t.hint}</p>
+            </button>
+          ))}
+        </div>
+      </section>
 
-        {/* Weekly trend */}
+      {/* Weekly trend */}
+      <section>
         <div className="relative rounded-sm bg-card border border-border shadow-[0_12px_36px_-22px_rgba(15,23,42,0.25)] overflow-hidden">
           <div className="absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r from-blue-500 via-emerald-500 to-violet-500" />
           <div className="p-5 pb-2 flex items-start justify-between flex-wrap gap-3">
@@ -5681,11 +5702,12 @@ export function MainDashboardView({ onNavigate }: { onNavigate?: (view: string) 
       {/* Quick actions */}
       <section>
         <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-[0.14em] mb-3">Jump back in</h3>
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-          <QuickActionTile icon={MessageSquareIcon} title="Compose Message" description="Reach contacts on any channel" gradient="from-blue-500 to-blue-600"     onClick={() => onNavigate?.("messages")} />
-          <QuickActionTile icon={Sparkles}          title="Run Auto-Match" description="Pair seekers with mentors"   gradient="from-violet-500 to-fuchsia-500" onClick={() => onNavigate?.("matches")} />
-          <QuickActionTile icon={BookOpen}          title="Generate Content" description="Let Claude draft a devotional" gradient="from-pink-500 to-rose-500"  onClick={() => onNavigate?.("content_library")} />
-          <QuickActionTile icon={Zap}               title="Build Automation" description="Welcome, drip, or flow"     gradient="from-amber-500 to-orange-500"   onClick={() => onNavigate?.("automations")} />
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
+          <QuickActionTile icon={UserPlus}          title="Add Contact"      description="Capture a new contact"       gradient="from-sky-500 to-cyan-500"       onClick={() => onNavigate?.("contacts")} />
+          <QuickActionTile icon={MessageSquareIcon} title="Compose Message"  description="Reach contacts on any channel" gradient="from-blue-500 to-blue-600"   onClick={() => onNavigate?.("messages")} />
+          <QuickActionTile icon={Sparkles}          title="Run Auto-Match"   description="Pair seekers with mentors"    gradient="from-violet-500 to-fuchsia-500" onClick={() => onNavigate?.("matches")} />
+          <QuickActionTile icon={BookOpen}          title="Generate Content" description="Let Claude draft a devotional" gradient="from-pink-500 to-rose-500"   onClick={() => onNavigate?.("content_library")} />
+          <QuickActionTile icon={Zap}               title="Build Automation" description="Welcome, drip, or flow"        gradient="from-amber-500 to-orange-500" onClick={() => onNavigate?.("automations")} />
         </div>
       </section>
 
@@ -5766,11 +5788,11 @@ export function MainDashboardView({ onNavigate }: { onNavigate?: (view: string) 
 // ===========================================================================
 
 const VITAL_DASH_STAGES = [
-  { letter: "V", label: "Volume",      value: 12450, color: "bg-blue-500",    text: "text-blue-600",    light: "bg-blue-50",    delta: "+8.2%",  blurb: "Touchpoints" },
-  { letter: "I", label: "Interaction", value: 3820,  color: "bg-violet-500",  text: "text-violet-600",  light: "bg-violet-50",  delta: "+5.4%",  blurb: "Engaged back" },
-  { letter: "T", label: "Transaction", value: 1247,  color: "bg-pink-500",    text: "text-pink-600",    light: "bg-pink-50",    delta: "+12.1%", blurb: "Started journey" },
-  { letter: "A", label: "Active",      value: 342,   color: "bg-amber-500",   text: "text-amber-600",   light: "bg-amber-50",   delta: "+18.0%", blurb: "Active journeys" },
-  { letter: "L", label: "Loyal",       value: 89,    color: "bg-emerald-500", text: "text-emerald-600", light: "bg-emerald-50", delta: "+22.0%", blurb: "Decision + connected" },
+  { letter: "V", label: "Volume",      value: 12450, color: "bg-blue-500",    text: "text-blue-600",    light: "bg-blue-50",    delta: "+8.2%",  blurb: "Touchpoints",         definition: "Volume is the total number of touchpoints — every person we've reached across any channel (Telegram, WhatsApp, SMS, Web). It's the top of the funnel." },
+  { letter: "I", label: "Interaction", value: 3820,  color: "bg-violet-500",  text: "text-violet-600",  light: "bg-violet-50",  delta: "+5.4%",  blurb: "Engaged back",        definition: "Interaction counts people who engaged back — replies, button taps, forms started. It's the first sign of genuine interest beyond passive reach." },
+  { letter: "T", label: "Transaction", value: 1247,  color: "bg-pink-500",    text: "text-pink-600",    light: "bg-pink-50",    delta: "+12.1%", blurb: "Started journey",     definition: "Transaction means a faith journey has started — intake completed, a match accepted, or a study begun. A real commitment to move forward." },
+  { letter: "A", label: "Active",      value: 342,   color: "bg-amber-500",   text: "text-amber-600",   light: "bg-amber-50",   delta: "+18.0%", blurb: "Active journeys",     definition: "Active seekers are currently on a journey — meeting with mentors, completing milestones, or actively discipled in the last 30 days." },
+  { letter: "L", label: "Loyal",       value: 89,    color: "bg-emerald-500", text: "text-emerald-600", light: "bg-emerald-50", delta: "+22.0%", blurb: "Decision + connected", definition: "Loyal disciples have made a decision and are connected to a local fellowship. This is the bottom of the funnel — the lasting outcome we pray for." },
 ];
 
 const VITAL_TREND = [
@@ -5783,6 +5805,7 @@ const VITAL_TREND = [
 
 export function VitalDashboardView({ onNavigate }: { onNavigate?: (view: string) => void }) {
   const [period, setPeriod] = useState("q1_2026");
+  const [openStage, setOpenStage] = useState<string | null>(null);
 
   const conversions = [
     { from: "V", to: "I", pct: 30.7, delta: "+1.4 pts", tone: "green" as const },
@@ -5837,24 +5860,55 @@ export function VitalDashboardView({ onNavigate }: { onNavigate?: (view: string)
 
       {/* 5-stage pulse — at-a-glance funnel */}
       <section className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
-        {VITAL_DASH_STAGES.map(s => (
-          <div key={s.letter} className="relative rounded-sm bg-card border border-border overflow-hidden shadow-[0_8px_30px_-18px_rgba(15,23,42,0.25)]">
-            <div className={cn("absolute top-0 left-0 right-0 h-0.5", s.color)} />
-            <div className="p-4">
-              <div className="flex items-center gap-2">
-                <span className={cn("w-7 h-7 rounded-sm flex items-center justify-center font-bold text-xs", s.color, "text-white")}>{s.letter}</span>
-                <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">{s.label}</span>
-              </div>
-              <div className="mt-3">
-                <div className="text-2xl font-bold text-foreground tabular-nums tracking-tight">{s.value.toLocaleString()}</div>
-                <div className="flex items-center gap-2 mt-0.5">
-                  <span className={cn("text-xs font-bold", s.text)}>↑ {s.delta}</span>
-                  <span className="text-xs text-muted-foreground">{s.blurb}</span>
+        {VITAL_DASH_STAGES.map(s => {
+          const isOpen = openStage === s.letter;
+          return (
+            <div key={s.letter} className="relative rounded-sm bg-card border border-border overflow-hidden shadow-[0_8px_30px_-18px_rgba(15,23,42,0.25)]">
+              <div className={cn("absolute top-0 left-0 right-0 h-0.5", s.color)} />
+
+              {/* Help toggle — low opacity question mark, top-right */}
+              <button
+                type="button"
+                onClick={() => setOpenStage(isOpen ? null : s.letter)}
+                aria-label={isOpen ? `Hide ${s.label} definition` : `What is ${s.label}?`}
+                aria-expanded={isOpen}
+                className={cn(
+                  "absolute top-2.5 right-2.5 z-10 w-5 h-5 rounded-sm flex items-center justify-center transition-opacity",
+                  isOpen ? "opacity-100 text-foreground bg-muted" : "opacity-30 hover:opacity-90 text-muted-foreground",
+                )}
+              >
+                {isOpen ? <X className="w-3 h-3" /> : <HelpCircle className="w-3.5 h-3.5" />}
+              </button>
+
+              <div className="p-4">
+                <div className="flex items-center gap-2">
+                  <span className={cn("w-7 h-7 rounded-sm flex items-center justify-center font-bold text-xs text-white", s.color)}>{s.letter}</span>
+                  <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">{s.label}</span>
+                </div>
+                <div className="mt-3">
+                  <div className="text-2xl font-bold text-foreground tabular-nums tracking-tight">{s.value.toLocaleString()}</div>
+                  <div className="flex items-center gap-2 mt-0.5">
+                    <span className={cn("text-xs font-bold", s.text)}>↑ {s.delta}</span>
+                    <span className="text-xs text-muted-foreground">{s.blurb}</span>
+                  </div>
                 </div>
               </div>
+
+              {/* Definition reveal */}
+              {isOpen && (
+                <div className={cn("absolute inset-0 z-20 flex flex-col p-4 backdrop-blur-[2px]", s.light)}>
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className={cn("w-7 h-7 rounded-sm flex items-center justify-center font-bold text-xs text-white", s.color)}>{s.letter}</span>
+                    <span className={cn("text-xs font-semibold uppercase tracking-wider", s.text)}>{s.label}</span>
+                  </div>
+                  <p className="text-[11px] leading-snug text-foreground/80">
+                    {s.definition}
+                  </p>
+                </div>
+              )}
             </div>
-          </div>
-        ))}
+          );
+        })}
       </section>
 
       {/* Conversion bridge + multi-line trend */}
