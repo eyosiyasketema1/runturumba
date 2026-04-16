@@ -34,6 +34,27 @@ const getAllTags = (contacts: Contact[]): string[] => {
   return Array.from(set).sort();
 };
 
+// Soft pastel palette for tag badges — each tag keeps a stable color.
+const TAG_PALETTE = [
+  "bg-violet-50 text-violet-700 ring-1 ring-inset ring-violet-200",
+  "bg-emerald-50 text-emerald-700 ring-1 ring-inset ring-emerald-200",
+  "bg-amber-50 text-amber-700 ring-1 ring-inset ring-amber-200",
+  "bg-pink-50 text-pink-700 ring-1 ring-inset ring-pink-200",
+  "bg-teal-50 text-teal-700 ring-1 ring-inset ring-teal-200",
+  "bg-sky-50 text-sky-700 ring-1 ring-inset ring-sky-200",
+  "bg-rose-50 text-rose-700 ring-1 ring-inset ring-rose-200",
+  "bg-orange-50 text-orange-700 ring-1 ring-inset ring-orange-200",
+] as const;
+
+function tagColor(tag: string): string {
+  let h = 0;
+  for (let i = 0; i < tag.length; i++) h = (h * 31 + tag.charCodeAt(i)) >>> 0;
+  return TAG_PALETTE[h % TAG_PALETTE.length];
+}
+
+const GROUP_BADGE_CLASS =
+  "bg-blue-50 text-blue-700 ring-1 ring-inset ring-blue-200";
+
 export const ContactsView = ({
   contacts,
   groups,
@@ -324,28 +345,49 @@ export const ContactsView = ({
                       {contact.phone}
                     </td>
                     <td className="px-4 py-3">
-                      <div className="flex flex-wrap gap-1.5">
-                        {(contact.groupIds || []).slice(0, 2).map(gid => {
-                          const g = groups.find(x => x.id === gid);
-                          if (!g) return null;
-                          return (
-                            <span key={gid} className="px-1.5 py-0.5 bg-blue-500/10 text-blue-700 text-[10px] font-bold rounded-sm uppercase tracking-wider">
-                              {g.name}
-                            </span>
-                          );
-                        })}
-                        {(contact.tags || []).slice(0, 2).map(tag => (
-                          <span key={tag} className="px-1.5 py-0.5 bg-muted text-muted-foreground text-[10px] font-bold rounded-sm uppercase tracking-wider">
-                            {tag}
-                          </span>
-                        ))}
-                        {(contact.groupIds?.length || 0) + (contact.tags?.length || 0) === 0 && (
-                          <span className="text-sm text-muted-foreground">—</span>
-                        )}
-                        {((contact.groupIds?.length || 0) + (contact.tags?.length || 0)) > 4 && (
-                          <span className="text-[10px] font-bold text-muted-foreground">+more</span>
-                        )}
-                      </div>
+                      {(() => {
+                        const groupItems = (contact.groupIds || [])
+                          .map(gid => groups.find(x => x.id === gid))
+                          .filter((g): g is Group => Boolean(g));
+                        const tagItems = contact.tags || [];
+                        const total = groupItems.length + tagItems.length;
+                        if (total === 0) {
+                          return <span className="text-sm text-muted-foreground">—</span>;
+                        }
+                        const visibleGroups = groupItems.slice(0, 2);
+                        const visibleTags = tagItems.slice(0, 3);
+                        const hidden = total - visibleGroups.length - visibleTags.length;
+                        return (
+                          <div className="flex flex-wrap items-center gap-1.5">
+                            {visibleGroups.map(g => (
+                              <span
+                                key={g.id}
+                                className={cn(
+                                  "inline-flex items-center gap-1 px-2 py-0.5 rounded-sm text-[11px] font-semibold",
+                                  GROUP_BADGE_CLASS,
+                                )}
+                              >
+                                <span className="w-1.5 h-1.5 rounded-full bg-blue-500" />
+                                {g.name}
+                              </span>
+                            ))}
+                            {visibleTags.map(tag => (
+                              <span
+                                key={tag}
+                                className={cn(
+                                  "inline-flex items-center px-2 py-0.5 rounded-sm text-[11px] font-medium",
+                                  tagColor(tag),
+                                )}
+                              >
+                                #{tag}
+                              </span>
+                            ))}
+                            {hidden > 0 && (
+                              <span className="text-[11px] font-semibold text-muted-foreground">+{hidden}</span>
+                            )}
+                          </div>
+                        );
+                      })()}
                     </td>
                     <td className="px-4 py-3 text-right">
                       <div className="inline-flex items-center gap-0.5">

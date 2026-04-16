@@ -367,24 +367,24 @@ export const INITIAL_USERS: User[] = [
 ];
 
 export const INITIAL_GROUPS: Group[] = [
-  { id: "group-1", name: "Premium", description: "High-value customers with recurring purchases", contactCount: 4, tenantId: "tenant-1", createdAt: "2025-02-01" },
-  { id: "group-2", name: "Leads", description: "Potential opportunities from marketing broadcasts", contactCount: 3, tenantId: "tenant-1", createdAt: "2025-02-02" },
-  { id: "group-3", name: "VIP Tier", description: "Highest priority customers requiring dedicated support", contactCount: 3, tenantId: "tenant-1", createdAt: "2025-02-05" },
-  { id: "group-4", name: "Newsletter Subscribers", description: "Monthly email and WhatsApp newsletter recipients", contactCount: 5, tenantId: "tenant-1", createdAt: "2025-02-08" },
-  { id: "group-5", name: "New Signups", description: "Recent registrations from this quarter", contactCount: 2, tenantId: "tenant-1", createdAt: "2025-02-10" },
+  { id: "group-1", name: "Seekers",         description: "New people exploring the Christian faith",         contactCount: 3, tenantId: "tenant-1", createdAt: "2025-12-01" },
+  { id: "group-2", name: "New Believers",   description: "Recently made a decision and started a journey",   contactCount: 3, tenantId: "tenant-1", createdAt: "2025-12-05" },
+  { id: "group-3", name: "Active Disciples", description: "Currently meeting with a mentor weekly",          contactCount: 3, tenantId: "tenant-1", createdAt: "2026-01-08" },
+  { id: "group-4", name: "Mentors Pool",    description: "Trained mentors available for matches",            contactCount: 2, tenantId: "tenant-1", createdAt: "2026-01-15" },
+  { id: "group-5", name: "Alumni",          description: "Completed a journey and connected to fellowship",  contactCount: 2, tenantId: "tenant-1", createdAt: "2026-02-01" },
 ];
 
 export const INITIAL_CONTACTS: Contact[] = [
-  { id: "contact-1",  name: "Eyosiyas Ketema", phone: "+251988683325", email: "eyosiyasketema@gmail.com", tags: [],              groupIds: [],                  tenantId: "tenant-1", createdAt: "2026-04-15T09:30:00Z" },
-  { id: "contact-2",  name: "Eyosiyas Ketema", phone: "+251988683325", email: "eyosiyasketema@gmail.com", tags: [],              groupIds: [],                  tenantId: "tenant-1", createdAt: "2026-04-14T09:30:00Z" },
-  { id: "contact-3",  name: "Eyosiyas Ketema", phone: "+251988683325", email: "eyosiyasketema@gmail.com", tags: [],              groupIds: [],                  tenantId: "tenant-1", createdAt: "2026-04-13T09:30:00Z" },
-  { id: "contact-4",  name: "Eyosiyas Ketema", phone: "+251988683325", email: "eyosiyasketema@gmail.com", tags: [],              groupIds: [],                  tenantId: "tenant-1", createdAt: "2026-04-12T09:30:00Z" },
-  { id: "contact-5",  name: "Eyosiyas Ketema", phone: "+251988683325", email: "eyosiyasketema@gmail.com", tags: [],              groupIds: [],                  tenantId: "tenant-1", createdAt: "2026-04-11T09:30:00Z" },
-  { id: "contact-6",  name: "Eyosiyas Ketema", phone: "+251988683325", email: "eyosiyasketema@gmail.com", tags: [],              groupIds: [],                  tenantId: "tenant-1", createdAt: "2026-04-10T09:30:00Z" },
-  { id: "contact-7",  name: "Eyosiyas Ketema", phone: "+251988683325", email: "eyosiyasketema@gmail.com", tags: [],              groupIds: [],                  tenantId: "tenant-1", createdAt: "2026-04-09T09:30:00Z" },
-  { id: "contact-8",  name: "Eyosiyas Ketema", phone: "+251988683325", email: "eyosiyasketema@gmail.com", tags: [],              groupIds: [],                  tenantId: "tenant-1", createdAt: "2026-04-08T09:30:00Z" },
-  { id: "contact-9",  name: "Eyosiyas Ketema", phone: "+251988683325", email: "eyosiyasketema@gmail.com", tags: [],              groupIds: [],                  tenantId: "tenant-1", createdAt: "2026-04-07T09:30:00Z" },
-  { id: "contact-10", name: "Eyosiyas Ketema", phone: "+251988683325", email: "eyosiyasketema@gmail.com", tags: [],              groupIds: [],                  tenantId: "tenant-1", createdAt: "2026-04-06T09:30:00Z" },
+  { id: "contact-1",  name: "Abel Tesfaye",        phone: "+251911234567", email: "abel.tesfaye@gmail.com",       tags: ["amharic", "telegram", "prayer-request"], groupIds: ["group-1"],                 tenantId: "tenant-1", createdAt: "2026-04-15T09:30:00Z" },
+  { id: "contact-2",  name: "Hanna Bekele",        phone: "+251922456780", email: "hanna.bekele@outlook.com",     tags: ["amharic", "whatsapp", "baptized"],       groupIds: ["group-2", "group-3"],      tenantId: "tenant-1", createdAt: "2026-04-14T14:05:00Z" },
+  { id: "contact-3",  name: "Mikias Alemu",        phone: "+251933789012", email: "mikias.alemu@yahoo.com",       tags: ["oromo", "telegram", "new-believer"],     groupIds: ["group-2"],                 tenantId: "tenant-1", createdAt: "2026-04-13T11:12:00Z" },
+  { id: "contact-4",  name: "Yordanos Girma",      phone: "+251944321098", email: "yordanos.girma@gmail.com",     tags: ["english", "whatsapp", "follow-up"],      groupIds: ["group-1", "group-5"],      tenantId: "tenant-1", createdAt: "2026-04-12T08:47:00Z" },
+  { id: "contact-5",  name: "Daniel Haile",        phone: "+251955876543", email: "daniel.haile@proton.me",       tags: ["amharic", "sms", "catechumen"],          groupIds: ["group-3"],                 tenantId: "tenant-1", createdAt: "2026-04-11T17:22:00Z" },
+  { id: "contact-6",  name: "Meron Abebe",         phone: "+251966543210", email: "meron.abebe@gmail.com",        tags: ["amharic", "telegram", "prayer-request"], groupIds: ["group-1", "group-2"],      tenantId: "tenant-1", createdAt: "2026-04-10T13:58:00Z" },
+  { id: "contact-7",  name: "Samuel Tadesse",      phone: "+251977109876", email: "samuel.tadesse@gmail.com",     tags: ["english", "whatsapp", "baptized"],       groupIds: ["group-4"],                 tenantId: "tenant-1", createdAt: "2026-04-09T10:15:00Z" },
+  { id: "contact-8",  name: "Bethlehem Yohannes",  phone: "+251988234501", email: "beti.yohannes@outlook.com",    tags: ["amharic", "whatsapp"],                   groupIds: ["group-3", "group-5"],      tenantId: "tenant-1", createdAt: "2026-04-08T16:40:00Z" },
+  { id: "contact-9",  name: "Robel Desta",         phone: "+251999456781", email: "robel.desta@gmail.com",        tags: ["oromo", "telegram", "follow-up"],        groupIds: ["group-3"],                 tenantId: "tenant-1", createdAt: "2026-04-07T09:03:00Z" },
+  { id: "contact-10", name: "Selamawit Kebede",    phone: "+251911678923", email: "selam.kebede@gmail.com",       tags: ["amharic", "whatsapp", "baptized"],       groupIds: ["group-4"],                 tenantId: "tenant-1", createdAt: "2026-04-06T12:27:00Z" },
 ];
 
 export const INITIAL_MESSAGES: Message[] = [
