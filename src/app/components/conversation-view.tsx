@@ -6,7 +6,7 @@ import {
   Clock, Tag, MoreHorizontal, Paperclip, Smile, Lock,
   ChevronDown, ArrowUp, Filter, Circle, Plus, Calendar,
   FileText, BookOpen, Sparkles, RefreshCw, ChevronRight, AlertCircle,
-  Zap, ListOrdered, Library,
+  Zap, ListOrdered, Library, Hand, Timer,
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { toast } from "sonner";
@@ -178,6 +178,48 @@ const COMMON_LABELS = ["Support", "Sales", "Billing", "Technical", "VIP", "Feedb
 const COMMON_EMOJIS = ["😊","👍","🙏","❤️","😅","🎉","🤔","😢","✅","🚀","💡","⚠️","🔥","📞","📧","✨","💬","🎯","👋","🙌"];
 const DEFAULT_META: ConvMeta = { status: "open", priority: "normal", assigneeId: null, labels: [], unreadCount: 0 };
 
+// ─── Grab Conversation — 10-minute window ────────────────────────────────────
+const GRAB_WINDOW_MS = 10 * 60 * 1000; // 10 minutes
+
+/** Hook that ticks every second and returns remaining seconds until deadline. Returns 0 when expired. */
+function useCountdown(deadline: number | null) {
+  const [remaining, setRemaining] = useState(() => {
+    if (!deadline) return 0;
+    return Math.max(0, Math.ceil((deadline - Date.now()) / 1000));
+  });
+  useEffect(() => {
+    if (!deadline) { setRemaining(0); return; }
+    const tick = () => setRemaining(Math.max(0, Math.ceil((deadline - Date.now()) / 1000)));
+    tick();
+    const id = setInterval(tick, 1000);
+    return () => clearInterval(id);
+  }, [deadline]);
+  return remaining;
+}
+
+function formatCountdown(secs: number) {
+  const m = Math.floor(secs / 60);
+  const s = secs % 60;
+  return `${m}:${s.toString().padStart(2, "0")}`;
+}
+
+/** Small grab countdown badge used in the inbox list & banner */
+function GrabCountdownBadge({ deadline }: { deadline: number }) {
+  const remaining = useCountdown(deadline);
+  if (remaining <= 0) return null;
+  const pct = remaining / (GRAB_WINDOW_MS / 1000);
+  const isUrgent = remaining <= 120; // last 2 min
+  return (
+    <span className={cn(
+      "inline-flex items-center gap-1 text-xs font-bold tabular-nums px-1.5 py-0.5 rounded-sm",
+      isUrgent ? "bg-red-500/10 text-red-600" : "bg-amber-500/10 text-amber-600"
+    )}>
+      <Timer className="w-3 h-3" />
+      {formatCountdown(remaining)}
+    </span>
+  );
+}
+
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 const getPresence = (userId: string): "online" | "away" | "offline" =>
@@ -272,7 +314,7 @@ function ThreadMessage({ entry }: { entry: ThreadEntry }) {
 // ─── InboxListItem ────────────────────────────────────────────────────────────
 
 const InboxListItem = React.memo(function InboxListItem({
-  contact, lastMsg, meta, isActive, onClick, users,
+  contact, lastMsg, meta, isActive, onClick, users, grabDeadline, onGrab,
 }: {
   contact:  Contact;
   lastMsg:  Message | undefined;
@@ -280,10 +322,13 @@ const InboxListItem = React.memo(function InboxListItem({
   isActive: boolean;
   onClick:  () => void;
   users:    User[];
+  grabDeadline?: number | null;
+  onGrab?:  (contactId: string) => void;
 }) {
   const assignee    = users.find(u => u.id === meta.assigneeId);
   const priorityOpt = PRIORITY_OPTIONS.find(p => p.id === meta.priority)!;
   const statusOpt   = STATUS_OPTIONS.find(s => s.id === meta.status)!;
+  const isGrabbable = !!grabDeadline && grabDeadline > Date.now() && !meta.assigneeId;
 
   return (
     <button onClick={onClick}
@@ -291,20 +336,29 @@ const InboxListItem = React.memo(function InboxListItem({
         "w-full flex items-start gap-3.5 px-4 py-4 text-left border-b border-border/50 transition-all border-l-[3px]",
         isActive
           ? "bg-primary/5 border-l-primary"
-          : cn("hover:bg-muted/40", PRIORITY_BORDER[meta.priority])
+          : isGrabbable
+            ? "bg-amber-50/60 border-l-amber-400 hover:bg-amber-50"
+            : cn("hover:bg-muted/40", PRIORITY_BORDER[meta.priority])
       )}
     >
       {/* Avatar with assignee overlay */}
       <div className="relative shrink-0">
         <div className={cn(
           "w-10 h-10 rounded-full flex items-center justify-center border text-sm font-bold shadow-sm",
-          isActive ? "bg-primary text-primary-foreground border-primary" : "bg-muted text-muted-foreground border-border"
+          isActive ? "bg-primary text-primary-foreground border-primary"
+            : isGrabbable ? "bg-amber-100 text-amber-700 border-amber-300"
+            : "bg-muted text-muted-foreground border-border"
         )}>
           {contact.name.charAt(0)}
         </div>
         {assignee && (
           <div className="absolute -bottom-1 -right-1 w-4 h-4 rounded-full bg-violet-500 flex items-center justify-center text-[8px] font-bold text-white border-2 border-background">
             {assignee.name.charAt(0)}
+          </div>
+        )}
+        {isGrabbable && !assignee && (
+          <div className="absolute -bottom-1 -right-1 w-4 h-4 rounded-full bg-amber-500 flex items-center justify-center border-2 border-background">
+            <Hand className="w-2.5 h-2.5 text-white" />
           </div>
         )}
       </div>
@@ -316,6 +370,7 @@ const InboxListItem = React.memo(function InboxListItem({
             {contact.name}
           </span>
           <div className="flex items-center gap-1.5 shrink-0">
+            {isGrabbable && <GrabCountdownBadge deadline={grabDeadline!} />}
             {lastMsg && (
               <span className="text-xs font-semibold text-muted-foreground">
                 {formatTimeAgo(lastMsg.createdAt)}
@@ -341,7 +396,7 @@ const InboxListItem = React.memo(function InboxListItem({
           {lastMsg?.content ?? "No messages yet"}
         </p>
 
-        {/* Row 4: status + priority */}
+        {/* Row 4: status + priority + grab button */}
         <div className="flex items-center gap-1.5 mt-2 flex-wrap">
           <span className={cn("text-xs font-bold px-2 py-0.5 border", statusOpt.cls)}>
             {statusOpt.label}
@@ -350,6 +405,16 @@ const InboxListItem = React.memo(function InboxListItem({
             <span className={cn("flex items-center gap-1 text-xs font-bold uppercase", priorityOpt.text)}>
               <span className={cn("w-1.5 h-1.5 rounded-full", priorityOpt.dot)} />
               {priorityOpt.label}
+            </span>
+          )}
+          {isGrabbable && onGrab && (
+            <span
+              role="button"
+              onClick={e => { e.stopPropagation(); onGrab(contact.id); }}
+              className="ml-auto inline-flex items-center gap-1 text-xs font-bold px-2.5 py-1 bg-amber-500 text-white hover:bg-amber-600 transition-colors rounded-sm cursor-pointer shadow-sm"
+            >
+              <Hand className="w-3 h-3" />
+              Grab
             </span>
           )}
         </div>
@@ -1797,6 +1862,57 @@ export const ConversationView = ({
   const [shownTyping, setShownTyping]     = useState<Set<string>>(new Set());
   const chatBottomRef = useRef<HTMLDivElement>(null);
 
+  // ── Grab Conversation state ────────────────────────────────────────────
+  // Maps contactId → deadline timestamp (Date.now() + GRAB_WINDOW_MS)
+  const [grabDeadlines, setGrabDeadlines] = useState<Record<string, number>>(() => {
+    // Seed: mark all currently unassigned "open" conversations as grabbable
+    const now = Date.now();
+    const seeds: Record<string, number> = {};
+    // Simulate: first 3 contacts with messages that have no assignee get a grab window
+    const withMsg = new Set(messages.map(m => m.contactId));
+    contacts.filter(c => withMsg.has(c.id)).slice(0, 3).forEach((c, i) => {
+      // Stagger: first arrived 8 min ago, second 5 min ago, third just now
+      const offsets = [8 * 60 * 1000, 5 * 60 * 1000, 30 * 1000];
+      seeds[c.id] = now + GRAB_WINDOW_MS - (offsets[i] ?? 0);
+    });
+    return seeds;
+  });
+
+  const grabConversation = useCallback((contactId: string) => {
+    // Assign to current user
+    updateMeta(contactId, { assigneeId: currentUser.id, status: "assigned" });
+    addLocalItem({ contactId, type: "system", content: `${currentUser.name} grabbed this conversation` });
+    // Remove from grab deadlines
+    setGrabDeadlines(prev => { const n = { ...prev }; delete n[contactId]; return n; });
+    toast.success("Conversation grabbed!");
+  }, [currentUser, updateMeta, addLocalItem]);
+
+  // Auto-assign expired grab windows to a random active mentor
+  useEffect(() => {
+    const id = setInterval(() => {
+      const now = Date.now();
+      setGrabDeadlines(prev => {
+        const updated = { ...prev };
+        let changed = false;
+        for (const [contactId, deadline] of Object.entries(updated)) {
+          if (deadline <= now && !convMeta[contactId]?.assigneeId) {
+            // Auto-assign to a random active user (AI picks a mentor)
+            const activeUsers = users.filter(u => u.status === "active");
+            if (activeUsers.length > 0) {
+              const mentor = activeUsers[Math.floor(Math.random() * activeUsers.length)];
+              updateMeta(contactId, { assigneeId: mentor.id, status: "assigned" });
+              addLocalItem({ contactId, type: "system", content: `AI auto-assigned to ${mentor.name} (grab window expired)` });
+            }
+            delete updated[contactId];
+            changed = true;
+          }
+        }
+        return changed ? updated : prev;
+      });
+    }, 1000);
+    return () => clearInterval(id);
+  }, [convMeta, users, updateMeta, addLocalItem]);
+
   // ── Helpers ────────────────────────────────────────────────────────────
   const getMeta = useCallback((id: string): ConvMeta => convMeta[id] ?? DEFAULT_META, [convMeta]);
 
@@ -2057,6 +2173,8 @@ export const ConversationView = ({
                 return (
                   <InboxListItem key={c.id} contact={c} lastMsg={lastMsg} meta={getMeta(c.id)}
                     isActive={selectedId === c.id} users={users}
+                    grabDeadline={grabDeadlines[c.id] ?? null}
+                    onGrab={grabConversation}
                     onClick={() => { setSelectedId(c.id); }}
                   />
                 );
@@ -2087,6 +2205,31 @@ export const ConversationView = ({
                     isAgent={isAgent}
                   />
                 </div>
+
+                {/* Grab conversation banner */}
+                {selectedId && grabDeadlines[selectedId] && !selectedMeta.assigneeId && grabDeadlines[selectedId] > Date.now() && (
+                  <div className="shrink-0 bg-amber-50 border-b border-amber-200 px-5 py-3 flex items-center justify-between gap-3 animate-in slide-in-from-top-2 duration-300">
+                    <div className="flex items-center gap-3 min-w-0">
+                      <div className="w-8 h-8 rounded-sm bg-amber-500 flex items-center justify-center shrink-0 shadow-sm">
+                        <Hand className="w-4 h-4 text-white" />
+                      </div>
+                      <div className="min-w-0">
+                        <p className="text-sm font-bold text-amber-900">This conversation is unassigned</p>
+                        <p className="text-xs text-amber-700/80">Grab it before AI auto-assigns to a mentor</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-3 shrink-0">
+                      <GrabCountdownBadge deadline={grabDeadlines[selectedId]} />
+                      <button
+                        onClick={() => grabConversation(selectedId)}
+                        className="inline-flex items-center gap-1.5 px-4 py-2 bg-amber-500 text-white text-sm font-bold hover:bg-amber-600 transition-colors rounded-sm shadow-sm"
+                      >
+                        <Hand className="w-3.5 h-3.5" />
+                        Grab Conversation
+                      </button>
+                    </div>
+                  </div>
+                )}
 
                 {/* Thread */}
                 <div className="flex-1 overflow-y-auto py-4 space-y-1 custom-scrollbar bg-muted/5">
