@@ -5899,7 +5899,7 @@ export function MainDashboardView({ onNavigate, stats }: {
             <button
               key={i}
               onClick={() => onNavigate?.(t.action)}
-              className="relative overflow-hidden rounded-sm border border-border bg-card p-4 text-left transition-all group hover:border-primary/40 hover:-translate-y-0.5 hover:shadow-[0_16px_36px_-22px_rgba(15,23,42,0.35)]"
+              className="relative overflow-hidden rounded-sm border border-slate-200 bg-white p-4 text-left transition-all group hover:border-slate-300 hover:-translate-y-0.5 hover:shadow-[0_16px_36px_-22px_rgba(15,23,42,0.35)]"
             >
               <div className="flex items-start justify-between gap-2">
                 <span className={cn(
