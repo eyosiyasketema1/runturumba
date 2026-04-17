@@ -2717,134 +2717,145 @@ function ManualMatchDialog({
   const canCreate = !!seekerId && !!mentorId;
 
   return (
-    <Modal isOpen={isOpen} onClose={handleClose} title="Manual Match" size="lg">
+    <Modal isOpen={isOpen} onClose={handleClose} title="Manual Match" size="xl">
       <div className="space-y-5">
-        {/* Seeker selection */}
-        <div>
-          <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-2 block">Select Seeker</label>
-          <input
-            type="text"
-            placeholder="Search seekers..."
-            value={seekerSearch}
-            onChange={e => setSeekerSearch(e.target.value)}
-            className="w-full px-3 py-2 border border-input text-sm bg-background focus:ring-1 focus:ring-ring outline-none mb-2"
-          />
-          <div className="max-h-[140px] overflow-y-auto border border-border rounded-sm">
-            {seekerList.length === 0 ? (
-              <p className="text-xs text-muted-foreground p-3 text-center">No seekers found</p>
-            ) : seekerList.map(c => (
-              <button
-                key={c.id}
-                onClick={() => setSeekerId(c.id)}
-                className={cn(
-                  "w-full flex items-center gap-2.5 px-3 py-2 text-left text-sm transition-colors border-b border-border/50 last:border-0",
-                  seekerId === c.id ? "bg-primary/10 text-primary font-bold" : "hover:bg-muted/40"
-                )}
-              >
-                <div className={cn(
-                  "w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold shrink-0",
-                  seekerId === c.id ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"
-                )}>{c.name.charAt(0)}</div>
-                <div className="min-w-0">
-                  <p className="font-semibold truncate">{c.name}</p>
-                  <p className="text-xs text-muted-foreground">{c.phone || c.email || "No contact info"}</p>
-                </div>
-                {seekerId === c.id && <CheckCircle2 className="w-4 h-4 text-primary ml-auto shrink-0" />}
-              </button>
-            ))}
+        {/* Side-by-side: Seeker | Match with | Mentor */}
+        <div className="grid grid-cols-[1fr,auto,1fr] gap-0 items-stretch">
+          {/* Left — Select Seeker */}
+          <div className="pr-4">
+            <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-2 block">Select Seeker</label>
+            <input
+              type="text"
+              placeholder="Search seekers..."
+              value={seekerSearch}
+              onChange={e => setSeekerSearch(e.target.value)}
+              className="w-full px-3 py-2 border border-input text-sm bg-background focus:ring-1 focus:ring-ring outline-none mb-2"
+            />
+            <div className="max-h-[220px] overflow-y-auto border border-border rounded-sm">
+              {seekerList.length === 0 ? (
+                <p className="text-xs text-muted-foreground p-3 text-center">No seekers found</p>
+              ) : seekerList.map(c => (
+                <button
+                  key={c.id}
+                  onClick={() => setSeekerId(c.id)}
+                  className={cn(
+                    "w-full flex items-center gap-2.5 px-3 py-2 text-left text-sm transition-colors border-b border-border/50 last:border-0",
+                    seekerId === c.id ? "bg-primary/10 text-primary font-bold" : "hover:bg-muted/40"
+                  )}
+                >
+                  <div className={cn(
+                    "w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold shrink-0",
+                    seekerId === c.id ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"
+                  )}>{c.name.charAt(0)}</div>
+                  <div className="min-w-0">
+                    <p className="font-semibold truncate">{c.name}</p>
+                    <p className="text-xs text-muted-foreground">{c.phone || c.email || "No contact info"}</p>
+                  </div>
+                  {seekerId === c.id && <CheckCircle2 className="w-4 h-4 text-primary ml-auto shrink-0" />}
+                </button>
+              ))}
+            </div>
           </div>
-        </div>
 
-        {/* Mentor selection */}
-        <div>
-          <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-2 block">Select Mentor</label>
-          <input
-            type="text"
-            placeholder="Search mentors..."
-            value={mentorSearch}
-            onChange={e => setMentorSearch(e.target.value)}
-            className="w-full px-3 py-2 border border-input text-sm bg-background focus:ring-1 focus:ring-ring outline-none mb-2"
-          />
-          <div className="max-h-[140px] overflow-y-auto border border-border rounded-sm">
-            {mentorList.length === 0 ? (
-              <p className="text-xs text-muted-foreground p-3 text-center">No mentors found</p>
-            ) : mentorList.map(u => (
-              <button
-                key={u.id}
-                onClick={() => setMentorId(u.id)}
-                className={cn(
-                  "w-full flex items-center gap-2.5 px-3 py-2 text-left text-sm transition-colors border-b border-border/50 last:border-0",
-                  mentorId === u.id ? "bg-violet-500/10 text-violet-700 font-bold" : "hover:bg-muted/40"
-                )}
-              >
-                <div className={cn(
-                  "w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold shrink-0",
-                  mentorId === u.id ? "bg-violet-500 text-white" : "bg-muted text-muted-foreground"
-                )}>{u.name.charAt(0)}</div>
-                <div className="min-w-0">
-                  <p className="font-semibold truncate">{u.name}</p>
-                  <p className="text-xs text-muted-foreground">{u.role}</p>
-                </div>
-                {mentorId === u.id && <CheckCircle2 className="w-4 h-4 text-violet-600 ml-auto shrink-0" />}
-              </button>
-            ))}
+          {/* Center divider — "Match with" */}
+          <div className="flex flex-col items-center justify-center px-4 border-l border-r border-border">
+            <div className="w-10 h-10 rounded-full bg-violet-100 flex items-center justify-center mb-2">
+              <ArrowRight className="w-5 h-5 text-violet-600" />
+            </div>
+            <span className="text-xs font-bold text-violet-600 uppercase tracking-wider whitespace-nowrap">Match with</span>
+          </div>
+
+          {/* Right — Select Mentor */}
+          <div className="pl-4">
+            <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-2 block">Select Mentor</label>
+            <input
+              type="text"
+              placeholder="Search mentors..."
+              value={mentorSearch}
+              onChange={e => setMentorSearch(e.target.value)}
+              className="w-full px-3 py-2 border border-input text-sm bg-background focus:ring-1 focus:ring-ring outline-none mb-2"
+            />
+            <div className="max-h-[220px] overflow-y-auto border border-border rounded-sm">
+              {mentorList.length === 0 ? (
+                <p className="text-xs text-muted-foreground p-3 text-center">No mentors found</p>
+              ) : mentorList.map(u => (
+                <button
+                  key={u.id}
+                  onClick={() => setMentorId(u.id)}
+                  className={cn(
+                    "w-full flex items-center gap-2.5 px-3 py-2 text-left text-sm transition-colors border-b border-border/50 last:border-0",
+                    mentorId === u.id ? "bg-violet-500/10 text-violet-700 font-bold" : "hover:bg-muted/40"
+                  )}
+                >
+                  <div className={cn(
+                    "w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold shrink-0",
+                    mentorId === u.id ? "bg-violet-500 text-white" : "bg-muted text-muted-foreground"
+                  )}>{u.name.charAt(0)}</div>
+                  <div className="min-w-0">
+                    <p className="font-semibold truncate">{u.name}</p>
+                    <p className="text-xs text-muted-foreground">{u.role}</p>
+                  </div>
+                  {mentorId === u.id && <CheckCircle2 className="w-4 h-4 text-violet-600 ml-auto shrink-0" />}
+                </button>
+              ))}
+            </div>
           </div>
         </div>
 
         {/* Preview pair */}
         {seekerId && mentorId && (
-          <div className="flex items-center gap-3 p-3 bg-emerald-50/50 border border-emerald-200 rounded-sm">
+          <div className="flex items-center justify-center gap-3 p-3 bg-emerald-50/50 border border-emerald-200 rounded-sm">
             <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-xs font-bold text-primary-foreground">{seekerName.charAt(0)}</div>
             <div className="text-sm font-bold text-foreground">{seekerName}</div>
-            <ArrowRight className="w-4 h-4 text-emerald-600 shrink-0" />
+            <span className="text-xs font-bold text-emerald-600 uppercase px-2">matched with</span>
             <div className="w-8 h-8 rounded-full bg-violet-500 flex items-center justify-center text-xs font-bold text-white">{mentorName.charAt(0)}</div>
             <div className="text-sm font-bold text-foreground">{mentorName}</div>
           </div>
         )}
 
-        {/* Match factors */}
-        <div>
-          <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-2 block">Match Factors (optional)</label>
-          <div className="flex flex-wrap gap-1.5">
-            {MANUAL_MATCH_FACTORS.map(f => (
-              <button
-                key={f}
-                onClick={() => setSelectedFactors(prev => {
-                  const n = new Set(prev);
-                  n.has(f) ? n.delete(f) : n.add(f);
-                  return n;
-                })}
-                className={cn(
-                  "px-2.5 py-1 text-xs font-semibold border rounded-sm transition-colors",
-                  selectedFactors.has(f)
-                    ? "bg-primary/10 text-primary border-primary/30"
-                    : "bg-muted/30 text-muted-foreground border-border hover:border-primary/40"
-                )}
-              >{f}</button>
-            ))}
+        {/* Match factors + Score — side by side */}
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-2 block">Match Factors (optional)</label>
+            <div className="flex flex-wrap gap-1.5">
+              {MANUAL_MATCH_FACTORS.map(f => (
+                <button
+                  key={f}
+                  onClick={() => setSelectedFactors(prev => {
+                    const n = new Set(prev);
+                    n.has(f) ? n.delete(f) : n.add(f);
+                    return n;
+                  })}
+                  className={cn(
+                    "px-2.5 py-1 text-xs font-semibold border rounded-sm transition-colors",
+                    selectedFactors.has(f)
+                      ? "bg-primary/10 text-primary border-primary/30"
+                      : "bg-muted/30 text-muted-foreground border-border hover:border-primary/40"
+                  )}
+                >{f}</button>
+              ))}
+            </div>
           </div>
-        </div>
-
-        {/* Confidence score */}
-        <div>
-          <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-2 block">
-            Confidence Score: <span className={cn(
-              "tabular-nums",
-              score >= 80 ? "text-emerald-600" : score >= 60 ? "text-amber-600" : "text-rose-600"
-            )}>{score}/100</span>
-          </label>
-          <input
-            type="range" min={30} max={100} value={score}
-            onChange={e => setScore(Number(e.target.value))}
-            className="w-full accent-primary"
-          />
+          <div>
+            <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-2 block">
+              Confidence Score: <span className={cn(
+                "tabular-nums",
+                score >= 80 ? "text-emerald-600" : score >= 60 ? "text-amber-600" : "text-rose-600"
+              )}>{score}/100</span>
+            </label>
+            <input
+              type="range" min={30} max={100} value={score}
+              onChange={e => setScore(Number(e.target.value))}
+              className="w-full accent-primary"
+            />
+          </div>
         </div>
 
         {/* Reasoning */}
         <div>
           <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-2 block">Reasoning (optional)</label>
           <textarea
-            rows={3}
+            rows={2}
             placeholder="Why is this a good match? e.g. Same language, similar interests, compatible schedules..."
             value={reasoning}
             onChange={e => setReasoning(e.target.value)}
