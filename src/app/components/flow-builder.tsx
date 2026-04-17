@@ -10,7 +10,7 @@ import {
   ArrowLeft, Zap, Send, Clock, GitBranch, List, Sparkles, Bell,
   Plus, Save, Flag, CheckCircle2, Webhook, Copy, Trash2, AlertCircle,
   ChevronDown, ChevronRight, Globe, LayoutTemplate, BookOpen, Heart,
-  Users, GraduationCap, Church
+  Users, GraduationCap, Church, Search, X
 } from "lucide-react";
 import {
   cn, type Webhook as WebhookType, formatTimeAgo, copyToClipboard
@@ -169,12 +169,15 @@ const nodeTypes = Object.fromEntries(NODE_TYPES.map(n => [n.id, FlowNode]));
 // these pre-built templates from the Templates section in the palette.
 // ---------------------------------------------------------------------------
 
+type TemplateCategory = "Onboarding" | "Discipleship" | "Community" | "Outreach" | "Follow-up" | "Events";
+
 type JourneyTemplate = {
   id: string;
   name: string;
   description: string;
   icon: any;
   tint: string;          // tailwind bg/text combo for the card
+  category: TemplateCategory;
   nodeCount: number;
   nodes: Node[];
   edges: Edge[];
@@ -195,6 +198,7 @@ const JOURNEY_TEMPLATES: JourneyTemplate[] = [
     description: "Welcome journey with devotional, engagement check, and AI-personalized follow-up.",
     icon: BookOpen,
     tint: "bg-indigo-50 text-indigo-700 border-indigo-200",
+    category: "Onboarding",
     nodeCount: 11,
     nodes: [
       { id: "trigger",     type: "trigger",        position: { x: 320, y: 20  }, data: { type: "trigger",        title: "Trigger: Intake Complete", body: "When a seeker completes the intake form.\nChannel: All channels" } },
@@ -230,6 +234,7 @@ const JOURNEY_TEMPLATES: JourneyTemplate[] = [
     description: "4-week guided path to baptism with weekly lessons, mentor check-ins, and key milestone tracking.",
     icon: Church,
     tint: "bg-violet-50 text-violet-700 border-violet-200",
+    category: "Discipleship",
     nodeCount: 10,
     nodes: [
       { id: "trigger",   type: "trigger",        position: { x: 300, y: 20  }, data: { type: "trigger",        title: "Trigger: Baptism Interest", body: "When a seeker indicates interest in baptism via form or mentor note." } },
@@ -257,6 +262,7 @@ const JOURNEY_TEMPLATES: JourneyTemplate[] = [
     description: "Pair seekers with prayer partners, check in weekly, and track engagement milestones.",
     icon: Heart,
     tint: "bg-rose-50 text-rose-700 border-rose-200",
+    category: "Community",
     nodeCount: 8,
     nodes: [
       { id: "trigger",   type: "trigger",       position: { x: 300, y: 20  }, data: { type: "trigger",       title: "Trigger: Partner Request", body: "When a seeker requests a prayer partner through the app." } },
@@ -284,6 +290,7 @@ const JOURNEY_TEMPLATES: JourneyTemplate[] = [
     description: "Onboard seekers into a small group with welcome, intro session, weekly content, and graduation.",
     icon: Users,
     tint: "bg-emerald-50 text-emerald-700 border-emerald-200",
+    category: "Community",
     nodeCount: 9,
     nodes: [
       { id: "trigger",   type: "trigger",       position: { x: 300, y: 20  }, data: { type: "trigger",       title: "Trigger: Group Signup", body: "When a seeker signs up for a small group via form or invite link." } },
@@ -313,6 +320,7 @@ const JOURNEY_TEMPLATES: JourneyTemplate[] = [
     description: "6-week guided Bible study with daily readings, quizzes, and progressive milestones.",
     icon: GraduationCap,
     tint: "bg-amber-50 text-amber-700 border-amber-200",
+    category: "Discipleship",
     nodeCount: 9,
     nodes: [
       { id: "trigger",  type: "trigger",       position: { x: 300, y: 20  }, data: { type: "trigger",       title: "Trigger: Study Enrollment", body: "When a seeker enrolls in a Bible study series." } },
@@ -339,6 +347,7 @@ const JOURNEY_TEMPLATES: JourneyTemplate[] = [
     description: "Win back inactive seekers with personalized outreach, escalating nudges, and mentor alerts.",
     icon: Bell,
     tint: "bg-sky-50 text-sky-700 border-sky-200",
+    category: "Follow-up",
     nodeCount: 9,
     nodes: [
       { id: "trigger",   type: "trigger",       position: { x: 300, y: 20  }, data: { type: "trigger",       title: "Trigger: 14 Days Inactive", body: "When a seeker has had no engagement for 14 consecutive days." } },
@@ -361,6 +370,99 @@ const JOURNEY_TEMPLATES: JourneyTemplate[] = [
       EDGE("r9","cond2","mentor",   "no", "AT RISK",   "#f43f5e"),
     ],
   },
+
+  // ── Quick-start templates (lightweight, 3–5 nodes) ─────────────────────
+  // These provide a fast starting point for common scenarios.
+
+  { id: "welcome-message",    name: "Welcome Message",           description: "Simple welcome flow — greet new contacts and assign a tag.",                            icon: Send,          tint: "bg-blue-50 text-blue-700 border-blue-200",       category: "Onboarding",    nodeCount: 3, nodes: [
+    { id: "t", type: "trigger", position:{x:300,y:20}, data:{type:"trigger",title:"Trigger: New Contact",body:"When a new contact is added to the system."} },
+    { id: "m", type: "send_message", position:{x:300,y:200}, data:{type:"send_message",title:"Welcome Message",body:"\"Hi! Welcome to our community. We're glad you're here.\""} },
+    { id: "a", type: "action", position:{x:300,y:380}, data:{type:"action",title:"Tag: welcomed",body:"Apply 'welcomed' tag to the contact."} },
+  ], edges: [EDGE("w1","t","m"), EDGE("w2","m","a")] },
+
+  { id: "mentor-intro",       name: "Mentor Introduction",       description: "Introduce a newly matched mentor to their seeker with context.",                       icon: Users,         tint: "bg-teal-50 text-teal-700 border-teal-200",       category: "Onboarding",    nodeCount: 4, nodes: [
+    { id: "t", type: "trigger", position:{x:300,y:20}, data:{type:"trigger",title:"Trigger: Mentor Matched",body:"When a mentor is assigned to a seeker."} },
+    { id: "ai", type: "ai_personalize", position:{x:300,y:200}, data:{type:"ai_personalize",title:"AI Craft Introduction",body:"Claude writes a warm introduction using seeker interests, language, and background."} },
+    { id: "m", type: "send_message", position:{x:300,y:400}, data:{type:"send_message",title:"Send to Both",body:"Send the personalized intro to both mentor and seeker."} },
+    { id: "ms", type: "milestone", position:{x:300,y:580}, data:{type:"milestone",title:"Milestone: First Contact",body:"Mark that the mentor and seeker have been introduced."} },
+  ], edges: [EDGE("mi1","t","ai"), EDGE("mi2","ai","m"), EDGE("mi3","m","ms")] },
+
+  { id: "testimony-collection", name: "Testimony Collection",    description: "Invite seekers to share their testimony after a key milestone.",                       icon: BookOpen,      tint: "bg-amber-50 text-amber-700 border-amber-200",    category: "Discipleship",  nodeCount: 4, nodes: [
+    { id: "t", type: "trigger", position:{x:300,y:20}, data:{type:"trigger",title:"Trigger: Milestone Reached",body:"When seeker completes baptism or salvation milestone."} },
+    { id: "w", type: "wait", position:{x:300,y:200}, data:{type:"wait",title:"Wait 3 days",body:"Give them time to reflect."} },
+    { id: "m", type: "send_message", position:{x:300,y:380}, data:{type:"send_message",title:"Share Your Story",body:"\"We'd love to hear your testimony! Would you like to share what God has done in your life?\""} },
+    { id: "km", type: "key_milestone", position:{x:300,y:560}, data:{type:"key_milestone",title:"Key Milestone: Testimony Shared",body:"Seeker shared their testimony — celebrate and archive it."} },
+  ], edges: [EDGE("tc1","t","w"), EDGE("tc2","w","m"), EDGE("tc3","m","km")] },
+
+  { id: "daily-devotional",   name: "Daily Devotional Drip",     description: "7-day devotional series with daily messages and completion tracking.",                  icon: BookOpen,      tint: "bg-orange-50 text-orange-700 border-orange-200",  category: "Discipleship",  nodeCount: 5, nodes: [
+    { id: "t", type: "trigger", position:{x:300,y:20}, data:{type:"trigger",title:"Trigger: Enrolled in Devotional",body:"When seeker opts into the 7-day devotional."} },
+    { id: "m1", type: "send_message", position:{x:300,y:200}, data:{type:"send_message",title:"Day 1: God's Love",body:"Your first devotional: 'For God so loved the world…' (John 3:16)"} },
+    { id: "w", type: "wait", position:{x:300,y:380}, data:{type:"wait",title:"Wait 1 day",body:"Send next devotional tomorrow."} },
+    { id: "ai", type: "ai_personalize", position:{x:300,y:560}, data:{type:"ai_personalize",title:"AI Next Devotional",body:"Claude picks the next devotional based on seeker engagement and reading pace."} },
+    { id: "ms", type: "key_milestone", position:{x:300,y:740}, data:{type:"key_milestone",title:"Key Milestone: Devotional Complete",body:"Seeker completed the 7-day devotional series!"} },
+  ], edges: [EDGE("dd1","t","m1"), EDGE("dd2","m1","w"), EDGE("dd3","w","ai"), EDGE("dd4","ai","ms")] },
+
+  { id: "event-invite",       name: "Event Invitation",          description: "Invite contacts to an event with RSVP tracking and reminders.",                        icon: Bell,          tint: "bg-pink-50 text-pink-700 border-pink-200",       category: "Events",        nodeCount: 5, nodes: [
+    { id: "t", type: "trigger", position:{x:300,y:20}, data:{type:"trigger",title:"Trigger: Event Created",body:"When a new event is published."} },
+    { id: "m", type: "send_message", position:{x:300,y:200}, data:{type:"send_message",title:"Event Invitation",body:"\"You're invited! Join us for [Event Name] on [Date]. Tap below to RSVP.\""} },
+    { id: "c", type: "condition", position:{x:300,y:400}, data:{type:"condition",title:"Did they RSVP?",body:"Check if the contact responded to the invitation.", branches:[{label:"Yes",tone:"yes"},{label:"No",tone:"no"}]} },
+    { id: "r", type: "send_message", position:{x:60,y:600}, data:{type:"send_message",title:"Confirmation",body:"\"Great, you're registered! We'll send a reminder the day before.\""} },
+    { id: "n", type: "action", position:{x:540,y:600}, data:{type:"action",title:"Reminder Nudge",body:"Send a follow-up reminder about the event 2 days before."} },
+  ], edges: [EDGE("ei1","t","m"), EDGE("ei2","m","c"), EDGE("ei3","c","r","yes","RSVP'D","#10b981"), EDGE("ei4","c","n","no","NO REPLY","#f43f5e")] },
+
+  { id: "event-followup",     name: "Post-Event Follow-up",      description: "Follow up with attendees after an event with next steps.",                             icon: Heart,         tint: "bg-fuchsia-50 text-fuchsia-700 border-fuchsia-200", category: "Events",     nodeCount: 4, nodes: [
+    { id: "t", type: "trigger", position:{x:300,y:20}, data:{type:"trigger",title:"Trigger: Event Ended",body:"When the event date has passed."} },
+    { id: "m", type: "send_message", position:{x:300,y:200}, data:{type:"send_message",title:"Thank You",body:"\"Thank you for joining us! We hope it was a blessing. Here are some resources to continue your journey.\""} },
+    { id: "menu", type: "menu", position:{x:300,y:400}, data:{type:"menu",title:"What's Next?",body:"What would you like to do?", choices:[{label:"Join a small group",dot:"bg-emerald-500"},{label:"Connect with a mentor",dot:"bg-blue-500"},{label:"Get more content",dot:"bg-violet-500"}]} },
+    { id: "ai", type: "ai_personalize", position:{x:300,y:620}, data:{type:"ai_personalize",title:"AI Route Next Step",body:"Claude routes the seeker to the appropriate journey based on their choice."} },
+  ], edges: [EDGE("ef1","t","m"), EDGE("ef2","m","menu"), EDGE("ef3","menu","ai")] },
+
+  { id: "outreach-campaign",  name: "Outreach Campaign",         description: "Multi-channel outreach to new contacts with AI-crafted messaging.",                    icon: Globe,         tint: "bg-cyan-50 text-cyan-700 border-cyan-200",       category: "Outreach",      nodeCount: 5, nodes: [
+    { id: "t", type: "trigger", position:{x:300,y:20}, data:{type:"trigger",title:"Trigger: Campaign Start",body:"When the outreach campaign is launched."} },
+    { id: "ai", type: "ai_personalize", position:{x:300,y:200}, data:{type:"ai_personalize",title:"AI Craft Message",body:"Claude crafts a culturally appropriate message based on the contact's language and background."} },
+    { id: "m", type: "send_message", position:{x:300,y:400}, data:{type:"send_message",title:"Initial Outreach",body:"Send the personalized outreach message."} },
+    { id: "c", type: "condition", position:{x:300,y:600}, data:{type:"condition",title:"Response received?",body:"Did the contact respond?", branches:[{label:"Yes",tone:"yes"},{label:"No",tone:"no"}]} },
+    { id: "a", type: "action", position:{x:300,y:800}, data:{type:"action",title:"Notify Team",body:"Alert the outreach team about respondents for follow-up."} },
+  ], edges: [EDGE("oc1","t","ai"), EDGE("oc2","ai","m"), EDGE("oc3","m","c"), EDGE("oc4","c","a","yes","RESPONDED","#10b981")] },
+
+  { id: "gospel-presentation", name: "Gospel Presentation",      description: "Step-by-step gospel sharing journey with response tracking.",                          icon: BookOpen,      tint: "bg-indigo-50 text-indigo-700 border-indigo-200",  category: "Outreach",      nodeCount: 5, nodes: [
+    { id: "t", type: "trigger", position:{x:300,y:20}, data:{type:"trigger",title:"Trigger: Seeker Ready",body:"When mentor marks seeker as ready for gospel presentation."} },
+    { id: "m1", type: "send_message", position:{x:300,y:200}, data:{type:"send_message",title:"The Gospel Message",body:"Share a clear, loving presentation of the gospel message."} },
+    { id: "menu", type: "menu", position:{x:300,y:400}, data:{type:"menu",title:"How do you feel?",body:"After hearing the gospel…", choices:[{label:"I want to accept",dot:"bg-emerald-500"},{label:"I have questions",dot:"bg-amber-500"},{label:"Not ready yet",dot:"bg-slate-400"}]} },
+    { id: "km", type: "key_milestone", position:{x:60,y:620}, data:{type:"key_milestone",title:"Key Milestone: Salvation",body:"The seeker made a decision to follow Christ!"} },
+    { id: "ai", type: "ai_personalize", position:{x:540,y:620}, data:{type:"ai_personalize",title:"AI Address Questions",body:"Claude provides thoughtful answers to the seeker's questions about faith."} },
+  ], edges: [EDGE("gp1","t","m1"), EDGE("gp2","m1","menu"), EDGE("gp3","menu","km"), EDGE("gp4","menu","ai")] },
+
+  { id: "accountability",     name: "Accountability Check-in",   description: "Weekly accountability check-in loop between mentor and seeker.",                       icon: CheckCircle2,  tint: "bg-emerald-50 text-emerald-700 border-emerald-200", category: "Follow-up",  nodeCount: 5, nodes: [
+    { id: "t", type: "trigger", position:{x:300,y:20}, data:{type:"trigger",title:"Trigger: Weekly (Monday)",body:"Every Monday morning, send check-in."} },
+    { id: "m", type: "send_message", position:{x:300,y:200}, data:{type:"send_message",title:"Weekly Check-in",body:"\"How was your week? Share your highs and lows, and any prayer requests.\""} },
+    { id: "c", type: "condition", position:{x:300,y:400}, data:{type:"condition",title:"Responded?",body:"Did the seeker reply within 48 hours?", branches:[{label:"Yes",tone:"yes"},{label:"No",tone:"no"}]} },
+    { id: "ms", type: "milestone", position:{x:60,y:600}, data:{type:"milestone",title:"Milestone: Check-in Done",body:"Weekly check-in completed — track streak."} },
+    { id: "a", type: "action", position:{x:540,y:600}, data:{type:"action",title:"Notify Mentor",body:"Alert mentor that seeker missed this week's check-in."} },
+  ], edges: [EDGE("ac1","t","m"), EDGE("ac2","m","c"), EDGE("ac3","c","ms","yes","REPLIED","#10b981"), EDGE("ac4","c","a","no","MISSED","#f43f5e")] },
+
+  { id: "graduation-path",    name: "Graduation Path",           description: "Track a seeker through final milestones before graduating from mentorship.",            icon: GraduationCap, tint: "bg-violet-50 text-violet-700 border-violet-200",  category: "Discipleship",  nodeCount: 5, nodes: [
+    { id: "t", type: "trigger", position:{x:300,y:20}, data:{type:"trigger",title:"Trigger: All Milestones Done",body:"When seeker completes all core milestones."} },
+    { id: "m", type: "send_message", position:{x:300,y:200}, data:{type:"send_message",title:"Graduation Notice",body:"\"Congratulations! You've completed all your discipleship milestones. Let's talk about what's next.\""} },
+    { id: "menu", type: "menu", position:{x:300,y:400}, data:{type:"menu",title:"Next Step",body:"What would you like to do next?", choices:[{label:"Become a mentor",dot:"bg-emerald-500"},{label:"Join leadership",dot:"bg-violet-500"},{label:"Continue growing",dot:"bg-blue-500"}]} },
+    { id: "km", type: "key_milestone", position:{x:300,y:620}, data:{type:"key_milestone",title:"Key Milestone: Graduated",body:"Seeker has officially graduated from the mentorship program!"} },
+    { id: "a", type: "action", position:{x:300,y:800}, data:{type:"action",title:"Notify Leadership",body:"Alert mentor coach and leadership about the new graduate."} },
+  ], edges: [EDGE("gr1","t","m"), EDGE("gr2","m","menu"), EDGE("gr3","menu","km"), EDGE("gr4","km","a")] },
+
+  { id: "dropout-rescue",     name: "Dropout Prevention",        description: "3-stage intervention for seekers showing disengagement patterns.",                     icon: AlertCircle,   tint: "bg-red-50 text-red-700 border-red-200",           category: "Follow-up",     nodeCount: 5, nodes: [
+    { id: "t", type: "trigger", position:{x:300,y:20}, data:{type:"trigger",title:"Trigger: Engagement Drop",body:"When engagement score drops below 30%."} },
+    { id: "ai", type: "ai_personalize", position:{x:300,y:200}, data:{type:"ai_personalize",title:"AI Personal Outreach",body:"Claude crafts a caring message referencing the seeker's journey so far."} },
+    { id: "w", type: "wait", position:{x:300,y:400}, data:{type:"wait",title:"Wait 5 days",body:"Allow time for response."} },
+    { id: "c", type: "condition", position:{x:300,y:580}, data:{type:"condition",title:"Re-engaged?",body:"Did the seeker respond or show activity?", branches:[{label:"Yes",tone:"yes"},{label:"No",tone:"no"}]} },
+    { id: "a", type: "action", position:{x:540,y:780}, data:{type:"action",title:"Escalate to Mentor Coach",body:"Flag this seeker for personal intervention by the mentor coach."} },
+  ], edges: [EDGE("dp1","t","ai"), EDGE("dp2","ai","w"), EDGE("dp3","w","c"), EDGE("dp4","c","a","no","STILL INACTIVE","#f43f5e")] },
+
+  { id: "new-volunteer",      name: "Volunteer Onboarding",      description: "Onboard new volunteers with training materials and check-ins.",                        icon: Users,         tint: "bg-lime-50 text-lime-700 border-lime-200",        category: "Onboarding",    nodeCount: 4, nodes: [
+    { id: "t", type: "trigger", position:{x:300,y:20}, data:{type:"trigger",title:"Trigger: Volunteer Signup",body:"When someone signs up to volunteer."} },
+    { id: "m", type: "send_message", position:{x:300,y:200}, data:{type:"send_message",title:"Welcome & Training",body:"\"Welcome to the team! Here's your training guide and what to expect in your first week.\""} },
+    { id: "w", type: "wait", position:{x:300,y:380}, data:{type:"wait",title:"Wait 7 days",body:"Check in after first week."} },
+    { id: "ms", type: "milestone", position:{x:300,y:560}, data:{type:"milestone",title:"Milestone: Training Complete",body:"Volunteer completed initial training."} },
+  ], edges: [EDGE("nv1","t","m"), EDGE("nv2","m","w"), EDGE("nv3","w","ms")] },
 ];
 
 const EMPTY_CANVAS: { nodes: Node[]; edges: Edge[] } = {
@@ -430,8 +532,9 @@ function FlowBuilderInner({
   const [name, setName] = useState(flowName);
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
   const [webhooksOpen, setWebhooksOpen] = useState(false);
-  const [templatesOpen, setTemplatesOpen] = useState(true);   // open by default so new users see templates
   const [isAddWebhookOpen, setIsAddWebhookOpen] = useState(false);
+  const [isTemplateGalleryOpen, setIsTemplateGalleryOpen] = useState(false);
+  const [isSaveTemplateOpen, setIsSaveTemplateOpen] = useState(false);
 
   const handleLoadTemplate = useCallback((tpl: JourneyTemplate) => {
     setNodes(tpl.nodes);
@@ -543,6 +646,9 @@ function FlowBuilderInner({
           <Button variant="outline" size="sm" onClick={() => handleSave(false)}>
             <Save className="w-3.5 h-3.5" /> Save Draft
           </Button>
+          <Button variant="outline" size="sm" onClick={() => setIsSaveTemplateOpen(true)}>
+            <LayoutTemplate className="w-3.5 h-3.5" /> Save as Template
+          </Button>
           <Button size="sm" onClick={() => handleSave(true)}>
             Publish
           </Button>
@@ -576,49 +682,7 @@ function FlowBuilderInner({
             Click a type to add it to the canvas, then drag nodes around or draw connections between handles.
           </p>
 
-          {/* ── Templates section ── */}
-          <div className="mt-6 border-t border-border pt-4">
-            <button
-              onClick={() => setTemplatesOpen(v => !v)}
-              className="w-full flex items-center justify-between text-xs font-semibold text-muted-foreground uppercase tracking-wider pb-2 hover:text-foreground transition-colors"
-            >
-              <span className="flex items-center gap-1.5">
-                <LayoutTemplate className="w-3.5 h-3.5" />
-                Templates
-                <Badge variant="secondary" className="text-[10px] ml-0.5">{JOURNEY_TEMPLATES.length}</Badge>
-              </span>
-              {templatesOpen ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronRight className="w-3.5 h-3.5" />}
-            </button>
-
-            {templatesOpen && (
-              <div className="space-y-2 mt-1">
-                {JOURNEY_TEMPLATES.map(tpl => {
-                  const TplIcon = tpl.icon;
-                  return (
-                    <button
-                      key={tpl.id}
-                      onClick={() => handleLoadTemplate(tpl)}
-                      className={cn(
-                        "w-full text-left p-2.5 rounded-lg border transition-all hover:shadow-sm group",
-                        tpl.tint
-                      )}
-                    >
-                      <div className="flex items-start gap-2">
-                        <TplIcon className="w-4 h-4 mt-0.5 shrink-0 opacity-70" />
-                        <div className="min-w-0 flex-1">
-                          <p className="text-xs font-bold leading-snug">{tpl.name}</p>
-                          <p className="text-[10px] opacity-70 leading-relaxed mt-0.5 line-clamp-2">{tpl.description}</p>
-                          <span className="text-[9px] opacity-50 font-medium mt-1 inline-block">{tpl.nodeCount} nodes</span>
-                        </div>
-                      </div>
-                    </button>
-                  );
-                })}
-              </div>
-            )}
-          </div>
-
-          {/* ── Webhooks section ── */}
+          {/* ── Webhooks section — below node types ── */}
           <div className="mt-6 border-t border-border pt-4">
             <button
               onClick={() => setWebhooksOpen(v => !v)}
@@ -687,6 +751,24 @@ function FlowBuilderInner({
               </div>
             )}
           </div>
+
+          {/* ── Templates — browse button opens full gallery modal ── */}
+          <div className="mt-6 border-t border-border pt-4">
+            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider pb-3">Templates</p>
+            <Button
+              variant="outline"
+              size="sm"
+              className="w-full text-xs h-9 justify-start gap-2"
+              onClick={() => setIsTemplateGalleryOpen(true)}
+            >
+              <LayoutTemplate className="w-4 h-4 text-primary" />
+              Browse Templates
+              <Badge variant="secondary" className="text-[10px] ml-auto">{JOURNEY_TEMPLATES.length}</Badge>
+            </Button>
+            <p className="text-[10px] text-muted-foreground mt-2 leading-relaxed">
+              Choose from pre-built journey templates to get started quickly.
+            </p>
+          </div>
         </aside>
 
         {/* Canvas */}
@@ -745,6 +827,24 @@ function FlowBuilderInner({
         isOpen={isAddWebhookOpen}
         onClose={() => setIsAddWebhookOpen(false)}
         onAdd={(data) => { onAddWebhook?.(data); setIsAddWebhookOpen(false); }}
+      />
+
+      {/* Template Gallery Modal */}
+      <TemplateGalleryModal
+        isOpen={isTemplateGalleryOpen}
+        onClose={() => setIsTemplateGalleryOpen(false)}
+        onSelect={(tpl) => { handleLoadTemplate(tpl); setIsTemplateGalleryOpen(false); }}
+      />
+
+      {/* Save as Template Modal */}
+      <SaveTemplateModal
+        isOpen={isSaveTemplateOpen}
+        onClose={() => setIsSaveTemplateOpen(false)}
+        onSave={(tplName) => {
+          toast.success(`Journey saved as template "${tplName}"`);
+          setIsSaveTemplateOpen(false);
+        }}
+        defaultName={name}
       />
     </div>
   );
@@ -806,6 +906,175 @@ function JourneyWebhookModal({ isOpen, onClose, onAdd }: { isOpen: boolean; onCl
         <div className="flex justify-end gap-2 pt-2">
           <Button variant="outline" size="sm" onClick={onClose}>Cancel</Button>
           <Button size="sm" disabled={!whName.trim() || !url.trim() || events.length === 0} onClick={handleAdd}>Add Webhook</Button>
+        </div>
+      </div>
+    </Modal>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Template Gallery — full-screen modal with search, category tabs, and grid
+// ---------------------------------------------------------------------------
+
+const TEMPLATE_CATEGORIES: { id: TemplateCategory | "All"; label: string }[] = [
+  { id: "All",          label: "All" },
+  { id: "Onboarding",   label: "Onboarding" },
+  { id: "Discipleship",  label: "Discipleship" },
+  { id: "Community",    label: "Community" },
+  { id: "Outreach",     label: "Outreach" },
+  { id: "Follow-up",    label: "Follow-up" },
+  { id: "Events",       label: "Events" },
+];
+
+function TemplateGalleryModal({
+  isOpen, onClose, onSelect,
+}: { isOpen: boolean; onClose: () => void; onSelect: (tpl: JourneyTemplate) => void }) {
+  const [search, setSearch] = useState("");
+  const [category, setCategory] = useState<TemplateCategory | "All">("All");
+
+  const filtered = useMemo(() => {
+    return JOURNEY_TEMPLATES.filter(t => {
+      const matchCat = category === "All" || t.category === category;
+      const q = search.toLowerCase();
+      const matchSearch = !q || t.name.toLowerCase().includes(q) || t.description.toLowerCase().includes(q);
+      return matchCat && matchSearch;
+    });
+  }, [search, category]);
+
+  const categoryCounts = useMemo(() => {
+    const counts: Record<string, number> = { All: JOURNEY_TEMPLATES.length };
+    for (const t of JOURNEY_TEMPLATES) counts[t.category] = (counts[t.category] || 0) + 1;
+    return counts;
+  }, []);
+
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm animate-in fade-in duration-200">
+      <div className="bg-background rounded-xl shadow-2xl border border-border w-[90vw] max-w-[960px] h-[80vh] max-h-[700px] flex flex-col overflow-hidden">
+        {/* Header */}
+        <div className="flex items-center justify-between gap-4 px-6 py-4 border-b border-border shrink-0">
+          <div>
+            <h2 className="text-lg font-bold text-foreground">Journey Templates</h2>
+            <p className="text-xs text-muted-foreground mt-0.5">Choose a template to start building your journey</p>
+          </div>
+          <div className="flex items-center gap-3">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
+              <Input
+                placeholder="Search templates..."
+                value={search}
+                onChange={e => setSearch(e.target.value)}
+                className="pl-9 h-8 text-xs w-[220px]"
+              />
+            </div>
+            <button onClick={onClose} className="p-1.5 rounded-md hover:bg-muted text-muted-foreground hover:text-foreground transition-colors">
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
+
+        {/* Category tabs */}
+        <div className="flex items-center gap-1 px-6 py-2.5 border-b border-border shrink-0 overflow-x-auto">
+          {TEMPLATE_CATEGORIES.map(cat => (
+            <button
+              key={cat.id}
+              onClick={() => setCategory(cat.id)}
+              className={cn(
+                "px-3 py-1.5 text-xs font-semibold rounded-md transition-all whitespace-nowrap flex items-center gap-1.5",
+                category === cat.id
+                  ? "bg-primary text-primary-foreground"
+                  : "text-muted-foreground hover:bg-muted hover:text-foreground"
+              )}
+            >
+              {cat.label}
+              <span className={cn(
+                "text-[10px] tabular-nums",
+                category === cat.id ? "opacity-80" : "opacity-50"
+              )}>
+                {categoryCounts[cat.id] || 0}
+              </span>
+            </button>
+          ))}
+        </div>
+
+        {/* Grid */}
+        <div className="flex-1 overflow-y-auto p-6">
+          {filtered.length === 0 ? (
+            <div className="flex flex-col items-center justify-center h-full text-center">
+              <LayoutTemplate className="w-10 h-10 text-muted-foreground/30 mb-3" />
+              <p className="text-sm font-semibold text-muted-foreground">No templates found</p>
+              <p className="text-xs text-muted-foreground/70 mt-1">Try a different search term or category.</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+              {filtered.map(tpl => {
+                const TplIcon = tpl.icon;
+                return (
+                  <button
+                    key={tpl.id}
+                    onClick={() => onSelect(tpl)}
+                    className={cn(
+                      "text-left p-4 rounded-xl border-2 transition-all hover:shadow-md hover:scale-[1.01] group",
+                      tpl.tint
+                    )}
+                  >
+                    <div className="flex items-start gap-3">
+                      <div className="w-9 h-9 rounded-lg bg-white/60 flex items-center justify-center shrink-0 shadow-sm">
+                        <TplIcon className="w-4.5 h-4.5 opacity-80" />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <p className="text-sm font-bold leading-snug">{tpl.name}</p>
+                        <p className="text-[11px] opacity-70 leading-relaxed mt-1 line-clamp-2">{tpl.description}</p>
+                        <div className="flex items-center gap-2 mt-2">
+                          <span className="text-[10px] opacity-50 font-semibold">{tpl.nodeCount} nodes</span>
+                          <span className="text-[10px] opacity-40">·</span>
+                          <span className="text-[10px] opacity-50 font-medium">{tpl.category}</span>
+                        </div>
+                      </div>
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Save as Template modal
+// ---------------------------------------------------------------------------
+
+function SaveTemplateModal({
+  isOpen, onClose, onSave, defaultName,
+}: { isOpen: boolean; onClose: () => void; onSave: (name: string) => void; defaultName: string }) {
+  const [tplName, setTplName] = useState(defaultName);
+
+  React.useEffect(() => { if (isOpen) setTplName(defaultName); }, [isOpen, defaultName]);
+
+  return (
+    <Modal isOpen={isOpen} onClose={onClose} title="Save as Template" size="sm">
+      <div className="space-y-4">
+        <div className="grid gap-2">
+          <Label className="text-xs font-semibold">Template Name</Label>
+          <Input
+            placeholder="e.g. My Onboarding Flow"
+            value={tplName}
+            onChange={e => setTplName(e.target.value)}
+            className="h-9 text-sm"
+            autoFocus
+          />
+          <p className="text-xs text-muted-foreground">This template will be saved and available for future journeys.</p>
+        </div>
+        <div className="flex justify-end gap-2">
+          <Button variant="outline" size="sm" onClick={onClose}>Cancel</Button>
+          <Button size="sm" disabled={!tplName.trim()} onClick={() => onSave(tplName.trim())}>
+            <LayoutTemplate className="w-3.5 h-3.5" />
+            Save Template
+          </Button>
         </div>
       </div>
     </Modal>
