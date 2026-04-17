@@ -762,6 +762,12 @@ export function SeekersView({
     return <SeekerDetailView seeker={selected} onBack={() => setSelectedId(null)} />;
   }
 
+  // Mini dashboard stats
+  const totalSeekers = seekers.length;
+  const activeSeekers = seekers.filter(s => s.status === "Active").length;
+  const avgEngagement = seekers.length === 0 ? 0 : Math.round(seekers.reduce((sum, s) => sum + s.engagement, 0) / seekers.length);
+  const newBelieverCount = seekers.filter(s => s.maturity === "New Believer" || s.maturity === "Growing" || s.maturity === "Mature" || s.maturity === "Leader").length;
+
   return (
     <div className="p-6 space-y-4">
       <PageHeader
@@ -773,6 +779,14 @@ export function SeekersView({
           </Button>
         )}
       />
+
+      {/* Stats */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
+        <StatCard label="Total Seekers"    value={totalSeekers}      icon={Users}        tone="blue" />
+        <StatCard label="Active"           value={activeSeekers}     icon={CheckCircle2} tone="green"  subtitle="currently engaged" />
+        <StatCard label="Avg. Engagement"  value={`${avgEngagement}%`} icon={Activity}   tone="amber" />
+        <StatCard label="Believers"        value={newBelieverCount}  icon={Flame}        tone="purple" subtitle="New Believer+" />
+      </div>
 
       <div className="flex items-center gap-2 flex-wrap">
         <div className="flex-1 min-w-[240px] relative">
