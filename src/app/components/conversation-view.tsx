@@ -611,6 +611,7 @@ function ConversationContextPanel({
   messages = [], notes = [], groups = [],
   faithJourneys = [], contactMilestones = [], matches = [],
   onUpdateContact, onUpdateJourney, onLogMilestone, onAddNote, onDeleteNote,
+  reassignRequests = [], onRequestReassign, viewMode, onApproveReassign, onRejectReassign,
 }: {
   contact:     Contact;
   meta:        ConvMeta;
