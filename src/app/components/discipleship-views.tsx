@@ -2255,6 +2255,7 @@ export function MatchesView({
   const [scoreFilter, setScoreFilter] = useState<string>("all");
   const [sort, setSort] = useState<"score_high" | "score_low" | "newest">("score_high");
   const [isAutoMatchOpen, setIsAutoMatchOpen] = useState(false);
+  const [isManualMatchOpen, setIsManualMatchOpen] = useState(false);
 
   const filtered = useMemo(() => {
     let list = matches.filter(m => {
@@ -2298,9 +2299,14 @@ export function MatchesView({
         title="AI Match Proposals"
         subtitle="Review and approve AI-suggested mentor-seeker matches"
         actions={(
-          <Button onClick={() => setIsAutoMatchOpen(true)}>
-            <Sparkles className="w-4 h-4" /> Run Auto-Match
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button variant="outline" onClick={() => setIsManualMatchOpen(true)}>
+              <UserPlus className="w-4 h-4" /> Manual Match
+            </Button>
+            <Button onClick={() => setIsAutoMatchOpen(true)}>
+              <Sparkles className="w-4 h-4" /> Run Auto-Match
+            </Button>
+          </div>
         )}
       />
 
@@ -2468,6 +2474,18 @@ export function MatchesView({
           toast.success(`${newMatches.length} new match${newMatches.length === 1 ? "" : "es"} proposed`);
         }}
       />
+
+      <ManualMatchDialog
+        isOpen={isManualMatchOpen}
+        onClose={() => setIsManualMatchOpen(false)}
+        contacts={sharedContacts ?? []}
+        users={sharedUsers ?? []}
+        onComplete={(newMatch) => {
+          setMatches(list => [newMatch, ...list]);
+          setSelectedId(newMatch.id);
+          toast.success(`Manual match created: ${newMatch.seeker} → ${newMatch.mentor}`);
+        }}
+      />
     </div>
   );
 }
@@ -2622,6 +2640,224 @@ function RunAutoMatchDialog({
               </Button>
             )}
           </div>
+        </div>
+      </div>
+    </Modal>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Manual Match dialog — admin picks seeker + mentor, adds optional reasoning
+// ---------------------------------------------------------------------------
+
+const MANUAL_MATCH_FACTORS = [
+  "Language", "Age Group", "Gender Preference", "Location", "Interests",
+  "Availability", "Spiritual Background", "Capacity",
+] as const;
+
+function ManualMatchDialog({
+  isOpen, onClose, contacts, users, onComplete,
+}: {
+  isOpen: boolean;
+  onClose: () => void;
+  contacts: Contact[];
+  users: User[];
+  onComplete: (match: MatchRow) => void;
+}) {
+  const [seekerId, setSeekerId] = useState("");
+  const [mentorId, setMentorId] = useState("");
+  const [reasoning, setReasoning] = useState("");
+  const [score, setScore] = useState(80);
+  const [selectedFactors, setSelectedFactors] = useState<Set<string>>(new Set());
+  const [seekerSearch, setSeekerSearch] = useState("");
+  const [mentorSearch, setMentorSearch] = useState("");
+
+  const seekerList = useMemo(() => {
+    const q = seekerSearch.toLowerCase();
+    return contacts.filter(c => !q || c.name.toLowerCase().includes(q)).slice(0, 20);
+  }, [contacts, seekerSearch]);
+
+  const mentorList = useMemo(() => {
+    const q = mentorSearch.toLowerCase();
+    return users.filter(u => u.status === "active" && (!q || u.name.toLowerCase().includes(q))).slice(0, 20);
+  }, [users, mentorSearch]);
+
+  const seekerName = contacts.find(c => c.id === seekerId)?.name ?? "";
+  const mentorName = users.find(u => u.id === mentorId)?.name ?? "";
+
+  const handleClose = () => {
+    setSeekerId(""); setMentorId(""); setReasoning(""); setScore(80);
+    setSelectedFactors(new Set()); setSeekerSearch(""); setMentorSearch("");
+    onClose();
+  };
+
+  const handleCreate = () => {
+    if (!seekerId || !mentorId) return;
+    const scoreTone: "green" | "amber" | "red" = score >= 80 ? "green" : score >= 60 ? "amber" : "red";
+    const factors: MatchRow["factors"] = Array.from(selectedFactors).map(f => {
+      const s = Math.max(60, Math.min(100, score + Math.floor(Math.random() * 20 - 10)));
+      const tone: "green" | "blue" | "amber" = s >= 85 ? "green" : s >= 70 ? "blue" : "amber";
+      return [f, s, tone];
+    });
+    const newMatch: MatchRow = {
+      id: `manual-${Date.now()}`,
+      score,
+      scoreTone,
+      seeker: seekerName,
+      mentor: mentorName,
+      factors: factors.length > 0 ? factors : [["Manual", score, scoreTone]],
+      status: "Active",
+      statusTone: "blue",
+      reasoning: reasoning || `Manually matched by admin: ${seekerName} assigned to ${mentorName}.`,
+    };
+    onComplete(newMatch);
+    handleClose();
+  };
+
+  const canCreate = !!seekerId && !!mentorId;
+
+  return (
+    <Modal isOpen={isOpen} onClose={handleClose} title="Manual Match" size="lg">
+      <div className="space-y-5">
+        {/* Seeker selection */}
+        <div>
+          <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-2 block">Select Seeker</label>
+          <input
+            type="text"
+            placeholder="Search seekers..."
+            value={seekerSearch}
+            onChange={e => setSeekerSearch(e.target.value)}
+            className="w-full px-3 py-2 border border-input text-sm bg-background focus:ring-1 focus:ring-ring outline-none mb-2"
+          />
+          <div className="max-h-[140px] overflow-y-auto border border-border rounded-sm">
+            {seekerList.length === 0 ? (
+              <p className="text-xs text-muted-foreground p-3 text-center">No seekers found</p>
+            ) : seekerList.map(c => (
+              <button
+                key={c.id}
+                onClick={() => setSeekerId(c.id)}
+                className={cn(
+                  "w-full flex items-center gap-2.5 px-3 py-2 text-left text-sm transition-colors border-b border-border/50 last:border-0",
+                  seekerId === c.id ? "bg-primary/10 text-primary font-bold" : "hover:bg-muted/40"
+                )}
+              >
+                <div className={cn(
+                  "w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold shrink-0",
+                  seekerId === c.id ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"
+                )}>{c.name.charAt(0)}</div>
+                <div className="min-w-0">
+                  <p className="font-semibold truncate">{c.name}</p>
+                  <p className="text-xs text-muted-foreground">{c.phone || c.email || "No contact info"}</p>
+                </div>
+                {seekerId === c.id && <CheckCircle2 className="w-4 h-4 text-primary ml-auto shrink-0" />}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Mentor selection */}
+        <div>
+          <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-2 block">Select Mentor</label>
+          <input
+            type="text"
+            placeholder="Search mentors..."
+            value={mentorSearch}
+            onChange={e => setMentorSearch(e.target.value)}
+            className="w-full px-3 py-2 border border-input text-sm bg-background focus:ring-1 focus:ring-ring outline-none mb-2"
+          />
+          <div className="max-h-[140px] overflow-y-auto border border-border rounded-sm">
+            {mentorList.length === 0 ? (
+              <p className="text-xs text-muted-foreground p-3 text-center">No mentors found</p>
+            ) : mentorList.map(u => (
+              <button
+                key={u.id}
+                onClick={() => setMentorId(u.id)}
+                className={cn(
+                  "w-full flex items-center gap-2.5 px-3 py-2 text-left text-sm transition-colors border-b border-border/50 last:border-0",
+                  mentorId === u.id ? "bg-violet-500/10 text-violet-700 font-bold" : "hover:bg-muted/40"
+                )}
+              >
+                <div className={cn(
+                  "w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold shrink-0",
+                  mentorId === u.id ? "bg-violet-500 text-white" : "bg-muted text-muted-foreground"
+                )}>{u.name.charAt(0)}</div>
+                <div className="min-w-0">
+                  <p className="font-semibold truncate">{u.name}</p>
+                  <p className="text-xs text-muted-foreground">{u.role}</p>
+                </div>
+                {mentorId === u.id && <CheckCircle2 className="w-4 h-4 text-violet-600 ml-auto shrink-0" />}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Preview pair */}
+        {seekerId && mentorId && (
+          <div className="flex items-center gap-3 p-3 bg-emerald-50/50 border border-emerald-200 rounded-sm">
+            <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-xs font-bold text-primary-foreground">{seekerName.charAt(0)}</div>
+            <div className="text-sm font-bold text-foreground">{seekerName}</div>
+            <ArrowRight className="w-4 h-4 text-emerald-600 shrink-0" />
+            <div className="w-8 h-8 rounded-full bg-violet-500 flex items-center justify-center text-xs font-bold text-white">{mentorName.charAt(0)}</div>
+            <div className="text-sm font-bold text-foreground">{mentorName}</div>
+          </div>
+        )}
+
+        {/* Match factors */}
+        <div>
+          <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-2 block">Match Factors (optional)</label>
+          <div className="flex flex-wrap gap-1.5">
+            {MANUAL_MATCH_FACTORS.map(f => (
+              <button
+                key={f}
+                onClick={() => setSelectedFactors(prev => {
+                  const n = new Set(prev);
+                  n.has(f) ? n.delete(f) : n.add(f);
+                  return n;
+                })}
+                className={cn(
+                  "px-2.5 py-1 text-xs font-semibold border rounded-sm transition-colors",
+                  selectedFactors.has(f)
+                    ? "bg-primary/10 text-primary border-primary/30"
+                    : "bg-muted/30 text-muted-foreground border-border hover:border-primary/40"
+                )}
+              >{f}</button>
+            ))}
+          </div>
+        </div>
+
+        {/* Confidence score */}
+        <div>
+          <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-2 block">
+            Confidence Score: <span className={cn(
+              "tabular-nums",
+              score >= 80 ? "text-emerald-600" : score >= 60 ? "text-amber-600" : "text-rose-600"
+            )}>{score}/100</span>
+          </label>
+          <input
+            type="range" min={30} max={100} value={score}
+            onChange={e => setScore(Number(e.target.value))}
+            className="w-full accent-primary"
+          />
+        </div>
+
+        {/* Reasoning */}
+        <div>
+          <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-2 block">Reasoning (optional)</label>
+          <textarea
+            rows={3}
+            placeholder="Why is this a good match? e.g. Same language, similar interests, compatible schedules..."
+            value={reasoning}
+            onChange={e => setReasoning(e.target.value)}
+            className="w-full px-3 py-2 border border-input text-sm bg-background focus:ring-1 focus:ring-ring outline-none resize-none"
+          />
+        </div>
+
+        {/* Actions */}
+        <div className="flex justify-end gap-2 pt-2 border-t border-border">
+          <Button variant="outline" size="sm" onClick={handleClose}>Cancel</Button>
+          <Button size="sm" disabled={!canCreate} onClick={handleCreate}>
+            <UserPlus className="w-3.5 h-3.5" /> Create Match
+          </Button>
         </div>
       </div>
     </Modal>
