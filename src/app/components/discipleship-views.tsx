@@ -25,7 +25,7 @@ import {
 } from "./ui/dropdown-menu";
 import { Modal } from "./shared-ui";
 import { toast } from "sonner";
-import { ArrowLeft, Eye, Trash2, MessageSquare as MessageSquareIcon, Archive, RefreshCw, Zap, HelpCircle, UserPlus, X } from "lucide-react";
+import { ArrowLeft, Eye, Trash2, MessageSquare as MessageSquareIcon, Archive, RefreshCw, Zap, HelpCircle, UserPlus, X, GripVertical, Mail, Tag, ListOrdered, UserCheck } from "lucide-react";
 import {
   AreaChart, Area, PieChart, Pie, Cell, XAxis, YAxis, Tooltip, ResponsiveContainer
 } from "recharts";
@@ -1469,6 +1469,119 @@ const ALL_LANGUAGES = [
 const ALL_SPECIALTIES = ["New Believers", "Youth", "Women", "Men", "Grief", "Prayer", "Apologetics", "Bible Study", "Marriage", "Addiction recovery"];
 const ALL_STRENGTHS  = ["Empathy", "Bible knowledge", "Prayer", "Patience", "Counseling", "Apologetics", "Teaching", "Storytelling", "Pastoral care", "Study planning"];
 
+// ── Mentor Groups types & data ──
+type MentorGroup = {
+  id: string;
+  name: string;
+  description: string;
+  icon: string;
+  memberIds: string[];
+};
+
+type FormFieldDef = {
+  id: string;
+  type: "text" | "textarea" | "select" | "checkbox" | "checkbox_group" | "email" | "phone" | "date" | "number" | "file";
+  label: string;
+  required: boolean;
+  options?: string[];
+};
+
+type MentorFormTemplate = {
+  id: string;
+  name: string;
+  specialty: string;
+  fields: FormFieldDef[];
+  submissions: number;
+};
+
+type MentorInvitation = {
+  id: string;
+  email: string;
+  name: string;
+  formId: string;
+  formName: string;
+  message: string;
+  status: "sent" | "opened" | "completed" | "expired";
+  sentAt: string;
+};
+
+const GROUP_ICON_MAP: Record<string, any> = {
+  Heart, BookOpen, Star, Globe, Users, ShieldCheck, HandHeart,
+  Flame, Droplets, Activity, UsersRound, UserCheck, Bell, Calendar,
+};
+
+const INITIAL_MENTOR_GROUPS: MentorGroup[] = [
+  { id: "grp-1",  name: "Marriage",        description: "Mentors specialising in marriage counseling and couple guidance",    icon: "Heart",       memberIds: ["m1"] },
+  { id: "grp-2",  name: "Addiction Recovery", description: "Supporting seekers through addiction recovery journeys",          icon: "ShieldCheck", memberIds: ["m2"] },
+  { id: "grp-3",  name: "Youth",           description: "Young adult and teen discipleship specialists",                     icon: "Star",        memberIds: ["m2"] },
+  { id: "grp-4",  name: "Women's Ministry",description: "Women mentoring women in faith and life",                           icon: "HandHeart",   memberIds: ["m3"] },
+  { id: "grp-5",  name: "Men's Ministry",  description: "Brotherhood, accountability, and spiritual growth for men",         icon: "ShieldCheck", memberIds: ["m1"] },
+  { id: "grp-6",  name: "Prayer",          description: "Dedicated intercessors and prayer mentors",                         icon: "Flame",       memberIds: ["m3"] },
+  { id: "grp-7",  name: "Counseling",      description: "Pastoral and biblical counseling specialists",                      icon: "Heart",       memberIds: ["m1", "m3"] },
+  { id: "grp-8",  name: "New Believers",   description: "Foundations of faith for those just starting their walk",            icon: "Droplets",    memberIds: ["m1", "m4"] },
+  { id: "grp-9",  name: "Leadership",      description: "Training and equipping emerging leaders",                           icon: "Activity",    memberIds: ["m4"] },
+  { id: "grp-10", name: "Worship",         description: "Worship ministry leadership and spiritual formation through music",  icon: "Bell",       memberIds: [] },
+  { id: "grp-11", name: "Outreach",        description: "Evangelism, missions, and community engagement",                    icon: "Globe",       memberIds: ["m2"] },
+  { id: "grp-12", name: "Family",          description: "Parenting, family dynamics, and household discipleship",             icon: "UsersRound",  memberIds: ["m1", "m4"] },
+];
+
+const FORM_FIELD_TYPES: { type: FormFieldDef["type"]; label: string; icon: any }[] = [
+  { type: "text",           label: "Short Text",    icon: Tag },
+  { type: "textarea",       label: "Long Text",     icon: FileText },
+  { type: "email",          label: "Email",          icon: Mail },
+  { type: "phone",          label: "Phone",          icon: Bell },
+  { type: "number",         label: "Number",         icon: ListOrdered },
+  { type: "date",           label: "Date",           icon: Calendar },
+  { type: "select",         label: "Dropdown",       icon: ChevronDown },
+  { type: "checkbox",       label: "Checkbox",       icon: CheckCircle2 },
+  { type: "checkbox_group", label: "Checkbox Group", icon: CheckCircle2 },
+  { type: "file",           label: "File Upload",    icon: Download },
+];
+
+const INITIAL_FORM_TEMPLATES: MentorFormTemplate[] = [
+  {
+    id: "tpl-1", name: "General Mentor Application", specialty: "General",
+    fields: [
+      { id: "f1", type: "text",     label: "Full Name",           required: true },
+      { id: "f2", type: "email",    label: "Email Address",       required: true },
+      { id: "f3", type: "phone",    label: "Phone Number",        required: false },
+      { id: "f4", type: "select",   label: "Area of Specialty",   required: true, options: ALL_SPECIALTIES },
+      { id: "f5", type: "select",   label: "Experience Level",    required: true, options: [...EXPERIENCE_LEVELS] },
+      { id: "f6", type: "textarea", label: "Brief Testimony",     required: false },
+      { id: "f7", type: "checkbox", label: "I agree to the mentor guidelines", required: true },
+    ],
+    submissions: 12,
+  },
+  {
+    id: "tpl-2", name: "Youth Ministry Application", specialty: "Youth",
+    fields: [
+      { id: "f1", type: "text",     label: "Full Name",           required: true },
+      { id: "f2", type: "email",    label: "Email Address",       required: true },
+      { id: "f3", type: "select",   label: "Age Range You Can Mentor", required: true, options: ["13-15", "16-18", "18-25"] },
+      { id: "f4", type: "checkbox_group", label: "Topics You Can Cover", required: true, options: ["Identity", "Peer Pressure", "Faith & Doubt", "Relationships", "Purpose"] },
+      { id: "f5", type: "textarea", label: "Why youth ministry?",  required: false },
+    ],
+    submissions: 5,
+  },
+  {
+    id: "tpl-3", name: "Marriage Counseling Application", specialty: "Marriage",
+    fields: [
+      { id: "f1", type: "text",     label: "Full Name",           required: true },
+      { id: "f2", type: "email",    label: "Email Address",       required: true },
+      { id: "f3", type: "select",   label: "Years of Marriage",   required: true, options: ["1-5", "5-10", "10-20", "20+"] },
+      { id: "f4", type: "checkbox", label: "Completed pre-marital counseling training", required: true },
+      { id: "f5", type: "textarea", label: "Relevant Experience", required: false },
+    ],
+    submissions: 3,
+  },
+];
+
+const INITIAL_INVITATIONS: MentorInvitation[] = [
+  { id: "inv-1", email: "abebe@church.org",   name: "Abebe Tesfaye",  formId: "tpl-1", formName: "General Mentor Application", message: "We'd love to have you join our mentorship team!", status: "completed", sentAt: "2024-12-01T10:00:00Z" },
+  { id: "inv-2", email: "marta@church.org",   name: "Marta Haile",    formId: "tpl-2", formName: "Youth Ministry Application", message: "", status: "opened", sentAt: "2025-01-15T14:30:00Z" },
+  { id: "inv-3", email: "solomon@church.org", name: "Solomon Bekele", formId: "tpl-1", formName: "General Mentor Application", message: "Your experience would be a great fit.", status: "sent", sentAt: "2025-03-20T09:00:00Z" },
+];
+
 export function MentorsView({
   canCreate = true,
   users: sharedUsers,
@@ -1553,129 +1666,584 @@ export function MentorsView({
     return acc + Math.max(0, (max || 0) - (cur || 0));
   }, 0);
 
+  // ── Tab state ──
+  const [activeTab, setActiveTab] = useState<"all" | "groups" | "forms" | "invitations">("all");
+
+  // ── Groups state ──
+  const [mentorGroups, setMentorGroups] = useState<MentorGroup[]>(INITIAL_MENTOR_GROUPS);
+  const [selectedGroupId, setSelectedGroupId] = useState<string | null>(null);
+  const [isNewGroupOpen, setIsNewGroupOpen] = useState(false);
+  const [newGroupName, setNewGroupName] = useState("");
+  const [newGroupDesc, setNewGroupDesc] = useState("");
+  const [newGroupIcon, setNewGroupIcon] = useState("Heart");
+
+  const handleCreateGroup = () => {
+    if (!newGroupName.trim()) return;
+    setMentorGroups(prev => [...prev, { id: `grp-${Date.now()}`, name: newGroupName.trim(), description: newGroupDesc.trim(), icon: newGroupIcon, memberIds: [] }]);
+    setNewGroupName(""); setNewGroupDesc(""); setNewGroupIcon("Heart"); setIsNewGroupOpen(false);
+    toast.success(`Group "${newGroupName}" created`);
+  };
+  const toggleMentorInGroup = (groupId: string, mentorId: string) => {
+    setMentorGroups(prev => prev.map(g => g.id === groupId
+      ? { ...g, memberIds: g.memberIds.includes(mentorId) ? g.memberIds.filter(id => id !== mentorId) : [...g.memberIds, mentorId] }
+      : g
+    ));
+  };
+  const deleteGroup = (groupId: string) => {
+    setMentorGroups(prev => prev.filter(g => g.id !== groupId));
+    if (selectedGroupId === groupId) setSelectedGroupId(null);
+    toast.success("Group deleted");
+  };
+
+  // ── Forms state ──
+  const [formTemplates, setFormTemplates] = useState<MentorFormTemplate[]>(INITIAL_FORM_TEMPLATES);
+  const [activeFormId, setActiveFormId] = useState<string | null>(null);
+  const [isFormBuilderOpen, setIsFormBuilderOpen] = useState(false);
+  const [builderFields, setBuilderFields] = useState<FormFieldDef[]>([]);
+  const [builderName, setBuilderName] = useState("");
+  const [builderSpecialty, setBuilderSpecialty] = useState("");
+  const [dragIdx, setDragIdx] = useState<number | null>(null);
+
+  const addField = (type: FormFieldDef["type"]) => {
+    setBuilderFields(prev => [...prev, { id: `f-${Date.now()}-${Math.random().toString(36).slice(2,5)}`, type, label: "", required: false, options: type === "select" || type === "checkbox_group" ? ["Option 1"] : undefined }]);
+  };
+  const updateField = (id: string, data: Partial<FormFieldDef>) => {
+    setBuilderFields(prev => prev.map(f => f.id === id ? { ...f, ...data } : f));
+  };
+  const removeField = (id: string) => setBuilderFields(prev => prev.filter(f => f.id !== id));
+  const handleDrop = (targetIdx: number) => {
+    if (dragIdx === null || dragIdx === targetIdx) return;
+    setBuilderFields(prev => {
+      const arr = [...prev];
+      const [moved] = arr.splice(dragIdx, 1);
+      arr.splice(targetIdx, 0, moved);
+      return arr;
+    });
+    setDragIdx(null);
+  };
+  const saveForm = () => {
+    if (!builderName.trim()) { toast.error("Form name is required"); return; }
+    const newTpl: MentorFormTemplate = {
+      id: `tpl-${Date.now()}`,
+      name: builderName.trim(),
+      specialty: builderSpecialty || "General",
+      fields: builderFields,
+      submissions: 0,
+    };
+    setFormTemplates(prev => [newTpl, ...prev]);
+    setIsFormBuilderOpen(false); setBuilderFields([]); setBuilderName(""); setBuilderSpecialty("");
+    toast.success(`Form "${newTpl.name}" created`);
+  };
+  const loadTemplate = (tpl: MentorFormTemplate) => {
+    setBuilderName(tpl.name + " (copy)");
+    setBuilderSpecialty(tpl.specialty);
+    setBuilderFields(tpl.fields.map(f => ({ ...f, id: `f-${Date.now()}-${Math.random().toString(36).slice(2,5)}` })));
+    setIsFormBuilderOpen(true);
+  };
+
+  // ── Invitations state ──
+  const [invitations, setInvitations] = useState<MentorInvitation[]>(INITIAL_INVITATIONS);
+  const [isInviteOpen, setIsInviteOpen] = useState(false);
+  const [invEmail, setInvEmail] = useState("");
+  const [invName, setInvName] = useState("");
+  const [invFormId, setInvFormId] = useState("");
+  const [invMessage, setInvMessage] = useState("");
+
+  const sendInvitation = () => {
+    if (!invEmail.trim() || !invFormId) { toast.error("Email and form selection are required"); return; }
+    const formName = formTemplates.find(f => f.id === invFormId)?.name ?? "Unknown";
+    setInvitations(prev => [{
+      id: `inv-${Date.now()}`,
+      email: invEmail.trim(),
+      name: invName.trim() || invEmail.trim(),
+      formId: invFormId,
+      formName,
+      message: invMessage,
+      status: "sent",
+      sentAt: new Date().toISOString(),
+    }, ...prev]);
+    setInvEmail(""); setInvName(""); setInvFormId(""); setInvMessage(""); setIsInviteOpen(false);
+    toast.success(`Invitation sent to ${invEmail}`);
+  };
+
+  // ── Tab labels ──
+  const TABS: { key: typeof activeTab; label: string; icon: any; count?: number }[] = [
+    { key: "all",         label: "All Mentors",  icon: Users,       count: mentors.length },
+    { key: "groups",      label: "Groups",       icon: UsersRound,  count: mentorGroups.length },
+    { key: "forms",       label: "Forms",        icon: FileText,    count: formTemplates.length },
+    { key: "invitations", label: "Invitations",  icon: Mail,        count: invitations.length },
+  ];
+
   return (
     <div className="p-6 space-y-4">
       <PageHeader
         title="Mentors"
-        subtitle="Manage mentor profiles, availability, and capacity"
-        actions={canCreate && (
-          <Button onClick={() => setIsNewOpen(true)}>
-            <Plus className="w-4 h-4" /> New Mentor
-          </Button>
+        subtitle="Manage mentor profiles, groups, forms, and invitations"
+        actions={(
+          <div className="flex items-center gap-2">
+            {activeTab === "all" && canCreate && (
+              <Button onClick={() => setIsNewOpen(true)}>
+                <Plus className="w-4 h-4" /> New Mentor
+              </Button>
+            )}
+            {activeTab === "groups" && (
+              <Button onClick={() => setIsNewGroupOpen(true)}>
+                <Plus className="w-4 h-4" /> New Group
+              </Button>
+            )}
+            {activeTab === "forms" && (
+              <Button onClick={() => { setBuilderFields([]); setBuilderName(""); setBuilderSpecialty(""); setIsFormBuilderOpen(true); }}>
+                <Plus className="w-4 h-4" /> New Form
+              </Button>
+            )}
+            {activeTab === "invitations" && (
+              <Button onClick={() => setIsInviteOpen(true)}>
+                <Mail className="w-4 h-4" /> Send Invitation
+              </Button>
+            )}
+          </div>
         )}
       />
 
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
-        <StatCard label="Total Mentors"   value={mentors.length} icon={ShieldCheck}  tone="blue" />
-        <StatCard label="Active"          value={totalActive}    icon={CheckCircle2} tone="green" />
-        <StatCard label="Avg. Load"       value={`${avgLoad}%`}  icon={Activity}     tone="amber" />
-        <StatCard label="Available Slots" value={availableSlots} icon={Users}        tone="purple" />
+      {/* Tabs */}
+      <div className="flex border-b border-border">
+        {TABS.map(t => (
+          <button
+            key={t.key}
+            onClick={() => setActiveTab(t.key)}
+            className={cn(
+              "flex items-center gap-2 px-4 py-2.5 text-sm font-semibold border-b-2 transition-colors",
+              activeTab === t.key
+                ? "border-primary text-primary"
+                : "border-transparent text-muted-foreground hover:text-foreground hover:border-border"
+            )}
+          >
+            <t.icon className="w-4 h-4" />
+            {t.label}
+            {t.count !== undefined && (
+              <span className={cn("text-xs tabular-nums px-1.5 py-0.5 rounded-full font-bold", activeTab === t.key ? "bg-primary/10 text-primary" : "bg-muted text-muted-foreground")}>{t.count}</span>
+            )}
+          </button>
+        ))}
       </div>
 
-      <div className="flex items-center gap-2 flex-wrap">
-        <div className="flex-1 min-w-[240px] relative">
-          <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none" />
-          <Input
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search by name, email, or specialty..."
-            className="pl-9 h-10"
-          />
-        </div>
-        <FilterDropdown
-          label="Status"
-          value={status}
-          onChange={setStatus}
-          options={[{ value: "all", label: "All statuses" }, ...MENTOR_STATUSES.map(s => ({ value: s, label: s }))]}
-        />
-        <FilterDropdown
-          label="Experience"
-          value={exp}
-          onChange={setExp}
-          options={[{ value: "all", label: "All experience" }, ...EXPERIENCE_LEVELS.map(s => ({ value: s, label: s }))]}
-        />
-        <FilterDropdown
-          label="Sort"
-          value={sort}
-          onChange={(v) => setSort(v as typeof sort)}
-          options={[
-            { value: "newest",    label: "Newest first" },
-            { value: "name",      label: "Name (A–Z)" },
-            { value: "load_low",  label: "Load (low → high)" },
-            { value: "load_high", label: "Load (high → low)" },
-          ]}
-        />
-      </div>
+      {/* ═══════════════ TAB: ALL MENTORS ═══════════════ */}
+      {activeTab === "all" && (
+        <>
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
+            <StatCard label="Total Mentors"   value={mentors.length} icon={ShieldCheck}  tone="blue" />
+            <StatCard label="Active"          value={totalActive}    icon={CheckCircle2} tone="green" />
+            <StatCard label="Avg. Load"       value={`${avgLoad}%`}  icon={Activity}     tone="amber" />
+            <StatCard label="Available Slots" value={availableSlots} icon={Users}        tone="purple" />
+          </div>
 
-      <div className="bg-card border border-border rounded-lg overflow-hidden">
-        <table className="w-full">
-          <thead>
-            <tr className="bg-muted/40 border-b border-border text-xs uppercase tracking-wider text-muted-foreground">
-              <th className="px-4 py-3 text-left font-semibold">Mentor</th>
-              <th className="px-4 py-3 text-left font-semibold">Specialty Areas</th>
-              <th className="px-4 py-3 text-left font-semibold">Languages</th>
-              <th className="px-4 py-3 text-left font-semibold">Experience</th>
-              <th className="px-4 py-3 text-left font-semibold">Capacity</th>
-              <th className="px-4 py-3 text-left font-semibold">Status</th>
-              <th className="px-4 py-3 text-right font-semibold w-10">Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {filtered.length === 0 ? (
-              <tr>
-                <td colSpan={7} className="px-4 py-12 text-center text-sm text-muted-foreground">
-                  No mentors match your filters.
-                </td>
-              </tr>
-            ) : filtered.map(m => (
-              <tr
-                key={m.id}
-                className="border-b border-border last:border-0 hover:bg-muted/30 transition-colors cursor-pointer"
-                onClick={() => setSelectedId(m.id)}
-              >
-                <td className="px-4 py-3">
-                  <div className="flex items-center gap-3">
-                    <Avatar name={m.name} tone={m.avatarTone} />
+          <div className="flex items-center gap-2 flex-wrap">
+            <div className="flex-1 min-w-[240px] relative">
+              <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none" />
+              <Input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Search by name, email, or specialty..." className="pl-9 h-10" />
+            </div>
+            <FilterDropdown label="Status" value={status} onChange={setStatus} options={[{ value: "all", label: "All statuses" }, ...MENTOR_STATUSES.map(s => ({ value: s, label: s }))]} />
+            <FilterDropdown label="Experience" value={exp} onChange={setExp} options={[{ value: "all", label: "All experience" }, ...EXPERIENCE_LEVELS.map(s => ({ value: s, label: s }))]} />
+            <FilterDropdown label="Sort" value={sort} onChange={(v) => setSort(v as typeof sort)} options={[
+              { value: "newest", label: "Newest first" }, { value: "name", label: "Name (A–Z)" },
+              { value: "load_low", label: "Load (low → high)" }, { value: "load_high", label: "Load (high → low)" },
+            ]} />
+          </div>
+
+          <div className="bg-card border border-border rounded-lg overflow-hidden">
+            <table className="w-full">
+              <thead>
+                <tr className="bg-muted/40 border-b border-border text-xs uppercase tracking-wider text-muted-foreground">
+                  <th className="px-4 py-3 text-left font-semibold">Mentor</th>
+                  <th className="px-4 py-3 text-left font-semibold">Specialty Areas</th>
+                  <th className="px-4 py-3 text-left font-semibold">Languages</th>
+                  <th className="px-4 py-3 text-left font-semibold">Experience</th>
+                  <th className="px-4 py-3 text-left font-semibold">Capacity</th>
+                  <th className="px-4 py-3 text-left font-semibold">Status</th>
+                  <th className="px-4 py-3 text-right font-semibold w-10">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filtered.length === 0 ? (
+                  <tr><td colSpan={7} className="px-4 py-12 text-center text-sm text-muted-foreground">No mentors match your filters.</td></tr>
+                ) : filtered.map(m => (
+                  <tr key={m.id} className="border-b border-border last:border-0 hover:bg-muted/30 transition-colors cursor-pointer" onClick={() => setSelectedId(m.id)}>
+                    <td className="px-4 py-3"><div className="flex items-center gap-3"><Avatar name={m.name} tone={m.avatarTone} /><div><div className="text-sm font-semibold text-foreground">{m.name}</div><div className="text-xs text-muted-foreground">{m.email}</div></div></div></td>
+                    <td className="px-4 py-3 text-sm text-foreground">{m.specialty}</td>
+                    <td className="px-4 py-3 text-sm text-muted-foreground">{m.languages}</td>
+                    <td className="px-4 py-3"><Chip tone="slate">{m.experience}</Chip></td>
+                    <td className="px-4 py-3"><div className="flex items-center gap-2 min-w-[120px]"><div className="flex-1"><ProgressBar value={m.load} tone={m.load >= 90 ? "red" : m.load >= 70 ? "amber" : "green"} /></div><span className="text-xs font-semibold text-foreground">{m.capacity}</span></div></td>
+                    <td className="px-4 py-3"><Chip tone={m.statusTone}>{m.status}</Chip></td>
+                    <td className="px-4 py-3 text-right" onClick={(e) => e.stopPropagation()}>
+                      <MentorActionsMenu mentor={m} onView={() => setSelectedId(m.id)} onEdit={() => setEditingId(m.id)} onMessage={() => toast.success(`Messaging ${m.name}`)}
+                        onToggleStatus={() => { setMentors(list => list.map(x => x.id === m.id ? { ...x, status: x.status === "Active" ? "Unavailable" : "Active", statusTone: x.status === "Active" ? "amber" : "green" } : x)); toast.success(`${m.name} is now ${m.status === "Active" ? "Unavailable" : "Active"}`); }}
+                        onDelete={() => { setMentors(list => list.filter(x => x.id !== m.id)); toast.success(`${m.name} removed`); }}
+                      />
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </>
+      )}
+
+      {/* ═══════════════ TAB: GROUPS ═══════════════ */}
+      {activeTab === "groups" && (
+        <>
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
+            <StatCard label="Total Groups" value={mentorGroups.length} icon={UsersRound} tone="blue" />
+            <StatCard label="Mentors in Groups" value={new Set(mentorGroups.flatMap(g => g.memberIds)).size} icon={Users} tone="green" />
+            <StatCard label="Avg. Group Size" value={mentorGroups.length === 0 ? 0 : Math.round(mentorGroups.reduce((s, g) => s + g.memberIds.length, 0) / mentorGroups.length)} icon={Activity} tone="amber" />
+            <StatCard label="Unassigned" value={mentors.filter(m => !mentorGroups.some(g => g.memberIds.includes(m.id))).length} icon={AlertCircle} tone="purple" subtitle="not in any group" />
+          </div>
+
+          <div className="flex gap-4">
+            {/* Group list */}
+            <div className="w-[300px] shrink-0 space-y-2">
+              {mentorGroups.map(g => {
+                const Icon = GROUP_ICON_MAP[g.icon] || Users;
+                return (
+                  <button key={g.id} onClick={() => setSelectedGroupId(g.id)}
+                    className={cn(
+                      "w-full flex items-center gap-3 p-3 border rounded-sm text-left transition-all",
+                      selectedGroupId === g.id ? "border-primary bg-primary/5" : "border-border bg-card hover:border-primary/40"
+                    )}
+                  >
+                    <div className={cn("w-9 h-9 rounded-sm flex items-center justify-center shrink-0", selectedGroupId === g.id ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground")}>
+                      <Icon className="w-4 h-4" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-bold text-foreground truncate">{g.name}</p>
+                      <p className="text-xs text-muted-foreground">{g.memberIds.length} mentor{g.memberIds.length !== 1 ? "s" : ""}</p>
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* Group detail */}
+            <div className="flex-1 bg-card border border-border rounded-sm p-5">
+              {selectedGroupId ? (() => {
+                const group = mentorGroups.find(g => g.id === selectedGroupId);
+                if (!group) return null;
+                const members = mentors.filter(m => group.memberIds.includes(m.id));
+                const nonMembers = mentors.filter(m => !group.memberIds.includes(m.id));
+                return (
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <h3 className="text-lg font-bold text-foreground">{group.name}</h3>
+                        <p className="text-sm text-muted-foreground">{group.description}</p>
+                      </div>
+                      <Button variant="outline" size="sm" onClick={() => deleteGroup(group.id)} className="text-red-600 hover:text-red-700 hover:bg-red-50">
+                        <Trash2 className="w-3.5 h-3.5" /> Delete
+                      </Button>
+                    </div>
+
+                    {/* Current members */}
                     <div>
-                      <div className="text-sm font-semibold text-foreground">{m.name}</div>
-                      <div className="text-xs text-muted-foreground">{m.email}</div>
+                      <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-2">Members ({members.length})</p>
+                      {members.length === 0 ? (
+                        <p className="text-sm text-muted-foreground py-4 text-center">No mentors in this group yet</p>
+                      ) : (
+                        <div className="space-y-1">
+                          {members.map(m => (
+                            <div key={m.id} className="flex items-center justify-between gap-2 px-3 py-2 bg-muted/20 rounded-sm">
+                              <div className="flex items-center gap-2.5">
+                                <Avatar name={m.name} tone={m.avatarTone} size="sm" />
+                                <div><p className="text-sm font-semibold">{m.name}</p><p className="text-xs text-muted-foreground">{m.specialty}</p></div>
+                              </div>
+                              <button onClick={() => toggleMentorInGroup(group.id, m.id)} className="text-xs font-bold text-red-500 hover:text-red-700 px-2 py-1 hover:bg-red-50 rounded transition-colors">Remove</button>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Add mentors */}
+                    <div>
+                      <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-2">Add Mentors</p>
+                      <div className="max-h-[200px] overflow-y-auto space-y-1 border border-border rounded-sm p-1">
+                        {nonMembers.length === 0 ? (
+                          <p className="text-xs text-muted-foreground py-3 text-center">All mentors are in this group</p>
+                        ) : nonMembers.map(m => (
+                          <button key={m.id} onClick={() => toggleMentorInGroup(group.id, m.id)}
+                            className="w-full flex items-center justify-between gap-2 px-3 py-2 hover:bg-muted/30 rounded-sm transition-colors text-left"
+                          >
+                            <div className="flex items-center gap-2.5">
+                              <Avatar name={m.name} tone={m.avatarTone} size="sm" />
+                              <div><p className="text-sm font-semibold">{m.name}</p><p className="text-xs text-muted-foreground">{m.specialty}</p></div>
+                            </div>
+                            <Plus className="w-4 h-4 text-primary" />
+                          </button>
+                        ))}
+                      </div>
                     </div>
                   </div>
-                </td>
-                <td className="px-4 py-3 text-sm text-foreground">{m.specialty}</td>
-                <td className="px-4 py-3 text-sm text-muted-foreground">{m.languages}</td>
-                <td className="px-4 py-3"><Chip tone="slate">{m.experience}</Chip></td>
-                <td className="px-4 py-3">
-                  <div className="flex items-center gap-2 min-w-[120px]">
-                    <div className="flex-1"><ProgressBar value={m.load} tone={m.load >= 90 ? "red" : m.load >= 70 ? "amber" : "green"} /></div>
-                    <span className="text-xs font-semibold text-foreground">{m.capacity}</span>
+                );
+              })() : (
+                <div className="flex flex-col items-center justify-center h-full py-16 text-center">
+                  <UsersRound className="w-12 h-12 text-muted-foreground/20 mb-3" />
+                  <p className="text-sm text-muted-foreground">Select a group to manage members</p>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* New Group Modal */}
+          {isNewGroupOpen && (
+            <Modal isOpen={isNewGroupOpen} onClose={() => setIsNewGroupOpen(false)} title="Create Group" size="md">
+              <div className="space-y-4">
+                <div>
+                  <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-1.5 block">Group Name</label>
+                  <Input value={newGroupName} onChange={e => setNewGroupName(e.target.value)} placeholder="e.g. Youth Ministry" />
+                </div>
+                <div>
+                  <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-1.5 block">Description</label>
+                  <Input value={newGroupDesc} onChange={e => setNewGroupDesc(e.target.value)} placeholder="Brief description of this group" />
+                </div>
+                <div>
+                  <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-1.5 block">Icon</label>
+                  <div className="flex flex-wrap gap-1.5">
+                    {Object.keys(GROUP_ICON_MAP).map(k => {
+                      const I = GROUP_ICON_MAP[k];
+                      return (
+                        <button key={k} onClick={() => setNewGroupIcon(k)} className={cn("w-9 h-9 rounded-sm flex items-center justify-center border transition-colors", newGroupIcon === k ? "border-primary bg-primary/10 text-primary" : "border-border text-muted-foreground hover:border-primary/40")}>
+                          <I className="w-4 h-4" />
+                        </button>
+                      );
+                    })}
                   </div>
-                </td>
-                <td className="px-4 py-3"><Chip tone={m.statusTone}>{m.status}</Chip></td>
-                <td className="px-4 py-3 text-right" onClick={(e) => e.stopPropagation()}>
-                  <MentorActionsMenu
-                    mentor={m}
-                    onView={() => setSelectedId(m.id)}
-                    onEdit={() => setEditingId(m.id)}
-                    onMessage={() => toast.success(`Messaging ${m.name}`)}
-                    onToggleStatus={() => {
-                      setMentors(list => list.map(x => x.id === m.id
-                        ? { ...x, status: x.status === "Active" ? "Unavailable" : "Active", statusTone: x.status === "Active" ? "amber" : "green" }
-                        : x
-                      ));
-                      toast.success(`${m.name} is now ${m.status === "Active" ? "Unavailable" : "Active"}`);
-                    }}
-                    onDelete={() => {
-                      setMentors(list => list.filter(x => x.id !== m.id));
-                      toast.success(`${m.name} removed`);
-                    }}
-                  />
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+                </div>
+                <div className="flex justify-end gap-2 pt-2 border-t border-border">
+                  <Button variant="outline" size="sm" onClick={() => setIsNewGroupOpen(false)}>Cancel</Button>
+                  <Button size="sm" disabled={!newGroupName.trim()} onClick={handleCreateGroup}><Plus className="w-3.5 h-3.5" /> Create</Button>
+                </div>
+              </div>
+            </Modal>
+          )}
+        </>
+      )}
+
+      {/* ═══════════════ TAB: FORMS ═══════════════ */}
+      {activeTab === "forms" && (
+        <>
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
+            <StatCard label="Total Forms" value={formTemplates.length} icon={FileText} tone="blue" />
+            <StatCard label="Submissions" value={formTemplates.reduce((s, f) => s + f.submissions, 0)} icon={CheckCircle2} tone="green" />
+            <StatCard label="Specialties" value={new Set(formTemplates.map(f => f.specialty)).size} icon={Tag} tone="purple" />
+            <StatCard label="Avg. Fields" value={formTemplates.length === 0 ? 0 : Math.round(formTemplates.reduce((s, f) => s + f.fields.length, 0) / formTemplates.length)} icon={ListOrdered} tone="amber" />
+          </div>
+
+          {isFormBuilderOpen ? (
+            /* ── Form Builder ── */
+            <div className="bg-card border border-border rounded-sm overflow-hidden">
+              <div className="border-b border-border p-4 flex items-center justify-between">
+                <div className="flex items-center gap-3 flex-1">
+                  <Input value={builderName} onChange={e => setBuilderName(e.target.value)} placeholder="Form name..." className="max-w-[280px] font-bold" />
+                  <Input value={builderSpecialty} onChange={e => setBuilderSpecialty(e.target.value)} placeholder="Specialty (e.g. Youth)" className="max-w-[180px]" />
+                </div>
+                <div className="flex items-center gap-2">
+                  <Button variant="outline" size="sm" onClick={() => setIsFormBuilderOpen(false)}>Cancel</Button>
+                  <Button size="sm" onClick={saveForm}><Check className="w-3.5 h-3.5" /> Save Form</Button>
+                </div>
+              </div>
+              <div className="flex">
+                {/* Field palette */}
+                <div className="w-[200px] border-r border-border p-3 space-y-1.5 shrink-0 bg-muted/10">
+                  <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-2">Add Field</p>
+                  {FORM_FIELD_TYPES.map(ft => (
+                    <button key={ft.type} onClick={() => addField(ft.type)}
+                      className="w-full flex items-center gap-2 px-3 py-2 text-sm text-left rounded-sm hover:bg-muted/50 transition-colors border border-transparent hover:border-border"
+                    >
+                      <ft.icon className="w-3.5 h-3.5 text-muted-foreground" />
+                      {ft.label}
+                    </button>
+                  ))}
+                </div>
+                {/* Canvas */}
+                <div className="flex-1 p-5 min-h-[350px]">
+                  {builderFields.length === 0 ? (
+                    <div className="flex flex-col items-center justify-center h-full py-16 text-center border-2 border-dashed border-border rounded-sm">
+                      <FileText className="w-10 h-10 text-muted-foreground/20 mb-3" />
+                      <p className="text-sm text-muted-foreground">Click fields on the left to add them</p>
+                      <p className="text-xs text-muted-foreground mt-1">Drag to reorder</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-2">
+                      {builderFields.map((f, idx) => (
+                        <div
+                          key={f.id}
+                          draggable
+                          onDragStart={() => setDragIdx(idx)}
+                          onDragOver={e => e.preventDefault()}
+                          onDrop={() => handleDrop(idx)}
+                          className={cn("flex items-start gap-3 p-3 border rounded-sm bg-background transition-all group", dragIdx === idx ? "opacity-50 border-primary" : "border-border hover:border-primary/40")}
+                        >
+                          <div className="cursor-grab text-muted-foreground hover:text-foreground mt-1">
+                            <GripVertical className="w-4 h-4" />
+                          </div>
+                          <div className="flex-1 space-y-2">
+                            <div className="flex items-center gap-2">
+                              <Chip tone="slate">{FORM_FIELD_TYPES.find(t => t.type === f.type)?.label ?? f.type}</Chip>
+                              <Input value={f.label} onChange={e => updateField(f.id, { label: e.target.value })} placeholder="Field label..." className="h-8 text-sm flex-1" />
+                            </div>
+                            {(f.type === "select" || f.type === "checkbox_group") && f.options && (
+                              <div className="pl-1 space-y-1">
+                                {f.options.map((opt, oi) => (
+                                  <div key={oi} className="flex items-center gap-2">
+                                    <span className="text-xs text-muted-foreground w-4">{oi + 1}.</span>
+                                    <Input value={opt} onChange={e => { const o = [...f.options!]; o[oi] = e.target.value; updateField(f.id, { options: o }); }} className="h-7 text-xs flex-1" />
+                                    <button onClick={() => { const o = f.options!.filter((_, i) => i !== oi); updateField(f.id, { options: o }); }} className="text-muted-foreground hover:text-red-500"><X className="w-3 h-3" /></button>
+                                  </div>
+                                ))}
+                                <button onClick={() => updateField(f.id, { options: [...(f.options || []), `Option ${(f.options?.length || 0) + 1}`] })} className="text-xs font-semibold text-primary hover:text-primary/80">+ Add option</button>
+                              </div>
+                            )}
+                          </div>
+                          <div className="flex items-center gap-2 shrink-0">
+                            <label className="flex items-center gap-1 text-xs text-muted-foreground">
+                              <input type="checkbox" checked={f.required} onChange={e => updateField(f.id, { required: e.target.checked })} className="accent-primary" />
+                              Req
+                            </label>
+                            <button onClick={() => removeField(f.id)} className="text-muted-foreground hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity"><Trash2 className="w-3.5 h-3.5" /></button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          ) : (
+            /* ── Form template gallery ── */
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+              {formTemplates.map(tpl => (
+                <div key={tpl.id} className="bg-card border border-border rounded-sm p-4 hover:border-primary/40 transition-colors group">
+                  <div className="flex items-start justify-between mb-3">
+                    <div>
+                      <h4 className="text-sm font-bold text-foreground">{tpl.name}</h4>
+                      <p className="text-xs text-muted-foreground mt-0.5"><Chip tone="blue">{tpl.specialty}</Chip></p>
+                    </div>
+                    <span className="text-xs font-semibold text-muted-foreground">{tpl.fields.length} fields</span>
+                  </div>
+                  <div className="flex flex-wrap gap-1 mb-3">
+                    {tpl.fields.slice(0, 4).map(f => <Chip key={f.id} tone="slate">{f.label || f.type}</Chip>)}
+                    {tpl.fields.length > 4 && <Chip tone="slate">+{tpl.fields.length - 4}</Chip>}
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs text-muted-foreground">{tpl.submissions} submission{tpl.submissions !== 1 ? "s" : ""}</span>
+                    <div className="flex gap-1.5">
+                      <Button variant="outline" size="sm" onClick={() => loadTemplate(tpl)} className="text-xs h-7">Duplicate</Button>
+                      <Button variant="outline" size="sm" onClick={() => setActiveFormId(tpl.id === activeFormId ? null : tpl.id)} className="text-xs h-7">
+                        {activeFormId === tpl.id ? "Hide" : "Preview"}
+                      </Button>
+                    </div>
+                  </div>
+                  {/* Preview */}
+                  {activeFormId === tpl.id && (
+                    <div className="mt-3 pt-3 border-t border-border space-y-2">
+                      {tpl.fields.map(f => (
+                        <div key={f.id} className="flex items-center gap-2 text-xs">
+                          <span className="text-muted-foreground w-20 shrink-0 font-semibold">{FORM_FIELD_TYPES.find(t => t.type === f.type)?.label ?? f.type}</span>
+                          <span className="text-foreground">{f.label || "(no label)"}</span>
+                          {f.required && <span className="text-red-500">*</span>}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+        </>
+      )}
+
+      {/* ═══════════════ TAB: INVITATIONS ═══════════════ */}
+      {activeTab === "invitations" && (
+        <>
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
+            <StatCard label="Total Sent" value={invitations.length} icon={Mail} tone="blue" />
+            <StatCard label="Pending" value={invitations.filter(i => i.status === "sent" || i.status === "opened").length} icon={Clock} tone="amber" subtitle="awaiting response" />
+            <StatCard label="Submitted" value={invitations.filter(i => i.status === "submitted").length} icon={CheckCircle2} tone="green" />
+            <StatCard label="Accepted" value={invitations.filter(i => i.status === "accepted").length} icon={UserCheck} tone="purple" />
+          </div>
+
+          <div className="bg-card border border-border rounded-lg overflow-hidden">
+            <table className="w-full">
+              <thead>
+                <tr className="bg-muted/40 border-b border-border text-xs uppercase tracking-wider text-muted-foreground">
+                  <th className="px-4 py-3 text-left font-semibold">Invitee</th>
+                  <th className="px-4 py-3 text-left font-semibold">Email</th>
+                  <th className="px-4 py-3 text-left font-semibold">Form</th>
+                  <th className="px-4 py-3 text-left font-semibold">Status</th>
+                  <th className="px-4 py-3 text-left font-semibold">Sent</th>
+                  <th className="px-4 py-3 text-right font-semibold">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {invitations.length === 0 ? (
+                  <tr><td colSpan={6} className="px-4 py-12 text-center text-sm text-muted-foreground">No invitations sent yet.</td></tr>
+                ) : invitations.map(inv => (
+                  <tr key={inv.id} className="border-b border-border last:border-0 hover:bg-muted/30 transition-colors">
+                    <td className="px-4 py-3"><div className="flex items-center gap-2"><Avatar name={inv.name} tone="blue" size="sm" /><span className="text-sm font-semibold">{inv.name}</span></div></td>
+                    <td className="px-4 py-3 text-sm text-muted-foreground">{inv.email}</td>
+                    <td className="px-4 py-3"><Chip tone="blue">{inv.formName}</Chip></td>
+                    <td className="px-4 py-3"><Chip tone={inv.status === "accepted" ? "green" : inv.status === "submitted" ? "blue" : inv.status === "opened" ? "amber" : inv.status === "expired" ? "red" : "slate"}>{inv.status}</Chip></td>
+                    <td className="px-4 py-3 text-xs text-muted-foreground">{new Date(inv.sentAt).toLocaleDateString()}</td>
+                    <td className="px-4 py-3 text-right">
+                      <Button variant="outline" size="sm" className="text-xs h-7" onClick={() => toast.success(`Resent invitation to ${inv.email}`)}>Resend</Button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          {/* Send Invitation Modal */}
+          {isInviteOpen && (
+            <Modal isOpen={isInviteOpen} onClose={() => setIsInviteOpen(false)} title="Send Mentor Invitation" size="lg">
+              <div className="space-y-4">
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-1.5 block">Name</label>
+                    <Input value={invName} onChange={e => setInvName(e.target.value)} placeholder="Mentor's name" />
+                  </div>
+                  <div>
+                    <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-1.5 block">Email <span className="text-red-500">*</span></label>
+                    <Input value={invEmail} onChange={e => setInvEmail(e.target.value)} placeholder="mentor@email.com" type="email" />
+                  </div>
+                </div>
+                <div>
+                  <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-1.5 block">Select Form <span className="text-red-500">*</span></label>
+                  <div className="max-h-[200px] overflow-y-auto border border-border rounded-sm">
+                    {formTemplates.map(f => (
+                      <button key={f.id} onClick={() => setInvFormId(f.id)}
+                        className={cn("w-full flex items-center justify-between px-3 py-2.5 text-left text-sm border-b border-border/50 last:border-0 transition-colors", invFormId === f.id ? "bg-primary/10 text-primary font-bold" : "hover:bg-muted/40")}
+                      >
+                        <div><p className="font-semibold">{f.name}</p><p className="text-xs text-muted-foreground">{f.specialty} · {f.fields.length} fields</p></div>
+                        {invFormId === f.id && <CheckCircle2 className="w-4 h-4 text-primary shrink-0" />}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                <div>
+                  <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-1.5 block">Personal Message (optional)</label>
+                  <textarea rows={3} value={invMessage} onChange={e => setInvMessage(e.target.value)} placeholder="Add a personal note to the invitation email..."
+                    className="w-full px-3 py-2 border border-input text-sm bg-background focus:ring-1 focus:ring-ring outline-none resize-none" />
+                </div>
+                <div className="flex justify-end gap-2 pt-2 border-t border-border">
+                  <Button variant="outline" size="sm" onClick={() => setIsInviteOpen(false)}>Cancel</Button>
+                  <Button size="sm" disabled={!invEmail.trim() || !invFormId} onClick={sendInvitation}>
+                    <Mail className="w-3.5 h-3.5" /> Send Invitation
+                  </Button>
+                </div>
+              </div>
+            </Modal>
+          )}
+        </>
+      )}
 
       {/* Create + Edit share the same modal to keep the form logic in one place */}
       <MentorFormModal
