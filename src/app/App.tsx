@@ -133,6 +133,40 @@ export default function App() {
   const [matches, setMatches] = useState<Match[]>(INITIAL_MATCHES);
   const [contentLibrary, setContentLibrary] = useState<ContentRow[]>(INITIAL_CONTENT);
 
+  // Reassignment requests
+  const [reassignRequests, setReassignRequests] = useState<{
+    id: string; contactId: string; fromMentorId: string; reason: string;
+    status: "pending" | "approved" | "rejected"; createdAt: string;
+  }[]>([]);
+
+  const handleRequestReassign = (contactId: string, reason: string) => {
+    setReassignRequests(prev => [...prev, {
+      id: `ra-${Date.now()}`,
+      contactId,
+      fromMentorId: currentUser.id,
+      reason,
+      status: "pending",
+      createdAt: new Date().toISOString(),
+    }]);
+    toast.success("Reassignment request submitted — awaiting mentor coach approval");
+  };
+
+  const handleApproveReassign = (reqId: string, newMentorId: string) => {
+    const req = reassignRequests.find(r => r.id === reqId);
+    if (!req) return;
+    // Update the request status
+    setReassignRequests(prev => prev.map(r => r.id === reqId ? { ...r, status: "approved" as const } : r));
+    // Assign the new mentor to the contact
+    setContacts(prev => prev.map(c => c.id === req.contactId ? { ...c, assignedMentorId: newMentorId } : c));
+    const newMentor = users.find(u => u.id === newMentorId);
+    toast.success(`Reassignment approved — ${newMentor?.name || "new mentor"} assigned`);
+  };
+
+  const handleRejectReassign = (reqId: string) => {
+    setReassignRequests(prev => prev.map(r => r.id === reqId ? { ...r, status: "rejected" as const } : r));
+    toast.success("Reassignment request rejected");
+  };
+
   // Selected state for modals
   const [selectedContact, setSelectedContact] = useState<Contact | null>(null);
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
@@ -815,6 +849,10 @@ export default function App() {
                     setNotes(prev => [newNote, ...prev]);
                   }}
                   onDeleteNote={(id: string) => setNotes(prev => prev.filter(n => n.id !== id))}
+                  reassignRequests={reassignRequests}
+                  onRequestReassign={handleRequestReassign}
+                  onApproveReassign={handleApproveReassign}
+                  onRejectReassign={handleRejectReassign}
                   onAddRule={(data) => {
                     const newRule: ConversationRule = {
                       ...data as any,

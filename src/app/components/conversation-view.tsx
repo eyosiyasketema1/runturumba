@@ -628,11 +628,19 @@ function ConversationContextPanel({
   onLogMilestone?:    (contactId: string, key: string, date: string, sub: string[]) => void;
   onAddNote?:         (content: string, contactId: string) => void;
   onDeleteNote?:      (id: string) => void;
+  onRequestReassign?: (contactId: string, reason: string) => void;
+  reassignRequests?:  ReassignmentRequest[];
+  viewMode?:          string;
+  onApproveReassign?: (reqId: string, newMentorId: string) => void;
+  onRejectReassign?:  (reqId: string) => void;
 }) {
   const [activeTab, setActiveTab] = useState<InfoTab>("profile");
   const [newNote, setNewNote] = useState("");
   const [filterDate, setFilterDate] = useState("");
   const [isStatusOpen, setIsStatusOpen] = useState(false);
+  const [reassignReason, setReassignReason] = useState("");
+  const [isReassignOpen, setIsReassignOpen] = useState(false);
+  const [selectedNewMentor, setSelectedNewMentor] = useState<string>("");
 
   const contactMessages = messages.filter(m => m.contactId === contact.id);
   const contactNotes = notes.filter(n => n.contactId === contact.id);
@@ -816,6 +824,145 @@ function ConversationContextPanel({
                   <span className="text-xs text-muted-foreground italic">No groups or tags</span>
                 )}
               </div>
+            </div>
+
+            {/* Reassignment Section */}
+            <div className="px-6 py-4 border-b border-border">
+              <div className="flex items-center justify-between mb-2.5">
+                <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Mentor Assignment</h3>
+              </div>
+
+              {/* Current mentor display */}
+              <div className="flex items-center gap-3 p-3 bg-muted/30 rounded-sm border border-border mb-3">
+                <div className="w-9 h-9 rounded-full bg-primary/10 border border-primary/20 flex items-center justify-center text-xs font-bold text-primary shrink-0">
+                  {assignedMentor ? assignedMentor.name.split(" ").map(w => w[0]).join("").slice(0, 2).toUpperCase() : "—"}
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm font-semibold text-foreground">{assignedMentor?.name || "No mentor assigned"}</p>
+                  {assignedMentor?.mentorProfile && (
+                    <p className="text-[11px] text-muted-foreground">{assignedMentor.mentorProfile.specialty} · {assignedMentor.mentorProfile.experience}</p>
+                  )}
+                </div>
+              </div>
+
+              {/* Pending reassignment requests */}
+              {(reassignRequests || []).filter(r => r.contactId === contact.id && r.status === "pending").map(req => {
+                const fromMentor = users.find(u => u.id === req.fromMentorId);
+                const mentorUsers = users.filter(u => u.mentorProfile && u.id !== req.fromMentorId);
+                return (
+                  <div key={req.id} className="bg-amber-50 border border-amber-200 rounded-sm p-3 mb-3 space-y-2.5">
+                    <div className="flex items-start gap-2">
+                      <AlertCircle className="w-4 h-4 text-amber-600 mt-0.5 shrink-0" />
+                      <div className="flex-1 min-w-0">
+                        <p className="text-xs font-bold text-amber-800">Reassignment Pending</p>
+                        <p className="text-[11px] text-amber-700 mt-0.5">
+                          Requested by {fromMentor?.name || "Unknown"}: "{req.reason}"
+                        </p>
+                        <p className="text-[10px] text-amber-600 mt-1">{formatTimeAgo(req.createdAt)}</p>
+                      </div>
+                    </div>
+
+                    {/* Mentor Coach controls — only visible to mentor_coach / admin / super_admin */}
+                    {(viewMode === "mentor_coach" || viewMode === "admin" || viewMode === "super_admin") && (
+                      <div className="pt-2 border-t border-amber-200 space-y-2">
+                        <label className="text-[11px] font-semibold text-amber-800 block">Assign to new mentor</label>
+                        <select
+                          value={selectedNewMentor}
+                          onChange={e => setSelectedNewMentor(e.target.value)}
+                          className="w-full h-8 px-2 text-xs border border-amber-300 bg-white rounded-sm outline-none focus:ring-1 focus:ring-amber-400"
+                        >
+                          <option value="">Select a mentor…</option>
+                          {mentorUsers.map(u => (
+                            <option key={u.id} value={u.id}>
+                              {u.name} {u.mentorProfile ? `(${u.mentorProfile.capacity}, ${u.mentorProfile.specialty})` : ""}
+                            </option>
+                          ))}
+                        </select>
+                        <div className="flex items-center gap-2">
+                          <button
+                            onClick={() => {
+                              if (!selectedNewMentor) { toast.error("Please select a mentor"); return; }
+                              if (onApproveReassign) onApproveReassign(req.id, selectedNewMentor);
+                              setSelectedNewMentor("");
+                            }}
+                            disabled={!selectedNewMentor}
+                            className={cn(
+                              "flex items-center gap-1 px-3 py-1.5 text-xs font-bold rounded-sm transition-all",
+                              selectedNewMentor
+                                ? "bg-emerald-500 text-white hover:bg-emerald-600"
+                                : "bg-muted text-muted-foreground cursor-not-allowed"
+                            )}
+                          >
+                            <CheckCircle2 className="w-3 h-3" />
+                            Approve & Assign
+                          </button>
+                          <button
+                            onClick={() => { if (onRejectReassign) onRejectReassign(req.id); }}
+                            className="flex items-center gap-1 px-3 py-1.5 text-xs font-bold text-rose-600 hover:bg-rose-50 rounded-sm transition-all"
+                          >
+                            <XCircle className="w-3 h-3" />
+                            Reject
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+
+              {/* Request reassignment form */}
+              {!isReassignOpen ? (
+                <button
+                  onClick={() => setIsReassignOpen(true)}
+                  className="w-full flex items-center justify-center gap-1.5 px-3 py-2 text-xs font-semibold text-muted-foreground hover:text-foreground bg-muted/30 hover:bg-muted/50 border border-dashed border-border rounded-sm transition-all"
+                >
+                  <RefreshCw className="w-3.5 h-3.5" />
+                  Request Reassignment
+                </button>
+              ) : (
+                <div className="bg-muted/20 border border-border rounded-sm p-3 space-y-2.5">
+                  <div className="flex items-center justify-between">
+                    <p className="text-xs font-bold text-foreground">Request Reassignment</p>
+                    <button onClick={() => { setIsReassignOpen(false); setReassignReason(""); }}
+                      className="p-0.5 text-muted-foreground hover:text-foreground transition-colors">
+                      <X className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                  <p className="text-[11px] text-muted-foreground leading-snug">
+                    Submit a reason and the mentor coach will review and assign a new mentor.
+                  </p>
+                  <textarea
+                    value={reassignReason}
+                    onChange={e => setReassignReason(e.target.value)}
+                    placeholder="e.g. Language barrier, scheduling conflict, seeker requested change..."
+                    rows={3}
+                    className="w-full px-3 py-2 text-xs border border-input bg-background rounded-sm outline-none resize-none focus:ring-1 focus:ring-ring"
+                  />
+                  <div className="flex items-center justify-end gap-2">
+                    <button onClick={() => { setIsReassignOpen(false); setReassignReason(""); }}
+                      className="px-3 py-1.5 text-xs font-semibold text-muted-foreground hover:text-foreground transition-colors"
+                    >Cancel</button>
+                    <button
+                      onClick={() => {
+                        if (!reassignReason.trim()) { toast.error("Please provide a reason"); return; }
+                        if (onRequestReassign) onRequestReassign(contact.id, reassignReason.trim());
+                        setReassignReason("");
+                        setIsReassignOpen(false);
+                      }}
+                      disabled={!reassignReason.trim()}
+                      className={cn(
+                        "flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-sm transition-all",
+                        reassignReason.trim()
+                          ? "bg-primary text-primary-foreground hover:bg-primary/90"
+                          : "bg-muted text-muted-foreground cursor-not-allowed"
+                      )}
+                    >
+                      <Send className="w-3 h-3" />
+                      Submit Request
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         )}
@@ -1083,11 +1230,9 @@ function ConversationToolbar({
   onSendMessage:     (contactId: string, content: string, scheduledAt?: string, port?: MessagePort) => void;
   port:              MessagePort;
   onUpdateContact?:  (id: string, data: Partial<Contact>) => void;
-  onRequestReassign?: (contactId: string, reason: string) => void;
 }) {
   const [isExpanded, setIsExpanded] = useState(false);
-  const [activePanel, setActivePanel] = useState<"form" | "series" | "suggest" | "reassign" | null>(null);
-  const [reassignReason, setReassignReason] = useState("");
+  const [activePanel, setActivePanel] = useState<"form" | "series" | "suggest" | null>(null);
 
   // AI content suggestion — picks from library based on seeker's maturity and journey
   const suggestions = useMemo(() => {
@@ -1126,14 +1271,6 @@ function ConversationToolbar({
     setActivePanel(null);
   };
 
-  const handleReassign = () => {
-    if (!reassignReason.trim()) { toast.error("Please provide a reason for reassignment"); return; }
-    if (onRequestReassign) onRequestReassign(contact.id, reassignReason.trim());
-    toast.success("Reassignment request submitted — awaiting mentor coach approval");
-    setReassignReason("");
-    setActivePanel(null);
-  };
-
   const togglePanel = (panel: typeof activePanel) => {
     setActivePanel(prev => prev === panel ? null : panel);
     if (!isExpanded) setIsExpanded(true);
@@ -1143,7 +1280,6 @@ function ConversationToolbar({
     { id: "form" as const,    icon: FileText,   label: "Send Form",      desc: "Assessment or intake" },
     { id: "series" as const,  icon: ListOrdered, label: "Content Series", desc: "Start a drip sequence" },
     { id: "suggest" as const, icon: Sparkles,    label: "AI Suggest",     desc: "Smart content pick" },
-    { id: "reassign" as const, icon: RefreshCw,  label: "Reassign",       desc: "Request reassignment" },
   ];
 
   return (
@@ -1188,7 +1324,7 @@ function ConversationToolbar({
             className="overflow-hidden"
           >
             {/* Action tiles row */}
-            <div className="grid grid-cols-4 gap-1.5 px-3 pb-2">
+            <div className="grid grid-cols-3 gap-1.5 px-3 pb-2">
               {TOOLBAR_ACTIONS.map(action => {
                 const isActive = activePanel === action.id;
                 return (
@@ -1298,52 +1434,7 @@ function ConversationToolbar({
                       </div>
                     )}
 
-                    {/* REASSIGNMENT REQUEST */}
-                    {activePanel === "reassign" && (
-                      <div className="space-y-3">
-                        <div className="flex items-center gap-2">
-                          <RefreshCw className="w-3.5 h-3.5 text-orange-500" />
-                          <p className="text-xs font-bold text-foreground">Request Reassignment</p>
-                        </div>
-                        <div className="bg-amber-50 border border-amber-200 rounded-sm p-2.5">
-                          <div className="flex items-start gap-2">
-                            <AlertCircle className="w-3.5 h-3.5 text-amber-600 mt-0.5 shrink-0" />
-                            <p className="text-[11px] text-amber-800 leading-snug">
-                              This request will be sent to a Mentor Coach for review.
-                              {contact.assignedMentorId ? " The current mentor will remain assigned until the request is approved." : ""}
-                            </p>
-                          </div>
-                        </div>
-                        <div>
-                          <label className="text-xs font-semibold text-foreground block mb-1">Reason for reassignment</label>
-                          <textarea
-                            value={reassignReason}
-                            onChange={e => setReassignReason(e.target.value)}
-                            placeholder="e.g. Language barrier, scheduling conflict, seeker requested a different mentor..."
-                            rows={3}
-                            className="w-full px-3 py-2 text-sm border border-input bg-background rounded-sm outline-none resize-none focus:ring-1 focus:ring-ring"
-                          />
-                        </div>
-                        <div className="flex items-center justify-end gap-2">
-                          <button onClick={() => setActivePanel(null)}
-                            className="px-3 py-1.5 text-xs font-semibold text-muted-foreground hover:text-foreground transition-colors"
-                          >Cancel</button>
-                          <button
-                            onClick={handleReassign}
-                            disabled={!reassignReason.trim()}
-                            className={cn(
-                              "flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-sm transition-all",
-                              reassignReason.trim()
-                                ? "bg-orange-500 text-white hover:bg-orange-600"
-                                : "bg-muted text-muted-foreground cursor-not-allowed"
-                            )}
-                          >
-                            <RefreshCw className="w-3 h-3" />
-                            Submit Request
-                          </button>
-                        </div>
-                      </div>
-                    )}
+                    {/* Reassignment moved to Profile tab in info panel */}
                   </div>
                 </motion.div>
               )}
@@ -1669,6 +1760,10 @@ interface ConversationViewProps {
   onUpdateMatch?:      (id: string, data: Partial<Match>) => void;
   onAddNote?:          (content: string, contactId: string) => void;
   onDeleteNote?:       (id: string) => void;
+  reassignRequests?:   ReassignmentRequest[];
+  onRequestReassign?:  (contactId: string, reason: string) => void;
+  onApproveReassign?:  (reqId: string, newMentorId: string) => void;
+  onRejectReassign?:   (reqId: string) => void;
 }
 
 export const ConversationView = ({
@@ -1679,6 +1774,7 @@ export const ConversationView = ({
   faithJourneys = [], contactMilestones = [], matches = [], contentLibrary = [],
   onUpdateContact, onUpdateJourney, onLogMilestone, onUpdateMatch,
   onAddNote, onDeleteNote,
+  reassignRequests = [], onRequestReassign, onApproveReassign, onRejectReassign,
 }: ConversationViewProps) => {
   const isAgent = viewMode === "agent";
 
@@ -2024,10 +2120,6 @@ export const ConversationView = ({
                   onSendMessage={onSendMessage}
                   port={convPort}
                   onUpdateContact={onUpdateContact}
-                  onRequestReassign={(contactId, reason) => {
-                    addLocalItem({ contactId, type: "system", content: `🔄 Reassignment requested: "${reason}" — awaiting mentor coach approval` });
-                    toast.success("Reassignment request submitted");
-                  }}
                 />
 
                 {/* Compose */}
@@ -2066,6 +2158,11 @@ export const ConversationView = ({
                       onLogMilestone={onLogMilestone}
                       onAddNote={onAddNote}
                       onDeleteNote={onDeleteNote}
+                      onRequestReassign={onRequestReassign}
+                      reassignRequests={reassignRequests}
+                      viewMode={viewMode}
+                      onApproveReassign={onApproveReassign}
+                      onRejectReassign={onRejectReassign}
                     />
                   </motion.div>
                 )}
