@@ -245,55 +245,51 @@ export function DiscipleshipDashboardView({ onNavigate, stats }: {
       {/* ---------- HEADLINE METRICS ---------- */}
       <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <HeroStat
-          accent="from-blue-500 to-blue-600"
-          tintClass="bg-blue-50/70"
-          iconBg="bg-blue-500"
-          deltaChip="bg-blue-500/10 text-blue-700"
+          accentFrom="#2b7fff" accentTo="#155dfc"
+          iconColor="#2b7fff"
+          deltaColor="#1447e6" deltaBg="rgba(43,127,255,0.1)"
           icon={Users}
           label="Active Seekers"
           value={String(stats?.activeSeekers ?? 247)}
           delta="+12%"
           deltaTone="up"
-          sparkColor="#2563eb"
+          sparkColor="#2b7fff"
           sparkData={[180, 195, 212, 205, 228, 241, stats?.activeSeekers ?? 247]}
         />
         <HeroStat
-          accent="from-violet-500 to-fuchsia-500"
-          tintClass="bg-violet-50/70"
-          iconBg="bg-violet-500"
-          deltaChip="bg-violet-500/10 text-violet-700"
+          accentFrom="#8e51ff" accentTo="#e12afb"
+          iconColor="#8e51ff"
+          deltaColor="#7008e7" deltaBg="rgba(142,81,255,0.1)"
           icon={GitBranch}
           label="Active Matches"
           value={String(stats?.activeMatches ?? 89)}
           delta="+8%"
           deltaTone="up"
-          sparkColor="#8b5cf6"
+          sparkColor="#8e51ff"
           sparkData={[65, 68, 74, 76, 81, 85, stats?.activeMatches ?? 89]}
         />
         <HeroStat
-          accent="from-emerald-500 to-teal-500"
-          tintClass="bg-emerald-50/70"
-          iconBg="bg-emerald-500"
-          deltaChip="bg-emerald-500/10 text-emerald-700"
+          accentFrom="#00bc7d" accentTo="#00bba7"
+          iconColor="#00bc7d"
+          deltaColor="#007a55" deltaBg="rgba(0,188,125,0.1)"
           icon={CheckCircle2}
           label="Completion Rate"
           value="73%"
           delta="+5%"
           deltaTone="up"
-          sparkColor="#10b981"
+          sparkColor="#00bc7d"
           sparkData={[62, 64, 66, 68, 70, 71, 73]}
         />
         <HeroStat
-          accent="from-pink-500 to-rose-500"
-          tintClass="bg-pink-50/70"
-          iconBg="bg-pink-500"
-          deltaChip="bg-pink-500/10 text-pink-700"
+          accentFrom="#fe9a00" accentTo="#ff6900"
+          iconColor="#fe9a00"
+          deltaColor="#bb4d00" deltaBg="rgba(254,154,0,0.1)"
           icon={Activity}
           label="Engagement Score"
           value="82"
           delta="+3 pts"
           deltaTone="up"
-          sparkColor="#ec4899"
+          sparkColor="#fe9a00"
           sparkData={[74, 76, 78, 79, 80, 81, 82]}
         />
       </section>
@@ -494,11 +490,13 @@ export function DiscipleshipDashboardView({ onNavigate, stats }: {
 // ---------------------------------------------------------------------------
 
 function HeroStat({
-  accent, tintClass, iconBg, icon: Icon, label, value, delta, deltaTone, sparkColor, sparkData, deltaChip,
+  accentFrom, accentTo, iconColor, deltaColor, deltaBg, icon: Icon, label, value, delta, deltaTone, sparkColor, sparkData,
 }: {
-  accent: string;
-  tintClass: string;
-  iconBg: string;
+  accentFrom: string;
+  accentTo: string;
+  iconColor: string;
+  deltaColor: string;
+  deltaBg: string;
   icon: any;
   label: string;
   value: string;
@@ -506,43 +504,76 @@ function HeroStat({
   deltaTone: "up" | "down";
   sparkColor: string;
   sparkData: number[];
-  deltaChip?: string;
 }) {
-  const data = sparkData.map((v, i) => ({ i, v }));
-  return (
-    <div className="relative rounded-sm bg-card border border-border overflow-hidden shadow-[0_8px_30px_-18px_rgba(15,23,42,0.25)] hover:shadow-[0_18px_40px_-18px_rgba(15,23,42,0.35)] transition-all group">
-      {/* 2px color accent strip */}
-      <div className={cn("absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r", accent)} />
+  // Build an SVG sparkline path manually so we have full control over the gradient fill
+  const uid = React.useId();
+  const gradId = `spk${uid.replace(/:/g, "")}`;
 
-      <div className="relative p-5">
-        <div className="flex items-start justify-between mb-4">
-          <span className="text-xs font-semibold text-muted-foreground uppercase tracking-[0.12em]">{label}</span>
-          <span className={cn("w-8 h-8 rounded-sm flex items-center justify-center text-white shadow-md", iconBg)}>
-            <Icon className="w-4 h-4" />
+  const buildPath = (pts: number[], w: number, h: number, pad = 2) => {
+    if (!pts.length) return { line: "", area: "" };
+    const min = Math.min(...pts);
+    const max = Math.max(...pts);
+    const range = max - min || 1;
+    const coords = pts.map((v, i) => ({
+      x: pad + (i / (pts.length - 1)) * (w - pad * 2),
+      y: pad + (1 - (v - min) / range) * (h - pad * 2),
+    }));
+    // Smooth curve using catmull-rom → cubic bezier
+    const catmull = (p0: {x:number;y:number}, p1: {x:number;y:number}, p2: {x:number;y:number}, p3: {x:number;y:number}) => {
+      const t = 0.35;
+      return {
+        cp1x: p1.x + (p2.x - p0.x) * t / 3,
+        cp1y: p1.y + (p2.y - p0.y) * t / 3,
+        cp2x: p2.x - (p3.x - p1.x) * t / 3,
+        cp2y: p2.y - (p3.y - p1.y) * t / 3,
+      };
+    };
+    let d = `M${coords[0].x},${coords[0].y}`;
+    for (let i = 0; i < coords.length - 1; i++) {
+      const p0 = coords[Math.max(0, i - 1)];
+      const p1 = coords[i];
+      const p2 = coords[i + 1];
+      const p3 = coords[Math.min(coords.length - 1, i + 2)];
+      const c = catmull(p0, p1, p2, p3);
+      d += ` C${c.cp1x},${c.cp1y} ${c.cp2x},${c.cp2y} ${p2.x},${p2.y}`;
+    }
+    const line = d;
+    const area = `${d} L${coords[coords.length - 1].x},${h} L${coords[0].x},${h} Z`;
+    return { line, area };
+  };
+
+  const svgW = 370;
+  const svgH = 35;
+  const { line, area } = buildPath(sparkData, svgW, svgH);
+
+  return (
+    <div className="relative rounded-sm bg-white border border-slate-200 overflow-hidden shadow-[0_8px_30px_-18px_rgba(15,23,42,0.25)] hover:shadow-[0_18px_40px_-18px_rgba(15,23,42,0.35)] transition-all group">
+      {/* ~2px color accent gradient strip at top */}
+      <div className="absolute top-0 left-0 right-0 h-[1.75px]" style={{ background: `linear-gradient(to right, ${accentFrom}, ${accentTo})` }} />
+
+      <div className="relative p-[17.5px] flex flex-col gap-[10.5px]">
+        <div className="flex items-start justify-between">
+          <span className="text-[10.5px] font-semibold text-slate-500 uppercase tracking-[0.12em] leading-[14px]">{label}</span>
+          <span className="w-7 h-7 rounded-sm flex items-center justify-center text-white shadow-md" style={{ backgroundColor: iconColor }}>
+            <Icon className="w-3.5 h-3.5" />
           </span>
         </div>
         <div className="flex items-baseline gap-2">
-          <span className="text-4xl font-bold text-foreground tracking-tight tabular-nums">{value}</span>
-          <span className={cn(
-            "text-xs font-bold px-1.5 py-0.5 rounded-sm",
-            deltaChip
-              ? deltaChip
-              : deltaTone === "up" ? "bg-emerald-500/10 text-emerald-700" : "bg-rose-500/10 text-rose-700"
-          )}>{deltaTone === "up" ? "↑" : "↓"} {delta}</span>
+          <span className="text-[31.5px] font-bold text-slate-900 tracking-tight tabular-nums leading-[35px]">{value}</span>
+          <span className="text-[10.5px] font-bold px-[5.25px] py-[1.75px] rounded-sm leading-[14px]" style={{ backgroundColor: deltaBg, color: deltaColor }}>{deltaTone === "up" ? "↑" : "↓"} {delta}</span>
         </div>
-        {/* Sparkline */}
-        <div className="h-10 -mx-1 mt-3">
-          <ResponsiveContainer width="100%" height="100%">
-            <AreaChart data={data}>
-              <defs>
-                <linearGradient id={`spark-${label}`} x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%"   stopColor={sparkColor} stopOpacity={0.06} />
-                  <stop offset="100%" stopColor={sparkColor} stopOpacity={0} />
-                </linearGradient>
-              </defs>
-              <Area type="monotone" dataKey="v" stroke={sparkColor} strokeWidth={1.5} fill={`url(#spark-${label})`} fillOpacity={1} />
-            </AreaChart>
-          </ResponsiveContainer>
+        {/* Sparkline — raw SVG for reliable gradient fills */}
+        <div className="h-[35px] -mx-1">
+          <svg viewBox={`0 0 ${svgW} ${svgH}`} preserveAspectRatio="none" className="w-full h-full overflow-visible">
+            <defs>
+              <linearGradient id={gradId} x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor={sparkColor} stopOpacity={0.15} />
+                <stop offset="100%" stopColor={sparkColor} stopOpacity={0} />
+              </linearGradient>
+            </defs>
+            <path d={area} fill={`url(#${gradId})`} />
+            <path d={line} fill="none" stroke={sparkColor} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
         </div>
       </div>
     </div>
@@ -5811,37 +5842,32 @@ export function MainDashboardView({ onNavigate, stats }: {
             }
             return kpi;
           });
-          return liveKpis.map(kpi => (
-            <HeroStat
-              key={kpi.label}
-              accent={kpi.tone === "blue" ? "from-blue-500 to-blue-600"
-                : kpi.tone === "purple" ? "from-violet-500 to-fuchsia-500"
-                : kpi.tone === "green"  ? "from-emerald-500 to-teal-500"
-                : "from-amber-500 to-orange-500"}
-              tintClass={kpi.tone === "blue" ? "bg-blue-50/70"
-                : kpi.tone === "purple" ? "bg-violet-50/70"
-                : kpi.tone === "green"  ? "bg-emerald-50/70"
-                : "bg-amber-50/70"}
-              iconBg={kpi.tone === "blue" ? "bg-blue-500"
-                : kpi.tone === "purple" ? "bg-violet-500"
-                : kpi.tone === "green"  ? "bg-emerald-500"
-                : "bg-amber-500"}
-              deltaChip={kpi.tone === "blue" ? "bg-blue-500/10 text-blue-700"
-                : kpi.tone === "purple" ? "bg-violet-500/10 text-violet-700"
-                : kpi.tone === "green"  ? "bg-emerald-500/10 text-emerald-700"
-                : "bg-amber-500/10 text-amber-700"}
-              icon={kpi.icon}
-              label={kpi.label}
-              value={kpi.value}
-              delta={kpi.delta}
-              deltaTone="up"
-              sparkColor={kpi.tone === "blue" ? "#2563eb"
-                : kpi.tone === "purple" ? "#8b5cf6"
-                : kpi.tone === "green"  ? "#10b981"
-                : "#f59e0b"}
-              sparkData={kpi.spark}
-            />
-          ));
+          const TONE_MAP: Record<string, { accentFrom: string; accentTo: string; iconColor: string; deltaColor: string; deltaBg: string; sparkColor: string }> = {
+            blue:   { accentFrom: "#2b7fff", accentTo: "#155dfc", iconColor: "#2b7fff", deltaColor: "#1447e6", deltaBg: "rgba(43,127,255,0.1)",  sparkColor: "#2b7fff" },
+            purple: { accentFrom: "#8e51ff", accentTo: "#e12afb", iconColor: "#8e51ff", deltaColor: "#7008e7", deltaBg: "rgba(142,81,255,0.1)",  sparkColor: "#8e51ff" },
+            green:  { accentFrom: "#00bc7d", accentTo: "#00bba7", iconColor: "#00bc7d", deltaColor: "#007a55", deltaBg: "rgba(0,188,125,0.1)",   sparkColor: "#00bc7d" },
+            amber:  { accentFrom: "#fe9a00", accentTo: "#ff6900", iconColor: "#fe9a00", deltaColor: "#bb4d00", deltaBg: "rgba(254,154,0,0.1)",   sparkColor: "#fe9a00" },
+          };
+          return liveKpis.map(kpi => {
+            const t = TONE_MAP[kpi.tone] ?? TONE_MAP.blue;
+            return (
+              <HeroStat
+                key={kpi.label}
+                accentFrom={t.accentFrom}
+                accentTo={t.accentTo}
+                iconColor={t.iconColor}
+                deltaColor={t.deltaColor}
+                deltaBg={t.deltaBg}
+                icon={kpi.icon}
+                label={kpi.label}
+                value={kpi.value}
+                delta={kpi.delta}
+                deltaTone="up"
+                sparkColor={t.sparkColor}
+                sparkData={kpi.spark}
+              />
+            );
+          });
         })()}
       </section>
 
