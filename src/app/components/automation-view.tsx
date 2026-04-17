@@ -238,7 +238,6 @@ export const AutomationView = ({
           avgCtr: rule ? (getAutoCtr(rule) ?? 0) : 0,
           completionRate: 68, dropoutRate: 7, aiBoost: 18,
         }}
-        useStarterTemplate={!isEdit}
         onBack={close}
         onSave={({ name }) => persist({ name, description: "Journey", trigger: "webhook_received", action: "webhook_call", enabled: false })}
         onPublish={({ name }) => { persist({ name, description: "Journey", trigger: "webhook_received", action: "webhook_call", enabled: true }); close(); }}

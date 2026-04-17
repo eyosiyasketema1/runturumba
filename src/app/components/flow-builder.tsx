@@ -9,7 +9,8 @@ import "@xyflow/react/dist/style.css";
 import {
   ArrowLeft, Zap, Send, Clock, GitBranch, List, Sparkles, Bell,
   Plus, Save, Flag, CheckCircle2, Webhook, Copy, Trash2, AlertCircle,
-  ChevronDown, ChevronRight, Globe
+  ChevronDown, ChevronRight, Globe, LayoutTemplate, BookOpen, Heart,
+  Users, GraduationCap, Church
 } from "lucide-react";
 import {
   cn, type Webhook as WebhookType, formatTimeAgo, copyToClipboard
@@ -164,38 +165,205 @@ function FlowNode({ data, selected }: NodeProps) {
 const nodeTypes = Object.fromEntries(NODE_TYPES.map(n => [n.id, FlowNode]));
 
 // ---------------------------------------------------------------------------
-// Starter template — matches the reference screenshot's "New Believer Onboarding"
-// flow so new users see a fully-wired example they can edit.
+// Journey templates — users start with an empty canvas but can load any of
+// these pre-built templates from the Templates section in the palette.
 // ---------------------------------------------------------------------------
 
-const STARTER_NODES: Node[] = [
-  { id: "trigger",     type: "trigger",        position: { x: 320, y: 20  }, data: { type: "trigger",        title: "Trigger: Intake Complete", body: "When a seeker completes the intake form.\nChannel: All channels" } },
-  { id: "welcome",     type: "send_message",   position: { x: 320, y: 220 }, data: { type: "send_message",   title: "Send Message", body: "Welcome Devotional\n\"Welcome to your spiritual journey! Here is your first devotional on God's love for you.\"", meta: [{ label: "Sent", value: "892" }, { label: "Read", value: "847 (95%)" }] } },
-  { id: "wait1",       type: "wait",           position: { x: 320, y: 480 }, data: { type: "wait",           title: "Wait", body: "Wait 1 day\nThen check if seeker read the welcome message" } },
-  { id: "cond1",       type: "condition",      position: { x: 320, y: 680 }, data: { type: "condition",      title: "Condition", body: "Did seeker read welcome message?", branches: [{ label: "Yes", pct: 78, tone: "yes" }, { label: "No", pct: 22, tone: "no" }] } },
-  { id: "menu",        type: "menu",           position: { x:  40, y: 900 }, data: { type: "menu",           title: "Menu: Topic Selection", body: "What would you like to explore?", choices: [{ label: "Prayer & Meditation", pct: 42, dot: "bg-violet-500" }, { label: "Bible Study", pct: 35, dot: "bg-blue-500" }, { label: "Community & Fellowship", pct: 23, dot: "bg-emerald-500" }] } },
-  { id: "reminder",    type: "action",         position: { x: 640, y: 900 }, data: { type: "action",         title: "Send Reminder", body: "Gentle Nudge\n\"Hi! We sent you a devotional yesterday. Whenever you're ready, it's waiting for you.\"", meta: [{ label: "Sent", value: "196" }, { label: "Re-engaged", value: "128 (65%)" }] } },
-  { id: "personalize", type: "ai_personalize", position: { x:  40, y: 1160 }, data: { type: "ai_personalize", title: "AI Personalize", body: "Personalized Content Delivery\nClaude selects the best content from the library based on seeker's topic choice, maturity level, and engagement.", meta: [{ label: "Processed", value: "696" }, { label: "Engagement", value: "91%" }] } },
-  { id: "wait2",       type: "wait",           position: { x: 640, y: 1160 }, data: { type: "wait",           title: "Wait 2 days", body: "Check re-engagement status" } },
-  { id: "cond2",       type: "condition",      position: { x: 640, y: 1360 }, data: { type: "condition",      title: "Condition", body: "Still no engagement after reminder?", branches: [{ label: "Yes (dropout)", pct: 35, tone: "no" }, { label: "No (re-engaged)", pct: 65, tone: "yes" }] } },
-  { id: "notify",      type: "action",         position: { x: 440, y: 1600 }, data: { type: "action",         title: "Action: Notify Mentor", body: "Alert assigned mentor about dropout risk." } },
-  { id: "rejoin",      type: "ai_personalize", position: { x: 820, y: 1600 }, data: { type: "ai_personalize", title: "Rejoin Main Flow", body: "Move seeker back to the Menu: Topic Selection step." } },
+type JourneyTemplate = {
+  id: string;
+  name: string;
+  description: string;
+  icon: any;
+  tint: string;          // tailwind bg/text combo for the card
+  nodeCount: number;
+  nodes: Node[];
+  edges: Edge[];
+};
+
+const EDGE = (id: string, src: string, tgt: string, srcHandle?: string, label?: string, color?: string): Edge => ({
+  id, source: src, target: tgt, type: "smoothstep",
+  ...(srcHandle ? { sourceHandle: srcHandle } : {}),
+  ...(label ? { label, style: { stroke: color }, labelStyle: { fill: color, fontWeight: 700 } } : {}),
+  markerEnd: { type: MarkerType.ArrowClosed, ...(color ? { color } : {}) },
+});
+
+const JOURNEY_TEMPLATES: JourneyTemplate[] = [
+  // ── 1  New Believer Onboarding ─────────────────────────────────────────
+  {
+    id: "new-believer",
+    name: "New Believer Onboarding",
+    description: "Welcome journey with devotional, engagement check, and AI-personalized follow-up.",
+    icon: BookOpen,
+    tint: "bg-indigo-50 text-indigo-700 border-indigo-200",
+    nodeCount: 11,
+    nodes: [
+      { id: "trigger",     type: "trigger",        position: { x: 320, y: 20  }, data: { type: "trigger",        title: "Trigger: Intake Complete", body: "When a seeker completes the intake form.\nChannel: All channels" } },
+      { id: "welcome",     type: "send_message",   position: { x: 320, y: 220 }, data: { type: "send_message",   title: "Send Message", body: "Welcome Devotional\n\"Welcome to your spiritual journey! Here is your first devotional on God's love for you.\"", meta: [{ label: "Sent", value: "892" }, { label: "Read", value: "847 (95%)" }] } },
+      { id: "wait1",       type: "wait",           position: { x: 320, y: 480 }, data: { type: "wait",           title: "Wait", body: "Wait 1 day\nThen check if seeker read the welcome message" } },
+      { id: "cond1",       type: "condition",      position: { x: 320, y: 680 }, data: { type: "condition",      title: "Condition", body: "Did seeker read welcome message?", branches: [{ label: "Yes", pct: 78, tone: "yes" }, { label: "No", pct: 22, tone: "no" }] } },
+      { id: "menu",        type: "menu",           position: { x:  40, y: 900 }, data: { type: "menu",           title: "Menu: Topic Selection", body: "What would you like to explore?", choices: [{ label: "Prayer & Meditation", pct: 42, dot: "bg-violet-500" }, { label: "Bible Study", pct: 35, dot: "bg-blue-500" }, { label: "Community & Fellowship", pct: 23, dot: "bg-emerald-500" }] } },
+      { id: "reminder",    type: "action",         position: { x: 640, y: 900 }, data: { type: "action",         title: "Send Reminder", body: "Gentle Nudge\n\"Hi! We sent you a devotional yesterday. Whenever you're ready, it's waiting for you.\"", meta: [{ label: "Sent", value: "196" }, { label: "Re-engaged", value: "128 (65%)" }] } },
+      { id: "personalize", type: "ai_personalize", position: { x:  40, y: 1160 }, data: { type: "ai_personalize", title: "AI Personalize", body: "Personalized Content Delivery\nClaude selects the best content from the library based on seeker's topic choice, maturity level, and engagement.", meta: [{ label: "Processed", value: "696" }, { label: "Engagement", value: "91%" }] } },
+      { id: "wait2",       type: "wait",           position: { x: 640, y: 1160 }, data: { type: "wait",           title: "Wait 2 days", body: "Check re-engagement status" } },
+      { id: "cond2",       type: "condition",      position: { x: 640, y: 1360 }, data: { type: "condition",      title: "Condition", body: "Still no engagement after reminder?", branches: [{ label: "Yes (dropout)", pct: 35, tone: "no" }, { label: "No (re-engaged)", pct: 65, tone: "yes" }] } },
+      { id: "notify",      type: "action",         position: { x: 440, y: 1600 }, data: { type: "action",         title: "Action: Notify Mentor", body: "Alert assigned mentor about dropout risk." } },
+      { id: "rejoin",      type: "ai_personalize", position: { x: 820, y: 1600 }, data: { type: "ai_personalize", title: "Rejoin Main Flow", body: "Move seeker back to the Menu: Topic Selection step." } },
+    ],
+    edges: [
+      EDGE("e1", "trigger", "welcome"),
+      EDGE("e2", "welcome", "wait1"),
+      EDGE("e3", "wait1",   "cond1"),
+      EDGE("e4", "cond1",   "menu",     "yes", "YES",        "#10b981"),
+      EDGE("e5", "cond1",   "reminder", "no",  "NO",         "#f43f5e"),
+      EDGE("e6", "menu",    "personalize"),
+      EDGE("e7", "reminder","wait2"),
+      EDGE("e8", "wait2",   "cond2"),
+      EDGE("e9", "cond2",   "notify",   "yes", "DROPOUT",    "#f43f5e"),
+      EDGE("e10","cond2",   "rejoin",   "no",  "RE-ENGAGED", "#10b981"),
+    ],
+  },
+
+  // ── 2  Baptism Preparation ─────────────────────────────────────────────
+  {
+    id: "baptism-prep",
+    name: "Baptism Preparation",
+    description: "4-week guided path to baptism with weekly lessons, mentor check-ins, and key milestone tracking.",
+    icon: Church,
+    tint: "bg-violet-50 text-violet-700 border-violet-200",
+    nodeCount: 10,
+    nodes: [
+      { id: "trigger",   type: "trigger",        position: { x: 300, y: 20  }, data: { type: "trigger",        title: "Trigger: Baptism Interest", body: "When a seeker indicates interest in baptism via form or mentor note." } },
+      { id: "intro",     type: "send_message",   position: { x: 300, y: 200 }, data: { type: "send_message",   title: "Week 1: What is Baptism?", body: "Intro lesson on the meaning and significance of baptism.\nIncludes short video + reflection questions." } },
+      { id: "ms1",       type: "milestone",      position: { x: 300, y: 400 }, data: { type: "milestone",      title: "Milestone: Week 1 Complete", body: "Seeker completed the intro lesson and reflection." } },
+      { id: "wait1",     type: "wait",           position: { x: 300, y: 560 }, data: { type: "wait",           title: "Wait 7 days", body: "Proceed to Week 2 content" } },
+      { id: "lesson2",   type: "send_message",   position: { x: 300, y: 720 }, data: { type: "send_message",   title: "Week 2: Faith & Repentance", body: "Deep dive into faith, repentance, and commitment to follow Christ." } },
+      { id: "wait2",     type: "wait",           position: { x: 300, y: 900 }, data: { type: "wait",           title: "Wait 7 days", body: "Proceed to Week 3" } },
+      { id: "lesson3",   type: "send_message",   position: { x: 300, y: 1060 }, data: { type: "send_message",  title: "Week 3: Living a New Life", body: "Practical guidance on living out faith daily after baptism." } },
+      { id: "wait3",     type: "wait",           position: { x: 300, y: 1220 }, data: { type: "wait",           title: "Wait 7 days", body: "Final week — baptism day prep" } },
+      { id: "lesson4",   type: "send_message",   position: { x: 300, y: 1380 }, data: { type: "send_message",  title: "Week 4: Baptism Day Prep", body: "Logistics, testimony preparation, and what to expect on baptism day." } },
+      { id: "baptism",   type: "key_milestone",  position: { x: 300, y: 1560 }, data: { type: "key_milestone", title: "Key Milestone: Baptism", body: "Seeker is baptized! Mark this major faith milestone and notify the mentor coach." } },
+    ],
+    edges: [
+      EDGE("b1","trigger","intro"),   EDGE("b2","intro","ms1"),     EDGE("b3","ms1","wait1"),
+      EDGE("b4","wait1","lesson2"),   EDGE("b5","lesson2","wait2"), EDGE("b6","wait2","lesson3"),
+      EDGE("b7","lesson3","wait3"),   EDGE("b8","wait3","lesson4"), EDGE("b9","lesson4","baptism"),
+    ],
+  },
+
+  // ── 3  Prayer Partner Matching ─────────────────────────────────────────
+  {
+    id: "prayer-partner",
+    name: "Prayer Partner Matching",
+    description: "Pair seekers with prayer partners, check in weekly, and track engagement milestones.",
+    icon: Heart,
+    tint: "bg-rose-50 text-rose-700 border-rose-200",
+    nodeCount: 8,
+    nodes: [
+      { id: "trigger",   type: "trigger",       position: { x: 300, y: 20  }, data: { type: "trigger",       title: "Trigger: Partner Request", body: "When a seeker requests a prayer partner through the app." } },
+      { id: "match",     type: "ai_personalize", position: { x: 300, y: 200 }, data: { type: "ai_personalize", title: "AI Match Partners", body: "Claude matches the seeker with a suitable prayer partner based on language, timezone, and interests." } },
+      { id: "intro_msg", type: "send_message",  position: { x: 300, y: 400 }, data: { type: "send_message",  title: "Send Introduction", body: "Introduce both partners to each other with a suggested first prayer topic." } },
+      { id: "ms1",       type: "milestone",     position: { x: 300, y: 580 }, data: { type: "milestone",     title: "Milestone: First Prayer", body: "Partners completed their first prayer session together." } },
+      { id: "wait1",     type: "wait",          position: { x: 300, y: 740 }, data: { type: "wait",          title: "Wait 7 days", body: "Weekly check-in" } },
+      { id: "checkin",   type: "condition",     position: { x: 300, y: 920 }, data: { type: "condition",     title: "Weekly Check-in", body: "Did both partners pray together this week?", branches: [{ label: "Yes", tone: "yes" }, { label: "No", tone: "no" }] } },
+      { id: "celebrate", type: "send_message",  position: { x: 60, y: 1120 }, data: { type: "send_message",  title: "Celebrate & Encourage", body: "Great work praying together! Here's your next prayer guide for the week." } },
+      { id: "nudge",     type: "action",        position: { x: 540, y: 1120 }, data: { type: "action",       title: "Gentle Nudge", body: "Send a gentle reminder to reconnect with your prayer partner this week." } },
+    ],
+    edges: [
+      EDGE("p1","trigger","match"),     EDGE("p2","match","intro_msg"),
+      EDGE("p3","intro_msg","ms1"),     EDGE("p4","ms1","wait1"),
+      EDGE("p5","wait1","checkin"),
+      EDGE("p6","checkin","celebrate","yes","YES","#10b981"),
+      EDGE("p7","checkin","nudge",    "no", "NO", "#f43f5e"),
+    ],
+  },
+
+  // ── 4  Small Group Launch ──────────────────────────────────────────────
+  {
+    id: "small-group",
+    name: "Small Group Launch",
+    description: "Onboard seekers into a small group with welcome, intro session, weekly content, and graduation.",
+    icon: Users,
+    tint: "bg-emerald-50 text-emerald-700 border-emerald-200",
+    nodeCount: 9,
+    nodes: [
+      { id: "trigger",   type: "trigger",       position: { x: 300, y: 20  }, data: { type: "trigger",       title: "Trigger: Group Signup", body: "When a seeker signs up for a small group via form or invite link." } },
+      { id: "welcome",   type: "send_message",  position: { x: 300, y: 200 }, data: { type: "send_message",  title: "Welcome to the Group", body: "\"You've joined [Group Name]! Here's what to expect and how to prepare for your first session.\"" } },
+      { id: "ms_join",   type: "milestone",     position: { x: 300, y: 380 }, data: { type: "milestone",     title: "Milestone: Joined Group", body: "Seeker officially enrolled in the small group." } },
+      { id: "wait1",     type: "wait",          position: { x: 300, y: 540 }, data: { type: "wait",          title: "Wait until session day", body: "Dynamic wait until the first group session." } },
+      { id: "session",   type: "send_message",  position: { x: 300, y: 700 }, data: { type: "send_message",  title: "Session Reminder & Content", body: "Reminder with session link, topic overview, and discussion questions for this week." } },
+      { id: "cond",      type: "condition",     position: { x: 300, y: 880 }, data: { type: "condition",     title: "Did they attend?", body: "Check if the seeker attended the session.", branches: [{ label: "Yes", tone: "yes" }, { label: "No", tone: "no" }] } },
+      { id: "recap",     type: "ai_personalize", position: { x: 60, y: 1080 }, data: { type: "ai_personalize", title: "AI Session Recap", body: "Send a personalized recap of discussion highlights and action items from the session." } },
+      { id: "follow",    type: "action",        position: { x: 540, y: 1080 }, data: { type: "action",       title: "Follow Up", body: "Reach out to the seeker who missed the session with a summary and encouragement to attend next time." } },
+      { id: "grad",      type: "key_milestone", position: { x: 300, y: 1280 }, data: { type: "key_milestone", title: "Key Milestone: Group Complete", body: "Seeker completed all sessions in the small group study!" } },
+    ],
+    edges: [
+      EDGE("g1","trigger","welcome"),   EDGE("g2","welcome","ms_join"),
+      EDGE("g3","ms_join","wait1"),     EDGE("g4","wait1","session"),
+      EDGE("g5","session","cond"),
+      EDGE("g6","cond","recap",  "yes","ATTENDED",   "#10b981"),
+      EDGE("g7","cond","follow", "no", "MISSED",     "#f43f5e"),
+      EDGE("g8","recap","grad"),        EDGE("g9","follow","grad"),
+    ],
+  },
+
+  // ── 5  Bible Study Series ──────────────────────────────────────────────
+  {
+    id: "bible-study",
+    name: "Bible Study Series",
+    description: "6-week guided Bible study with daily readings, quizzes, and progressive milestones.",
+    icon: GraduationCap,
+    tint: "bg-amber-50 text-amber-700 border-amber-200",
+    nodeCount: 9,
+    nodes: [
+      { id: "trigger",  type: "trigger",       position: { x: 300, y: 20  }, data: { type: "trigger",       title: "Trigger: Study Enrollment", body: "When a seeker enrolls in a Bible study series." } },
+      { id: "intro",    type: "send_message",  position: { x: 300, y: 200 }, data: { type: "send_message",  title: "Study Guide & Week 1", body: "Welcome! Here's your study guide and the first week's reading plan: Genesis 1–3 — The Beginning." } },
+      { id: "ms1",      type: "milestone",     position: { x: 300, y: 380 }, data: { type: "milestone",     title: "Milestone: Week 1 Reading", body: "Completed Week 1 reading and reflection questions." } },
+      { id: "menu",     type: "menu",          position: { x: 300, y: 560 }, data: { type: "menu",          title: "How are you feeling?", body: "Quick check-in after Week 1", choices: [{ label: "Inspired & want more", pct: 55, dot: "bg-emerald-500" }, { label: "Have questions", pct: 30, dot: "bg-amber-500" }, { label: "Struggling to keep up", pct: 15, dot: "bg-rose-500" }] } },
+      { id: "ai_adapt", type: "ai_personalize", position: { x: 300, y: 780 }, data: { type: "ai_personalize", title: "AI Adapt Content", body: "Claude adjusts the next reading plan and pacing based on the seeker's response and engagement level." } },
+      { id: "wait",     type: "wait",          position: { x: 300, y: 960 }, data: { type: "wait",          title: "Wait 7 days", body: "Next week's content" } },
+      { id: "next",     type: "send_message",  position: { x: 300, y: 1120 }, data: { type: "send_message", title: "Next Week's Reading", body: "Your reading for this week is ready! Continue exploring God's Word at your own pace." } },
+      { id: "ms_half",  type: "key_milestone", position: { x: 300, y: 1300 }, data: { type: "key_milestone", title: "Key Milestone: Halfway", body: "Seeker reached the halfway point of the Bible study series! Send a congratulations message." } },
+      { id: "complete", type: "key_milestone", position: { x: 300, y: 1480 }, data: { type: "key_milestone", title: "Key Milestone: Study Complete", body: "Seeker completed the entire Bible study series. Certificate of completion!" } },
+    ],
+    edges: [
+      EDGE("s1","trigger","intro"),  EDGE("s2","intro","ms1"),      EDGE("s3","ms1","menu"),
+      EDGE("s4","menu","ai_adapt"),  EDGE("s5","ai_adapt","wait"),  EDGE("s6","wait","next"),
+      EDGE("s7","next","ms_half"),   EDGE("s8","ms_half","complete"),
+    ],
+  },
+
+  // ── 6  Re-engagement Campaign ──────────────────────────────────────────
+  {
+    id: "re-engage",
+    name: "Re-engagement Campaign",
+    description: "Win back inactive seekers with personalized outreach, escalating nudges, and mentor alerts.",
+    icon: Bell,
+    tint: "bg-sky-50 text-sky-700 border-sky-200",
+    nodeCount: 9,
+    nodes: [
+      { id: "trigger",   type: "trigger",       position: { x: 300, y: 20  }, data: { type: "trigger",       title: "Trigger: 14 Days Inactive", body: "When a seeker has had no engagement for 14 consecutive days." } },
+      { id: "ai_msg",    type: "ai_personalize", position: { x: 300, y: 200 }, data: { type: "ai_personalize", title: "AI Personal Message", body: "Claude crafts a warm, personalized message referencing the seeker's last activity and interests." } },
+      { id: "wait1",     type: "wait",          position: { x: 300, y: 380 }, data: { type: "wait",          title: "Wait 3 days", body: "Give them time to respond" } },
+      { id: "cond1",     type: "condition",     position: { x: 300, y: 560 }, data: { type: "condition",     title: "Did they respond?", body: "Check if the seeker opened or replied to the message.", branches: [{ label: "Yes", tone: "yes" }, { label: "No", tone: "no" }] } },
+      { id: "welcome_b", type: "send_message",  position: { x: 40, y: 760 },  data: { type: "send_message",  title: "Welcome Back!", body: "Great to see you! Here's some new content we picked just for you." } },
+      { id: "nudge2",    type: "send_message",  position: { x: 560, y: 760 }, data: { type: "send_message",  title: "Second Nudge", body: "A short, caring message with a simple question to lower the barrier to re-engage." } },
+      { id: "wait2",     type: "wait",          position: { x: 560, y: 940 }, data: { type: "wait",          title: "Wait 5 days", body: "Final check" } },
+      { id: "cond2",     type: "condition",     position: { x: 560, y: 1100 }, data: { type: "condition",     title: "Still inactive?", body: "Check engagement after second nudge.", branches: [{ label: "Active", tone: "yes" }, { label: "Still inactive", tone: "no" }] } },
+      { id: "mentor",    type: "action",        position: { x: 560, y: 1300 }, data: { type: "action",       title: "Alert Mentor", body: "Notify the assigned mentor about this at-risk seeker for personal outreach." } },
+    ],
+    edges: [
+      EDGE("r1","trigger","ai_msg"),   EDGE("r2","ai_msg","wait1"),
+      EDGE("r3","wait1","cond1"),
+      EDGE("r4","cond1","welcome_b","yes","RESPONDED","#10b981"),
+      EDGE("r5","cond1","nudge2",   "no", "SILENT",   "#f43f5e"),
+      EDGE("r6","nudge2","wait2"),     EDGE("r7","wait2","cond2"),
+      EDGE("r8","cond2","welcome_b","yes","RE-ENGAGED","#10b981"),
+      EDGE("r9","cond2","mentor",   "no", "AT RISK",   "#f43f5e"),
+    ],
+  },
 ];
 
-const STARTER_EDGES: Edge[] = [
-  { id: "e1", source: "trigger",  target: "welcome",     type: "smoothstep", markerEnd: { type: MarkerType.ArrowClosed } },
-  { id: "e2", source: "welcome",  target: "wait1",       type: "smoothstep", markerEnd: { type: MarkerType.ArrowClosed } },
-  { id: "e3", source: "wait1",    target: "cond1",       type: "smoothstep", markerEnd: { type: MarkerType.ArrowClosed } },
-  { id: "e4", source: "cond1",    sourceHandle: "yes", target: "menu",     type: "smoothstep", label: "YES", style: { stroke: "#10b981" }, labelStyle: { fill: "#10b981", fontWeight: 700 }, markerEnd: { type: MarkerType.ArrowClosed, color: "#10b981" } },
-  { id: "e5", source: "cond1",    sourceHandle: "no",  target: "reminder", type: "smoothstep", label: "NO",  style: { stroke: "#f43f5e" }, labelStyle: { fill: "#f43f5e", fontWeight: 700 }, markerEnd: { type: MarkerType.ArrowClosed, color: "#f43f5e" } },
-  { id: "e6", source: "menu",     target: "personalize", type: "smoothstep", markerEnd: { type: MarkerType.ArrowClosed } },
-  { id: "e7", source: "reminder", target: "wait2",       type: "smoothstep", markerEnd: { type: MarkerType.ArrowClosed } },
-  { id: "e8", source: "wait2",    target: "cond2",       type: "smoothstep", markerEnd: { type: MarkerType.ArrowClosed } },
-  { id: "e9", source: "cond2",    sourceHandle: "yes", target: "notify",   type: "smoothstep", label: "DROPOUT",    style: { stroke: "#f43f5e" }, labelStyle: { fill: "#f43f5e", fontWeight: 700 }, markerEnd: { type: MarkerType.ArrowClosed, color: "#f43f5e" } },
-  { id: "e10", source: "cond2",   sourceHandle: "no",  target: "rejoin",   type: "smoothstep", label: "RE-ENGAGED", style: { stroke: "#10b981" }, labelStyle: { fill: "#10b981", fontWeight: 700 }, markerEnd: { type: MarkerType.ArrowClosed, color: "#10b981" } },
-];
-
-const EMPTY_STARTER: { nodes: Node[]; edges: Edge[] } = {
+const EMPTY_CANVAS: { nodes: Node[]; edges: Edge[] } = {
   nodes: [
     { id: "start", type: "trigger", position: { x: 240, y: 40 }, data: { type: "trigger", title: "Trigger: Choose a trigger", body: "Configure what starts this journey." } },
   ],
@@ -210,6 +378,7 @@ export interface FlowBuilderProps {
   flowName?: string;
   status?: "draft" | "active" | "stopped";
   stats?: { totalRuns: number; avgCtr: number; completionRate: number; dropoutRate: number; aiBoost: number };
+  /** @deprecated No longer used — Journey Builder always starts empty with a template picker. */
   useStarterTemplate?: boolean;
   onBack: () => void;
   onSave?: (data: { nodes: Node[]; edges: Edge[]; name: string }) => void;
@@ -225,7 +394,6 @@ export function FlowBuilder({
   flowName = "Untitled Journey",
   status = "draft",
   stats = { totalRuns: 0, avgCtr: 0, completionRate: 0, dropoutRate: 0, aiBoost: 0 },
-  useStarterTemplate = true,
   onBack,
   onSave,
   onPublish,
@@ -240,7 +408,6 @@ export function FlowBuilder({
         flowName={flowName}
         status={status}
         stats={stats}
-        useStarterTemplate={useStarterTemplate}
         onBack={onBack}
         onSave={onSave}
         onPublish={onPublish}
@@ -254,16 +421,25 @@ export function FlowBuilder({
 }
 
 function FlowBuilderInner({
-  flowName, status, stats, useStarterTemplate, onBack, onSave, onPublish,
+  flowName, status, stats, onBack, onSave, onPublish,
   webhooks, onToggleWebhook, onDeleteWebhook, onAddWebhook,
-}: Required<Pick<FlowBuilderProps, "flowName" | "status" | "stats" | "useStarterTemplate" | "onBack" | "webhooks">> & Pick<FlowBuilderProps, "onSave" | "onPublish" | "onToggleWebhook" | "onDeleteWebhook" | "onAddWebhook">) {
-  const initial = useMemo(() => useStarterTemplate ? { nodes: STARTER_NODES, edges: STARTER_EDGES } : EMPTY_STARTER, [useStarterTemplate]);
-  const [nodes, setNodes] = useState<Node[]>(initial.nodes);
-  const [edges, setEdges] = useState<Edge[]>(initial.edges);
+}: Required<Pick<FlowBuilderProps, "flowName" | "status" | "stats" | "onBack" | "webhooks">> & Pick<FlowBuilderProps, "onSave" | "onPublish" | "onToggleWebhook" | "onDeleteWebhook" | "onAddWebhook">) {
+  // Always start empty — users pick a template from the palette if they want one.
+  const [nodes, setNodes] = useState<Node[]>(EMPTY_CANVAS.nodes);
+  const [edges, setEdges] = useState<Edge[]>(EMPTY_CANVAS.edges);
   const [name, setName] = useState(flowName);
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
   const [webhooksOpen, setWebhooksOpen] = useState(false);
+  const [templatesOpen, setTemplatesOpen] = useState(true);   // open by default so new users see templates
   const [isAddWebhookOpen, setIsAddWebhookOpen] = useState(false);
+
+  const handleLoadTemplate = useCallback((tpl: JourneyTemplate) => {
+    setNodes(tpl.nodes);
+    setEdges(tpl.edges);
+    setName(tpl.name);
+    setSelectedNodeId(null);
+    toast.success(`Template "${tpl.name}" loaded`);
+  }, []);
 
   const onNodesChange = useCallback((changes: NodeChange[]) => setNodes(ns => applyNodeChanges(changes, ns)), []);
   const onEdgesChange = useCallback((changes: EdgeChange[]) => setEdges(es => applyEdgeChanges(changes, es)), []);
@@ -399,6 +575,48 @@ function FlowBuilderInner({
           <p className="text-xs text-muted-foreground mt-5 leading-relaxed">
             Click a type to add it to the canvas, then drag nodes around or draw connections between handles.
           </p>
+
+          {/* ── Templates section ── */}
+          <div className="mt-6 border-t border-border pt-4">
+            <button
+              onClick={() => setTemplatesOpen(v => !v)}
+              className="w-full flex items-center justify-between text-xs font-semibold text-muted-foreground uppercase tracking-wider pb-2 hover:text-foreground transition-colors"
+            >
+              <span className="flex items-center gap-1.5">
+                <LayoutTemplate className="w-3.5 h-3.5" />
+                Templates
+                <Badge variant="secondary" className="text-[10px] ml-0.5">{JOURNEY_TEMPLATES.length}</Badge>
+              </span>
+              {templatesOpen ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronRight className="w-3.5 h-3.5" />}
+            </button>
+
+            {templatesOpen && (
+              <div className="space-y-2 mt-1">
+                {JOURNEY_TEMPLATES.map(tpl => {
+                  const TplIcon = tpl.icon;
+                  return (
+                    <button
+                      key={tpl.id}
+                      onClick={() => handleLoadTemplate(tpl)}
+                      className={cn(
+                        "w-full text-left p-2.5 rounded-lg border transition-all hover:shadow-sm group",
+                        tpl.tint
+                      )}
+                    >
+                      <div className="flex items-start gap-2">
+                        <TplIcon className="w-4 h-4 mt-0.5 shrink-0 opacity-70" />
+                        <div className="min-w-0 flex-1">
+                          <p className="text-xs font-bold leading-snug">{tpl.name}</p>
+                          <p className="text-[10px] opacity-70 leading-relaxed mt-0.5 line-clamp-2">{tpl.description}</p>
+                          <span className="text-[9px] opacity-50 font-medium mt-1 inline-block">{tpl.nodeCount} nodes</span>
+                        </div>
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+          </div>
 
           {/* ── Webhooks section ── */}
           <div className="mt-6 border-t border-border pt-4">
