@@ -2717,12 +2717,12 @@ function ManualMatchDialog({
   const canCreate = !!seekerId && !!mentorId;
 
   return (
-    <Modal isOpen={isOpen} onClose={handleClose} title="Manual Match" size="xl">
+    <Modal isOpen={isOpen} onClose={handleClose} title="Manual Match" size="4xl">
       <div className="space-y-5">
         {/* Side-by-side: Seeker | Match with | Mentor */}
-        <div className="grid grid-cols-[1fr,auto,1fr] gap-0 items-stretch">
+        <div className="flex items-stretch gap-0 min-h-[300px]">
           {/* Left — Select Seeker */}
-          <div className="pr-4">
+          <div className="flex-1 min-w-0 pr-4">
             <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-2 block">Select Seeker</label>
             <input
               type="text"
@@ -2758,7 +2758,7 @@ function ManualMatchDialog({
           </div>
 
           {/* Center divider — "Match with" */}
-          <div className="flex flex-col items-center justify-center px-4 border-l border-r border-border">
+          <div className="flex flex-col items-center justify-center px-5 shrink-0 border-l border-r border-border">
             <div className="w-10 h-10 rounded-full bg-violet-100 flex items-center justify-center mb-2">
               <ArrowRight className="w-5 h-5 text-violet-600" />
             </div>
@@ -2766,7 +2766,7 @@ function ManualMatchDialog({
           </div>
 
           {/* Right — Select Mentor */}
-          <div className="pl-4">
+          <div className="flex-1 min-w-0 pl-4">
             <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-2 block">Select Mentor</label>
             <input
               type="text"
