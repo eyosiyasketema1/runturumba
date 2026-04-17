@@ -5,6 +5,8 @@ import {
   User as UserIcon, UserPlus, UserCheck, CheckCircle2, XCircle,
   Clock, Tag, MoreHorizontal, Paperclip, Smile, Lock,
   ChevronDown, ArrowUp, Filter, Circle, Plus, Calendar,
+  FileText, BookOpen, Sparkles, RefreshCw, ChevronRight, AlertCircle,
+  Zap, ListOrdered, Library,
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { toast } from "sonner";
@@ -52,6 +54,43 @@ interface ThreadEntry {
   status?:     string;
   port?:       MessagePort;
 }
+
+// ─── Reassignment & Forms Types ──────────────────────────────────────────────
+
+type ReassignmentStatus = "pending" | "approved" | "rejected";
+
+interface ReassignmentRequest {
+  id: string;
+  contactId: string;
+  fromMentorId: string;
+  reason: string;
+  status: ReassignmentStatus;
+  createdAt: string;
+}
+
+type SeekerStatusOption = "Active" | "Pending" | "Inactive" | "Graduated" | "Archived";
+
+const SEEKER_STATUS_OPTIONS: { id: SeekerStatusOption; label: string; cls: string }[] = [
+  { id: "Active",    label: "Active",    cls: "text-emerald-700 bg-emerald-50 ring-1 ring-inset ring-emerald-200" },
+  { id: "Pending",   label: "Pending",   cls: "text-amber-700 bg-amber-50 ring-1 ring-inset ring-amber-200" },
+  { id: "Inactive",  label: "Inactive",  cls: "text-slate-700 bg-slate-100 ring-1 ring-inset ring-slate-200" },
+  { id: "Graduated", label: "Graduated", cls: "text-violet-700 bg-violet-50 ring-1 ring-inset ring-violet-200" },
+  { id: "Archived",  label: "Archived",  cls: "text-rose-700 bg-rose-50 ring-1 ring-inset ring-rose-200" },
+];
+
+const FORM_TEMPLATES = [
+  { id: "intake",     label: "Intake Form",        desc: "Collect basic info, spiritual background, and contact preferences",       icon: FileText },
+  { id: "assessment", label: "Faith Assessment",    desc: "5-question check-in to gauge current spiritual engagement",               icon: CheckCircle2 },
+  { id: "prayer",     label: "Prayer Request Form", desc: "Structured form for submitting prayer requests with follow-up option",    icon: BookOpen },
+  { id: "feedback",   label: "Mentor Feedback",     desc: "Short survey about their experience with their assigned mentor",          icon: UserCheck },
+];
+
+const CONTENT_SERIES = [
+  { id: "foundations",   label: "Foundations of Faith",   lessons: 7,  desc: "Core beliefs and first steps for new believers" },
+  { id: "prayer_basics", label: "Prayer Basics",          lessons: 5,  desc: "Learning to build a consistent prayer life" },
+  { id: "bible_101",     label: "Bible 101",              lessons: 10, desc: "How to read, understand, and apply Scripture" },
+  { id: "community",     label: "Finding Community",      lessons: 4,  desc: "Connecting with a faith community and small groups" },
+];
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -593,6 +632,7 @@ function ConversationContextPanel({
   const [activeTab, setActiveTab] = useState<InfoTab>("profile");
   const [newNote, setNewNote] = useState("");
   const [filterDate, setFilterDate] = useState("");
+  const [isStatusOpen, setIsStatusOpen] = useState(false);
 
   const contactMessages = messages.filter(m => m.contactId === contact.id);
   const contactNotes = notes.filter(n => n.contactId === contact.id);
@@ -622,7 +662,7 @@ function ConversationContextPanel({
         </button>
       </div>
 
-      {/* Compact profile header (always visible) */}
+      {/* Compact profile header (always visible) — includes seeker status control */}
       <div className="flex items-center gap-3 px-6 py-4 border-b border-border shrink-0">
         <div className="w-12 h-12 rounded-full bg-muted border-2 border-border flex items-center justify-center text-lg font-bold text-foreground shrink-0">
           {contact.name.split(" ").map(w => w[0]).join("").slice(0, 2).toUpperCase()}
@@ -631,11 +671,61 @@ function ConversationContextPanel({
           <h2 className="text-base font-bold text-foreground truncate">{contact.name}</h2>
           <p className="text-xs text-muted-foreground truncate">{contact.phone}{contact.email ? ` · ${contact.email}` : ""}</p>
         </div>
-        {contact.maturity && (
-          <span className={cn("px-2 py-0.5 rounded-sm text-[10px] font-bold shrink-0", MATURITY_COLORS[contact.maturity] || MATURITY_COLORS["Seeker"])}>
-            {contact.maturity}
-          </span>
-        )}
+        <div className="flex items-center gap-1.5 shrink-0">
+          {contact.maturity && (
+            <span className={cn("px-2 py-0.5 rounded-sm text-[10px] font-bold", MATURITY_COLORS[contact.maturity] || MATURITY_COLORS["Seeker"])}>
+              {contact.maturity}
+            </span>
+          )}
+          {/* Seeker status dropdown — mentor can change directly */}
+          <div className="relative">
+            <button
+              onClick={() => setIsStatusOpen(!isStatusOpen)}
+              className={cn(
+                "flex items-center gap-1 px-2 py-0.5 rounded-sm text-[10px] font-bold cursor-pointer transition-all",
+                SEEKER_STATUS_OPTIONS.find(s => s.id === (contact.discipleshipStatus || "Active"))?.cls || "bg-muted text-muted-foreground"
+              )}
+            >
+              {contact.discipleshipStatus || "Active"}
+              <ChevronDown className="w-2.5 h-2.5 opacity-60" />
+            </button>
+            {isStatusOpen && (
+              <>
+                <div className="fixed inset-0 z-40" onClick={() => setIsStatusOpen(false)} />
+                <div className="absolute right-0 top-full mt-1 z-50 w-40 bg-background border border-border shadow-xl rounded-sm py-1">
+                  <div className="px-3 py-1.5 border-b border-border">
+                    <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Seeker Status</span>
+                  </div>
+                  {SEEKER_STATUS_OPTIONS.map(opt => {
+                    const isActive = (contact.discipleshipStatus || "Active") === opt.id;
+                    return (
+                      <button
+                        key={opt.id}
+                        onClick={() => {
+                          if (onUpdateContact) {
+                            onUpdateContact(contact.id, { discipleshipStatus: opt.id as any });
+                            toast.success(`Status changed to ${opt.label}`);
+                          }
+                          setIsStatusOpen(false);
+                        }}
+                        className={cn(
+                          "w-full flex items-center gap-2 px-3 py-2 text-xs font-semibold transition-colors",
+                          isActive ? "bg-muted/50" : "hover:bg-muted/30"
+                        )}
+                      >
+                        <span className={cn("w-1.5 h-1.5 rounded-full shrink-0",
+                          opt.id === "Active" ? "bg-emerald-500" : opt.id === "Pending" ? "bg-amber-500" : opt.id === "Inactive" ? "bg-slate-400" : opt.id === "Graduated" ? "bg-violet-500" : "bg-rose-400"
+                        )} />
+                        <span className={isActive ? "text-foreground" : "text-muted-foreground"}>{opt.label}</span>
+                        {isActive && <Check className="w-3 h-3 text-primary ml-auto" />}
+                      </button>
+                    );
+                  })}
+                </div>
+              </>
+            )}
+          </div>
+        </div>
       </div>
 
       {/* Tab bar */}
@@ -973,6 +1063,294 @@ function ConversationContextPanel({
           </div>
         )}
       </div>
+    </div>
+  );
+}
+
+// ─── ConversationToolbar ──────────────────────────────────────────────────────
+// Sits above the compose area — quick actions for forms, content, suggestions,
+// and reassignment. Collapsible so it doesn't eat vertical space when not needed.
+
+function ConversationToolbar({
+  contact, contentLibrary = [], users = [], currentUser,
+  onSendMessage, port,
+  onUpdateContact, onRequestReassign,
+}: {
+  contact:           Contact;
+  contentLibrary?:   ContentRow[];
+  users?:            User[];
+  currentUser:       User;
+  onSendMessage:     (contactId: string, content: string, scheduledAt?: string, port?: MessagePort) => void;
+  port:              MessagePort;
+  onUpdateContact?:  (id: string, data: Partial<Contact>) => void;
+  onRequestReassign?: (contactId: string, reason: string) => void;
+}) {
+  const [isExpanded, setIsExpanded] = useState(false);
+  const [activePanel, setActivePanel] = useState<"form" | "series" | "suggest" | "reassign" | null>(null);
+  const [reassignReason, setReassignReason] = useState("");
+
+  // AI content suggestion — picks from library based on seeker's maturity and journey
+  const suggestions = useMemo(() => {
+    const published = contentLibrary.filter(c => c.status === "Published");
+    // Simple relevance: match difficulty to maturity
+    const maturity = contact.maturity;
+    const diffMap: Record<string, string> = { "Pre-Seeker": "Beginner", "Seeker": "Beginner", "New Believer": "Beginner", "Growing": "Intermediate", "Mature": "Advanced", "Leader": "Advanced" };
+    const targetDiff = diffMap[maturity || "Seeker"] || "Beginner";
+    const matched = published.filter(c => c.difficulty === targetDiff);
+    return matched.length > 0 ? matched.slice(0, 4) : published.slice(0, 4);
+  }, [contentLibrary, contact.maturity]);
+
+  const handleSendForm = (formId: string) => {
+    const form = FORM_TEMPLATES.find(f => f.id === formId);
+    if (!form) return;
+    const msg = `📋 *${form.label}*\n\n${form.desc}\n\n👉 Please fill out this form: [Open Form]`;
+    onSendMessage(contact.id, msg, undefined, port);
+    toast.success(`${form.label} sent to ${contact.name.split(" ")[0]}`);
+    setActivePanel(null);
+  };
+
+  const handleStartSeries = (seriesId: string) => {
+    const series = CONTENT_SERIES.find(s => s.id === seriesId);
+    if (!series) return;
+    const msg = `📚 *${series.label}* — ${series.lessons}-part series\n\n${series.desc}\n\nLesson 1 is on its way! You'll receive one lesson at a time. Reply "pause" to take a break.`;
+    onSendMessage(contact.id, msg, undefined, port);
+    toast.success(`Started "${series.label}" series for ${contact.name.split(" ")[0]}`);
+    setActivePanel(null);
+  };
+
+  const handleSendContent = (item: ContentRow) => {
+    const variant = item.variants?.[port] || item.variants?.web || item.body;
+    const msg = `📖 *${item.title}*\n\n${variant}`;
+    onSendMessage(contact.id, msg, undefined, port);
+    toast.success(`Sent "${item.title}"`);
+    setActivePanel(null);
+  };
+
+  const handleReassign = () => {
+    if (!reassignReason.trim()) { toast.error("Please provide a reason for reassignment"); return; }
+    if (onRequestReassign) onRequestReassign(contact.id, reassignReason.trim());
+    toast.success("Reassignment request submitted — awaiting mentor coach approval");
+    setReassignReason("");
+    setActivePanel(null);
+  };
+
+  const togglePanel = (panel: typeof activePanel) => {
+    setActivePanel(prev => prev === panel ? null : panel);
+    if (!isExpanded) setIsExpanded(true);
+  };
+
+  const TOOLBAR_ACTIONS = [
+    { id: "form" as const,    icon: FileText,   label: "Send Form",      desc: "Assessment or intake" },
+    { id: "series" as const,  icon: ListOrdered, label: "Content Series", desc: "Start a drip sequence" },
+    { id: "suggest" as const, icon: Sparkles,    label: "AI Suggest",     desc: "Smart content pick" },
+    { id: "reassign" as const, icon: RefreshCw,  label: "Reassign",       desc: "Request reassignment" },
+  ];
+
+  return (
+    <div className="shrink-0 border-t border-border bg-background">
+      {/* Toggle bar */}
+      <div className="flex items-center gap-1 px-3 py-1.5">
+        <button
+          onClick={() => { setIsExpanded(!isExpanded); if (isExpanded) setActivePanel(null); }}
+          className="flex items-center gap-1.5 px-2 py-1 text-xs font-semibold text-muted-foreground hover:text-foreground transition-colors"
+        >
+          <Zap className="w-3.5 h-3.5 text-amber-500" />
+          <span>Quick Actions</span>
+          <ChevronDown className={cn("w-3 h-3 transition-transform", isExpanded && "rotate-180")} />
+        </button>
+
+        {/* Compact action chips when collapsed */}
+        {!isExpanded && (
+          <div className="flex items-center gap-1 ml-1">
+            {TOOLBAR_ACTIONS.map(action => (
+              <button
+                key={action.id}
+                onClick={() => togglePanel(action.id)}
+                className="flex items-center gap-1 px-2 py-1 text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-all rounded-sm"
+                title={action.desc}
+              >
+                <action.icon className="w-3 h-3" />
+                <span className="hidden sm:inline">{action.label}</span>
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Expanded toolbar with action tiles */}
+      <AnimatePresence>
+        {isExpanded && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: "auto", opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.15 }}
+            className="overflow-hidden"
+          >
+            {/* Action tiles row */}
+            <div className="grid grid-cols-4 gap-1.5 px-3 pb-2">
+              {TOOLBAR_ACTIONS.map(action => {
+                const isActive = activePanel === action.id;
+                return (
+                  <button
+                    key={action.id}
+                    onClick={() => setActivePanel(isActive ? null : action.id)}
+                    className={cn(
+                      "flex flex-col items-center gap-1 px-2 py-2.5 text-center transition-all rounded-sm border",
+                      isActive
+                        ? "bg-primary/5 border-primary/30 text-primary"
+                        : "bg-muted/30 border-transparent text-muted-foreground hover:bg-muted/50 hover:text-foreground"
+                    )}
+                  >
+                    <action.icon className="w-4 h-4" />
+                    <span className="text-[11px] font-semibold leading-tight">{action.label}</span>
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* Panel content */}
+            <AnimatePresence mode="wait">
+              {activePanel && (
+                <motion.div
+                  key={activePanel}
+                  initial={{ height: 0, opacity: 0 }}
+                  animate={{ height: "auto", opacity: 1 }}
+                  exit={{ height: 0, opacity: 0 }}
+                  transition={{ duration: 0.12 }}
+                  className="overflow-hidden border-t border-border"
+                >
+                  <div className="px-3 py-3 max-h-52 overflow-y-auto custom-scrollbar">
+                    {/* SEND FORM */}
+                    {activePanel === "form" && (
+                      <div className="space-y-1.5">
+                        <p className="text-xs font-bold text-foreground mb-2">Send a form to {contact.name.split(" ")[0]}</p>
+                        {FORM_TEMPLATES.map(form => (
+                          <button key={form.id} onClick={() => handleSendForm(form.id)}
+                            className="w-full flex items-start gap-3 p-2.5 text-left bg-muted/20 hover:bg-muted/50 transition-colors rounded-sm group"
+                          >
+                            <div className="w-8 h-8 bg-blue-50 text-blue-600 rounded-sm flex items-center justify-center shrink-0">
+                              <form.icon className="w-4 h-4" />
+                            </div>
+                            <div className="min-w-0 flex-1">
+                              <p className="text-xs font-bold text-foreground">{form.label}</p>
+                              <p className="text-[11px] text-muted-foreground leading-snug">{form.desc}</p>
+                            </div>
+                            <Send className="w-3.5 h-3.5 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity mt-1 shrink-0" />
+                          </button>
+                        ))}
+                      </div>
+                    )}
+
+                    {/* CONTENT SERIES */}
+                    {activePanel === "series" && (
+                      <div className="space-y-1.5">
+                        <p className="text-xs font-bold text-foreground mb-2">Start a content series</p>
+                        {CONTENT_SERIES.map(series => (
+                          <button key={series.id} onClick={() => handleStartSeries(series.id)}
+                            className="w-full flex items-start gap-3 p-2.5 text-left bg-muted/20 hover:bg-muted/50 transition-colors rounded-sm group"
+                          >
+                            <div className="w-8 h-8 bg-violet-50 text-violet-600 rounded-sm flex items-center justify-center shrink-0">
+                              <Library className="w-4 h-4" />
+                            </div>
+                            <div className="min-w-0 flex-1">
+                              <p className="text-xs font-bold text-foreground">{series.label} <span className="font-normal text-muted-foreground">· {series.lessons} lessons</span></p>
+                              <p className="text-[11px] text-muted-foreground leading-snug">{series.desc}</p>
+                            </div>
+                            <ChevronRight className="w-3.5 h-3.5 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity mt-1 shrink-0" />
+                          </button>
+                        ))}
+                      </div>
+                    )}
+
+                    {/* AI CONTENT SUGGESTION */}
+                    {activePanel === "suggest" && (
+                      <div className="space-y-1.5">
+                        <div className="flex items-center gap-2 mb-2">
+                          <Sparkles className="w-3.5 h-3.5 text-amber-500" />
+                          <p className="text-xs font-bold text-foreground">AI picks for {contact.name.split(" ")[0]}</p>
+                          {contact.maturity && (
+                            <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-sm bg-muted text-muted-foreground">{contact.maturity}</span>
+                          )}
+                        </div>
+                        {suggestions.length === 0 ? (
+                          <p className="text-xs text-muted-foreground py-4 text-center">No published content found. Add content in the Content Library first.</p>
+                        ) : (
+                          suggestions.map(item => (
+                            <button key={item.id} onClick={() => handleSendContent(item)}
+                              className="w-full flex items-start gap-3 p-2.5 text-left bg-muted/20 hover:bg-muted/50 transition-colors rounded-sm group"
+                            >
+                              <div className="w-8 h-8 bg-amber-50 text-amber-600 rounded-sm flex items-center justify-center shrink-0">
+                                <BookOpen className="w-4 h-4" />
+                              </div>
+                              <div className="min-w-0 flex-1">
+                                <p className="text-xs font-bold text-foreground">{item.title}</p>
+                                <p className="text-[11px] text-muted-foreground leading-snug line-clamp-2">{item.summary}</p>
+                                <div className="flex items-center gap-2 mt-1">
+                                  <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-sm bg-muted text-muted-foreground">{item.type}</span>
+                                  <span className="text-[10px] text-muted-foreground">{item.readTimeMin} min read</span>
+                                </div>
+                              </div>
+                              <Send className="w-3.5 h-3.5 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity mt-1 shrink-0" />
+                            </button>
+                          ))
+                        )}
+                      </div>
+                    )}
+
+                    {/* REASSIGNMENT REQUEST */}
+                    {activePanel === "reassign" && (
+                      <div className="space-y-3">
+                        <div className="flex items-center gap-2">
+                          <RefreshCw className="w-3.5 h-3.5 text-orange-500" />
+                          <p className="text-xs font-bold text-foreground">Request Reassignment</p>
+                        </div>
+                        <div className="bg-amber-50 border border-amber-200 rounded-sm p-2.5">
+                          <div className="flex items-start gap-2">
+                            <AlertCircle className="w-3.5 h-3.5 text-amber-600 mt-0.5 shrink-0" />
+                            <p className="text-[11px] text-amber-800 leading-snug">
+                              This request will be sent to a Mentor Coach for review.
+                              {contact.assignedMentorId ? " The current mentor will remain assigned until the request is approved." : ""}
+                            </p>
+                          </div>
+                        </div>
+                        <div>
+                          <label className="text-xs font-semibold text-foreground block mb-1">Reason for reassignment</label>
+                          <textarea
+                            value={reassignReason}
+                            onChange={e => setReassignReason(e.target.value)}
+                            placeholder="e.g. Language barrier, scheduling conflict, seeker requested a different mentor..."
+                            rows={3}
+                            className="w-full px-3 py-2 text-sm border border-input bg-background rounded-sm outline-none resize-none focus:ring-1 focus:ring-ring"
+                          />
+                        </div>
+                        <div className="flex items-center justify-end gap-2">
+                          <button onClick={() => setActivePanel(null)}
+                            className="px-3 py-1.5 text-xs font-semibold text-muted-foreground hover:text-foreground transition-colors"
+                          >Cancel</button>
+                          <button
+                            onClick={handleReassign}
+                            disabled={!reassignReason.trim()}
+                            className={cn(
+                              "flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-sm transition-all",
+                              reassignReason.trim()
+                                ? "bg-orange-500 text-white hover:bg-orange-600"
+                                : "bg-muted text-muted-foreground cursor-not-allowed"
+                            )}
+                          >
+                            <RefreshCw className="w-3 h-3" />
+                            Submit Request
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
@@ -1636,6 +2014,21 @@ export const ConversationView = ({
                     </>
                   )}
                 </div>
+
+                {/* Quick Actions Toolbar */}
+                <ConversationToolbar
+                  contact={selectedContact}
+                  contentLibrary={contentLibrary}
+                  users={users}
+                  currentUser={currentUser}
+                  onSendMessage={onSendMessage}
+                  port={convPort}
+                  onUpdateContact={onUpdateContact}
+                  onRequestReassign={(contactId, reason) => {
+                    addLocalItem({ contactId, type: "system", content: `🔄 Reassignment requested: "${reason}" — awaiting mentor coach approval` });
+                    toast.success("Reassignment request submitted");
+                  }}
+                />
 
                 {/* Compose */}
                 <div data-dropdown-host>
