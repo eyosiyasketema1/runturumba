@@ -536,11 +536,11 @@ function HeroStat({
             <AreaChart data={data}>
               <defs>
                 <linearGradient id={`spark-${label}`} x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%"   stopColor={sparkColor} stopOpacity={0.12} />
-                  <stop offset="100%" stopColor={sparkColor} stopOpacity={0.02} />
+                  <stop offset="0%"   stopColor={sparkColor} stopOpacity={0.06} />
+                  <stop offset="100%" stopColor={sparkColor} stopOpacity={0} />
                 </linearGradient>
               </defs>
-              <Area type="monotone" dataKey="v" stroke={sparkColor} strokeWidth={2} fill={`url(#spark-${label})`} />
+              <Area type="monotone" dataKey="v" stroke={sparkColor} strokeWidth={1.5} fill={`url(#spark-${label})`} fillOpacity={1} />
             </AreaChart>
           </ResponsiveContainer>
         </div>
