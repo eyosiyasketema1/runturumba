@@ -562,7 +562,7 @@ function HeroStat({
           <span className="text-[31.5px] font-bold text-slate-900 tracking-tight tabular-nums leading-[35px]">{value}</span>
           <span className="text-[10.5px] font-bold px-[5.25px] py-[1.75px] rounded-sm leading-[14px]" style={{ backgroundColor: deltaBg, color: deltaColor }}>{deltaTone === "up" ? "↑" : "↓"} {delta}</span>
         </div>
-        {/* Sparkline — raw SVG for reliable gradient fills */}
+        {/* Sparkline — raw SVG with draw-in animation */}
         <div className="h-[35px] -mx-1">
           <svg viewBox={`0 0 ${svgW} ${svgH}`} preserveAspectRatio="none" className="w-full h-full overflow-visible">
             <defs>
@@ -571,8 +571,23 @@ function HeroStat({
                 <stop offset="100%" stopColor={sparkColor} stopOpacity={0} />
               </linearGradient>
             </defs>
-            <path d={area} fill={`url(#${gradId})`} />
-            <path d={line} fill="none" stroke={sparkColor} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
+            {/* Area fill — fades in */}
+            <path d={area} fill={`url(#${gradId})`} opacity={0}>
+              <animate attributeName="opacity" from="0" to="1" dur="1s" begin="0.4s" fill="freeze" />
+            </path>
+            {/* Line stroke — draws in from left to right */}
+            <path
+              d={line}
+              fill="none"
+              stroke={sparkColor}
+              strokeWidth={2}
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeDasharray="1000"
+              strokeDashoffset="1000"
+            >
+              <animate attributeName="stroke-dashoffset" from="1000" to="0" dur="1.2s" begin="0s" fill="freeze" calcMode="spline" keySplines="0.4 0 0.2 1" keyTimes="0;1" />
+            </path>
           </svg>
         </div>
       </div>
