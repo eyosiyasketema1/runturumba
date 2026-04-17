@@ -7,7 +7,12 @@ import {
   TrendingUp, ChevronUp, MessageCircle, Languages, Filter as FilterIcon,
   GitBranch
 } from "lucide-react";
-import { cn } from "./types";
+import {
+  cn,
+  type Contact, type User, type FaithJourney, type ContactMilestones, type Match, type ContentRow,
+  type MatchStatus, type JourneyStage as SharedJourneyStage, type MilestoneKey, type MilestoneState as SharedMilestoneState,
+  type MaturityLevel, type DiscipleshipStatus,
+} from "./types";
 import { Button } from "./ui/button";
 import { Badge } from "./ui/badge";
 import { Input } from "./ui/input";
@@ -175,7 +180,10 @@ const PLATFORM_MIX = [
   { label: "Messenger", pct:  7, dot: "bg-pink-500",    color: "bg-pink-500" },
 ];
 
-export function DiscipleshipDashboardView({ onNavigate }: { onNavigate?: (view: string) => void }) {
+export function DiscipleshipDashboardView({ onNavigate, stats }: {
+  onNavigate?: (view: string) => void;
+  stats?: { activeSeekers: number; mentors: number; activeMatches: number; decisions: number };
+}) {
   const activities = [
     { tone: "bg-emerald-500", icon: CheckCircle2, text: "Sarah M. completed", highlight: "'Foundations of Faith' campaign", when: "2m ago",  meta: "Milestone" },
     { tone: "bg-blue-500",    icon: GitBranch,    text: "New match proposed:", highlight: "David K. → Mentor James",        when: "15m ago", meta: "94 score" },
@@ -243,11 +251,11 @@ export function DiscipleshipDashboardView({ onNavigate }: { onNavigate?: (view: 
           deltaChip="bg-blue-500/10 text-blue-700"
           icon={Users}
           label="Active Seekers"
-          value="247"
+          value={String(stats?.activeSeekers ?? 247)}
           delta="+12%"
           deltaTone="up"
           sparkColor="#2563eb"
-          sparkData={[180, 195, 212, 205, 228, 241, 247]}
+          sparkData={[180, 195, 212, 205, 228, 241, stats?.activeSeekers ?? 247]}
         />
         <HeroStat
           accent="from-violet-500 to-fuchsia-500"
@@ -256,11 +264,11 @@ export function DiscipleshipDashboardView({ onNavigate }: { onNavigate?: (view: 
           deltaChip="bg-violet-500/10 text-violet-700"
           icon={GitBranch}
           label="Active Matches"
-          value="89"
+          value={String(stats?.activeMatches ?? 89)}
           delta="+8%"
           deltaTone="up"
           sparkColor="#8b5cf6"
-          sparkData={[65, 68, 74, 76, 81, 85, 89]}
+          sparkData={[65, 68, 74, 76, 81, 85, stats?.activeMatches ?? 89]}
         />
         <HeroStat
           accent="from-emerald-500 to-teal-500"
@@ -626,9 +634,56 @@ const SORT_OPTIONS: { key: SortKey; label: string }[] = [
   { key: "engagement_low",  label: "Engagement (low → high)" },
 ];
 
-export function SeekersView({ canCreate = true }: { canCreate?: boolean }) {
+export function SeekersView({
+  canCreate = true,
+  contacts: sharedContacts,
+  matches: sharedMatches,
+  faithJourneys: sharedJourneys,
+  users: sharedUsers,
+  onNavigate,
+  onUpdateContact,
+}: {
+  canCreate?: boolean;
+  contacts?: Contact[];
+  matches?: Match[];
+  faithJourneys?: FaithJourney[];
+  users?: User[];
+  onNavigate?: (view: string) => void;
+  onUpdateContact?: (id: string, data: Partial<Contact>) => void;
+}) {
   const [query, setQuery]         = useState("");
-  const [seekers, setSeekers]     = useState<SeekerRow[]>(SEEKERS);
+  // Derive seeker rows from shared contacts when available, fall back to local mock data
+  const derivedSeekers = useMemo<SeekerRow[]>(() => {
+    if (!sharedContacts?.length) return SEEKERS;
+    const maturityToneMap: Record<string, string> = {
+      "Pre-Seeker": "slate", "Seeker": "amber", "New Believer": "green",
+      "Growing": "blue", "Mature": "purple", "Leader": "pink",
+    };
+    const engTone = (e: number) => e >= 80 ? "green" : e >= 50 ? "amber" : "red";
+    const statusToneMap: Record<string, string> = {
+      "Active": "green", "Pending": "amber", "Inactive": "slate", "Graduated": "purple", "Archived": "slate",
+    };
+    const avatarTones: ("blue" | "purple" | "rose" | "amber" | "green" | "slate")[] = ["blue", "purple", "rose", "amber", "green", "slate"];
+    return sharedContacts
+      .filter(c => c.discipleshipStatus && c.discipleshipStatus !== "Archived")
+      .map((c, i) => ({
+        id: c.id,
+        name: c.name,
+        email: c.email || "",
+        maturity: c.maturity || "Seeker",
+        maturityTone: maturityToneMap[c.maturity || "Seeker"] || "amber",
+        campaign: "—",
+        engagement: c.engagement ?? 50,
+        engagementTone: engTone(c.engagement ?? 50),
+        status: c.discipleshipStatus || "Active",
+        statusTone: statusToneMap[c.discipleshipStatus || "Active"] || "green",
+        avatarTone: avatarTones[i % avatarTones.length],
+      }));
+  }, [sharedContacts]);
+
+  const [seekers, setSeekers]     = useState<SeekerRow[]>(derivedSeekers);
+  // Keep local seekers in sync when shared data changes
+  React.useEffect(() => { if (sharedContacts?.length) setSeekers(derivedSeekers); }, [derivedSeekers]);
   const [maturity, setMaturity]   = useState<string>("all");
   const [status, setStatus]       = useState<string>("all");
   const [sort, setSort]           = useState<SortKey>("newest");
@@ -1354,8 +1409,46 @@ const ALL_LANGUAGES = [
 const ALL_SPECIALTIES = ["New Believers", "Youth", "Women", "Men", "Grief", "Prayer", "Apologetics", "Bible Study", "Marriage", "Addiction recovery"];
 const ALL_STRENGTHS  = ["Empathy", "Bible knowledge", "Prayer", "Patience", "Counseling", "Apologetics", "Teaching", "Storytelling", "Pastoral care", "Study planning"];
 
-export function MentorsView({ canCreate = true }: { canCreate?: boolean }) {
-  const [mentors, setMentors] = useState<MentorRow[]>(INITIAL_MENTORS_DATA);
+export function MentorsView({
+  canCreate = true,
+  users: sharedUsers,
+  contacts: sharedContacts,
+  matches: sharedMatches,
+}: {
+  canCreate?: boolean;
+  users?: User[];
+  contacts?: Contact[];
+  matches?: Match[];
+}) {
+  const derivedMentors = useMemo<MentorRow[]>(() => {
+    if (!sharedUsers?.length) return INITIAL_MENTORS_DATA;
+    const mentorUsers = sharedUsers.filter(u => u.mentorProfile);
+    if (!mentorUsers.length) return INITIAL_MENTORS_DATA;
+    const avatarTones: ("blue" | "purple" | "rose" | "amber" | "green" | "slate")[] = ["blue", "purple", "rose", "amber", "green", "slate"];
+    return mentorUsers.map((u, i) => {
+      const p = u.mentorProfile!;
+      return {
+        id: u.id,
+        name: u.name,
+        email: u.email,
+        specialty: p.specialty,
+        languages: p.languages,
+        capacity: p.capacity,
+        load: p.load,
+        status: (p.load >= 100 ? "Unavailable" : "Active") as MentorRow["status"],
+        statusTone: p.load >= 100 ? "amber" : "green",
+        avatarTone: avatarTones[i % avatarTones.length],
+        experience: p.experience,
+        gender: p.gender,
+        strengths: p.strengths,
+        bio: p.bio,
+        joined: p.joined,
+      };
+    });
+  }, [sharedUsers]);
+
+  const [mentors, setMentors] = useState<MentorRow[]>(derivedMentors);
+  React.useEffect(() => { if (sharedUsers?.some(u => u.mentorProfile)) setMentors(derivedMentors); }, [derivedMentors]);
   const [query, setQuery]     = useState("");
   const [status, setStatus]   = useState<string>("all");
   const [exp, setExp]         = useState<string>("all");
@@ -2068,9 +2161,49 @@ const INITIAL_MATCHES: MatchRow[] = [
 
 const MATCH_STATUSES = ["Proposed", "Accepted", "Active", "Completed", "Ended"] as const;
 
-export function MatchesView() {
-  const [matches, setMatches] = useState<MatchRow[]>(INITIAL_MATCHES);
-  const [selectedId, setSelectedId] = useState<string | null>(INITIAL_MATCHES[0]?.id ?? null);
+export function MatchesView({
+  matches: sharedMatches,
+  contacts: sharedContacts,
+  users: sharedUsers,
+  onUpdateMatch,
+  onCreateMatch,
+  onNavigate,
+}: {
+  matches?: Match[];
+  contacts?: Contact[];
+  users?: User[];
+  onUpdateMatch?: (id: string, data: Partial<Match>) => void;
+  onCreateMatch?: (data: Omit<Match, "id" | "tenantId" | "createdAt">) => void;
+  onNavigate?: (view: string) => void;
+}) {
+  const derivedMatches = useMemo<MatchRow[]>(() => {
+    if (!sharedMatches?.length || !sharedContacts?.length || !sharedUsers?.length) {
+      return INITIAL_MATCHES;
+    }
+    const scoreTone = (s: number): "green" | "amber" | "red" => s >= 80 ? "green" : s >= 60 ? "amber" : "red";
+    const statusToneMap: Record<string, string> = {
+      Proposed: "amber", Accepted: "green", Active: "blue", Completed: "green", Ended: "slate",
+    };
+    return sharedMatches.map(m => {
+      const seeker = sharedContacts.find(c => c.id === m.seekerContactId);
+      const mentor = sharedUsers.find(u => u.id === m.mentorUserId);
+      return {
+        id: m.id,
+        score: m.score,
+        scoreTone: scoreTone(m.score),
+        seeker: seeker?.name || "Unknown Seeker",
+        mentor: mentor?.name || "Unknown Mentor",
+        factors: m.factors as MatchRow["factors"],
+        status: m.status,
+        statusTone: statusToneMap[m.status] || "slate",
+        reasoning: m.reasoning,
+      };
+    });
+  }, [sharedMatches, sharedContacts, sharedUsers]);
+
+  const [matches, setMatches] = useState<MatchRow[]>(derivedMatches);
+  React.useEffect(() => { if (sharedMatches?.length) setMatches(derivedMatches); }, [derivedMatches]);
+  const [selectedId, setSelectedId] = useState<string | null>(derivedMatches[0]?.id ?? null);
   const [query, setQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [scoreFilter, setScoreFilter] = useState<string>("all");
@@ -2541,9 +2674,44 @@ const PERIODS = ["All time", "Q1 2026", "Q4 2025", "Q3 2025", "Last 30 days", "L
 
 // Keep the old PIPELINE_COLS for back-compat but we no longer use them directly.
 
-export function FaithJourneysView() {
+export function FaithJourneysView({
+  faithJourneys: sharedJourneys,
+  contacts: sharedContacts,
+  contactMilestones: sharedMilestones,
+  onUpdateJourney,
+  onNavigate,
+}: {
+  faithJourneys?: FaithJourney[];
+  contacts?: Contact[];
+  contactMilestones?: ContactMilestones[];
+  onUpdateJourney?: (id: string, data: Partial<FaithJourney>) => void;
+  onNavigate?: (view: string) => void;
+}) {
+  const derivedJourneys = useMemo<Journey[]>(() => {
+    if (!sharedJourneys?.length || !sharedContacts?.length) return INITIAL_JOURNEYS;
+    const avatarTones: Journey["avatarTone"][] = ["blue", "purple", "rose", "amber", "green", "slate"];
+    return sharedJourneys.map((j, i) => {
+      const contact = sharedContacts.find(c => c.id === j.contactId);
+      return {
+        id: j.id,
+        name: contact?.name || "Unknown",
+        source: j.source,
+        type: j.type,
+        stage: j.stage,
+        indicators: j.indicators,
+        total: j.total,
+        milestone: j.milestone,
+        validation: j.validation,
+        avatarTone: avatarTones[i % avatarTones.length],
+        language: (j.language || "English") as Journey["language"],
+        startedAt: j.startedAt,
+      };
+    });
+  }, [sharedJourneys, sharedContacts]);
+
   const [tab, setTab] = useState<"pipeline" | "milestones" | "list">("pipeline");
-  const [journeys, setJourneys] = useState<Journey[]>(INITIAL_JOURNEYS);
+  const [journeys, setJourneys] = useState<Journey[]>(derivedJourneys);
+  React.useEffect(() => { if (sharedJourneys?.length) setJourneys(derivedJourneys); }, [derivedJourneys]);
   const [period, setPeriod]   = useState<string>("Q1 2026");
   const [stageF, setStageF]   = useState<string>("all");
   const [typeF, setTypeF]     = useState<string>("all");
@@ -2915,15 +3083,60 @@ const MILESTONE_PEOPLE: MilestonePerson[] = [
 
 const MILESTONE_STATES = ["Active Journey", "Engaged", "Touchpoint", "Decision"] as const;
 
-export function MilestonesView() {
+export function MilestonesView({
+  contactMilestones: sharedMilestones,
+  contacts: sharedContacts,
+  faithJourneys: sharedJourneys,
+  onLogMilestone,
+}: {
+  contactMilestones?: ContactMilestones[];
+  contacts?: Contact[];
+  faithJourneys?: FaithJourney[];
+  onLogMilestone?: (contactId: string, key: MilestoneKey, date: string, sub: string[]) => void;
+}) {
+  // Derive MilestonePerson[] from shared state when available
+  const derivedPeople = useMemo<MilestonePerson[]>(() => {
+    if (!sharedMilestones?.length || !sharedContacts?.length) return MILESTONE_PEOPLE;
+    const avatarTones: MilestonePerson["avatarTone"][] = ["blue", "purple", "rose", "amber", "green", "slate"];
+    const stateToneMap: Record<string, string> = {
+      "Active Journey": "green", Engaged: "amber", Touchpoint: "slate", Decision: "green",
+    };
+    return sharedMilestones.map((ms, i) => {
+      const contact = sharedContacts.find(c => c.id === ms.contactId);
+      const journey = sharedJourneys?.find(j => j.contactId === ms.contactId);
+      const doneCount = ms.milestones.filter(m => m.state === "done").length;
+      const total = ms.milestones.length;
+      return {
+        id: ms.id,
+        name: contact?.name || "Unknown",
+        journeyType: (journey?.source === "Self-guided" ? "Self-guided" : journey?.source === "Conversation" ? "Conversation-based" : "Hybrid") as MilestonePerson["journeyType"],
+        started: journey?.startedAt || "Unknown",
+        language: (contact?.preferredLanguage || "English") as MilestonePerson["language"],
+        state: (journey?.stage || "Touchpoint") as MilestonePerson["state"],
+        stateTone: stateToneMap[journey?.stage || "Touchpoint"] || "slate",
+        indicators: journey?.indicators ?? doneCount,
+        total: journey?.total ?? total,
+        avatarTone: avatarTones[i % avatarTones.length],
+        milestones: ms.milestones.map(m => ({
+          key: m.key,
+          label: m.label,
+          date: m.date,
+          state: m.state as MilestonePerson["milestones"][number]["state"],
+          sub: m.sub,
+        })),
+      };
+    });
+  }, [sharedMilestones, sharedContacts, sharedJourneys]);
+
   const [query, setQuery]   = useState("");
   const [stateF, setStateF] = useState("all");
   const [langF, setLangF]   = useState("all");
   const [milestoneF, setMilestoneF] = useState<string>("all"); // filter by a specific milestone status
   const [typeF, setTypeF]   = useState("all");                 // self-guided / conversation / hybrid
 
+  const people = derivedPeople;
   const filtered = useMemo(() => {
-    return MILESTONE_PEOPLE.filter(p => {
+    return people.filter(p => {
       const q = query.toLowerCase();
       const matchesQ = !q || p.name.toLowerCase().includes(q);
       const matchesState = stateF === "all" || p.state === stateF;
@@ -2937,7 +3150,7 @@ export function MilestonesView() {
       }
       return matchesQ && matchesState && matchesLang && matchesType && matchesMilestone;
     });
-  }, [query, stateF, langF, milestoneF, typeF]);
+  }, [people, query, stateF, langF, milestoneF, typeF]);
 
   const hasFilters = query || stateF !== "all" || langF !== "all" || milestoneF !== "all" || typeF !== "all";
 
@@ -3249,8 +3462,17 @@ const INITIAL_CONTENT: ContentRow[] = [
   { id: "c6", title: "7-Day Worship Challenge",                    type: "Challenge",    typeTone: "amber",  category: "Worship",      difficulty: "Beginner",     lang: "English", status: "Published", statusTone: "green", summary: "A week of small worship practices.",                        body: "Day 1: Sing one song.\nDay 2: Thank someone out loud.\nDay 3: Pray the Lord's Prayer.\nDay 4: Read Psalm 23.\nDay 5: Sit in silence for 5 minutes.\nDay 6: Share a verse with a friend.\nDay 7: Go to a gathering.", tags: ["worship", "challenge", "7-day"], author: "curated", readTimeMin: 2, variants: makeVariants("7-Day Worship Challenge", "A week of small worship practices."), stats: { views: 560, engagement: 69, completion: 41 }, updatedAt: "5 days ago" },
 ];
 
-export function ContentLibraryView({ canEdit = true }: { canEdit?: boolean }) {
-  const [items, setItems]        = useState<ContentRow[]>(INITIAL_CONTENT);
+export function ContentLibraryView({
+  canEdit = true,
+  contentLibrary: sharedContent,
+  onUpdateContent,
+}: {
+  canEdit?: boolean;
+  contentLibrary?: ContentRow[];
+  onUpdateContent?: (id: string, data: Partial<ContentRow>) => void;
+}) {
+  const [items, setItems]        = useState<ContentRow[]>(sharedContent?.length ? sharedContent : INITIAL_CONTENT);
+  React.useEffect(() => { if (sharedContent?.length) setItems(sharedContent); }, [sharedContent]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [editingId, setEditingId]   = useState<string | null>(null);
   const [isAddOpen, setIsAddOpen]   = useState(false);
@@ -5537,7 +5759,10 @@ const MAIN_TREND = [
   { day: "Sun", contacts: 8420, sent:  720 },
 ];
 
-export function MainDashboardView({ onNavigate }: { onNavigate?: (view: string) => void }) {
+export function MainDashboardView({ onNavigate, stats }: {
+  onNavigate?: (view: string) => void;
+  stats?: { totalContacts: number; activeSeekers: number; messagesSent: number; automationsLive: number };
+}) {
   const hour = new Date().getHours();
   const greeting = hour < 12 ? "Good morning" : hour < 18 ? "Good afternoon" : "Good evening";
   const today = new Date().toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" });
@@ -5575,37 +5800,49 @@ export function MainDashboardView({ onNavigate }: { onNavigate?: (view: string) 
 
       {/* KPI cards spanning every module */}
       <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        {MAIN_KPIS.map(kpi => (
-          <HeroStat
-            key={kpi.label}
-            accent={kpi.tone === "blue" ? "from-blue-500 to-blue-600"
-              : kpi.tone === "purple" ? "from-violet-500 to-fuchsia-500"
-              : kpi.tone === "green"  ? "from-emerald-500 to-teal-500"
-              : "from-amber-500 to-orange-500"}
-            tintClass={kpi.tone === "blue" ? "bg-blue-50/70"
-              : kpi.tone === "purple" ? "bg-violet-50/70"
-              : kpi.tone === "green"  ? "bg-emerald-50/70"
-              : "bg-amber-50/70"}
-            iconBg={kpi.tone === "blue" ? "bg-blue-500"
-              : kpi.tone === "purple" ? "bg-violet-500"
-              : kpi.tone === "green"  ? "bg-emerald-500"
-              : "bg-amber-500"}
-            deltaChip={kpi.tone === "blue" ? "bg-blue-500/10 text-blue-700"
-              : kpi.tone === "purple" ? "bg-violet-500/10 text-violet-700"
-              : kpi.tone === "green"  ? "bg-emerald-500/10 text-emerald-700"
-              : "bg-amber-500/10 text-amber-700"}
-            icon={kpi.icon}
-            label={kpi.label}
-            value={kpi.value}
-            delta={kpi.delta}
-            deltaTone="up"
-            sparkColor={kpi.tone === "blue" ? "#2563eb"
-              : kpi.tone === "purple" ? "#8b5cf6"
-              : kpi.tone === "green"  ? "#10b981"
-              : "#f59e0b"}
-            sparkData={kpi.spark}
-          />
-        ))}
+        {(() => {
+          // Override KPI values with real data when available
+          const liveKpis = MAIN_KPIS.map(kpi => {
+            if (stats) {
+              if (kpi.label === "Total Contacts") return { ...kpi, value: stats.totalContacts.toLocaleString(), spark: [...kpi.spark.slice(0, -1), stats.totalContacts] };
+              if (kpi.label === "Active Seekers") return { ...kpi, value: String(stats.activeSeekers), spark: [...kpi.spark.slice(0, -1), stats.activeSeekers] };
+              if (kpi.label === "Messages Sent") return { ...kpi, value: stats.messagesSent.toLocaleString(), spark: [...kpi.spark.slice(0, -1), stats.messagesSent] };
+              if (kpi.label === "Automations Live") return { ...kpi, value: String(stats.automationsLive), spark: [...kpi.spark.slice(0, -1), stats.automationsLive] };
+            }
+            return kpi;
+          });
+          return liveKpis.map(kpi => (
+            <HeroStat
+              key={kpi.label}
+              accent={kpi.tone === "blue" ? "from-blue-500 to-blue-600"
+                : kpi.tone === "purple" ? "from-violet-500 to-fuchsia-500"
+                : kpi.tone === "green"  ? "from-emerald-500 to-teal-500"
+                : "from-amber-500 to-orange-500"}
+              tintClass={kpi.tone === "blue" ? "bg-blue-50/70"
+                : kpi.tone === "purple" ? "bg-violet-50/70"
+                : kpi.tone === "green"  ? "bg-emerald-50/70"
+                : "bg-amber-50/70"}
+              iconBg={kpi.tone === "blue" ? "bg-blue-500"
+                : kpi.tone === "purple" ? "bg-violet-500"
+                : kpi.tone === "green"  ? "bg-emerald-500"
+                : "bg-amber-500"}
+              deltaChip={kpi.tone === "blue" ? "bg-blue-500/10 text-blue-700"
+                : kpi.tone === "purple" ? "bg-violet-500/10 text-violet-700"
+                : kpi.tone === "green"  ? "bg-emerald-500/10 text-emerald-700"
+                : "bg-amber-500/10 text-amber-700"}
+              icon={kpi.icon}
+              label={kpi.label}
+              value={kpi.value}
+              delta={kpi.delta}
+              deltaTone="up"
+              sparkColor={kpi.tone === "blue" ? "#2563eb"
+                : kpi.tone === "purple" ? "#8b5cf6"
+                : kpi.tone === "green"  ? "#10b981"
+                : "#f59e0b"}
+              sparkData={kpi.spark}
+            />
+          ));
+        })()}
       </section>
 
       {/* Today's focus — single row of cards */}
@@ -5793,7 +6030,10 @@ const VITAL_TREND = [
   { period: "Now",  v: 12450, i: 3820, t: 1247, a: 342, l: 89 },
 ];
 
-export function VitalDashboardView({ onNavigate }: { onNavigate?: (view: string) => void }) {
+export function VitalDashboardView({ onNavigate, stats }: {
+  onNavigate?: (view: string) => void;
+  stats?: { totalContacts: number; activeSeekers: number; activeJourneys: number; decisions: number; leaders: number };
+}) {
   const [period, setPeriod] = useState("q1_2026");
 
   const conversions = [

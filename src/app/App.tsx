@@ -32,11 +32,14 @@ import {
   type DeliveryChannel, type AutomationRule, type Webhook as WebhookType,
   type AuditLogEntry,
   type ChatEndpoint, type ConversationRule,
+  type FaithJourney, type ContactMilestones, type Match, type ContentRow,
+  type MatchStatus, type JourneyStage, type MilestoneKey, type MilestoneState,
   PLAN_LIMITS, CHANNEL_TYPES,
   INITIAL_TENANTS, INITIAL_USERS, INITIAL_CONTACTS, INITIAL_GROUPS, INITIAL_TEAM_GROUPS,
   INITIAL_MESSAGES, INITIAL_BROADCASTS, INITIAL_NOTES,
   INITIAL_CHANNELS, INITIAL_AUTOMATIONS, INITIAL_WEBHOOKS, INITIAL_AUDIT_LOG,
-  INITIAL_CHAT_ENDPOINTS, INITIAL_CONVERSATION_RULES
+  INITIAL_CHAT_ENDPOINTS, INITIAL_CONVERSATION_RULES,
+  INITIAL_FAITH_JOURNEYS, INITIAL_CONTACT_MILESTONES, INITIAL_MATCHES, INITIAL_CONTENT,
 } from "./components/types";
 
 // Shared UI components
@@ -123,7 +126,13 @@ export default function App() {
   const [webhooks, setWebhooks] = useState<WebhookType[]>(INITIAL_WEBHOOKS);
   const [chatEndpoints, setChatEndpoints] = useState<ChatEndpoint[]>(INITIAL_CHAT_ENDPOINTS);
   const [conversationRules, setConversationRules] = useState<ConversationRule[]>(INITIAL_CONVERSATION_RULES);
-  
+
+  // Discipleship state (shared across Seekers, Mentors, Matches, Journeys, Milestones, Conversations)
+  const [faithJourneys, setFaithJourneys] = useState<FaithJourney[]>(INITIAL_FAITH_JOURNEYS);
+  const [contactMilestones, setContactMilestones] = useState<ContactMilestones[]>(INITIAL_CONTACT_MILESTONES);
+  const [matches, setMatches] = useState<Match[]>(INITIAL_MATCHES);
+  const [contentLibrary, setContentLibrary] = useState<ContentRow[]>(INITIAL_CONTENT);
+
   // Selected state for modals
   const [selectedContact, setSelectedContact] = useState<Contact | null>(null);
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
@@ -222,6 +231,12 @@ export default function App() {
       createdAt: scheduledAt || new Date().toISOString()
     };
     setMessages(prev => [newMessage, ...prev]);
+    // Cross-view: bump contact engagement on each sent message
+    setContacts(prev => prev.map(c =>
+      c.id === contactId && c.engagement != null
+        ? { ...c, engagement: Math.min(100, c.engagement + 2) }
+        : c
+    ));
     toast.success(scheduledAt ? "Message scheduled" : "Message sent");
   };
 
@@ -266,6 +281,76 @@ export default function App() {
     setContacts(prev => [newContact, ...prev]);
     setIsAddContactOpen(false);
     toast.success(`"${newContact.name}" has been added.`);
+  };
+
+  // --- Discipleship handlers ---
+
+  const handleUpdateContact = (id: string, data: Partial<Contact>) => {
+    setContacts(prev => prev.map(c => c.id === id ? { ...c, ...data } : c));
+  };
+
+  const handleUpdateJourney = (id: string, data: Partial<FaithJourney>) => {
+    setFaithJourneys(prev => prev.map(j => j.id === id ? { ...j, ...data } : j));
+  };
+
+  const handleLogMilestone = (contactId: string, key: MilestoneKey, date: string, sub: string[]) => {
+    setContactMilestones(prev => {
+      const existing = prev.find(m => m.contactId === contactId);
+      if (existing) {
+        const updated = prev.map(m => m.contactId === contactId ? {
+          ...m,
+          milestones: m.milestones.map(ms => ms.key === key ? { ...ms, date, state: "done" as MilestoneState, sub } : ms),
+        } : m);
+        // Cross-view: if all 4 milestones are now done, advance the faith journey to "Decision"
+        const rec = updated.find(m => m.contactId === contactId);
+        if (rec && rec.milestones.every(ms => ms.state === "done")) {
+          setFaithJourneys(fj => fj.map(j =>
+            j.contactId === contactId ? { ...j, stage: "Decision" as JourneyStage, indicators: j.total } : j
+          ));
+          setContacts(cs => cs.map(c =>
+            c.id === contactId ? { ...c, maturity: "Mature", discipleshipStatus: "Graduated" } : c
+          ));
+        }
+        return updated;
+      }
+      // Create new milestone record for this contact
+      const newMs: ContactMilestones = {
+        id: `ms-${Date.now()}`,
+        contactId,
+        tenantId: activeTenant.id,
+        milestones: [
+          { key: "salvation", label: "Salvation Decision", date: key === "salvation" ? date : "Not Started", state: key === "salvation" ? "done" : "pending", sub: key === "salvation" ? sub : [] },
+          { key: "baptism",   label: "Baptism",           date: key === "baptism"   ? date : "Not Started", state: key === "baptism"   ? "done" : "pending", sub: key === "baptism"   ? sub : [] },
+          { key: "community", label: "Community",         date: key === "community" ? date : "Not Started", state: key === "community" ? "done" : "pending", sub: key === "community" ? sub : [] },
+          { key: "growth",    label: "Growth Evidence",   date: key === "growth"    ? date : "Not Started", state: key === "growth"    ? "done" : "pending", sub: key === "growth"    ? sub : [] },
+        ],
+      };
+      return [...prev, newMs];
+    });
+  };
+
+  const handleUpdateMatch = (id: string, data: Partial<Match>) => {
+    setMatches(prev => prev.map(m => m.id === id ? { ...m, ...data } : m));
+    // Cross-view: when a match is accepted/active, assign the mentor to the seeker contact
+    if (data.status === "Accepted" || data.status === "Active") {
+      const match = matches.find(m => m.id === id);
+      if (match) {
+        setContacts(prev => prev.map(c =>
+          c.id === match.seekerContactId ? { ...c, assignedMentorId: match.mentorUserId, discipleshipStatus: "Active" } : c
+        ));
+      }
+    }
+  };
+
+  const handleCreateMatch = (data: Omit<Match, "id" | "tenantId" | "createdAt">) => {
+    const newMatch: Match = {
+      ...data,
+      id: `match-${Date.now()}`,
+      tenantId: activeTenant.id,
+      createdAt: new Date().toISOString(),
+    };
+    setMatches(prev => [newMatch, ...prev]);
+    toast.success("Match created");
   };
 
   const handleLogout = () => {
@@ -652,13 +737,38 @@ export default function App() {
                 </div>
 
                 {dashboardTab === "main" && (
-                  <MainDashboardView onNavigate={handleNavigate} />
+                  <MainDashboardView
+                    onNavigate={handleNavigate}
+                    stats={{
+                      totalContacts: contacts.length,
+                      activeSeekers: contacts.filter(c => c.discipleshipStatus === "Active").length,
+                      messagesSent: messages.filter(m => m.status === "sent" || m.status === "delivered" || m.status === "read").length,
+                      automationsLive: automations.filter(a => a.enabled).length,
+                    }}
+                  />
                 )}
                 {dashboardTab === "discipleship" && (
-                  <DiscipleshipDashboardView onNavigate={handleNavigate} />
+                  <DiscipleshipDashboardView
+                    onNavigate={handleNavigate}
+                    stats={{
+                      activeSeekers: contacts.filter(c => c.discipleshipStatus === "Active").length,
+                      mentors: users.filter(u => u.mentorProfile).length,
+                      activeMatches: matches.filter(m => m.status === "Active" || m.status === "Accepted").length,
+                      decisions: faithJourneys.filter(j => j.stage === "Decision").length,
+                    }}
+                  />
                 )}
                 {dashboardTab === "collective" && (
-                  <VitalDashboardView onNavigate={handleNavigate} />
+                  <VitalDashboardView
+                    onNavigate={handleNavigate}
+                    stats={{
+                      totalContacts: contacts.length,
+                      activeSeekers: contacts.filter(c => c.discipleshipStatus === "Active").length,
+                      activeJourneys: faithJourneys.filter(j => j.stage === "Active Journey" || j.stage === "Engaged").length,
+                      decisions: faithJourneys.filter(j => j.stage === "Decision").length,
+                      leaders: contacts.filter(c => c.maturity === "Leader").length,
+                    }}
+                  />
                 )}
               </motion.div>
             )}
@@ -692,6 +802,19 @@ export default function App() {
                   groups={groups}
                   teamGroups={teamGroups}
                   viewMode={viewMode}
+                  faithJourneys={faithJourneys}
+                  contactMilestones={contactMilestones}
+                  matches={matches}
+                  contentLibrary={contentLibrary}
+                  onUpdateContact={handleUpdateContact}
+                  onUpdateJourney={handleUpdateJourney}
+                  onLogMilestone={handleLogMilestone}
+                  onUpdateMatch={handleUpdateMatch}
+                  onAddNote={(content: string, contactId: string) => {
+                    const newNote: ContactNote = { id: `note-${Date.now()}`, contactId, authorId: currentUser.id, content, createdAt: new Date().toISOString() };
+                    setNotes(prev => [newNote, ...prev]);
+                  }}
+                  onDeleteNote={(id: string) => setNotes(prev => prev.filter(n => n.id !== id))}
                   onAddRule={(data) => {
                     const newRule: ConversationRule = {
                       ...data as any,
@@ -851,32 +974,32 @@ export default function App() {
             )}
             {currentView === "seekers" && (
               <motion.div key="seekers" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.2 }}>
-                <SeekersView canCreate={viewMode === "super_admin" || viewMode === "admin"} />
+                <SeekersView canCreate={viewMode === "super_admin" || viewMode === "admin"} contacts={contacts} matches={matches} faithJourneys={faithJourneys} users={users} onNavigate={handleNavigate} onUpdateContact={handleUpdateContact} />
               </motion.div>
             )}
             {currentView === "mentors" && (
               <motion.div key="mentors" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.2 }}>
-                <MentorsView canCreate={viewMode === "super_admin" || viewMode === "admin"} />
+                <MentorsView canCreate={viewMode === "super_admin" || viewMode === "admin"} users={users} contacts={contacts} matches={matches} />
               </motion.div>
             )}
             {currentView === "matches" && (
               <motion.div key="matches" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.2 }}>
-                <MatchesView />
+                <MatchesView matches={matches} contacts={contacts} users={users} onUpdateMatch={handleUpdateMatch} onCreateMatch={handleCreateMatch} onNavigate={handleNavigate} />
               </motion.div>
             )}
             {currentView === "faith_journeys" && (
               <motion.div key="faith_journeys" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.2 }}>
-                <FaithJourneysView />
+                <FaithJourneysView faithJourneys={faithJourneys} contacts={contacts} contactMilestones={contactMilestones} onUpdateJourney={handleUpdateJourney} onNavigate={handleNavigate} />
               </motion.div>
             )}
             {currentView === "milestones" && (
               <motion.div key="milestones" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.2 }}>
-                <MilestonesView />
+                <MilestonesView contactMilestones={contactMilestones} contacts={contacts} faithJourneys={faithJourneys} onLogMilestone={handleLogMilestone} />
               </motion.div>
             )}
             {currentView === "content_library" && (
               <motion.div key="content_library" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.2 }}>
-                <ContentLibraryView canEdit={viewMode === "super_admin" || viewMode === "admin" || viewMode === "content_creator"} />
+                <ContentLibraryView canEdit={viewMode === "super_admin" || viewMode === "admin" || viewMode === "content_creator"} contentLibrary={contentLibrary} onUpdateContent={(id: string, data: Partial<ContentRow>) => setContentLibrary(prev => prev.map(c => c.id === id ? { ...c, ...data } : c))} />
               </motion.div>
             )}
             {currentView === "growth_metrics" && (

@@ -23,6 +23,97 @@ export type MessagePort = ChannelType;
 export type ScheduleFrequency = "once" | "daily" | "weekly" | "biweekly" | "monthly";
 export type ChannelStatus = "connected" | "disconnected" | "error" | "rate_limited";
 
+// --- Discipleship Types ---
+
+export type MaturityLevel = "Pre-Seeker" | "Seeker" | "New Believer" | "Growing" | "Mature" | "Leader";
+export type DiscipleshipStatus = "Active" | "Pending" | "Inactive" | "Graduated" | "Archived";
+export type JourneyStage = "Touchpoint" | "Engaged" | "Active Journey" | "Decision";
+export type JourneyType = "Salvation" | "Baptism" | "Community" | "Growth";
+export type JourneySource = "Telegram" | "WhatsApp" | "SMS" | "Self-guided" | "Messenger" | "Conversation";
+export type JourneyValidation = "Pending" | "Confirmed" | "N/A";
+export type MilestoneKey = "salvation" | "baptism" | "community" | "growth";
+export type MilestoneState = "done" | "progress" | "pending";
+export type MatchStatus = "Proposed" | "Accepted" | "Active" | "Completed" | "Ended";
+export type MentorExperience = "Beginner" | "Intermediate" | "Experienced" | "Senior";
+export type ContentStatus = "Draft" | "Published" | "Archived";
+export type ContentAuthor = "curated" | "ai_generated";
+
+/** Mentor-specific profile attached to a User */
+export interface MentorProfile {
+  specialty: string;
+  languages: string;
+  capacity: string;          // "4/5"
+  load: number;              // 0-100
+  experience: MentorExperience;
+  gender: "female" | "male";
+  strengths: string[];
+  bio: string;
+  joined: string;
+}
+
+export interface FaithJourney {
+  id: string;
+  contactId: string;         // ← links to Contact.id
+  tenantId: string;
+  source: JourneySource;
+  type: JourneyType;
+  stage: JourneyStage;
+  indicators: number;
+  total: number;
+  milestone: string;         // current milestone label
+  validation: JourneyValidation;
+  language: string;
+  startedAt: string;
+}
+
+export interface MilestoneEntry {
+  key: MilestoneKey;
+  label: string;
+  date: string;
+  state: MilestoneState;
+  sub: string[];
+}
+
+export interface ContactMilestones {
+  id: string;
+  contactId: string;         // ← links to Contact.id
+  tenantId: string;
+  milestones: MilestoneEntry[];
+}
+
+export interface Match {
+  id: string;
+  tenantId: string;
+  seekerContactId: string;   // ← links to Contact.id
+  mentorUserId: string;      // ← links to User.id
+  score: number;             // 0-100
+  factors: [string, number, string][];
+  status: MatchStatus;
+  reasoning: string;
+  createdAt: string;
+}
+
+export interface ContentRow {
+  id: string;
+  title: string;
+  type: string;
+  typeTone: string;
+  category: string;
+  difficulty: "Beginner" | "Intermediate" | "Advanced";
+  lang: string;
+  status: ContentStatus;
+  statusTone: string;
+  summary: string;
+  body: string;
+  tags: string[];
+  author: ContentAuthor;
+  source?: string;
+  readTimeMin: number;
+  variants: { telegram: string; whatsapp: string; sms: string; web: string };
+  stats: { views: number; engagement: number; completion: number };
+  updatedAt: string;
+}
+
 export interface Tenant {
   id: string;
   name: string;
@@ -44,6 +135,7 @@ export interface User {
   status: Status;
   tenantId: string;
   avatar?: string;
+  mentorProfile?: MentorProfile;
 }
 
 export interface TeamGroup {
@@ -67,6 +159,13 @@ export interface Contact {
   createdAt: string;
   customAttributes?: Record<string, string>;
   preferredChannel?: ChannelType;
+  // --- discipleship fields (optional — only present for seekers) ---
+  maturity?: MaturityLevel;
+  engagement?: number;                 // 0-100
+  discipleshipStatus?: DiscipleshipStatus;
+  assignedMentorId?: string;           // → User.id with mentorProfile
+  preferredLanguage?: string;
+  spiritualBackground?: string;
 }
 
 export interface Group {
@@ -317,7 +416,8 @@ export const INITIAL_USERS: User[] = [
     role: "admin",
     status: "active",
     tenantId: "tenant-1",
-    avatar: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&h=100&fit=crop"
+    avatar: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&h=100&fit=crop",
+    mentorProfile: { specialty: "New Believers, Grief", languages: "EN, AM", capacity: "4/5", load: 80, experience: "Senior", gender: "male", strengths: ["Empathy", "Bible knowledge", "Prayer"], bio: "20+ years walking alongside new believers and those in grief. Passionate about foundational discipleship.", joined: "Jan 10, 2024" },
   },
   {
     id: "user-2",
@@ -326,7 +426,8 @@ export const INITIAL_USERS: User[] = [
     role: "agent",
     status: "active",
     tenantId: "tenant-1",
-    avatar: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=100&h=100&fit=crop"
+    avatar: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=100&h=100&fit=crop",
+    mentorProfile: { specialty: "Youth, Apologetics", languages: "EN", capacity: "3/5", load: 60, experience: "Experienced", gender: "female", strengths: ["Apologetics", "Teaching", "Patience"], bio: "Works with young seekers navigating questions of faith. Background in campus ministry.", joined: "Mar 22, 2024" },
   },
   {
     id: "user-3",
@@ -362,7 +463,8 @@ export const INITIAL_USERS: User[] = [
     role: "agent",
     status: "active",
     tenantId: "tenant-1",
-    avatar: "https://images.unsplash.com/photo-1573497019940-1c28c88b4f3e?w=100&h=100&fit=crop"
+    avatar: "https://images.unsplash.com/photo-1573497019940-1c28c88b4f3e?w=100&h=100&fit=crop",
+    mentorProfile: { specialty: "Women, Prayer", languages: "EN, OM", capacity: "5/5", load: 100, experience: "Experienced", gender: "female", strengths: ["Prayer", "Counseling", "Pastoral care"], bio: "Women's ministry leader. Specialises in prayer accompaniment and seasons of transition.", joined: "May 18, 2024" },
   }
 ];
 
@@ -375,16 +477,16 @@ export const INITIAL_GROUPS: Group[] = [
 ];
 
 export const INITIAL_CONTACTS: Contact[] = [
-  { id: "contact-1",  name: "Abel Tesfaye",        phone: "+251911234567", email: "abel.tesfaye@gmail.com",       tags: ["amharic", "telegram", "prayer-request"], groupIds: ["group-1"],                 tenantId: "tenant-1", createdAt: "2026-04-15T09:30:00Z" },
-  { id: "contact-2",  name: "Hanna Bekele",        phone: "+251922456780", email: "hanna.bekele@outlook.com",     tags: ["amharic", "whatsapp", "baptized"],       groupIds: ["group-2", "group-3"],      tenantId: "tenant-1", createdAt: "2026-04-14T14:05:00Z" },
-  { id: "contact-3",  name: "Mikias Alemu",        phone: "+251933789012", email: "mikias.alemu@yahoo.com",       tags: ["oromo", "telegram", "new-believer"],     groupIds: ["group-2"],                 tenantId: "tenant-1", createdAt: "2026-04-13T11:12:00Z" },
-  { id: "contact-4",  name: "Yordanos Girma",      phone: "+251944321098", email: "yordanos.girma@gmail.com",     tags: ["english", "whatsapp", "follow-up"],      groupIds: ["group-1", "group-5"],      tenantId: "tenant-1", createdAt: "2026-04-12T08:47:00Z" },
-  { id: "contact-5",  name: "Daniel Haile",        phone: "+251955876543", email: "daniel.haile@proton.me",       tags: ["amharic", "sms", "catechumen"],          groupIds: ["group-3"],                 tenantId: "tenant-1", createdAt: "2026-04-11T17:22:00Z" },
-  { id: "contact-6",  name: "Meron Abebe",         phone: "+251966543210", email: "meron.abebe@gmail.com",        tags: ["amharic", "telegram", "prayer-request"], groupIds: ["group-1", "group-2"],      tenantId: "tenant-1", createdAt: "2026-04-10T13:58:00Z" },
-  { id: "contact-7",  name: "Samuel Tadesse",      phone: "+251977109876", email: "samuel.tadesse@gmail.com",     tags: ["english", "whatsapp", "baptized"],       groupIds: ["group-4"],                 tenantId: "tenant-1", createdAt: "2026-04-09T10:15:00Z" },
-  { id: "contact-8",  name: "Bethlehem Yohannes",  phone: "+251988234501", email: "beti.yohannes@outlook.com",    tags: ["amharic", "whatsapp"],                   groupIds: ["group-3", "group-5"],      tenantId: "tenant-1", createdAt: "2026-04-08T16:40:00Z" },
-  { id: "contact-9",  name: "Robel Desta",         phone: "+251999456781", email: "robel.desta@gmail.com",        tags: ["oromo", "telegram", "follow-up"],        groupIds: ["group-3"],                 tenantId: "tenant-1", createdAt: "2026-04-07T09:03:00Z" },
-  { id: "contact-10", name: "Selamawit Kebede",    phone: "+251911678923", email: "selam.kebede@gmail.com",       tags: ["amharic", "whatsapp", "baptized"],       groupIds: ["group-4"],                 tenantId: "tenant-1", createdAt: "2026-04-06T12:27:00Z" },
+  { id: "contact-1",  name: "Abel Tesfaye",        phone: "+251911234567", email: "abel.tesfaye@gmail.com",       tags: ["amharic", "telegram", "prayer-request"], groupIds: ["group-1"],                 tenantId: "tenant-1", createdAt: "2026-04-15T09:30:00Z", maturity: "Seeker",      engagement: 58,  discipleshipStatus: "Active",  assignedMentorId: "user-1", preferredLanguage: "Amharic" },
+  { id: "contact-2",  name: "Hanna Bekele",        phone: "+251922456780", email: "hanna.bekele@outlook.com",     tags: ["amharic", "whatsapp", "baptized"],       groupIds: ["group-2", "group-3"],      tenantId: "tenant-1", createdAt: "2026-04-14T14:05:00Z", maturity: "Growing",     engagement: 91,  discipleshipStatus: "Active",  assignedMentorId: "user-2", preferredLanguage: "Amharic" },
+  { id: "contact-3",  name: "Mikias Alemu",        phone: "+251933789012", email: "mikias.alemu@yahoo.com",       tags: ["oromo", "telegram", "new-believer"],     groupIds: ["group-2"],                 tenantId: "tenant-1", createdAt: "2026-04-13T11:12:00Z", maturity: "New Believer", engagement: 72,  discipleshipStatus: "Active",  assignedMentorId: "user-6", preferredLanguage: "Afaan Oromoo" },
+  { id: "contact-4",  name: "Yordanos Girma",      phone: "+251944321098", email: "yordanos.girma@gmail.com",     tags: ["english", "whatsapp", "follow-up"],      groupIds: ["group-1", "group-5"],      tenantId: "tenant-1", createdAt: "2026-04-12T08:47:00Z", maturity: "Seeker",      engagement: 34,  discipleshipStatus: "Pending", preferredLanguage: "English" },
+  { id: "contact-5",  name: "Daniel Haile",        phone: "+251955876543", email: "daniel.haile@proton.me",       tags: ["amharic", "sms", "catechumen"],          groupIds: ["group-3"],                 tenantId: "tenant-1", createdAt: "2026-04-11T17:22:00Z", maturity: "Growing",     engagement: 85,  discipleshipStatus: "Active",  assignedMentorId: "user-1", preferredLanguage: "Amharic" },
+  { id: "contact-6",  name: "Meron Abebe",         phone: "+251966543210", email: "meron.abebe@gmail.com",        tags: ["amharic", "telegram", "prayer-request"], groupIds: ["group-1", "group-2"],      tenantId: "tenant-1", createdAt: "2026-04-10T13:58:00Z", maturity: "New Believer", engagement: 65,  discipleshipStatus: "Active",  assignedMentorId: "user-2", preferredLanguage: "Amharic" },
+  { id: "contact-7",  name: "Samuel Tadesse",      phone: "+251977109876", email: "samuel.tadesse@gmail.com",     tags: ["english", "whatsapp", "baptized"],       groupIds: ["group-4"],                 tenantId: "tenant-1", createdAt: "2026-04-09T10:15:00Z", maturity: "Mature",      engagement: 95,  discipleshipStatus: "Graduated", preferredLanguage: "English" },
+  { id: "contact-8",  name: "Bethlehem Yohannes",  phone: "+251988234501", email: "beti.yohannes@outlook.com",    tags: ["amharic", "whatsapp"],                   groupIds: ["group-3", "group-5"],      tenantId: "tenant-1", createdAt: "2026-04-08T16:40:00Z", maturity: "Growing",     engagement: 78,  discipleshipStatus: "Active",  assignedMentorId: "user-6", preferredLanguage: "Amharic" },
+  { id: "contact-9",  name: "Robel Desta",         phone: "+251999456781", email: "robel.desta@gmail.com",        tags: ["oromo", "telegram", "follow-up"],        groupIds: ["group-3"],                 tenantId: "tenant-1", createdAt: "2026-04-07T09:03:00Z", maturity: "New Believer", engagement: 52,  discipleshipStatus: "Active",  assignedMentorId: "user-1", preferredLanguage: "Afaan Oromoo" },
+  { id: "contact-10", name: "Selamawit Kebede",    phone: "+251911678923", email: "selam.kebede@gmail.com",       tags: ["amharic", "whatsapp", "baptized"],       groupIds: ["group-4"],                 tenantId: "tenant-1", createdAt: "2026-04-06T12:27:00Z", maturity: "Leader",      engagement: 98,  discipleshipStatus: "Graduated", preferredLanguage: "Amharic" },
 ];
 
 export const INITIAL_MESSAGES: Message[] = [
@@ -822,4 +924,97 @@ export const INITIAL_CONVERSATION_RULES: ConversationRule[] = [
     active: false,
     createdAt: "2025-02-12T08:00:00Z",
   },
+];
+
+// ---------------------------------------------------------------------------
+// Discipleship initial data — linked to Contact.id and User.id
+// ---------------------------------------------------------------------------
+
+export const INITIAL_FAITH_JOURNEYS: FaithJourney[] = [
+  { id: "j-1",  contactId: "contact-1",  tenantId: "tenant-1", source: "Telegram",     type: "Salvation",  stage: "Touchpoint",      indicators: 1, total: 7, milestone: "First contact",          validation: "N/A",       language: "Amharic",       startedAt: "2026-04-15" },
+  { id: "j-2",  contactId: "contact-2",  tenantId: "tenant-1", source: "WhatsApp",     type: "Growth",     stage: "Active Journey",  indicators: 5, total: 7, milestone: "Weekly mentor check",     validation: "Confirmed",  language: "Amharic",       startedAt: "2026-02-10" },
+  { id: "j-3",  contactId: "contact-3",  tenantId: "tenant-1", source: "Telegram",     type: "Salvation",  stage: "Engaged",         indicators: 3, total: 7, milestone: "Prayer guide step 2",     validation: "Pending",    language: "Afaan Oromoo",  startedAt: "2026-03-20" },
+  { id: "j-4",  contactId: "contact-4",  tenantId: "tenant-1", source: "WhatsApp",     type: "Salvation",  stage: "Touchpoint",      indicators: 1, total: 7, milestone: "Initial interest",        validation: "N/A",       language: "English",       startedAt: "2026-04-12" },
+  { id: "j-5",  contactId: "contact-5",  tenantId: "tenant-1", source: "Conversation", type: "Community",  stage: "Active Journey",  indicators: 6, total: 7, milestone: "Fellowship referral",     validation: "Confirmed",  language: "Amharic",       startedAt: "2026-01-25" },
+  { id: "j-6",  contactId: "contact-6",  tenantId: "tenant-1", source: "Telegram",     type: "Salvation",  stage: "Engaged",         indicators: 3, total: 7, milestone: "Devotional engagement",   validation: "Pending",    language: "Amharic",       startedAt: "2026-03-05" },
+  { id: "j-7",  contactId: "contact-7",  tenantId: "tenant-1", source: "Self-guided",  type: "Growth",     stage: "Decision",        indicators: 7, total: 7, milestone: "All milestones reached",  validation: "Confirmed",  language: "English",       startedAt: "2026-01-12" },
+  { id: "j-8",  contactId: "contact-8",  tenantId: "tenant-1", source: "WhatsApp",     type: "Community",  stage: "Active Journey",  indicators: 4, total: 7, milestone: "Study group started",     validation: "Pending",    language: "Amharic",       startedAt: "2026-02-20" },
+  { id: "j-9",  contactId: "contact-9",  tenantId: "tenant-1", source: "Telegram",     type: "Salvation",  stage: "Engaged",         indicators: 2, total: 7, milestone: "Bible basics started",    validation: "N/A",       language: "Afaan Oromoo",  startedAt: "2026-03-15" },
+  { id: "j-10", contactId: "contact-10", tenantId: "tenant-1", source: "Self-guided",  type: "Growth",     stage: "Decision",        indicators: 7, total: 7, milestone: "Serving consistently",    validation: "Confirmed",  language: "Amharic",       startedAt: "2025-12-01" },
+];
+
+export const INITIAL_CONTACT_MILESTONES: ContactMilestones[] = [
+  {
+    id: "ms-1", contactId: "contact-2", tenantId: "tenant-1",
+    milestones: [
+      { key: "salvation", label: "Salvation Decision", date: "Feb 28, 2026", state: "done", sub: ["Self-reported during conversation", "Confirmed by Sarah Chen"] },
+      { key: "baptism",   label: "Baptism",           date: "Mar 22, 2026", state: "done", sub: ["Public statement of faith confirmed"] },
+      { key: "community", label: "Community",         date: "In Progress",  state: "progress", sub: ["Referred to local fellowship", "Awaiting connection confirmation"] },
+      { key: "growth",    label: "Growth Evidence",   date: "Not Started",  state: "pending", sub: ["Prayer (0/7 days)", "Bible engagement (0/7 days)", "Contribution / Serving"] },
+    ],
+  },
+  {
+    id: "ms-2", contactId: "contact-5", tenantId: "tenant-1",
+    milestones: [
+      { key: "salvation", label: "Salvation Decision", date: "Feb 5, 2026",  state: "done", sub: ["Confirmed by Alex Rivera"] },
+      { key: "baptism",   label: "Baptism",           date: "Mar 10, 2026", state: "done", sub: ["Baptized at Addis community gathering"] },
+      { key: "community", label: "Community",         date: "Mar 28, 2026", state: "done", sub: ["Joined Tuesday study group"] },
+      { key: "growth",    label: "Growth Evidence",   date: "In Progress",  state: "progress", sub: ["Prayer 5/7 days", "Bible 4/7 days", "Serving weekly at church"] },
+    ],
+  },
+  {
+    id: "ms-3", contactId: "contact-7", tenantId: "tenant-1",
+    milestones: [
+      { key: "salvation", label: "Salvation Decision", date: "Feb 1, 2026",  state: "done", sub: ["Confirmed by Alex Rivera"] },
+      { key: "baptism",   label: "Baptism",           date: "Mar 9, 2026",  state: "done", sub: ["Baptized at community gathering"] },
+      { key: "community", label: "Community",         date: "Mar 20, 2026", state: "done", sub: ["Joined Tuesday study group", "Active fellowship member"] },
+      { key: "growth",    label: "Growth Evidence",   date: "Apr 5, 2026",  state: "done", sub: ["Prayer 6/7 days", "Bible 5/7 days", "Serves weekly", "Leading small group"] },
+    ],
+  },
+  {
+    id: "ms-4", contactId: "contact-10", tenantId: "tenant-1",
+    milestones: [
+      { key: "salvation", label: "Salvation Decision", date: "Jan 15, 2026", state: "done", sub: ["Long-term believer", "Confirmed by mentor"] },
+      { key: "baptism",   label: "Baptism",           date: "Jan 28, 2026", state: "done", sub: ["Baptized years ago, re-committed"] },
+      { key: "community", label: "Community",         date: "Feb 10, 2026", state: "done", sub: ["Fellowship leader", "Hosts weekly gathering"] },
+      { key: "growth",    label: "Growth Evidence",   date: "Mar 1, 2026",  state: "done", sub: ["Prayer 7/7 days", "Bible 7/7 days", "Mentoring 2 seekers"] },
+    ],
+  },
+  {
+    id: "ms-5", contactId: "contact-3", tenantId: "tenant-1",
+    milestones: [
+      { key: "salvation", label: "Salvation Decision", date: "In Progress",  state: "progress", sub: ["Exploring faith through Bible basics", "Open to prayer"] },
+      { key: "baptism",   label: "Baptism",           date: "Not Started",  state: "pending", sub: [] },
+      { key: "community", label: "Community",         date: "Not Started",  state: "pending", sub: [] },
+      { key: "growth",    label: "Growth Evidence",   date: "Not Started",  state: "pending", sub: [] },
+    ],
+  },
+  {
+    id: "ms-6", contactId: "contact-8", tenantId: "tenant-1",
+    milestones: [
+      { key: "salvation", label: "Salvation Decision", date: "Jan 20, 2026", state: "done", sub: ["Confirmed during group session"] },
+      { key: "baptism",   label: "Baptism",           date: "In Progress",  state: "progress", sub: ["Preparing for baptism class", "Scheduled for May 2026"] },
+      { key: "community", label: "Community",         date: "In Progress",  state: "progress", sub: ["Attends study group", "Building friendships"] },
+      { key: "growth",    label: "Growth Evidence",   date: "Not Started",  state: "pending", sub: ["Prayer 3/7 days", "Bible 2/7 days"] },
+    ],
+  },
+];
+
+export const INITIAL_MATCHES: Match[] = [
+  { id: "match-1", tenantId: "tenant-1", seekerContactId: "contact-1", mentorUserId: "user-1", score: 94, factors: [["Language", 95, "green"], ["Interests", 88, "blue"], ["Availability", 90, "green"]], status: "Active",    reasoning: "Abel shares strong language alignment (Amharic, 95%) and interest overlap (Prayer, Bible Study) with Alex. Both are available during mornings.", createdAt: "2026-04-15T10:00:00Z" },
+  { id: "match-2", tenantId: "tenant-1", seekerContactId: "contact-2", mentorUserId: "user-2", score: 87, factors: [["Language", 80, "blue"], ["Growth Stage", 92, "green"], ["Gender", 100, "green"]],    status: "Active",    reasoning: "Hanna's growth stage aligns well with Sarah's experience in youth discipleship. Gender preference met.", createdAt: "2026-04-14T14:30:00Z" },
+  { id: "match-3", tenantId: "tenant-1", seekerContactId: "contact-3", mentorUserId: "user-6", score: 72, factors: [["Language", 70, "amber"], ["Interests", 75, "blue"]],                                status: "Accepted",  reasoning: "Mikias's Oromo background has moderate overlap with Priya's language skills. Interest alignment is solid.", createdAt: "2026-04-13T12:00:00Z" },
+  { id: "match-4", tenantId: "tenant-1", seekerContactId: "contact-5", mentorUserId: "user-1", score: 91, factors: [["Language", 98, "green"], ["Maturity", 85, "blue"], ["Availability", 88, "green"]],   status: "Active",    reasoning: "Daniel and Alex share Amharic fluency and Daniel's growing maturity matches Alex's discipleship focus.", createdAt: "2026-04-11T18:00:00Z" },
+  { id: "match-5", tenantId: "tenant-1", seekerContactId: "contact-6", mentorUserId: "user-2", score: 83, factors: [["Language", 75, "blue"], ["Gender", 100, "green"], ["Needs", 80, "blue"]],            status: "Active",    reasoning: "Meron expressed preference for female mentor. Sarah's background in prayer ministry aligns with Meron's prayer requests.", createdAt: "2026-04-10T14:00:00Z" },
+  { id: "match-6", tenantId: "tenant-1", seekerContactId: "contact-9", mentorUserId: "user-1", score: 68, factors: [["Language", 55, "amber"], ["Stage", 80, "blue"]],                                    status: "Proposed",  reasoning: "Robel is Oromo-speaking — Alex has limited overlap but strong new-believer experience. Proposed pending language mentor availability.", createdAt: "2026-04-07T09:30:00Z" },
+  { id: "match-7", tenantId: "tenant-1", seekerContactId: "contact-8", mentorUserId: "user-6", score: 79, factors: [["Language", 70, "amber"], ["Community", 85, "blue"], ["Prayer", 82, "blue"]],         status: "Active",    reasoning: "Bethlehem and Priya connect through prayer focus and community building. Language is secondary as Bethlehem is bilingual.", createdAt: "2026-04-08T17:00:00Z" },
+];
+
+export const INITIAL_CONTENT: ContentRow[] = [
+  { id: "c-1", title: "Welcome to Your Faith Journey",       type: "Devotional",    typeTone: "pink",   category: "Salvation",     difficulty: "Beginner",      lang: "English",       status: "Published", statusTone: "green", summary: "A gentle introduction to beginning a relationship with Jesus.",                    body: "Stepping into faith can feel like standing at the edge of something vast…", tags: ["salvation", "new_believer", "prayer"],       author: "curated",      source: "John 3:16",     readTimeMin: 3,  variants: { telegram: "🕊️ Starting your journey? Begin with a simple prayer…", whatsapp: "Welcome! Today's thought: John 3:16…", sms: "Start here: John 3:16", web: "Full devotional content…" }, stats: { views: 1420, engagement: 78, completion: 64 }, updatedAt: "2 days ago" },
+  { id: "c-2", title: "Finding Peace in His Presence",       type: "Study",         typeTone: "blue",   category: "Prayer",        difficulty: "Intermediate",  lang: "English",       status: "Published", statusTone: "green", summary: "An in-depth study on stilling your heart in prayer.",                               body: "Peace isn't the absence of chaos — it's the presence of Someone…",         tags: ["prayer", "peace", "mark_4"],                author: "curated",      source: "Mark 4:35-41",  readTimeMin: 7,  variants: { telegram: "☮️ Peace study: sit for 3 quiet minutes…",            whatsapp: "Mark 4 study: Peace in the storm…",     sms: "Mark 4:35-41",    web: "Full study…" },                           stats: { views: 890,  engagement: 82, completion: 55 }, updatedAt: "1 week ago" },
+  { id: "c-3", title: "What Does It Mean to Follow Jesus?",  type: "Guide",         typeTone: "amber",  category: "Salvation",     difficulty: "Beginner",      lang: "Amharic",       status: "Published", statusTone: "green", summary: "A culturally-grounded guide for Ethiopian seekers.",                                body: "Following Jesus starts with a single step of trust…",                      tags: ["salvation", "amharic", "beginner"],          author: "curated",      source: "Matthew 4:19",  readTimeMin: 5,  variants: { telegram: "✝️ የኢየሱስን መንገድ ለመከተል…",                             whatsapp: "ኢየሱስን መከተል ምን ማለት ነው?…",                 sms: "ማቴ. 4:19",       web: "Full guide…" },                           stats: { views: 2100, engagement: 85, completion: 71 }, updatedAt: "3 days ago" },
+  { id: "c-4", title: "7-Day Prayer Challenge",              type: "Challenge",     typeTone: "purple", category: "Prayer",        difficulty: "Beginner",      lang: "English",       status: "Published", statusTone: "green", summary: "A week-long guided prayer experience for new believers.",                           body: "Day 1: Begin with gratitude. Name three things…",                          tags: ["prayer", "challenge", "7_day"],              author: "ai_generated",                              readTimeMin: 4,  variants: { telegram: "🙏 Day 1: Name 3 things you're grateful for…",        whatsapp: "Prayer challenge Day 1: Gratitude…",     sms: "Pray: 3 gratitudes", web: "Full challenge…" },                       stats: { views: 650,  engagement: 71, completion: 48 }, updatedAt: "5 days ago" },
+  { id: "c-5", title: "Understanding Baptism",               type: "Bible Study",   typeTone: "blue",   category: "Bible Basics",  difficulty: "Intermediate",  lang: "English",       status: "Draft",     statusTone: "amber", summary: "What baptism means and why it matters in the life of a believer.",                  body: "Baptism is an outward expression of an inward transformation…",            tags: ["baptism", "bible_study", "sacrament"],      author: "curated",      source: "Romans 6:3-4",  readTimeMin: 8,  variants: { telegram: "💧 Baptism study: Romans 6…",                         whatsapp: "Why baptism matters…",                    sms: "Rom 6:3-4",       web: "Full study…" },                           stats: { views: 340,  engagement: 65, completion: 32 }, updatedAt: "1 week ago" },
+  { id: "c-6", title: "Building Community: You're Not Alone", type: "Prayer Guide", typeTone: "green",  category: "Community",     difficulty: "Advanced",      lang: "Amharic",       status: "Published", statusTone: "green", summary: "A guide for seekers ready to connect with fellowship.",                            body: "Faith was never meant to be a solo journey…",                              tags: ["community", "fellowship", "amharic"],       author: "curated",      source: "Hebrews 10:25", readTimeMin: 6,  variants: { telegram: "👥 ማህበረሰብ: ብቻህን አይደለህም…",                           whatsapp: "ማህበረሰብ መገንባት…",                           sms: "ዕብ. 10:25",      web: "Full guide…" },                           stats: { views: 780,  engagement: 88, completion: 60 }, updatedAt: "4 days ago" },
 ];

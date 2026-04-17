@@ -13,6 +13,8 @@ import {
   type Contact, type Message, type ContactNote, type User,
   type MessagePort, type ChatEndpoint, type ConversationRule,
   type Group, type TeamGroup,
+  type FaithJourney, type ContactMilestones, type Match, type ContentRow,
+  type MilestoneKey,
   formatTimeAgo,
 } from "./types";
 import { RoutingRulesPanel } from "./routing-rules-panel";
@@ -531,156 +533,445 @@ function ConversationControlBar({
   );
 }
 
-// ─── ConversationContextPanel ─────────────────────────────────────────────────
+// ─── ConversationContextPanel (Tabbed) ────────────────────────────────────────
+
+type InfoTab = "profile" | "journey" | "milestones" | "match" | "notes";
+
+const INFO_TABS: { id: InfoTab; label: string }[] = [
+  { id: "profile",    label: "Profile" },
+  { id: "journey",    label: "Journey" },
+  { id: "milestones", label: "Milestones" },
+  { id: "match",      label: "Match" },
+  { id: "notes",      label: "Notes" },
+];
+
+const MATURITY_COLORS: Record<string, string> = {
+  "Pre-Seeker":   "bg-slate-100 text-slate-700 ring-1 ring-inset ring-slate-200",
+  "Seeker":       "bg-amber-50 text-amber-700 ring-1 ring-inset ring-amber-200",
+  "New Believer": "bg-sky-50 text-sky-700 ring-1 ring-inset ring-sky-200",
+  "Growing":      "bg-emerald-50 text-emerald-700 ring-1 ring-inset ring-emerald-200",
+  "Mature":       "bg-violet-50 text-violet-700 ring-1 ring-inset ring-violet-200",
+  "Leader":       "bg-rose-50 text-rose-700 ring-1 ring-inset ring-rose-200",
+};
+
+const STAGE_COLORS: Record<string, string> = {
+  "Touchpoint":      "bg-slate-100 text-slate-700",
+  "Engaged":         "bg-sky-50 text-sky-700",
+  "Active Journey":  "bg-emerald-50 text-emerald-700",
+  "Decision":        "bg-violet-50 text-violet-700",
+};
+
+const MS_STATE_CLS: Record<string, { bg: string; ring: string; icon: string }> = {
+  done:     { bg: "bg-emerald-50", ring: "ring-emerald-200", icon: "text-emerald-600" },
+  progress: { bg: "bg-amber-50",   ring: "ring-amber-200",   icon: "text-amber-600" },
+  pending:  { bg: "bg-slate-50",   ring: "ring-slate-200",   icon: "text-slate-400" },
+};
 
 function ConversationContextPanel({
   contact, meta, users, systemItems, onClose,
+  messages = [], notes = [], groups = [],
+  faithJourneys = [], contactMilestones = [], matches = [],
+  onUpdateContact, onUpdateJourney, onLogMilestone, onAddNote, onDeleteNote,
 }: {
   contact:     Contact;
   meta:        ConvMeta;
   users:       User[];
   systemItems: LocalItem[];
   onClose:     () => void;
+  messages?:    Message[];
+  notes?:       ContactNote[];
+  groups?:      Group[];
+  faithJourneys?:     FaithJourney[];
+  contactMilestones?: ContactMilestones[];
+  matches?:           Match[];
+  onUpdateContact?:   (id: string, data: Partial<Contact>) => void;
+  onUpdateJourney?:   (id: string, data: Partial<FaithJourney>) => void;
+  onLogMilestone?:    (contactId: string, key: string, date: string, sub: string[]) => void;
+  onAddNote?:         (content: string, contactId: string) => void;
+  onDeleteNote?:      (id: string) => void;
 }) {
+  const [activeTab, setActiveTab] = useState<InfoTab>("profile");
   const [newNote, setNewNote] = useState("");
-  const [savedNotes, setSavedNotes] = useState<{ id: string; content: string; createdAt: string; author: string }[]>([]);
   const [filterDate, setFilterDate] = useState("");
-  const assignee    = users.find(u => u.id === meta.assigneeId);
-  const contactGroups = meta.labels || [];
-  const contactMessages = systemItems.filter(i => i.content);
+
+  const contactMessages = messages.filter(m => m.contactId === contact.id);
+  const contactNotes = notes.filter(n => n.contactId === contact.id);
+  const journey = faithJourneys.find(j => j.contactId === contact.id);
+  const milestoneRecord = contactMilestones.find(m => m.contactId === contact.id);
+  const contactMatches = matches.filter(m => m.seekerContactId === contact.id || m.mentorUserId === contact.id);
+  const contactGroups = (contact.groupIds || []).map(gid => groups.find(g => g.id === gid)).filter(Boolean);
+  const assignedMentor = contact.assignedMentorId ? users.find(u => u.id === contact.assignedMentorId) : null;
 
   const handleAddNote = () => {
     if (!newNote.trim()) return;
-    const note = {
-      id: Date.now().toString(),
-      content: newNote.trim(),
-      createdAt: new Date().toISOString(),
-      author: assignee?.name || "System Admin",
-    };
-    setSavedNotes(prev => [note, ...prev]);
+    if (onAddNote) onAddNote(newNote.trim(), contact.id);
     setNewNote("");
   };
 
   const filteredNotes = filterDate
-    ? savedNotes.filter(note => new Date(note.createdAt).toISOString().slice(0, 10) === filterDate)
-    : savedNotes;
+    ? contactNotes.filter(note => new Date(note.createdAt).toISOString().slice(0, 10) === filterDate)
+    : contactNotes;
 
   return (
-    <div className="w-[576px] border-l border-border bg-card flex flex-col shrink-0 h-full overflow-y-auto">
+    <div className="w-[576px] border-l border-border bg-card flex flex-col shrink-0 h-full overflow-hidden">
       {/* Header */}
-      <div className="flex items-center justify-between px-6 py-4 border-b border-border bg-muted/10 sticky top-0 z-10">
+      <div className="flex items-center justify-between px-6 py-3 border-b border-border bg-muted/10 shrink-0">
         <span className="text-sm font-bold text-foreground">Contact Info</span>
-        <button onClick={onClose} className="p-1.5 text-muted-foreground hover:text-foreground hover:bg-muted rounded-md transition-colors">
+        <button onClick={onClose} className="p-1.5 text-muted-foreground hover:text-foreground hover:bg-muted rounded-sm transition-colors">
           <X className="w-4 h-4" />
         </button>
       </div>
 
-      {/* Contact Profile - Centered */}
-      <div className="flex flex-col items-center py-8 px-6 border-b border-border">
-        <div className="w-20 h-20 rounded-full bg-muted border-2 border-border flex items-center justify-center text-3xl font-bold text-foreground mb-4 overflow-hidden">
-          {contact.name.charAt(0)}
+      {/* Compact profile header (always visible) */}
+      <div className="flex items-center gap-3 px-6 py-4 border-b border-border shrink-0">
+        <div className="w-12 h-12 rounded-full bg-muted border-2 border-border flex items-center justify-center text-lg font-bold text-foreground shrink-0">
+          {contact.name.split(" ").map(w => w[0]).join("").slice(0, 2).toUpperCase()}
         </div>
-        <h2 className="text-xl font-bold text-foreground mb-1">{contact.name}</h2>
-        {contact.phone && (
-          <p className="text-sm text-foreground font-medium">{contact.phone}</p>
+        <div className="min-w-0 flex-1">
+          <h2 className="text-base font-bold text-foreground truncate">{contact.name}</h2>
+          <p className="text-xs text-muted-foreground truncate">{contact.phone}{contact.email ? ` · ${contact.email}` : ""}</p>
+        </div>
+        {contact.maturity && (
+          <span className={cn("px-2 py-0.5 rounded-sm text-[10px] font-bold shrink-0", MATURITY_COLORS[contact.maturity] || MATURITY_COLORS["Seeker"])}>
+            {contact.maturity}
+          </span>
         )}
-        {contact.email && (
-          <p className="text-sm text-muted-foreground mt-0.5">{contact.email}</p>
-        )}
-        <p className="text-xs text-primary mt-1.5 font-medium">Contact Since {new Date().toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })}</p>
       </div>
 
-      {/* Stats Row */}
-      <div className="grid grid-cols-3 border-b border-border">
-        <div className="flex flex-col items-center py-4 border-r border-border">
-          <span className="text-xl font-bold text-primary">{contactMessages.length}</span>
-          <span className="text-xs font-bold text-muted-foreground uppercase tracking-widest mt-0.5">Msgs</span>
-        </div>
-        <div className="flex flex-col items-center py-4 border-r border-border">
-          <span className="text-xl font-bold text-primary">{contactGroups.length}</span>
-          <span className="text-xs font-bold text-muted-foreground uppercase tracking-widest mt-0.5">Groups</span>
-        </div>
-        <div className="flex flex-col items-center py-4">
-          <span className="text-xl font-bold text-primary">{savedNotes.length}</span>
-          <span className="text-xs font-bold text-muted-foreground uppercase tracking-widest mt-0.5">Notes</span>
-        </div>
-      </div>
-
-      {/* Groups and Tags */}
-      <div className="px-6 py-5 border-b border-border">
-        <h3 className="text-sm font-bold text-foreground mb-3">Groups and tags</h3>
-        <div className="flex flex-wrap gap-2">
-          {meta.labels.map(label => (
-            <span key={label} className="px-3 py-1 bg-muted border border-border rounded-full text-xs font-medium text-foreground">{label}</span>
-          ))}
-          {contact.tags?.map(tag => (
-            <span key={tag} className="px-3 py-1 bg-primary/10 border border-primary/20 rounded-full text-xs font-medium text-primary">{tag}</span>
-          ))}
-          {meta.labels.length === 0 && (!contact.tags || contact.tags.length === 0) && (
-            <span className="text-xs text-muted-foreground italic">No groups or tags</span>
-          )}
-        </div>
-      </div>
-
-      {/* Notes Section */}
-      <div className="px-6 py-5 flex-1">
-        <div className="flex items-center justify-between mb-3">
-          <h3 className="text-sm font-bold text-foreground">Notes</h3>
-          <div className="flex items-center gap-2">
-            <div className="relative flex items-center">
-              <Calendar className="w-3.5 h-3.5 text-muted-foreground absolute left-2.5 pointer-events-none" />
-              <input
-                type="date"
-                value={filterDate}
-                onChange={(e) => setFilterDate(e.target.value)}
-                className="pl-8 pr-2 py-1.5 bg-background border border-input rounded-lg text-xs text-foreground focus:ring-1 focus:ring-ring outline-none cursor-pointer"
-              />
-            </div>
-            {filterDate && (
-              <button onClick={() => setFilterDate("")} className="text-xs font-bold text-primary hover:text-primary/80 transition-colors">
-                Clear
-              </button>
+      {/* Tab bar */}
+      <div className="flex items-center gap-0.5 px-4 py-1.5 border-b border-border bg-muted/20 shrink-0 overflow-x-auto no-scrollbar">
+        {INFO_TABS.map(tab => (
+          <button
+            key={tab.id}
+            onClick={() => setActiveTab(tab.id)}
+            className={cn(
+              "px-3 py-1.5 text-xs font-semibold rounded-sm transition-all whitespace-nowrap",
+              activeTab === tab.id
+                ? "bg-background text-foreground shadow-sm border border-border"
+                : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
             )}
-          </div>
-        </div>
-        <div className="flex gap-2 mb-4">
-          <input
-            value={newNote}
-            onChange={(e) => setNewNote(e.target.value)}
-            onKeyDown={(e) => e.key === "Enter" && handleAddNote()}
-            placeholder="Type here"
-            className="flex-1 bg-background border border-input rounded-lg px-3 py-2.5 text-sm focus:ring-1 focus:ring-ring outline-none placeholder:text-muted-foreground/50"
-          />
-          <button onClick={handleAddNote} disabled={!newNote.trim()} className="bg-primary text-primary-foreground p-2.5 rounded-lg hover:bg-primary/90 transition-all shrink-0 disabled:opacity-50">
-            <Plus className="w-5 h-5" />
+          >
+            {tab.label}
           </button>
-        </div>
-        <div className="space-y-4">
-          {filteredNotes.length === 0 && (
-            <p className="text-xs text-muted-foreground/50 italic p-2">{filterDate ? "No notes found for this date." : "No notes yet. Type a note above and click + to save."}</p>
-          )}
-          {(() => {
-            const grouped: Record<string, typeof savedNotes> = {};
-            filteredNotes.forEach(note => {
-              const dateKey = new Date(note.createdAt).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" });
-              if (!grouped[dateKey]) grouped[dateKey] = [];
-              grouped[dateKey].push(note);
-            });
-            return Object.entries(grouped).map(([date, notes]) => (
-              <div key={date}>
-                <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-2">{date}</p>
-                <div className="space-y-2">
-                  {notes.map(note => (
-                    <div key={note.id} className="p-4 bg-muted/30 rounded-lg border border-border">
-                      <p className="text-sm text-foreground leading-relaxed">{note.content}</p>
-                      <p className="text-xs text-primary mt-2 font-medium">{note.author} {new Date(note.createdAt).toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" })}</p>
-                    </div>
-                  ))}
+        ))}
+      </div>
+
+      {/* Tab content */}
+      <div className="flex-1 overflow-y-auto">
+
+        {/* ──── PROFILE TAB ──── */}
+        {activeTab === "profile" && (
+          <div className="space-y-0">
+            {/* Stats Row */}
+            <div className="grid grid-cols-4 border-b border-border">
+              {[
+                { label: "Msgs", value: contactMessages.length },
+                { label: "Groups", value: contactGroups.length },
+                { label: "Notes", value: contactNotes.length },
+                { label: "Engage", value: contact.engagement != null ? `${contact.engagement}%` : "—" },
+              ].map(s => (
+                <div key={s.label} className="flex flex-col items-center py-3 border-r border-border last:border-r-0">
+                  <span className="text-lg font-bold text-primary">{s.value}</span>
+                  <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mt-0.5">{s.label}</span>
+                </div>
+              ))}
+            </div>
+
+            {/* Contact details */}
+            <div className="px-6 py-4 border-b border-border space-y-3">
+              <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Details</h3>
+              <div className="grid grid-cols-2 gap-3 text-sm">
+                <div><span className="text-muted-foreground text-xs">Phone</span><p className="font-medium text-foreground mt-0.5">{contact.phone}</p></div>
+                <div><span className="text-muted-foreground text-xs">Email</span><p className="font-medium text-foreground mt-0.5 truncate">{contact.email || "—"}</p></div>
+                <div><span className="text-muted-foreground text-xs">Language</span><p className="font-medium text-foreground mt-0.5">{contact.preferredLanguage || "—"}</p></div>
+                <div><span className="text-muted-foreground text-xs">Status</span><p className="font-medium text-foreground mt-0.5">{contact.discipleshipStatus || "—"}</p></div>
+                <div><span className="text-muted-foreground text-xs">Mentor</span><p className="font-medium text-foreground mt-0.5">{assignedMentor?.name || "Unassigned"}</p></div>
+                <div><span className="text-muted-foreground text-xs">Since</span><p className="font-medium text-foreground mt-0.5">{new Date(contact.createdAt).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}</p></div>
+              </div>
+            </div>
+
+            {/* Engagement bar */}
+            {contact.engagement != null && (
+              <div className="px-6 py-4 border-b border-border">
+                <div className="flex items-center justify-between mb-1.5">
+                  <span className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Engagement</span>
+                  <span className="text-xs font-bold text-foreground">{contact.engagement}%</span>
+                </div>
+                <div className="h-2 bg-muted rounded-full overflow-hidden">
+                  <div
+                    className={cn("h-full rounded-full transition-all", contact.engagement >= 75 ? "bg-emerald-500" : contact.engagement >= 50 ? "bg-amber-500" : "bg-rose-500")}
+                    style={{ width: `${contact.engagement}%` }}
+                  />
                 </div>
               </div>
-            ));
-          })()}
-        </div>
+            )}
+
+            {/* Groups and Tags */}
+            <div className="px-6 py-4 border-b border-border">
+              <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-2.5">Groups & Tags</h3>
+              <div className="flex flex-wrap gap-1.5">
+                {contactGroups.map((g: any) => (
+                  <span key={g.id} className="inline-flex items-center gap-1 px-2 py-0.5 rounded-sm text-[11px] font-semibold bg-blue-50 text-blue-700 ring-1 ring-inset ring-blue-200">
+                    <span className="w-1.5 h-1.5 rounded-full bg-blue-500" />
+                    {g.name}
+                  </span>
+                ))}
+                {meta.labels.map(label => (
+                  <span key={label} className="px-2 py-0.5 bg-muted border border-border rounded-sm text-[11px] font-medium text-foreground">{label}</span>
+                ))}
+                {(contact.tags || []).map(tag => (
+                  <span key={tag} className="px-2 py-0.5 bg-primary/10 border border-primary/20 rounded-sm text-[11px] font-medium text-primary">#{tag}</span>
+                ))}
+                {contactGroups.length === 0 && meta.labels.length === 0 && (!contact.tags || contact.tags.length === 0) && (
+                  <span className="text-xs text-muted-foreground italic">No groups or tags</span>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ──── JOURNEY TAB ──── */}
+        {activeTab === "journey" && (
+          <div className="p-6 space-y-5">
+            {journey ? (
+              <>
+                {/* Journey card */}
+                <div className="bg-muted/30 rounded-sm border border-border p-4 space-y-4">
+                  <div className="flex items-center justify-between">
+                    <span className={cn("px-2 py-0.5 rounded-sm text-[11px] font-bold", STAGE_COLORS[journey.stage] || "bg-muted text-muted-foreground")}>
+                      {journey.stage}
+                    </span>
+                    <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">{journey.type}</span>
+                  </div>
+
+                  <div>
+                    <div className="flex items-center justify-between mb-1">
+                      <span className="text-xs text-muted-foreground">Progress</span>
+                      <span className="text-xs font-bold text-foreground">{journey.indicators}/{journey.total}</span>
+                    </div>
+                    <div className="h-2 bg-muted rounded-full overflow-hidden">
+                      <div className="h-full bg-primary rounded-full transition-all" style={{ width: `${(journey.indicators / journey.total) * 100}%` }} />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3 text-xs">
+                    <div><span className="text-muted-foreground">Current</span><p className="font-medium text-foreground mt-0.5">{journey.milestone}</p></div>
+                    <div><span className="text-muted-foreground">Source</span><p className="font-medium text-foreground mt-0.5">{journey.source}</p></div>
+                    <div><span className="text-muted-foreground">Language</span><p className="font-medium text-foreground mt-0.5">{journey.language}</p></div>
+                    <div><span className="text-muted-foreground">Validation</span>
+                      <p className={cn("font-medium mt-0.5", journey.validation === "Confirmed" ? "text-emerald-600" : journey.validation === "Pending" ? "text-amber-600" : "text-muted-foreground")}>{journey.validation}</p>
+                    </div>
+                    <div><span className="text-muted-foreground">Started</span><p className="font-medium text-foreground mt-0.5">{new Date(journey.startedAt).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}</p></div>
+                  </div>
+                </div>
+
+                {/* Stage pipeline */}
+                <div>
+                  <h4 className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-3">Stage Pipeline</h4>
+                  <div className="flex items-center gap-1">
+                    {(["Touchpoint", "Engaged", "Active Journey", "Decision"] as const).map((stage, i) => {
+                      const isActive = stage === journey.stage;
+                      const isPast = (["Touchpoint", "Engaged", "Active Journey", "Decision"].indexOf(journey.stage)) > i;
+                      return (
+                        <React.Fragment key={stage}>
+                          {i > 0 && <div className={cn("flex-1 h-0.5", isPast || isActive ? "bg-primary" : "bg-muted")} />}
+                          <div className={cn(
+                            "w-8 h-8 rounded-full flex items-center justify-center text-[10px] font-bold shrink-0 border-2 transition-all",
+                            isActive ? "bg-primary text-primary-foreground border-primary" :
+                            isPast ? "bg-primary/10 text-primary border-primary/30" :
+                            "bg-muted text-muted-foreground border-border"
+                          )}>
+                            {isPast ? <CheckCircle2 className="w-3.5 h-3.5" /> : i + 1}
+                          </div>
+                        </React.Fragment>
+                      );
+                    })}
+                  </div>
+                  <div className="flex justify-between mt-1.5 px-1">
+                    {["Touch", "Engaged", "Active", "Decision"].map(s => (
+                      <span key={s} className="text-[9px] text-muted-foreground font-medium">{s}</span>
+                    ))}
+                  </div>
+                </div>
+              </>
+            ) : (
+              <div className="flex flex-col items-center justify-center py-12 gap-2">
+                <div className="w-10 h-10 rounded-sm bg-muted flex items-center justify-center">
+                  <GitBranch className="w-4 h-4 text-muted-foreground" />
+                </div>
+                <p className="text-sm font-semibold text-muted-foreground">No journey started</p>
+                <p className="text-xs text-muted-foreground/70 text-center max-w-[200px]">This contact hasn't been assigned to a faith journey yet.</p>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* ──── MILESTONES TAB ──── */}
+        {activeTab === "milestones" && (
+          <div className="p-6 space-y-3">
+            {milestoneRecord ? (
+              milestoneRecord.milestones.map(ms => {
+                const cls = MS_STATE_CLS[ms.state] || MS_STATE_CLS.pending;
+                return (
+                  <div key={ms.key} className={cn("rounded-sm border ring-1 ring-inset p-4", cls.bg, cls.ring)}>
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="flex items-center gap-2">
+                        {ms.state === "done" ? <CheckCircle2 className={cn("w-4 h-4", cls.icon)} /> :
+                         ms.state === "progress" ? <Clock className={cn("w-4 h-4", cls.icon)} /> :
+                         <Circle className={cn("w-4 h-4", cls.icon)} />}
+                        <span className="text-sm font-bold text-foreground">{ms.label}</span>
+                      </div>
+                      <span className={cn("text-[10px] font-bold uppercase tracking-wider", cls.icon)}>
+                        {ms.state === "done" ? "Complete" : ms.state === "progress" ? "In Progress" : "Pending"}
+                      </span>
+                    </div>
+                    <p className="text-xs text-muted-foreground mb-2">{ms.date}</p>
+                    {ms.sub.length > 0 && (
+                      <div className="space-y-1 ml-6">
+                        {ms.sub.map((s, i) => (
+                          <p key={i} className="text-xs text-muted-foreground flex items-start gap-1.5">
+                            <span className="w-1 h-1 rounded-full bg-muted-foreground/40 shrink-0 mt-1.5" />
+                            {s}
+                          </p>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                );
+              })
+            ) : (
+              <div className="flex flex-col items-center justify-center py-12 gap-2">
+                <div className="w-10 h-10 rounded-sm bg-muted flex items-center justify-center">
+                  <CheckCircle2 className="w-4 h-4 text-muted-foreground" />
+                </div>
+                <p className="text-sm font-semibold text-muted-foreground">No milestones recorded</p>
+                <p className="text-xs text-muted-foreground/70 text-center max-w-[220px]">Milestones will appear here as they are logged during the journey.</p>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* ──── MATCH TAB ──── */}
+        {activeTab === "match" && (
+          <div className="p-6 space-y-4">
+            {contactMatches.length > 0 ? (
+              contactMatches.map(m => {
+                const seeker = contacts.find(c => c.id === m.seekerContactId);
+                const mentor = users.find(u => u.id === m.mentorUserId);
+                const scoreCls = m.score >= 80 ? "text-emerald-600 bg-emerald-50 ring-emerald-200" : m.score >= 60 ? "text-amber-600 bg-amber-50 ring-amber-200" : "text-rose-600 bg-rose-50 ring-rose-200";
+                const statusCls = m.status === "Active" ? "bg-emerald-50 text-emerald-700" : m.status === "Proposed" ? "bg-amber-50 text-amber-700" : m.status === "Accepted" ? "bg-sky-50 text-sky-700" : m.status === "Completed" ? "bg-violet-50 text-violet-700" : "bg-slate-100 text-slate-700";
+
+                return (
+                  <div key={m.id} className="bg-muted/30 rounded-sm border border-border p-4 space-y-3">
+                    <div className="flex items-center justify-between">
+                      <span className={cn("px-2 py-0.5 rounded-sm text-[11px] font-bold", statusCls)}>{m.status}</span>
+                      <span className={cn("px-2.5 py-0.5 rounded-sm text-sm font-black ring-1 ring-inset", scoreCls)}>{m.score}%</span>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <span className="text-[10px] text-muted-foreground uppercase tracking-wider font-bold">Seeker</span>
+                        <p className="text-sm font-semibold text-foreground mt-0.5">{seeker?.name || "Unknown"}</p>
+                      </div>
+                      <div>
+                        <span className="text-[10px] text-muted-foreground uppercase tracking-wider font-bold">Mentor</span>
+                        <p className="text-sm font-semibold text-foreground mt-0.5">{mentor?.name || "Unknown"}</p>
+                      </div>
+                    </div>
+
+                    {/* Factors */}
+                    <div className="space-y-1.5">
+                      <span className="text-[10px] text-muted-foreground uppercase tracking-wider font-bold">Factors</span>
+                      {m.factors.map(([name, score, tone], i) => (
+                        <div key={i} className="flex items-center gap-2">
+                          <span className="text-xs text-foreground font-medium w-20 shrink-0">{name}</span>
+                          <div className="flex-1 h-1.5 bg-muted rounded-full overflow-hidden">
+                            <div className={cn("h-full rounded-full", tone === "green" ? "bg-emerald-500" : tone === "blue" ? "bg-blue-500" : tone === "amber" ? "bg-amber-500" : "bg-rose-500")} style={{ width: `${score}%` }} />
+                          </div>
+                          <span className="text-[10px] font-bold text-muted-foreground w-8 text-right">{score}%</span>
+                        </div>
+                      ))}
+                    </div>
+
+                    {/* Reasoning */}
+                    <div className="bg-background rounded-sm border border-border p-3">
+                      <span className="text-[10px] text-muted-foreground uppercase tracking-wider font-bold block mb-1">AI Reasoning</span>
+                      <p className="text-xs text-foreground leading-relaxed">{m.reasoning}</p>
+                    </div>
+                  </div>
+                );
+              })
+            ) : (
+              <div className="flex flex-col items-center justify-center py-12 gap-2">
+                <div className="w-10 h-10 rounded-sm bg-muted flex items-center justify-center">
+                  <GitBranch className="w-4 h-4 text-muted-foreground" />
+                </div>
+                <p className="text-sm font-semibold text-muted-foreground">No matches yet</p>
+                <p className="text-xs text-muted-foreground/70 text-center max-w-[220px]">This contact hasn't been matched with a mentor or seeker.</p>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* ──── NOTES TAB ──── */}
+        {activeTab === "notes" && (
+          <div className="p-6 space-y-4">
+            <div className="flex items-center justify-between">
+              <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Notes ({contactNotes.length})</h3>
+              <div className="flex items-center gap-2">
+                <div className="relative flex items-center">
+                  <Calendar className="w-3.5 h-3.5 text-muted-foreground absolute left-2.5 pointer-events-none" />
+                  <input
+                    type="date"
+                    value={filterDate}
+                    onChange={(e) => setFilterDate(e.target.value)}
+                    className="pl-8 pr-2 py-1.5 bg-background border border-input rounded-sm text-xs text-foreground focus:ring-1 focus:ring-ring outline-none cursor-pointer"
+                  />
+                </div>
+                {filterDate && (
+                  <button onClick={() => setFilterDate("")} className="text-xs font-bold text-primary hover:text-primary/80 transition-colors">Clear</button>
+                )}
+              </div>
+            </div>
+
+            <div className="flex gap-2">
+              <input
+                value={newNote}
+                onChange={(e) => setNewNote(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && handleAddNote()}
+                placeholder="Add a note..."
+                className="flex-1 bg-background border border-input rounded-sm px-3 py-2.5 text-sm focus:ring-1 focus:ring-ring outline-none placeholder:text-muted-foreground/50"
+              />
+              <button onClick={handleAddNote} disabled={!newNote.trim()} className="bg-primary text-primary-foreground p-2.5 rounded-sm hover:bg-primary/90 transition-all shrink-0 disabled:opacity-50">
+                <Plus className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="space-y-3">
+              {filteredNotes.length === 0 && (
+                <p className="text-xs text-muted-foreground/50 italic p-2">{filterDate ? "No notes found for this date." : "No notes yet. Type a note above to add one."}</p>
+              )}
+              {filteredNotes.map(note => {
+                const author = users.find(u => u.id === note.authorId);
+                return (
+                  <div key={note.id} className="p-3 bg-muted/30 rounded-sm border border-border group">
+                    <p className="text-sm text-foreground leading-relaxed">{note.content}</p>
+                    <div className="flex items-center justify-between mt-2">
+                      <p className="text-xs text-primary font-medium">
+                        {author?.name || "System"} · {new Date(note.createdAt).toLocaleDateString("en-US", { month: "short", day: "numeric" })} {new Date(note.createdAt).toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" })}
+                      </p>
+                      {onDeleteNote && (
+                        <button onClick={() => onDeleteNote(note.id)} className="opacity-0 group-hover:opacity-100 p-1 text-muted-foreground hover:text-destructive transition-all">
+                          <X className="w-3 h-3" />
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
@@ -989,6 +1280,17 @@ interface ConversationViewProps {
   onDeleteRule:      (id: string) => void;
   onReorderRules:    (rules: ConversationRule[]) => void;
   viewMode?:         "super_admin" | "agent";
+  // --- discipleship data ---
+  faithJourneys?:      FaithJourney[];
+  contactMilestones?:  ContactMilestones[];
+  matches?:            Match[];
+  contentLibrary?:     ContentRow[];
+  onUpdateContact?:    (id: string, data: Partial<Contact>) => void;
+  onUpdateJourney?:    (id: string, data: Partial<FaithJourney>) => void;
+  onLogMilestone?:     (contactId: string, key: MilestoneKey, date: string, sub: string[]) => void;
+  onUpdateMatch?:      (id: string, data: Partial<Match>) => void;
+  onAddNote?:          (content: string, contactId: string) => void;
+  onDeleteNote?:       (id: string) => void;
 }
 
 export const ConversationView = ({
@@ -996,6 +1298,9 @@ export const ConversationView = ({
   preSelectedContactId, conversationRules, chatEndpoints, groups,
   teamGroups, onAddRule, onUpdateRule, onDeleteRule, onReorderRules,
   viewMode = "super_admin",
+  faithJourneys = [], contactMilestones = [], matches = [], contentLibrary = [],
+  onUpdateContact, onUpdateJourney, onLogMilestone, onUpdateMatch,
+  onAddNote, onDeleteNote,
 }: ConversationViewProps) => {
   const isAgent = viewMode === "agent";
 
@@ -1357,6 +1662,17 @@ export const ConversationView = ({
                       users={users}
                       systemItems={systemItems}
                       onClose={() => setIsInfoOpen(false)}
+                      messages={messages}
+                      notes={notes}
+                      groups={groups}
+                      faithJourneys={faithJourneys}
+                      contactMilestones={contactMilestones}
+                      matches={matches}
+                      onUpdateContact={onUpdateContact}
+                      onUpdateJourney={onUpdateJourney}
+                      onLogMilestone={onLogMilestone}
+                      onAddNote={onAddNote}
+                      onDeleteNote={onDeleteNote}
                     />
                   </motion.div>
                 )}
