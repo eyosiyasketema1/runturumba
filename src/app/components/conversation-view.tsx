@@ -1862,56 +1862,8 @@ export const ConversationView = ({
   const [shownTyping, setShownTyping]     = useState<Set<string>>(new Set());
   const chatBottomRef = useRef<HTMLDivElement>(null);
 
-  // ── Grab Conversation state ────────────────────────────────────────────
-  // Maps contactId → deadline timestamp (Date.now() + GRAB_WINDOW_MS)
-  const [grabDeadlines, setGrabDeadlines] = useState<Record<string, number>>(() => {
-    // Seed: mark all currently unassigned "open" conversations as grabbable
-    const now = Date.now();
-    const seeds: Record<string, number> = {};
-    // Simulate: first 3 contacts with messages that have no assignee get a grab window
-    const withMsg = new Set(messages.map(m => m.contactId));
-    contacts.filter(c => withMsg.has(c.id)).slice(0, 3).forEach((c, i) => {
-      // Stagger: first arrived 8 min ago, second 5 min ago, third just now
-      const offsets = [8 * 60 * 1000, 5 * 60 * 1000, 30 * 1000];
-      seeds[c.id] = now + GRAB_WINDOW_MS - (offsets[i] ?? 0);
-    });
-    return seeds;
-  });
-
-  const grabConversation = useCallback((contactId: string) => {
-    // Assign to current user
-    updateMeta(contactId, { assigneeId: currentUser.id, status: "assigned" });
-    addLocalItem({ contactId, type: "system", content: `${currentUser.name} grabbed this conversation` });
-    // Remove from grab deadlines
-    setGrabDeadlines(prev => { const n = { ...prev }; delete n[contactId]; return n; });
-    toast.success("Conversation grabbed!");
-  }, [currentUser, updateMeta, addLocalItem]);
-
-  // Auto-assign expired grab windows to a random active mentor
-  useEffect(() => {
-    const id = setInterval(() => {
-      const now = Date.now();
-      setGrabDeadlines(prev => {
-        const updated = { ...prev };
-        let changed = false;
-        for (const [contactId, deadline] of Object.entries(updated)) {
-          if (deadline <= now && !convMeta[contactId]?.assigneeId) {
-            // Auto-assign to a random active user (AI picks a mentor)
-            const activeUsers = users.filter(u => u.status === "active");
-            if (activeUsers.length > 0) {
-              const mentor = activeUsers[Math.floor(Math.random() * activeUsers.length)];
-              updateMeta(contactId, { assigneeId: mentor.id, status: "assigned" });
-              addLocalItem({ contactId, type: "system", content: `AI auto-assigned to ${mentor.name} (grab window expired)` });
-            }
-            delete updated[contactId];
-            changed = true;
-          }
-        }
-        return changed ? updated : prev;
-      });
-    }, 1000);
-    return () => clearInterval(id);
-  }, [convMeta, users, updateMeta, addLocalItem]);
+  // ── Grab Conversation state (declared here, logic wired after helpers) ──
+  const [grabDeadlines, setGrabDeadlines] = useState<Record<string, number>>({});
 
   // ── Helpers ────────────────────────────────────────────────────────────
   const getMeta = useCallback((id: string): ConvMeta => convMeta[id] ?? DEFAULT_META, [convMeta]);
@@ -1923,6 +1875,53 @@ export const ConversationView = ({
   const addLocalItem = useCallback((item: Omit<LocalItem, "id" | "createdAt">) => {
     setLocalItems(prev => [...prev, { ...item, id: `li-${Date.now()}-${Math.random()}`, createdAt: new Date().toISOString() }]);
   }, []);
+
+  // ── Grab Conversation logic ────────────────────────────────────────────
+  // Seed grab deadlines on mount for demo — first 3 unassigned contacts
+  const grabSeeded = useRef(false);
+  useEffect(() => {
+    if (grabSeeded.current || contactsWithMsg.length === 0) return;
+    grabSeeded.current = true;
+    const now = Date.now();
+    const seeds: Record<string, number> = {};
+    contactsWithMsg.slice(0, 3).forEach((c, i) => {
+      const offsets = [8 * 60 * 1000, 5 * 60 * 1000, 30 * 1000];
+      seeds[c.id] = now + GRAB_WINDOW_MS - (offsets[i] ?? 0);
+    });
+    setGrabDeadlines(seeds);
+  }, [contactsWithMsg]);
+
+  const grabConversation = useCallback((contactId: string) => {
+    updateMeta(contactId, { assigneeId: currentUser.id, status: "assigned" });
+    addLocalItem({ contactId, type: "system", content: `${currentUser.name} grabbed this conversation` });
+    setGrabDeadlines(prev => { const n = { ...prev }; delete n[contactId]; return n; });
+    toast.success("Conversation grabbed!");
+  }, [currentUser, updateMeta, addLocalItem]);
+
+  // Auto-assign expired grab windows
+  useEffect(() => {
+    const id = setInterval(() => {
+      const now = Date.now();
+      setGrabDeadlines(prev => {
+        const updated = { ...prev };
+        let changed = false;
+        for (const [cid, deadline] of Object.entries(updated)) {
+          if (deadline <= now && !convMeta[cid]?.assigneeId) {
+            const activeUsers = users.filter(u => u.status === "active");
+            if (activeUsers.length > 0) {
+              const mentor = activeUsers[Math.floor(Math.random() * activeUsers.length)];
+              updateMeta(cid, { assigneeId: mentor.id, status: "assigned" });
+              addLocalItem({ contactId: cid, type: "system", content: `AI auto-assigned to ${mentor.name} (grab window expired)` });
+            }
+            delete updated[cid];
+            changed = true;
+          }
+        }
+        return changed ? updated : prev;
+      });
+    }, 1000);
+    return () => clearInterval(id);
+  }, [convMeta, users, updateMeta, addLocalItem]);
 
   // ── Typing simulation ──────────────────────────────────────────────────
   useEffect(() => {
