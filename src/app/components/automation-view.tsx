@@ -7,11 +7,11 @@ import {
   RefreshCw, ExternalLink, ChevronRight, Shield,
   Inbox, ListOrdered, GitBranch, FolderPlus
 } from "lucide-react";
-import { motion, AnimatePresence } from "motion/react";
+// motion/AnimatePresence removed — webhooks tab eliminated.
 import { toast } from "sonner";
 import {
   cn, type AutomationRule, type AutomationTrigger, type AutomationAction,
-  type Webhook as WebhookType, formatTimeAgo, copyToClipboard
+  type Webhook as WebhookType, formatTimeAgo
 } from "./types";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "./ui/card";
 import { Button } from "./ui/button";
@@ -19,7 +19,7 @@ import { Input } from "./ui/input";
 import { Label } from "./ui/label";
 import { Badge } from "./ui/badge";
 import { Separator } from "./ui/separator";
-import { Switch } from "./ui/switch";
+// Switch removed — webhooks tab eliminated.
 import { Textarea } from "./ui/textarea";
 import { Modal } from "./shared-ui";
 import {
@@ -90,7 +90,7 @@ const statusBadge = (s: "active" | "draft" | "stopped") => {
   } as const;
   return map[s];
 };
-const typeLabel = (t: AutoType) => t === "basic" ? "Basic" : t === "sequence" ? "Sequence" : "Flow";
+const typeLabel = (t: AutoType) => t === "basic" ? "Basic" : t === "sequence" ? "Sequence" : "Journey";
 
 export const AutomationView = ({
   automations,
@@ -104,10 +104,11 @@ export const AutomationView = ({
   onAddWebhook,
   onUpdateWebhook,
 }: AutomationViewProps) => {
-  const [activeTab, setActiveTab] = useState<"rules" | "webhooks">("rules");
+  // Webhooks tab removed — webhooks now live inside the Journey Builder.
+  const activeTab = "rules" as const;
   const [searchQuery, setSearchQuery] = useState("");
   const [isAddRuleOpen, setIsAddRuleOpen] = useState(false);
-  const [isAddWebhookOpen, setIsAddWebhookOpen] = useState(false);
+  // isAddWebhookOpen removed — webhooks are managed inside the Journey Builder.
   const [activeFolder, setActiveFolder] = useState<"all" | AutoType>("all");
   const [editingRule, setEditingRule] = useState<AutomationRule | null>(null);
   const [ruleToDelete, setRuleToDelete] = useState<AutomationRule | null>(null);
@@ -149,7 +150,7 @@ export const AutomationView = ({
     all:      { createLabel: "New Automation", singular: "Automation", emptyTitle: "Create your first Automation", emptyBody: "Automate interactions with your contacts by creating rules, sequences, and flows so you have more time to handle meaningful conversations." },
     basic:    { createLabel: "New Basic",      singular: "Basic rule", emptyTitle: "Create your first Basic rule", emptyBody: "Basic rules pair a single trigger with a single action — perfect for welcome messages, keyword replies, and quick automations." },
     sequence: { createLabel: "New Sequence",   singular: "Sequence",   emptyTitle: "Create your first Sequence", emptyBody: "Automate interactions with your contacts by creating a series of automatic messages so you have more time to handle meaningful conversations." },
-    flow:     { createLabel: "New Flow",       singular: "Flow",       emptyTitle: "Create your first Flow",     emptyBody: "Flows let you build branching, multi-step automations triggered by events or webhooks — ideal for complex journeys." },
+    flow:     { createLabel: "New Journey",     singular: "Journey",    emptyTitle: "Create your first Journey",  emptyBody: "Journeys let you build branching, multi-step automations with milestones and webhooks — ideal for discipleship paths." },
   }[activeTab === "rules" ? activeFolder : "all"];
 
   const activeAutomations = automations.filter(a => a.enabled).length;
@@ -227,10 +228,10 @@ export const AutomationView = ({
         />
       );
     }
-    // kind === "flow"
+    // kind === "flow" → Journey Builder
     return (
       <FlowBuilder
-        flowName={rule?.name ?? "New Flow"}
+        flowName={rule?.name ?? "New Journey"}
         status={statusFor(rule)}
         stats={{
           totalRuns: rule?.triggerCount ?? 0,
@@ -239,8 +240,12 @@ export const AutomationView = ({
         }}
         useStarterTemplate={!isEdit}
         onBack={close}
-        onSave={({ name }) => persist({ name, description: "Visual flow", trigger: "webhook_received", action: "webhook_call", enabled: false })}
-        onPublish={({ name }) => { persist({ name, description: "Visual flow", trigger: "webhook_received", action: "webhook_call", enabled: true }); close(); }}
+        onSave={({ name }) => persist({ name, description: "Journey", trigger: "webhook_received", action: "webhook_call", enabled: false })}
+        onPublish={({ name }) => { persist({ name, description: "Journey", trigger: "webhook_received", action: "webhook_call", enabled: true }); close(); }}
+        webhooks={webhooks}
+        onToggleWebhook={onToggleWebhook}
+        onDeleteWebhook={onDeleteWebhook}
+        onAddWebhook={onAddWebhook}
       />
     );
   }
@@ -263,7 +268,6 @@ export const AutomationView = ({
             />
           </div>
           <Button onClick={() => {
-            if (activeTab !== "rules") { setIsAddWebhookOpen(true); return; }
             // Route the New button to the right full-page builder per folder.
             if (activeFolder === "basic")    { setBuilderState({ kind: "basic",    mode: "new" }); return; }
             if (activeFolder === "sequence") { setBuilderState({ kind: "sequence", mode: "new" }); return; }
@@ -272,47 +276,25 @@ export const AutomationView = ({
             setIsTypePickerOpen(true);
           }}>
             <Plus className="w-4 h-4 mr-1.5" />
-            {activeTab === "rules" ? folderCopy.createLabel : "New Webhook"}
+            {folderCopy.createLabel}
           </Button>
         </div>
       </header>
 
-      {/* Secondary tab: keep Webhooks accessible without dominating the view */}
-      <div className="flex items-center gap-1 bg-muted/50 border border-border rounded-md p-0.5 w-fit">
-        <button
-          onClick={() => setActiveTab("rules")}
-          className={cn(
-            "px-3 py-1.5 text-xs font-semibold rounded transition-all flex items-center gap-1.5",
-            activeTab === "rules" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
-          )}
-        >
-          <Zap className="w-3.5 h-3.5" />
-          Automations
-          <Badge variant="secondary" className="text-xs ml-0.5">{automations.length}</Badge>
-        </button>
-        <button
-          onClick={() => setActiveTab("webhooks")}
-          className={cn(
-            "px-3 py-1.5 text-xs font-semibold rounded transition-all flex items-center gap-1.5",
-            activeTab === "webhooks" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
-          )}
-        >
-          <Webhook className="w-3.5 h-3.5" />
-          Webhooks
-          <Badge variant="secondary" className="text-xs ml-0.5">{webhooks.length}</Badge>
-        </button>
+      {/* Summary badges */}
+      <div className="flex items-center gap-3">
+        <Badge variant="secondary" className="text-xs">
+          <Zap className="w-3 h-3 mr-1" />
+          {automations.length} Automations
+        </Badge>
+        <Badge variant="secondary" className="text-xs">
+          <Activity className="w-3 h-3 mr-1" />
+          {activeAutomations} Active
+        </Badge>
       </div>
 
       {/* Content */}
-      <AnimatePresence mode="wait">
-        {activeTab === "rules" ? (
-          <motion.div
-            key="rules"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="flex flex-col md:flex-row gap-5 items-start"
-          >
+      <div className="flex flex-col md:flex-row gap-5 items-start animate-in fade-in duration-300">
             {/* Folders sidebar — sticky, soft-tint active state */}
             <aside className="bg-card border border-border rounded-xl p-4 md:sticky md:top-6 self-start w-full md:w-[260px] md:shrink-0">
               <p className="text-sm font-semibold text-foreground px-2 pb-3">Folders</p>
@@ -321,7 +303,7 @@ export const AutomationView = ({
                   ["all",      "All Automations", folderCounts.all,      Inbox],
                   ["basic",    "Basic",           folderCounts.basic,    Zap],
                   ["sequence", "Sequences",       folderCounts.sequence, ListOrdered],
-                  ["flow",     "Flows",           folderCounts.flow,     GitBranch],
+                  ["flow",     "Journey Builder", folderCounts.flow,     GitBranch],
                 ] as const).map(([k, label, count, Icon]) => {
                   const isActive = activeFolder === k;
                   return (
@@ -368,7 +350,7 @@ export const AutomationView = ({
                       : activeFolder === "sequence" ? ListOrdered : GitBranch;
                     const label = activeFolder === "all" ? "All Automations"
                       : activeFolder === "basic" ? "Basic"
-                      : activeFolder === "sequence" ? "Sequences" : "Flows";
+                      : activeFolder === "sequence" ? "Sequences" : "Journey Builder";
                     return (
                       <>
                         <Icon className="w-4 h-4 text-primary" />
@@ -497,82 +479,7 @@ export const AutomationView = ({
                 </table>
               )}
             </div>
-          </motion.div>
-        ) : (
-          <motion.div key="webhooks" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="space-y-3">
-            {filteredWebhooks.length === 0 ? (
-              <Card>
-                <CardContent className="p-12 text-center">
-                  <Webhook className="w-10 h-10 text-muted-foreground/30 mx-auto mb-3" />
-                  <p className="text-sm font-medium text-muted-foreground">No webhooks configured</p>
-                  <p className="text-xs text-muted-foreground/70 mt-1">Set up webhooks to integrate with external systems.</p>
-                  <Button size="sm" className="mt-4" onClick={() => setIsAddWebhookOpen(true)}>
-                    <Plus className="w-3.5 h-3.5 mr-1.5" />
-                    Add Webhook
-                  </Button>
-                </CardContent>
-              </Card>
-            ) : (
-              filteredWebhooks.map((wh) => (
-                <Card key={wh.id} className={cn("transition-all", !wh.enabled && "opacity-50")}>
-                  <CardContent className="p-5">
-                    <div className="flex items-center gap-4">
-                      <div className={cn(
-                        "w-10 h-10 flex items-center justify-center shrink-0 border",
-                        wh.enabled ? "bg-sky-50 border-sky-200" : "bg-muted border-border"
-                      )}>
-                        <Webhook className={cn("w-5 h-5", wh.enabled ? "text-sky-600" : "text-muted-foreground")} />
-                      </div>
-
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2">
-                          <p className="text-sm font-semibold text-foreground truncate">{wh.name}</p>
-                          {wh.failureCount > 5 && (
-                            <Badge variant="outline" className="text-xs text-destructive border-destructive/20 bg-destructive/5">
-                              <AlertCircle className="w-2.5 h-2.5 mr-0.5" />
-                              {wh.failureCount} failures
-                            </Badge>
-                          )}
-                        </div>
-                        <div className="flex items-center gap-2 mt-0.5">
-                          <code className="text-xs text-muted-foreground font-mono truncate max-w-[300px]">{wh.url}</code>
-                          <button
-                            onClick={() => { copyToClipboard(wh.url); toast.success("URL copied"); }}
-                            className="text-muted-foreground hover:text-foreground"
-                          >
-                            <Copy className="w-3 h-3" />
-                          </button>
-                        </div>
-                        <div className="flex items-center gap-2 mt-1.5 flex-wrap">
-                          {wh.events.map(ev => (
-                            <Badge key={ev} variant="secondary" className="text-xs">{ev}</Badge>
-                          ))}
-                        </div>
-                      </div>
-
-                      <div className="flex items-center gap-3 shrink-0">
-                        {wh.lastCalledAt && (
-                          <div className="text-right hidden md:block">
-                            <p className="text-xs text-muted-foreground">Last called</p>
-                            <p className="text-xs font-medium text-foreground">{formatTimeAgo(wh.lastCalledAt)}</p>
-                          </div>
-                        )}
-                        <Switch
-                          checked={wh.enabled}
-                          onCheckedChange={() => onToggleWebhook(wh.id)}
-                        />
-                        <Button variant="ghost" size="sm" className="h-8 w-8 p-0" onClick={() => onDeleteWebhook(wh.id)}>
-                          <Trash2 className="w-3.5 h-3.5 text-muted-foreground" />
-                        </Button>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))
-            )}
-          </motion.div>
-        )}
-      </AnimatePresence>
+      </div>
 
       {/* Type picker — shown when the user clicks New from the All folder */}
       <Modal
@@ -627,8 +534,7 @@ export const AutomationView = ({
         </div>
       </Modal>
 
-      {/* Add Webhook Modal */}
-      <AddWebhookModal isOpen={isAddWebhookOpen} onClose={() => setIsAddWebhookOpen(false)} onAdd={onAddWebhook} />
+      {/* Webhooks are now managed inside the Journey Builder */}
     </div>
   );
 };
@@ -818,71 +724,4 @@ const AddRuleModal = ({ isOpen, onClose, onAdd }: { isOpen: boolean; onClose: ()
   );
 };
 
-// --- Add Webhook Modal ---
-const AddWebhookModal = ({ isOpen, onClose, onAdd }: { isOpen: boolean; onClose: () => void; onAdd: (data: Partial<WebhookType>) => void }) => {
-  const [name, setName] = useState("");
-  const [url, setUrl] = useState("");
-  const [events, setEvents] = useState<string[]>([]);
-
-  const availableEvents = [
-    "message.sent", "message.received", "message.delivered", "message.failed",
-    "contact.created", "contact.updated", "contact.deleted",
-    "broadcast.completed", "channel.connected", "channel.disconnected"
-  ];
-
-  const toggleEvent = (ev: string) => {
-    setEvents(prev => prev.includes(ev) ? prev.filter(e => e !== ev) : [...prev, ev]);
-  };
-
-  const handleAdd = () => {
-    if (!name.trim() || !url.trim() || events.length === 0) return;
-    onAdd({
-      tenantId: "tenant-1",
-      name: name.trim(),
-      url: url.trim(),
-      events,
-      enabled: false,
-      failureCount: 0,
-    });
-    toast.success(`Webhook "${name}" added`);
-    setName(""); setUrl(""); setEvents([]);
-    onClose();
-  };
-
-  return (
-    <Modal isOpen={isOpen} onClose={onClose} title="New Webhook" size="lg">
-      <div className="space-y-5">
-        <div className="grid gap-2">
-          <Label className="text-xs font-semibold">Webhook Name</Label>
-          <Input placeholder="e.g. CRM Sync" value={name} onChange={(e) => setName(e.target.value)} className="h-9 text-sm" />
-        </div>
-        <div className="grid gap-2">
-          <Label className="text-xs font-semibold">Endpoint URL</Label>
-          <Input placeholder="https://your-api.com/webhooks" value={url} onChange={(e) => setUrl(e.target.value)} className="h-9 text-sm font-mono" />
-          <p className="text-xs text-muted-foreground">Turumba will POST JSON payloads to this URL.</p>
-        </div>
-        <div className="grid gap-2">
-          <Label className="text-xs font-semibold">Subscribe to Events</Label>
-          <div className="flex flex-wrap gap-2">
-            {availableEvents.map(ev => (
-              <button
-                key={ev}
-                onClick={() => toggleEvent(ev)}
-                className={cn(
-                  "px-2.5 py-1 text-xs font-medium border transition-all",
-                  events.includes(ev) ? "bg-primary text-primary-foreground border-primary" : "bg-background text-muted-foreground border-border hover:bg-muted"
-                )}
-              >
-                {ev}
-              </button>
-            ))}
-          </div>
-        </div>
-        <div className="flex justify-end gap-2 pt-2">
-          <Button variant="outline" size="sm" onClick={onClose}>Cancel</Button>
-          <Button size="sm" disabled={!name.trim() || !url.trim() || events.length === 0} onClick={handleAdd}>Add Webhook</Button>
-        </div>
-      </div>
-    </Modal>
-  );
-};
+// AddWebhookModal removed — webhooks are now managed inside the Journey Builder (flow-builder.tsx).

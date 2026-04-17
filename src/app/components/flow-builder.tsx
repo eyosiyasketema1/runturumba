@@ -8,20 +8,26 @@ import {
 import "@xyflow/react/dist/style.css";
 import {
   ArrowLeft, Zap, Send, Clock, GitBranch, List, Sparkles, Bell,
-  Plus, Save
+  Plus, Save, Flag, CheckCircle2, Webhook, Copy, Trash2, AlertCircle,
+  ChevronDown, ChevronRight, Globe
 } from "lucide-react";
-import { cn } from "./types";
+import {
+  cn, type Webhook as WebhookType, formatTimeAgo, copyToClipboard
+} from "./types";
 import { Button } from "./ui/button";
 import { Badge } from "./ui/badge";
 import { Input } from "./ui/input";
+import { Label } from "./ui/label";
 import { Textarea } from "./ui/textarea";
+import { Switch } from "./ui/switch";
+import { Modal } from "./shared-ui";
 import { toast } from "sonner";
 
 // ---------------------------------------------------------------------------
 // Node type catalogue — palette, colors, and default content per type.
 // ---------------------------------------------------------------------------
 
-type NodeType = "trigger" | "send_message" | "wait" | "condition" | "menu" | "ai_personalize" | "action";
+type NodeType = "trigger" | "send_message" | "wait" | "condition" | "menu" | "ai_personalize" | "action" | "key_milestone" | "milestone";
 
 type NodeData = {
   type: NodeType;
@@ -43,6 +49,8 @@ const NODE_TYPES: { id: NodeType; label: string; icon: any; bg: string; headerBg
   { id: "menu",           label: "Menu / Choices",  icon: List,      bg: "bg-white",  headerBg: "bg-violet-500",   border: "border-violet-200" },
   { id: "ai_personalize", label: "AI Personalize",  icon: Sparkles,  bg: "bg-white",  headerBg: "bg-pink-500",     border: "border-pink-200" },
   { id: "action",         label: "Action / Notify", icon: Bell,      bg: "bg-white",  headerBg: "bg-rose-500",     border: "border-rose-200" },
+  { id: "key_milestone",  label: "Key Milestone",   icon: Flag,          bg: "bg-white",  headerBg: "bg-teal-500",     border: "border-teal-200" },
+  { id: "milestone",      label: "Milestone",       icon: CheckCircle2,  bg: "bg-white",  headerBg: "bg-cyan-500",     border: "border-cyan-200" },
 ];
 
 const getTypeConfig = (t: NodeType) => NODE_TYPES.find(n => n.id === t)!;
@@ -189,7 +197,7 @@ const STARTER_EDGES: Edge[] = [
 
 const EMPTY_STARTER: { nodes: Node[]; edges: Edge[] } = {
   nodes: [
-    { id: "start", type: "trigger", position: { x: 240, y: 40 }, data: { type: "trigger", title: "Trigger: Choose a trigger", body: "Configure what starts this flow." } },
+    { id: "start", type: "trigger", position: { x: 240, y: 40 }, data: { type: "trigger", title: "Trigger: Choose a trigger", body: "Configure what starts this journey." } },
   ],
   edges: [],
 };
@@ -206,16 +214,25 @@ export interface FlowBuilderProps {
   onBack: () => void;
   onSave?: (data: { nodes: Node[]; edges: Edge[]; name: string }) => void;
   onPublish?: (data: { nodes: Node[]; edges: Edge[]; name: string }) => void;
+  // Webhook management — moved into the Journey Builder
+  webhooks?: WebhookType[];
+  onToggleWebhook?: (id: string) => void;
+  onDeleteWebhook?: (id: string) => void;
+  onAddWebhook?: (data: Partial<WebhookType>) => void;
 }
 
 export function FlowBuilder({
-  flowName = "Untitled Flow",
+  flowName = "Untitled Journey",
   status = "draft",
   stats = { totalRuns: 0, avgCtr: 0, completionRate: 0, dropoutRate: 0, aiBoost: 0 },
   useStarterTemplate = true,
   onBack,
   onSave,
   onPublish,
+  webhooks = [],
+  onToggleWebhook,
+  onDeleteWebhook,
+  onAddWebhook,
 }: FlowBuilderProps) {
   return (
     <ReactFlowProvider>
@@ -227,6 +244,10 @@ export function FlowBuilder({
         onBack={onBack}
         onSave={onSave}
         onPublish={onPublish}
+        webhooks={webhooks}
+        onToggleWebhook={onToggleWebhook}
+        onDeleteWebhook={onDeleteWebhook}
+        onAddWebhook={onAddWebhook}
       />
     </ReactFlowProvider>
   );
@@ -234,12 +255,15 @@ export function FlowBuilder({
 
 function FlowBuilderInner({
   flowName, status, stats, useStarterTemplate, onBack, onSave, onPublish,
-}: Required<Pick<FlowBuilderProps, "flowName" | "status" | "stats" | "useStarterTemplate" | "onBack">> & Pick<FlowBuilderProps, "onSave" | "onPublish">) {
+  webhooks, onToggleWebhook, onDeleteWebhook, onAddWebhook,
+}: Required<Pick<FlowBuilderProps, "flowName" | "status" | "stats" | "useStarterTemplate" | "onBack" | "webhooks">> & Pick<FlowBuilderProps, "onSave" | "onPublish" | "onToggleWebhook" | "onDeleteWebhook" | "onAddWebhook">) {
   const initial = useMemo(() => useStarterTemplate ? { nodes: STARTER_NODES, edges: STARTER_EDGES } : EMPTY_STARTER, [useStarterTemplate]);
   const [nodes, setNodes] = useState<Node[]>(initial.nodes);
   const [edges, setEdges] = useState<Edge[]>(initial.edges);
   const [name, setName] = useState(flowName);
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
+  const [webhooksOpen, setWebhooksOpen] = useState(false);
+  const [isAddWebhookOpen, setIsAddWebhookOpen] = useState(false);
 
   const onNodesChange = useCallback((changes: NodeChange[]) => setNodes(ns => applyNodeChanges(changes, ns)), []);
   const onEdgesChange = useCallback((changes: EdgeChange[]) => setEdges(es => applyEdgeChanges(changes, es)), []);
@@ -256,12 +280,14 @@ function FlowBuilderInner({
       data: {
         type,
         title: cfg.label,
-        body: type === "trigger" ? "Configure what starts this flow."
+        body: type === "trigger" ? "Configure what starts this journey."
             : type === "send_message" ? "Edit to add your message content."
             : type === "wait" ? "Wait 1 day"
             : type === "condition" ? "Your condition here"
             : type === "menu" ? "What would you like to know?"
             : type === "ai_personalize" ? "Claude will pick the best content for each seeker."
+            : type === "key_milestone" ? "Define a key milestone that marks a major faith journey stage (e.g. Baptism, First Bible Study)."
+            : type === "milestone" ? "Track a milestone checkpoint in the seeker's journey (e.g. Completed Week 1, Attended Group)."
             : "Notify mentor or run an action.",
         ...(type === "condition" ? { branches: [{ label: "Yes", tone: "yes" }, { label: "No", tone: "no" }] } : {}),
         ...(type === "menu" ? { choices: [{ label: "Option 1", dot: "bg-violet-500" }, { label: "Option 2", dot: "bg-blue-500" }] } : {}),
@@ -309,7 +335,7 @@ function FlowBuilderInner({
               aria-label="Flow name"
             />
             <div className="flex items-center gap-2 mt-0.5 px-2">
-              <span className="text-xs text-muted-foreground">Flow</span>
+              <span className="text-xs text-muted-foreground">Journey</span>
               <span className="text-muted-foreground">·</span>
               <Badge
                 variant="outline"
@@ -373,6 +399,76 @@ function FlowBuilderInner({
           <p className="text-xs text-muted-foreground mt-5 leading-relaxed">
             Click a type to add it to the canvas, then drag nodes around or draw connections between handles.
           </p>
+
+          {/* ── Webhooks section ── */}
+          <div className="mt-6 border-t border-border pt-4">
+            <button
+              onClick={() => setWebhooksOpen(v => !v)}
+              className="w-full flex items-center justify-between text-xs font-semibold text-muted-foreground uppercase tracking-wider pb-2 hover:text-foreground transition-colors"
+            >
+              <span className="flex items-center gap-1.5">
+                <Webhook className="w-3.5 h-3.5" />
+                Webhooks
+                <Badge variant="secondary" className="text-[10px] ml-0.5">{webhooks.length}</Badge>
+              </span>
+              {webhooksOpen ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronRight className="w-3.5 h-3.5" />}
+            </button>
+
+            {webhooksOpen && (
+              <div className="space-y-2 mt-1">
+                {webhooks.length === 0 ? (
+                  <p className="text-xs text-muted-foreground leading-relaxed">
+                    No webhooks configured. Add one to integrate with external systems.
+                  </p>
+                ) : (
+                  webhooks.map(wh => (
+                    <div key={wh.id} className={cn(
+                      "p-2.5 rounded-md border text-xs space-y-1",
+                      wh.enabled ? "border-sky-200 bg-sky-50/50" : "border-border bg-muted/30 opacity-60"
+                    )}>
+                      <div className="flex items-center justify-between gap-1">
+                        <span className="font-semibold text-foreground truncate">{wh.name}</span>
+                        <div className="flex items-center gap-1 shrink-0">
+                          <Switch
+                            checked={wh.enabled}
+                            onCheckedChange={() => onToggleWebhook?.(wh.id)}
+                            className="scale-75"
+                          />
+                          <button onClick={() => onDeleteWebhook?.(wh.id)} className="text-muted-foreground hover:text-destructive transition-colors p-0.5">
+                            <Trash2 className="w-3 h-3" />
+                          </button>
+                        </div>
+                      </div>
+                      <code className="text-[10px] text-muted-foreground font-mono truncate block">{wh.url}</code>
+                      <div className="flex items-center gap-1 flex-wrap">
+                        {wh.events.slice(0, 2).map(ev => (
+                          <span key={ev} className="px-1.5 py-0.5 text-[9px] bg-background border border-border rounded font-medium">{ev}</span>
+                        ))}
+                        {wh.events.length > 2 && (
+                          <span className="text-[9px] text-muted-foreground">+{wh.events.length - 2}</span>
+                        )}
+                      </div>
+                      {wh.failureCount > 5 && (
+                        <div className="flex items-center gap-1 text-destructive">
+                          <AlertCircle className="w-2.5 h-2.5" />
+                          <span className="text-[10px] font-medium">{wh.failureCount} failures</span>
+                        </div>
+                      )}
+                    </div>
+                  ))
+                )}
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="w-full text-xs h-7"
+                  onClick={() => setIsAddWebhookOpen(true)}
+                >
+                  <Plus className="w-3 h-3 mr-1" />
+                  Add Webhook
+                </Button>
+              </div>
+            )}
+          </div>
         </aside>
 
         {/* Canvas */}
@@ -403,6 +499,7 @@ function FlowBuilderInner({
                 const map: Record<NodeType, string> = {
                   trigger: "#6366f1", send_message: "#3b82f6", wait: "#f59e0b",
                   condition: "#f97316", menu: "#8b5cf6", ai_personalize: "#ec4899", action: "#f43f5e",
+                  key_milestone: "#14b8a6", milestone: "#06b6d4",
                 };
                 return map[cfg.id];
               }}
@@ -424,7 +521,76 @@ function FlowBuilderInner({
           )}
         </aside>
       </div>
+
+      {/* Add Webhook Modal — embedded in the Journey Builder */}
+      <JourneyWebhookModal
+        isOpen={isAddWebhookOpen}
+        onClose={() => setIsAddWebhookOpen(false)}
+        onAdd={(data) => { onAddWebhook?.(data); setIsAddWebhookOpen(false); }}
+      />
     </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Inline webhook add modal for the Journey Builder
+// ---------------------------------------------------------------------------
+
+function JourneyWebhookModal({ isOpen, onClose, onAdd }: { isOpen: boolean; onClose: () => void; onAdd: (data: Partial<WebhookType>) => void }) {
+  const [whName, setWhName] = useState("");
+  const [url, setUrl] = useState("");
+  const [events, setEvents] = useState<string[]>([]);
+
+  const availableEvents = [
+    "message.sent", "message.received", "message.delivered", "message.failed",
+    "contact.created", "contact.updated", "contact.deleted",
+    "broadcast.completed", "channel.connected", "channel.disconnected"
+  ];
+
+  const toggleEvent = (ev: string) => setEvents(prev => prev.includes(ev) ? prev.filter(e => e !== ev) : [...prev, ev]);
+
+  const handleAdd = () => {
+    if (!whName.trim() || !url.trim() || events.length === 0) return;
+    onAdd({ tenantId: "tenant-1", name: whName.trim(), url: url.trim(), events, enabled: false, failureCount: 0 });
+    toast.success(`Webhook "${whName}" added`);
+    setWhName(""); setUrl(""); setEvents([]);
+  };
+
+  return (
+    <Modal isOpen={isOpen} onClose={onClose} title="New Webhook" size="lg">
+      <div className="space-y-5">
+        <div className="grid gap-2">
+          <Label className="text-xs font-semibold">Webhook Name</Label>
+          <Input placeholder="e.g. CRM Sync" value={whName} onChange={(e) => setWhName(e.target.value)} className="h-9 text-sm" />
+        </div>
+        <div className="grid gap-2">
+          <Label className="text-xs font-semibold">Endpoint URL</Label>
+          <Input placeholder="https://your-api.com/webhooks" value={url} onChange={(e) => setUrl(e.target.value)} className="h-9 text-sm font-mono" />
+          <p className="text-xs text-muted-foreground">Turumba will POST JSON payloads to this URL.</p>
+        </div>
+        <div className="grid gap-2">
+          <Label className="text-xs font-semibold">Subscribe to Events</Label>
+          <div className="flex flex-wrap gap-2">
+            {availableEvents.map(ev => (
+              <button
+                key={ev}
+                onClick={() => toggleEvent(ev)}
+                className={cn(
+                  "px-2.5 py-1 text-xs font-medium border transition-all",
+                  events.includes(ev) ? "bg-primary text-primary-foreground border-primary" : "bg-background text-muted-foreground border-border hover:bg-muted"
+                )}
+              >
+                {ev}
+              </button>
+            ))}
+          </div>
+        </div>
+        <div className="flex justify-end gap-2 pt-2">
+          <Button variant="outline" size="sm" onClick={onClose}>Cancel</Button>
+          <Button size="sm" disabled={!whName.trim() || !url.trim() || events.length === 0} onClick={handleAdd}>Add Webhook</Button>
+        </div>
+      </div>
+    </Modal>
   );
 }
 
@@ -449,7 +615,7 @@ function FlowStatsPanel({ stats }: { stats: FlowBuilderProps["stats"] }) {
       </div>
 
       <div className="border border-border rounded-xl p-4 space-y-3">
-        <p className="text-sm font-bold text-foreground">Flow Stats</p>
+        <p className="text-sm font-bold text-foreground">Journey Stats</p>
         <div className="space-y-2.5">
           <StatRow label="Total Runs"        value={s.totalRuns.toLocaleString()} />
           <StatRow label="Avg CTR"           value={`${s.avgCtr}%`}           tone="green" />

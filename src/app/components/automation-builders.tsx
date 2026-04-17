@@ -845,7 +845,7 @@ export function AutomationTypePicker({
   const types = [
     { id: "basic" as const,    label: "Basic automation", description: "A single trigger paired with a single reply — welcomes, keyword replies, default messages.",    icon: Zap,          tint: "bg-blue-50 text-blue-700" },
     { id: "sequence" as const, label: "Sequence",         description: "A drip series of messages sent at scheduled intervals.",                                         icon: ListClockIcon, tint: "bg-emerald-50 text-emerald-700" },
-    { id: "flow" as const,     label: "Flow",             description: "A branching, multi-step visual automation with conditions and AI personalization.",              icon: GripVertical, tint: "bg-violet-50 text-violet-700" },
+    { id: "flow" as const,     label: "Journey",          description: "A branching, multi-step visual journey with milestones, webhooks, conditions, and AI personalization.", icon: GripVertical, tint: "bg-violet-50 text-violet-700" },
   ];
   return (
     <div className="space-y-2">
