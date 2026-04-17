@@ -656,7 +656,7 @@ export function SeekersView({
   const derivedSeekers = useMemo<SeekerRow[]>(() => {
     if (!sharedContacts?.length) return SEEKERS;
     const maturityToneMap: Record<string, string> = {
-      "Pre-Seeker": "slate", "Seeker": "amber", "New Believer": "green",
+      "Interested": "blue", "Pre-Seeker": "slate", "Seeker": "amber", "New Believer": "green",
       "Growing": "blue", "Mature": "purple", "Leader": "pink",
     };
     const engTone = (e: number) => e >= 80 ? "green" : e >= 50 ? "amber" : "red";

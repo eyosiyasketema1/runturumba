@@ -68,14 +68,15 @@ interface ReassignmentRequest {
   createdAt: string;
 }
 
-type SeekerStatusOption = "Active" | "Pending" | "Inactive" | "Graduated" | "Archived";
-
-const SEEKER_STATUS_OPTIONS: { id: SeekerStatusOption; label: string; cls: string }[] = [
-  { id: "Active",    label: "Active",    cls: "text-emerald-700 bg-emerald-50 ring-1 ring-inset ring-emerald-200" },
-  { id: "Pending",   label: "Pending",   cls: "text-amber-700 bg-amber-50 ring-1 ring-inset ring-amber-200" },
-  { id: "Inactive",  label: "Inactive",  cls: "text-slate-700 bg-slate-100 ring-1 ring-inset ring-slate-200" },
-  { id: "Graduated", label: "Graduated", cls: "text-violet-700 bg-violet-50 ring-1 ring-inset ring-violet-200" },
-  { id: "Archived",  label: "Archived",  cls: "text-rose-700 bg-rose-50 ring-1 ring-inset ring-rose-200" },
+// Maturity levels — the mentor can change a seeker's maturity stage from the profile panel.
+const MATURITY_OPTIONS: { id: string; label: string; dot: string }[] = [
+  { id: "Interested",   label: "Interested",   dot: "bg-blue-500" },
+  { id: "Pre-Seeker",   label: "Pre-Seeker",   dot: "bg-slate-400" },
+  { id: "Seeker",       label: "Seeker",       dot: "bg-amber-500" },
+  { id: "New Believer", label: "New Believer", dot: "bg-sky-500" },
+  { id: "Growing",      label: "Growing",      dot: "bg-emerald-500" },
+  { id: "Mature",       label: "Mature",       dot: "bg-violet-500" },
+  { id: "Leader",       label: "Leader",       dot: "bg-rose-500" },
 ];
 
 const FORM_TEMPLATES = [
@@ -585,6 +586,7 @@ const INFO_TABS: { id: InfoTab; label: string }[] = [
 ];
 
 const MATURITY_COLORS: Record<string, string> = {
+  "Interested":   "bg-blue-50 text-blue-700 ring-1 ring-inset ring-blue-200",
   "Pre-Seeker":   "bg-slate-100 text-slate-700 ring-1 ring-inset ring-slate-200",
   "Seeker":       "bg-amber-50 text-amber-700 ring-1 ring-inset ring-amber-200",
   "New Believer": "bg-sky-50 text-sky-700 ring-1 ring-inset ring-sky-200",
@@ -681,39 +683,34 @@ function ConversationContextPanel({
           <p className="text-xs text-muted-foreground truncate">{contact.phone}{contact.email ? ` · ${contact.email}` : ""}</p>
         </div>
         <div className="flex items-center gap-1.5 shrink-0">
-          {contact.maturity && (
-            <span className={cn("px-2 py-0.5 rounded-sm text-[10px] font-bold", MATURITY_COLORS[contact.maturity] || MATURITY_COLORS["Seeker"])}>
-              {contact.maturity}
-            </span>
-          )}
-          {/* Seeker status dropdown — mentor can change directly */}
+          {/* Maturity dropdown — mentor can change the seeker's maturity level */}
           <div className="relative">
             <button
               onClick={() => setIsStatusOpen(!isStatusOpen)}
               className={cn(
                 "flex items-center gap-1 px-2 py-0.5 rounded-sm text-[10px] font-bold cursor-pointer transition-all",
-                SEEKER_STATUS_OPTIONS.find(s => s.id === (contact.discipleshipStatus || "Active"))?.cls || "bg-muted text-muted-foreground"
+                MATURITY_COLORS[contact.maturity || "Seeker"]
               )}
             >
-              {contact.discipleshipStatus || "Active"}
+              {contact.maturity || "Seeker"}
               <ChevronDown className="w-2.5 h-2.5 opacity-60" />
             </button>
             {isStatusOpen && (
               <>
                 <div className="fixed inset-0 z-40" onClick={() => setIsStatusOpen(false)} />
-                <div className="absolute right-0 top-full mt-1 z-50 w-40 bg-background border border-border shadow-xl rounded-sm py-1">
+                <div className="absolute right-0 top-full mt-1 z-50 w-44 bg-background border border-border shadow-xl rounded-sm py-1">
                   <div className="px-3 py-1.5 border-b border-border">
-                    <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Seeker Status</span>
+                    <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Maturity</span>
                   </div>
-                  {SEEKER_STATUS_OPTIONS.map(opt => {
-                    const isActive = (contact.discipleshipStatus || "Active") === opt.id;
+                  {MATURITY_OPTIONS.map(opt => {
+                    const isActive = (contact.maturity || "Seeker") === opt.id;
                     return (
                       <button
                         key={opt.id}
                         onClick={() => {
                           if (onUpdateContact) {
-                            onUpdateContact(contact.id, { discipleshipStatus: opt.id as any });
-                            toast.success(`Status changed to ${opt.label}`);
+                            onUpdateContact(contact.id, { maturity: opt.id as any });
+                            toast.success(`Maturity changed to ${opt.label}`);
                           }
                           setIsStatusOpen(false);
                         }}
@@ -722,9 +719,7 @@ function ConversationContextPanel({
                           isActive ? "bg-muted/50" : "hover:bg-muted/30"
                         )}
                       >
-                        <span className={cn("w-1.5 h-1.5 rounded-full shrink-0",
-                          opt.id === "Active" ? "bg-emerald-500" : opt.id === "Pending" ? "bg-amber-500" : opt.id === "Inactive" ? "bg-slate-400" : opt.id === "Graduated" ? "bg-violet-500" : "bg-rose-400"
-                        )} />
+                        <span className={cn("w-1.5 h-1.5 rounded-full shrink-0", opt.dot)} />
                         <span className={isActive ? "text-foreground" : "text-muted-foreground"}>{opt.label}</span>
                         {isActive && <Check className="w-3 h-3 text-primary ml-auto" />}
                       </button>

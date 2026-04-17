@@ -25,7 +25,7 @@ export type ChannelStatus = "connected" | "disconnected" | "error" | "rate_limit
 
 // --- Discipleship Types ---
 
-export type MaturityLevel = "Pre-Seeker" | "Seeker" | "New Believer" | "Growing" | "Mature" | "Leader";
+export type MaturityLevel = "Interested" | "Pre-Seeker" | "Seeker" | "New Believer" | "Growing" | "Mature" | "Leader";
 export type DiscipleshipStatus = "Active" | "Pending" | "Inactive" | "Graduated" | "Archived";
 export type JourneyStage = "Touchpoint" | "Engaged" | "Active Journey" | "Decision";
 export type JourneyType = "Salvation" | "Baptism" | "Community" | "Growth";
