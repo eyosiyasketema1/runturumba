@@ -5901,13 +5901,6 @@ export function MainDashboardView({ onNavigate, stats }: {
               onClick={() => onNavigate?.(t.action)}
               className="relative overflow-hidden rounded-sm border border-border bg-card p-4 text-left transition-all group hover:border-primary/40 hover:-translate-y-0.5 hover:shadow-[0_16px_36px_-22px_rgba(15,23,42,0.35)]"
             >
-              <div className={cn(
-                "absolute top-0 left-0 right-0 h-0.5",
-                t.tone === "amber"  && "bg-amber-500",
-                t.tone === "blue"   && "bg-blue-500",
-                t.tone === "purple" && "bg-violet-500",
-                t.tone === "pink"   && "bg-pink-500",
-              )} />
               <div className="flex items-start justify-between gap-2">
                 <span className={cn(
                   "w-9 h-9 rounded-sm flex items-center justify-center font-bold text-sm tabular-nums shrink-0",
