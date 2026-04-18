@@ -1512,6 +1512,19 @@ type MentorFormTemplate = {
   submissions: number;
 };
 
+type FormSubmission = {
+  id: string;
+  formId: string;
+  formName: string;
+  respondentName: string;
+  respondentEmail: string;
+  answers: Record<string, string | boolean | string[]>;
+  status: "pending" | "approved" | "rejected" | "resubmit";
+  reviewNote: string;
+  submittedAt: string;
+  reviewedAt?: string;
+};
+
 type MentorInvitation = {
   id: string;
   email: string;
@@ -1519,7 +1532,7 @@ type MentorInvitation = {
   formId: string;
   formName: string;
   message: string;
-  status: "sent" | "opened" | "completed" | "expired";
+  status: "sent" | "opened" | "submitted" | "accepted" | "expired";
   sentAt: string;
 };
 
@@ -1670,8 +1683,74 @@ const BROWSE_TEMPLATES: MentorFormTemplate[] = [
   },
 ];
 
+const INITIAL_SUBMISSIONS: FormSubmission[] = [
+  // General Mentor Application (tpl-1) — 5 submissions
+  {
+    id: "sub-1", formId: "tpl-1", formName: "General Mentor Application",
+    respondentName: "Abebe Tesfaye", respondentEmail: "abebe@church.org",
+    answers: { f1: "Abebe Tesfaye", f2: "abebe@church.org", f3: "+251911234567", f4: "Bible Study", f5: "5+ years", f6: "I came to faith through a campus ministry in Addis Ababa. The Word of God transformed my life, and I want to help others grow in their understanding of Scripture.", f7: true },
+    status: "approved", reviewNote: "Strong candidate with excellent testimony.", submittedAt: "2024-12-05T14:00:00Z", reviewedAt: "2024-12-06T09:00:00Z",
+  },
+  {
+    id: "sub-2", formId: "tpl-1", formName: "General Mentor Application",
+    respondentName: "Kidist Alemu", respondentEmail: "kidist@church.org",
+    answers: { f1: "Kidist Alemu", f2: "kidist@church.org", f3: "+251922345678", f4: "Prayer", f5: "3-5 years", f6: "Prayer has been the foundation of my walk with Christ. I lead a weekly prayer group and would love to mentor others in developing a prayer life.", f7: true },
+    status: "approved", reviewNote: "", submittedAt: "2024-12-10T08:30:00Z", reviewedAt: "2024-12-11T10:00:00Z",
+  },
+  {
+    id: "sub-3", formId: "tpl-1", formName: "General Mentor Application",
+    respondentName: "Dawit Hailu", respondentEmail: "dawit@church.org",
+    answers: { f1: "Dawit Hailu", f2: "dawit@church.org", f3: "", f4: "Counseling", f5: "1-3 years", f6: "I have a background in psychology and want to serve the church through biblical counseling.", f7: true },
+    status: "pending", reviewNote: "", submittedAt: "2025-03-25T11:00:00Z",
+  },
+  {
+    id: "sub-4", formId: "tpl-1", formName: "General Mentor Application",
+    respondentName: "Tigist Mekonnen", respondentEmail: "tigist@church.org",
+    answers: { f1: "Tigist Mekonnen", f2: "tigist@church.org", f3: "+251933456789", f4: "Women", f5: "5+ years", f6: "", f7: true },
+    status: "resubmit", reviewNote: "Please share a brief testimony about your faith journey. This helps us match you with mentees.", submittedAt: "2025-03-22T16:00:00Z", reviewedAt: "2025-03-23T08:00:00Z",
+  },
+  {
+    id: "sub-5", formId: "tpl-1", formName: "General Mentor Application",
+    respondentName: "Henok Girma", respondentEmail: "henok@church.org",
+    answers: { f1: "Henok Girma", f2: "henok@church.org", f3: "+251944567890", f4: "Evangelism", f5: "< 1 year", f6: "I'm new to ministry but have a strong passion for outreach and sharing the Gospel.", f7: false },
+    status: "rejected", reviewNote: "Applicant did not agree to mentor guidelines. Follow up to discuss.", submittedAt: "2025-02-14T13:00:00Z", reviewedAt: "2025-02-15T09:30:00Z",
+  },
+  // Youth Ministry Application (tpl-2) — 3 submissions
+  {
+    id: "sub-6", formId: "tpl-2", formName: "Youth Ministry Application",
+    respondentName: "Marta Haile", respondentEmail: "marta@church.org",
+    answers: { f1: "Marta Haile", f2: "marta@church.org", f3: "16-18", f4: ["Identity", "Faith & Doubt", "Purpose"], f5: "I was once a lost teenager myself. God found me and now I want to guide young people through the same struggles I faced." },
+    status: "approved", reviewNote: "Great fit for teen ministry.", submittedAt: "2025-01-20T10:00:00Z", reviewedAt: "2025-01-21T11:00:00Z",
+  },
+  {
+    id: "sub-7", formId: "tpl-2", formName: "Youth Ministry Application",
+    respondentName: "Yonas Tadesse", respondentEmail: "yonas@church.org",
+    answers: { f1: "Yonas Tadesse", f2: "yonas@church.org", f3: "13-15", f4: ["Peer Pressure", "Relationships"], f5: "I've been a Sunday school teacher for 3 years." },
+    status: "pending", reviewNote: "", submittedAt: "2025-04-01T09:00:00Z",
+  },
+  {
+    id: "sub-8", formId: "tpl-2", formName: "Youth Ministry Application",
+    respondentName: "Selam Bekele", respondentEmail: "selam@church.org",
+    answers: { f1: "Selam Bekele", f2: "selam@church.org", f3: "18-25", f4: ["Identity", "Peer Pressure", "Faith & Doubt", "Relationships", "Purpose"], f5: "" },
+    status: "pending", reviewNote: "", submittedAt: "2025-04-10T15:30:00Z",
+  },
+  // Marriage Counseling Application (tpl-3) — 2 submissions
+  {
+    id: "sub-9", formId: "tpl-3", formName: "Marriage Counseling Application",
+    respondentName: "Bereket & Hanna Worku", respondentEmail: "bereket@church.org",
+    answers: { f1: "Bereket & Hanna Worku", f2: "bereket@church.org", f3: "10-20", f4: true, f5: "We have been married for 15 years and went through both the highs and lows. We completed a certified pre-marital counseling course and have mentored 4 couples." },
+    status: "approved", reviewNote: "Experienced couple with formal training.", submittedAt: "2025-01-05T12:00:00Z", reviewedAt: "2025-01-06T08:00:00Z",
+  },
+  {
+    id: "sub-10", formId: "tpl-3", formName: "Marriage Counseling Application",
+    respondentName: "Eyob Desta", respondentEmail: "eyob@church.org",
+    answers: { f1: "Eyob Desta", f2: "eyob@church.org", f3: "5-10", f4: false, f5: "My wife and I want to serve but we haven't completed formal training yet." },
+    status: "resubmit", reviewNote: "Please complete the pre-marital counseling training first, then resubmit. We can recommend a program.", submittedAt: "2025-03-18T10:00:00Z", reviewedAt: "2025-03-19T14:00:00Z",
+  },
+];
+
 const INITIAL_INVITATIONS: MentorInvitation[] = [
-  { id: "inv-1", email: "abebe@church.org",   name: "Abebe Tesfaye",  formId: "tpl-1", formName: "General Mentor Application", message: "We'd love to have you join our mentorship team!", status: "completed", sentAt: "2024-12-01T10:00:00Z" },
+  { id: "inv-1", email: "abebe@church.org",   name: "Abebe Tesfaye",  formId: "tpl-1", formName: "General Mentor Application", message: "We'd love to have you join our mentorship team!", status: "submitted", sentAt: "2024-12-01T10:00:00Z" },
   { id: "inv-2", email: "marta@church.org",   name: "Marta Haile",    formId: "tpl-2", formName: "Youth Ministry Application", message: "", status: "opened", sentAt: "2025-01-15T14:30:00Z" },
   { id: "inv-3", email: "solomon@church.org", name: "Solomon Bekele", formId: "tpl-1", formName: "General Mentor Application", message: "Your experience would be a great fit.", status: "sent", sentAt: "2025-03-20T09:00:00Z" },
 ];
@@ -1950,7 +2029,38 @@ export function MentorsView({
     setIsInviteOpen(true);
   };
 
-  // Drill into a profile — full-page replacement.
+  // ── Responses state ──
+  const [submissions, setSubmissions] = useState<FormSubmission[]>(INITIAL_SUBMISSIONS);
+  const [responsesFormId, setResponsesFormId] = useState<string | null>(null);
+  const [selectedSubId, setSelectedSubId] = useState<string | null>(null);
+  const [reviewNoteInput, setReviewNoteInput] = useState("");
+
+  const openResponses = (formId: string) => {
+    setResponsesFormId(formId);
+    setSelectedSubId(null);
+    setReviewNoteInput("");
+    setIsFormBuilderOpen(false);
+  };
+  const closeResponses = () => {
+    setResponsesFormId(null);
+    setSelectedSubId(null);
+    setReviewNoteInput("");
+  };
+  const reviewSubmission = (subId: string, status: "approved" | "rejected" | "resubmit") => {
+    setSubmissions(prev => prev.map(s => s.id === subId ? { ...s, status, reviewNote: reviewNoteInput, reviewedAt: new Date().toISOString() } : s));
+    const sub = submissions.find(s => s.id === subId);
+    if (status === "approved") {
+      toast.success(`${sub?.respondentName} approved as mentor!`);
+    } else if (status === "rejected") {
+      toast.success(`Application from ${sub?.respondentName} rejected`);
+    } else {
+      toast.success(`Resubmission requested from ${sub?.respondentName}`);
+    }
+    setSelectedSubId(null);
+    setReviewNoteInput("");
+  };
+
+  // ── Drill into a profile — full-page replacement.
   if (selected) {
     return (
       <MentorDetailView
@@ -2006,7 +2116,7 @@ export function MentorsView({
         {TABS.map(t => (
           <button
             key={t.key}
-            onClick={() => setActiveTab(t.key)}
+            onClick={() => { setActiveTab(t.key); closeResponses(); }}
             className={cn(
               "flex items-center gap-2 px-4 py-2.5 text-sm font-semibold border-b-2 transition-colors",
               activeTab === t.key
@@ -2318,10 +2428,148 @@ export function MentorsView({
       {activeTab === "forms" && (() => {
         const userForms = formTemplates.filter(f => !INITIAL_FORM_TEMPLATES.some(t => t.id === f.id));
         const builtInTemplates = INITIAL_FORM_TEMPLATES;
+        const allForms = [...builtInTemplates, ...userForms];
         const isViewing = formViewMode === "view";
+        const responsesForm = allForms.find(f => f.id === responsesFormId);
+        const formSubs = submissions.filter(s => s.formId === responsesFormId);
+        const selectedSub = submissions.find(s => s.id === selectedSubId);
         return (
           <>
-            {isFormBuilderOpen ? (
+            {responsesFormId && responsesForm ? (
+              /* ── Responses View ── */
+              <div className="space-y-4">
+                {/* Header */}
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <button onClick={closeResponses} className="p-1.5 rounded-md hover:bg-muted transition-colors">
+                      <ArrowLeft className="w-4 h-4" />
+                    </button>
+                    <div>
+                      <h3 className="text-lg font-bold text-foreground">{responsesForm.name}</h3>
+                      <p className="text-xs text-muted-foreground">Responses &amp; review</p>
+                    </div>
+                  </div>
+                  <Chip tone="blue">{formSubs.length} response{formSubs.length !== 1 ? "s" : ""}</Chip>
+                </div>
+
+                {/* Analytics bar */}
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                  <StatCard label="Total Responses" value={formSubs.length} icon={FileText} tone="blue" />
+                  <StatCard label="Pending Review" value={formSubs.filter(s => s.status === "pending").length} icon={Clock} tone="amber" />
+                  <StatCard label="Approved" value={formSubs.filter(s => s.status === "approved").length} icon={CheckCircle2} tone="green" />
+                  <StatCard label="Rejected / Resubmit" value={formSubs.filter(s => s.status === "rejected" || s.status === "resubmit").length} icon={XCircle} tone="red" />
+                </div>
+
+                {selectedSub ? (
+                  /* ── Single submission detail ── */
+                  <div className="bg-card border border-border rounded-lg overflow-hidden">
+                    <div className="border-b border-border p-4 flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <button onClick={() => { setSelectedSubId(null); setReviewNoteInput(""); }} className="p-1.5 rounded-md hover:bg-muted transition-colors">
+                          <ArrowLeft className="w-4 h-4" />
+                        </button>
+                        <Avatar name={selectedSub.respondentName} tone="blue" />
+                        <div>
+                          <h4 className="text-sm font-bold text-foreground">{selectedSub.respondentName}</h4>
+                          <p className="text-xs text-muted-foreground">{selectedSub.respondentEmail} · Submitted {new Date(selectedSub.submittedAt).toLocaleDateString()}</p>
+                        </div>
+                      </div>
+                      <Chip tone={selectedSub.status === "approved" ? "green" : selectedSub.status === "rejected" ? "red" : selectedSub.status === "resubmit" ? "amber" : "slate"}>
+                        {selectedSub.status === "resubmit" ? "Resubmission Requested" : selectedSub.status.charAt(0).toUpperCase() + selectedSub.status.slice(1)}
+                      </Chip>
+                    </div>
+
+                    {/* Filled form answers */}
+                    <div className="p-6 max-w-[640px] mx-auto space-y-4">
+                      {responsesForm.fields.map(field => {
+                        const answer = selectedSub.answers[field.id];
+                        const displayAnswer = answer === undefined || answer === "" ? "—" : typeof answer === "boolean" ? (answer ? "Yes" : "No") : Array.isArray(answer) ? answer.join(", ") : String(answer);
+                        return (
+                          <div key={field.id} className="space-y-1">
+                            <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider">{field.label}</label>
+                            <p className="text-sm text-foreground bg-muted/30 rounded-md px-3 py-2.5 border border-border/50">{displayAnswer}</p>
+                          </div>
+                        );
+                      })}
+                    </div>
+
+                    {/* Review note from previous review */}
+                    {selectedSub.reviewNote && selectedSub.status !== "pending" && (
+                      <div className="mx-6 mb-4 p-3 rounded-md bg-amber-50 border border-amber-200">
+                        <p className="text-xs font-bold text-amber-800 mb-1">Review Note</p>
+                        <p className="text-sm text-amber-700">{selectedSub.reviewNote}</p>
+                      </div>
+                    )}
+
+                    {/* Action area */}
+                    <div className="border-t border-border p-4 space-y-3">
+                      <div>
+                        <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-1.5 block">Review Note <span className="text-xs font-normal normal-case text-muted-foreground">(optional — visible to applicant on rejection/resubmit)</span></label>
+                        <textarea
+                          rows={2}
+                          value={reviewNoteInput}
+                          onChange={e => setReviewNoteInput(e.target.value)}
+                          placeholder="Add a note for the applicant..."
+                          className="w-full px-3 py-2 border border-input text-sm bg-background focus:ring-1 focus:ring-ring outline-none resize-none rounded-md"
+                        />
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Button size="sm" onClick={() => reviewSubmission(selectedSub.id, "approved")} className="bg-green-600 hover:bg-green-700 text-white">
+                          <CheckCircle2 className="w-3.5 h-3.5" /> Approve as Mentor
+                        </Button>
+                        <Button size="sm" variant="outline" onClick={() => reviewSubmission(selectedSub.id, "resubmit")} className="text-amber-600 border-amber-300 hover:bg-amber-50">
+                          <RefreshCw className="w-3.5 h-3.5" /> Request Resubmission
+                        </Button>
+                        <Button size="sm" variant="outline" onClick={() => reviewSubmission(selectedSub.id, "rejected")} className="text-red-600 border-red-300 hover:bg-red-50">
+                          <XCircle className="w-3.5 h-3.5" /> Reject
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  /* ── Submissions list ── */
+                  <div className="bg-card border border-border rounded-lg overflow-hidden">
+                    <table className="w-full">
+                      <thead>
+                        <tr className="bg-muted/40 border-b border-border text-xs uppercase tracking-wider text-muted-foreground">
+                          <th className="px-4 py-3 text-left font-semibold">Applicant</th>
+                          <th className="px-4 py-3 text-left font-semibold">Email</th>
+                          <th className="px-4 py-3 text-left font-semibold">Status</th>
+                          <th className="px-4 py-3 text-left font-semibold">Submitted</th>
+                          <th className="px-4 py-3 text-right font-semibold">Action</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {formSubs.length === 0 ? (
+                          <tr><td colSpan={5} className="px-4 py-12 text-center text-sm text-muted-foreground">No responses yet for this form.</td></tr>
+                        ) : formSubs.map(sub => (
+                          <tr key={sub.id} className="border-b border-border last:border-0 hover:bg-muted/30 transition-colors cursor-pointer" onClick={() => { setSelectedSubId(sub.id); setReviewNoteInput(sub.reviewNote || ""); }}>
+                            <td className="px-4 py-3">
+                              <div className="flex items-center gap-2">
+                                <Avatar name={sub.respondentName} tone={sub.status === "approved" ? "green" : sub.status === "pending" ? "blue" : "amber"} size="sm" />
+                                <span className="text-sm font-semibold">{sub.respondentName}</span>
+                              </div>
+                            </td>
+                            <td className="px-4 py-3 text-sm text-muted-foreground">{sub.respondentEmail}</td>
+                            <td className="px-4 py-3">
+                              <Chip tone={sub.status === "approved" ? "green" : sub.status === "rejected" ? "red" : sub.status === "resubmit" ? "amber" : "slate"}>
+                                {sub.status === "resubmit" ? "Resubmit" : sub.status.charAt(0).toUpperCase() + sub.status.slice(1)}
+                              </Chip>
+                            </td>
+                            <td className="px-4 py-3 text-xs text-muted-foreground">{new Date(sub.submittedAt).toLocaleDateString()}</td>
+                            <td className="px-4 py-3 text-right">
+                              <Button variant="outline" size="sm" className="text-xs h-7" onClick={e => { e.stopPropagation(); setSelectedSubId(sub.id); setReviewNoteInput(sub.reviewNote || ""); }}>
+                                <Eye className="w-3 h-3" /> Review
+                              </Button>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </div>
+            ) : isFormBuilderOpen ? (
               /* ── Form Builder / Preview ── */
               <div className="bg-card border border-border rounded-lg overflow-hidden">
                 {/* Header */}
@@ -2544,7 +2792,7 @@ export function MentorsView({
                           ))}
                           {tpl.fields.length > 3 && <span className="text-[10px] font-medium px-1.5 py-0.5 rounded bg-muted text-muted-foreground">+{tpl.fields.length - 3}</span>}
                         </div>
-                        <div className="flex gap-1.5">
+                        <div className="flex gap-1.5 flex-wrap">
                           <Button size="sm" className="flex-1 text-xs h-8" onClick={() => openInviteWithForm(tpl.id)}>
                             <Send className="w-3.5 h-3.5" /> Send This Form
                           </Button>
@@ -2553,6 +2801,9 @@ export function MentorsView({
                           </Button>
                           <Button variant="outline" size="sm" className="text-xs h-8" onClick={() => openFormPreview(tpl)}>
                             <Eye className="w-3.5 h-3.5" /> Preview
+                          </Button>
+                          <Button variant="outline" size="sm" className="text-xs h-8" onClick={() => openResponses(tpl.id)}>
+                            <BarChart3 className="w-3.5 h-3.5" /> Responses {submissions.filter(s => s.formId === tpl.id).length > 0 && <span className="ml-0.5 px-1.5 py-0.5 bg-primary/10 text-primary rounded-full text-[10px] font-bold">{submissions.filter(s => s.formId === tpl.id).length}</span>}
                           </Button>
                         </div>
                       </div>
@@ -2581,7 +2832,7 @@ export function MentorsView({
                             ))}
                             {tpl.fields.length > 3 && <span className="text-[10px] font-medium px-1.5 py-0.5 rounded bg-muted text-muted-foreground">+{tpl.fields.length - 3}</span>}
                           </div>
-                          <div className="flex gap-1.5">
+                          <div className="flex gap-1.5 flex-wrap">
                             <Button size="sm" className="flex-1 text-xs h-8" variant="outline" onClick={() => openInviteWithForm(tpl.id)}>
                               <Send className="w-3.5 h-3.5" /> Send This Form
                             </Button>
@@ -2590,6 +2841,9 @@ export function MentorsView({
                             </Button>
                             <Button variant="outline" size="sm" className="text-xs h-8" onClick={() => openFormPreview(tpl)}>
                               <Eye className="w-3.5 h-3.5" /> Preview
+                            </Button>
+                            <Button variant="outline" size="sm" className="text-xs h-8" onClick={() => openResponses(tpl.id)}>
+                              <BarChart3 className="w-3.5 h-3.5" /> Responses {submissions.filter(s => s.formId === tpl.id).length > 0 && <span className="ml-0.5 px-1.5 py-0.5 bg-primary/10 text-primary rounded-full text-[10px] font-bold">{submissions.filter(s => s.formId === tpl.id).length}</span>}
                             </Button>
                           </div>
                         </div>
@@ -2641,7 +2895,7 @@ export function MentorsView({
                             ))}
                             {tpl.fields.length > 3 && <span className="text-[10px] font-medium px-1.5 py-0.5 rounded bg-muted text-muted-foreground">+{tpl.fields.length - 3}</span>}
                           </div>
-                          <div className="flex gap-1.5">
+                          <div className="flex gap-1.5 flex-wrap">
                             <Button size="sm" className="flex-1 text-xs h-8" onClick={() => openInviteWithForm(tpl.id)}>
                               <Send className="w-3.5 h-3.5" /> Send This Form
                             </Button>
@@ -2650,6 +2904,9 @@ export function MentorsView({
                             </Button>
                             <Button variant="outline" size="sm" className="text-xs h-8" onClick={() => openFormPreview(tpl)}>
                               <Eye className="w-3.5 h-3.5" /> Preview
+                            </Button>
+                            <Button variant="outline" size="sm" className="text-xs h-8" onClick={() => openResponses(tpl.id)}>
+                              <BarChart3 className="w-3.5 h-3.5" /> Responses {submissions.filter(s => s.formId === tpl.id).length > 0 && <span className="ml-0.5 px-1.5 py-0.5 bg-primary/10 text-primary rounded-full text-[10px] font-bold">{submissions.filter(s => s.formId === tpl.id).length}</span>}
                             </Button>
                           </div>
                         </div>
