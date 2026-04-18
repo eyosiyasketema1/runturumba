@@ -3062,11 +3062,20 @@ export function MentorsView({
               <textarea rows={3} value={invMessage} onChange={e => setInvMessage(e.target.value)} placeholder="Add a personal note to the invitation email..."
                 className="w-full px-3 py-2 border border-input text-sm bg-background focus:ring-1 focus:ring-ring outline-none resize-none" />
             </div>
-            <div className="flex justify-end gap-2 pt-2 border-t border-border">
-              <Button variant="outline" size="sm" onClick={() => setIsInviteOpen(false)}>Cancel</Button>
-              <Button size="sm" disabled={invEmails.length === 0 || !invFormId} onClick={sendInvitation}>
-                <Mail className="w-3.5 h-3.5" /> Send Invitation
-              </Button>
+            <div className="flex items-center justify-between pt-2 border-t border-border">
+              <div>
+                {invFormId && (
+                  <Button variant="outline" size="sm" onClick={() => { navigator.clipboard.writeText(`${window.location.origin}/forms/${invFormId}`); toast.success("Link copied!"); }}>
+                    <Link2 className="w-3.5 h-3.5" /> Copy Form Link
+                  </Button>
+                )}
+              </div>
+              <div className="flex items-center gap-2">
+                <Button variant="outline" size="sm" onClick={() => setIsInviteOpen(false)}>Cancel</Button>
+                <Button size="sm" disabled={invEmails.length === 0 || !invFormId} onClick={sendInvitation} className={invEmails.length === 0 || !invFormId ? "opacity-50 cursor-not-allowed" : ""}>
+                  <Mail className="w-3.5 h-3.5" /> Send Invitation
+                </Button>
+              </div>
             </div>
           </div>
         </Modal>
