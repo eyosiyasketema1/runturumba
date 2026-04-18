@@ -1819,6 +1819,7 @@ export function MentorsView({
   const [builderName, setBuilderName] = useState("");
   const [builderSpecialty, setBuilderSpecialty] = useState("");
   const [dragIdx, setDragIdx] = useState<number | null>(null);
+  const [showBrowseTemplates, setShowBrowseTemplates] = useState(false);
 
   const addField = (type: FormFieldDef["type"]) => {
     setBuilderFields(prev => [...prev, { id: `f-${Date.now()}-${Math.random().toString(36).slice(2,5)}`, type, label: "", required: false, options: type === "select" || type === "checkbox_group" ? ["Option 1"] : undefined }]);
@@ -2250,7 +2251,8 @@ export function MentorsView({
       {activeTab === "forms" && (() => {
         const userForms = formTemplates.filter(f => f.id.startsWith("tpl-") && !INITIAL_FORM_TEMPLATES.some(t => t.id === f.id));
         const builtInTemplates = INITIAL_FORM_TEMPLATES;
-        const [showBrowse, setShowBrowse] = React.useState(false);
+        const showBrowse = showBrowseTemplates;
+        const setShowBrowse = setShowBrowseTemplates;
         return (
           <>
             {isFormBuilderOpen ? (
