@@ -10,7 +10,7 @@ import {
   ArrowLeft, Zap, Send, Clock, GitBranch, List, Sparkles, Bell,
   Plus, Save, Flag, CheckCircle2, Webhook, Copy, Trash2, AlertCircle,
   ChevronDown, ChevronRight, Globe, LayoutTemplate, BookOpen, Heart,
-  Users, GraduationCap, Church, Search, X
+  Users, GraduationCap, Church, Search, X, ListOrdered, FileText
 } from "lucide-react";
 import {
   cn, type Webhook as WebhookType, formatTimeAgo, copyToClipboard
@@ -28,7 +28,7 @@ import { toast } from "sonner";
 // Node type catalogue — palette, colors, and default content per type.
 // ---------------------------------------------------------------------------
 
-type NodeType = "trigger" | "send_message" | "wait" | "condition" | "menu" | "ai_personalize" | "action" | "key_milestone" | "milestone";
+type NodeType = "trigger" | "send_message" | "wait" | "condition" | "menu" | "ai_personalize" | "action" | "key_milestone" | "milestone" | "sequence" | "content";
 
 type NodeData = {
   type: NodeType;
@@ -52,6 +52,8 @@ const NODE_TYPES: { id: NodeType; label: string; icon: any; bg: string; headerBg
   { id: "action",         label: "Action / Notify", icon: Bell,      bg: "bg-white",  headerBg: "bg-rose-500",     border: "border-rose-200" },
   { id: "key_milestone",  label: "Key Milestone",   icon: Flag,          bg: "bg-white",  headerBg: "bg-teal-500",     border: "border-teal-200" },
   { id: "milestone",      label: "Milestone",       icon: CheckCircle2,  bg: "bg-white",  headerBg: "bg-cyan-500",     border: "border-cyan-200" },
+  { id: "sequence",       label: "Sequence",        icon: ListOrdered,   bg: "bg-white",  headerBg: "bg-emerald-500",  border: "border-emerald-200" },
+  { id: "content",        label: "Content",         icon: FileText,      bg: "bg-white",  headerBg: "bg-sky-500",      border: "border-sky-200" },
 ];
 
 const getTypeConfig = (t: NodeType) => NODE_TYPES.find(n => n.id === t)!;
@@ -567,6 +569,8 @@ function FlowBuilderInner({
             : type === "ai_personalize" ? "Claude will pick the best content for each seeker."
             : type === "key_milestone" ? "Define a key milestone that marks a major faith journey stage (e.g. Baptism, First Bible Study)."
             : type === "milestone" ? "Track a milestone checkpoint in the seeker's journey (e.g. Completed Week 1, Attended Group)."
+            : type === "sequence" ? "Run a series of steps in order (e.g. Week 1 → Week 2 → Week 3 devotional series)."
+            : type === "content" ? "Deliver content to the seeker (e.g. devotional, video, article, or Bible study material)."
             : "Notify mentor or run an action.",
         ...(type === "condition" ? { branches: [{ label: "Yes", tone: "yes" }, { label: "No", tone: "no" }] } : {}),
         ...(type === "menu" ? { choices: [{ label: "Option 1", dot: "bg-violet-500" }, { label: "Option 2", dot: "bg-blue-500" }] } : {}),
@@ -799,7 +803,7 @@ function FlowBuilderInner({
                 const map: Record<NodeType, string> = {
                   trigger: "#6366f1", send_message: "#3b82f6", wait: "#f59e0b",
                   condition: "#f97316", menu: "#8b5cf6", ai_personalize: "#ec4899", action: "#f43f5e",
-                  key_milestone: "#14b8a6", milestone: "#06b6d4",
+                  key_milestone: "#14b8a6", milestone: "#06b6d4", sequence: "#10b981", content: "#0ea5e9",
                 };
                 return map[cfg.id];
               }}
