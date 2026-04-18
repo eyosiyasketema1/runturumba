@@ -1998,15 +1998,13 @@ export function MentorsView({
             {isNewGroupOpen && (
               <Modal isOpen onClose={() => setIsNewGroupOpen(false)} title="Create Group" size="lg">
                 <div className="space-y-4">
-                  <div className="grid grid-cols-2 gap-3">
-                    <div>
-                      <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-1.5 block">Group Name</label>
-                      <Input value={editGroupName} onChange={e => setEditGroupName(e.target.value)} placeholder="e.g. Youth Ministry" />
-                    </div>
-                    <div>
-                      <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-1.5 block">Description</label>
-                      <Input value={editGroupDesc} onChange={e => setEditGroupDesc(e.target.value)} placeholder="Brief description of this group" />
-                    </div>
+                  <div>
+                    <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-1.5 block">Group Name</label>
+                    <Input value={editGroupName} onChange={e => setEditGroupName(e.target.value)} placeholder="e.g. Youth Ministry" />
+                  </div>
+                  <div>
+                    <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-1.5 block">Description</label>
+                    <Input value={editGroupDesc} onChange={e => setEditGroupDesc(e.target.value)} placeholder="Brief description of this group" />
                   </div>
                   <div>
                     <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-1.5 block">Icon</label>
@@ -2050,7 +2048,7 @@ export function MentorsView({
                         </div>
                       </div>
                     </div>
-                    <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-3">
                       <div>
                         <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-1.5 block">Name</label>
                         <Input value={editGroupName} onChange={e => setEditGroupName(e.target.value)} />
