@@ -1673,15 +1673,39 @@ export function MentorsView({
   const [mentorGroups, setMentorGroups] = useState<MentorGroup[]>(INITIAL_MENTOR_GROUPS);
   const [selectedGroupId, setSelectedGroupId] = useState<string | null>(null);
   const [isNewGroupOpen, setIsNewGroupOpen] = useState(false);
-  const [newGroupName, setNewGroupName] = useState("");
-  const [newGroupDesc, setNewGroupDesc] = useState("");
-  const [newGroupIcon, setNewGroupIcon] = useState("Heart");
+  // Shared editing fields for both create & manage modals
+  const [editGroupName, setEditGroupName] = useState("");
+  const [editGroupDesc, setEditGroupDesc] = useState("");
+  const [editGroupIcon, setEditGroupIcon] = useState("Heart");
+  const [groupMemberSearch, setGroupMemberSearch] = useState("");
 
+  const openManageGroup = (g: MentorGroup) => {
+    setSelectedGroupId(g.id);
+    setEditGroupName(g.name);
+    setEditGroupDesc(g.description);
+    setEditGroupIcon(g.icon);
+    setGroupMemberSearch("");
+  };
+  const closeManageGroup = () => {
+    setSelectedGroupId(null);
+    setEditGroupName(""); setEditGroupDesc(""); setEditGroupIcon("Heart"); setGroupMemberSearch("");
+  };
+  const openNewGroup = () => {
+    setSelectedGroupId(null);
+    setEditGroupName(""); setEditGroupDesc(""); setEditGroupIcon("Heart"); setGroupMemberSearch("");
+    setIsNewGroupOpen(true);
+  };
   const handleCreateGroup = () => {
-    if (!newGroupName.trim()) return;
-    setMentorGroups(prev => [...prev, { id: `grp-${Date.now()}`, name: newGroupName.trim(), description: newGroupDesc.trim(), icon: newGroupIcon, memberIds: [] }]);
-    setNewGroupName(""); setNewGroupDesc(""); setNewGroupIcon("Heart"); setIsNewGroupOpen(false);
-    toast.success(`Group "${newGroupName}" created`);
+    if (!editGroupName.trim()) return;
+    setMentorGroups(prev => [...prev, { id: `grp-${Date.now()}`, name: editGroupName.trim(), description: editGroupDesc.trim(), icon: editGroupIcon, memberIds: [] }]);
+    setIsNewGroupOpen(false);
+    setEditGroupName(""); setEditGroupDesc(""); setEditGroupIcon("Heart");
+    toast.success(`Group "${editGroupName}" created`);
+  };
+  const saveGroupEdits = () => {
+    if (!selectedGroupId || !editGroupName.trim()) return;
+    setMentorGroups(prev => prev.map(g => g.id === selectedGroupId ? { ...g, name: editGroupName.trim(), description: editGroupDesc.trim(), icon: editGroupIcon } : g));
+    toast.success("Group updated");
   };
   const toggleMentorInGroup = (groupId: string, mentorId: string) => {
     setMentorGroups(prev => prev.map(g => g.id === groupId
@@ -1691,7 +1715,7 @@ export function MentorsView({
   };
   const deleteGroup = (groupId: string) => {
     setMentorGroups(prev => prev.filter(g => g.id !== groupId));
-    if (selectedGroupId === groupId) setSelectedGroupId(null);
+    closeManageGroup();
     toast.success("Group deleted");
   };
 
@@ -1889,19 +1913,25 @@ export function MentorsView({
       )}
 
       {/* ═══════════════ TAB: GROUPS ═══════════════ */}
-      {activeTab === "groups" && (
-        <>
-          {/* Compact card grid */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
-            {mentorGroups.map(g => {
-              const Icon = GROUP_ICON_MAP[g.icon] || Users;
-              const members = mentors.filter(m => g.memberIds.includes(m.id));
-              const isManaging = selectedGroupId === g.id;
-              return (
-                <div key={g.id} className={cn("bg-card border rounded-lg transition-all", isManaging ? "border-primary ring-1 ring-primary/20" : "border-border hover:border-foreground/15")}>
-                  <div className="p-4">
+      {activeTab === "groups" && (() => {
+        const managingGroup = mentorGroups.find(g => g.id === selectedGroupId) || null;
+        const filteredMentorsForGroup = mentors.filter(m => {
+          const q = groupMemberSearch.toLowerCase();
+          return !q || m.name.toLowerCase().includes(q) || m.specialty.toLowerCase().includes(q);
+        });
+        return (
+          <>
+            {/* Card grid */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
+              {mentorGroups.map(g => {
+                const Icon = GROUP_ICON_MAP[g.icon] || Users;
+                const members = mentors.filter(m => g.memberIds.includes(m.id));
+                return (
+                  <button key={g.id} onClick={() => openManageGroup(g)}
+                    className="bg-card border border-border rounded-lg p-4 text-left hover:border-foreground/15 hover:shadow-sm transition-all group"
+                  >
                     <div className="flex items-start gap-3 mb-3">
-                      <div className={cn("w-10 h-10 rounded-lg flex items-center justify-center shrink-0", isManaging ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground")}>
+                      <div className="w-10 h-10 rounded-lg flex items-center justify-center shrink-0 bg-muted text-muted-foreground group-hover:bg-primary/10 group-hover:text-primary transition-colors">
                         <Icon className="w-5 h-5" />
                       </div>
                       <div className="flex-1 min-w-0">
@@ -1909,123 +1939,157 @@ export function MentorsView({
                         <p className="text-xs text-muted-foreground line-clamp-1">{g.description}</p>
                       </div>
                     </div>
-
-                    {/* Member avatar stack */}
                     <div className="flex items-center justify-between">
-                      <div className="flex items-center">
-                        {members.length === 0 ? (
-                          <span className="text-xs text-muted-foreground">No members</span>
-                        ) : (
-                          <div className="flex -space-x-2">
-                            {members.slice(0, 4).map(m => (
-                              <div key={m.id} className={cn("w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-bold ring-2 ring-card",
-                                { "bg-blue-100 text-blue-700": m.avatarTone === "blue", "bg-violet-100 text-violet-700": m.avatarTone === "purple", "bg-rose-100 text-rose-700": m.avatarTone === "rose", "bg-amber-100 text-amber-700": m.avatarTone === "amber", "bg-emerald-100 text-emerald-700": m.avatarTone === "green", "bg-slate-200 text-slate-700": m.avatarTone === "slate" }
-                              )} title={m.name}>
-                                {m.name.split(" ").map(n => n[0]).slice(0, 2).join("").toUpperCase()}
-                              </div>
-                            ))}
-                            {members.length > 4 && (
-                              <div className="w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-bold ring-2 ring-card bg-muted text-muted-foreground">
-                                +{members.length - 4}
-                              </div>
-                            )}
-                          </div>
-                        )}
+                      {members.length === 0 ? (
+                        <span className="text-xs text-muted-foreground">No members</span>
+                      ) : (
+                        <div className="flex -space-x-2">
+                          {members.slice(0, 5).map(m => (
+                            <div key={m.id} className={cn("w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-bold ring-2 ring-card",
+                              { "bg-blue-100 text-blue-700": m.avatarTone === "blue", "bg-violet-100 text-violet-700": m.avatarTone === "purple", "bg-rose-100 text-rose-700": m.avatarTone === "rose", "bg-amber-100 text-amber-700": m.avatarTone === "amber", "bg-emerald-100 text-emerald-700": m.avatarTone === "green", "bg-slate-200 text-slate-700": m.avatarTone === "slate" }
+                            )} title={m.name}>
+                              {m.name.split(" ").map(n => n[0]).slice(0, 2).join("").toUpperCase()}
+                            </div>
+                          ))}
+                          {members.length > 5 && (
+                            <div className="w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-bold ring-2 ring-card bg-muted text-muted-foreground">+{members.length - 5}</div>
+                          )}
+                        </div>
+                      )}
+                      <span className="text-xs font-semibold text-muted-foreground tabular-nums">{g.memberIds.length} {g.memberIds.length === 1 ? "mentor" : "mentors"}</span>
+                    </div>
+                  </button>
+                );
+              })}
+
+              {/* Add group card */}
+              <button onClick={openNewGroup}
+                className="border-2 border-dashed border-border rounded-lg flex flex-col items-center justify-center gap-2 py-10 text-muted-foreground hover:border-primary/40 hover:text-primary transition-colors min-h-[140px]"
+              >
+                <Plus className="w-5 h-5" />
+                <span className="text-xs font-semibold">New Group</span>
+              </button>
+            </div>
+
+            {/* ── Create Group Modal ── */}
+            {isNewGroupOpen && (
+              <Modal isOpen onClose={() => setIsNewGroupOpen(false)} title="Create Group" size="md">
+                <div className="space-y-4">
+                  <div>
+                    <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-1.5 block">Group Name</label>
+                    <Input value={editGroupName} onChange={e => setEditGroupName(e.target.value)} placeholder="e.g. Youth Ministry" />
+                  </div>
+                  <div>
+                    <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-1.5 block">Description</label>
+                    <Input value={editGroupDesc} onChange={e => setEditGroupDesc(e.target.value)} placeholder="Brief description of this group" />
+                  </div>
+                  <div>
+                    <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-1.5 block">Icon</label>
+                    <div className="flex flex-wrap gap-1.5">
+                      {Object.keys(GROUP_ICON_MAP).map(k => {
+                        const I = GROUP_ICON_MAP[k];
+                        return (
+                          <button key={k} onClick={() => setEditGroupIcon(k)} className={cn("w-9 h-9 rounded-sm flex items-center justify-center border transition-colors", editGroupIcon === k ? "border-primary bg-primary/10 text-primary" : "border-border text-muted-foreground hover:border-primary/40")}>
+                            <I className="w-4 h-4" />
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                  <div className="flex justify-end gap-2 pt-2 border-t border-border">
+                    <Button variant="outline" size="sm" onClick={() => setIsNewGroupOpen(false)}>Cancel</Button>
+                    <Button size="sm" disabled={!editGroupName.trim()} onClick={handleCreateGroup}><Plus className="w-3.5 h-3.5" /> Create</Button>
+                  </div>
+                </div>
+              </Modal>
+            )}
+
+            {/* ── Manage Group Modal ── */}
+            {managingGroup && (
+              <Modal isOpen onClose={closeManageGroup} title="Manage Group" size="lg">
+                <div className="space-y-5">
+                  {/* Editable group details */}
+                  <div className="space-y-3">
+                    <div className="flex items-start gap-3">
+                      <div>
+                        <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-1.5 block">Icon</label>
+                        <div className="flex flex-wrap gap-1">
+                          {Object.keys(GROUP_ICON_MAP).map(k => {
+                            const I = GROUP_ICON_MAP[k];
+                            return (
+                              <button key={k} onClick={() => setEditGroupIcon(k)} className={cn("w-8 h-8 rounded-sm flex items-center justify-center border transition-colors", editGroupIcon === k ? "border-primary bg-primary/10 text-primary" : "border-border text-muted-foreground hover:border-primary/40")}>
+                                <I className="w-3.5 h-3.5" />
+                              </button>
+                            );
+                          })}
+                        </div>
                       </div>
-                      <span className="text-xs font-semibold text-muted-foreground tabular-nums">{g.memberIds.length}</span>
+                    </div>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-1.5 block">Name</label>
+                        <Input value={editGroupName} onChange={e => setEditGroupName(e.target.value)} />
+                      </div>
+                      <div>
+                        <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-1.5 block">Description</label>
+                        <Input value={editGroupDesc} onChange={e => setEditGroupDesc(e.target.value)} />
+                      </div>
+                    </div>
+                    {/* Save details if changed */}
+                    {(editGroupName !== managingGroup.name || editGroupDesc !== managingGroup.description || editGroupIcon !== managingGroup.icon) && (
+                      <Button size="sm" onClick={saveGroupEdits}>Save Changes</Button>
+                    )}
+                  </div>
+
+                  {/* Members section */}
+                  <div className="border-t border-border pt-4">
+                    <div className="flex items-center justify-between mb-3">
+                      <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Members ({managingGroup.memberIds.length})</p>
+                      <div className="relative w-[200px]">
+                        <Search className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none" />
+                        <Input value={groupMemberSearch} onChange={e => setGroupMemberSearch(e.target.value)} placeholder="Search mentors..." className="pl-8 h-8 text-xs" />
+                      </div>
+                    </div>
+
+                    <div className="max-h-[300px] overflow-y-auto space-y-0.5 border border-border rounded-lg p-1">
+                      {filteredMentorsForGroup.map(m => {
+                        const isMember = managingGroup.memberIds.includes(m.id);
+                        return (
+                          <label key={m.id} className={cn(
+                            "flex items-center gap-3 px-3 py-2.5 rounded-md cursor-pointer transition-colors",
+                            isMember ? "bg-primary/8" : "hover:bg-muted/40"
+                          )}>
+                            <input type="checkbox" checked={isMember} onChange={() => toggleMentorInGroup(managingGroup.id, m.id)}
+                              className="w-4 h-4 rounded border-border accent-primary shrink-0"
+                            />
+                            <Avatar name={m.name} tone={m.avatarTone} />
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm font-semibold text-foreground truncate">{m.name}</p>
+                              <p className="text-xs text-muted-foreground truncate">{m.specialty}</p>
+                            </div>
+                            <Chip tone={isMember ? "green" : "slate"}>{isMember ? "In group" : "Not added"}</Chip>
+                          </label>
+                        );
+                      })}
+                      {filteredMentorsForGroup.length === 0 && (
+                        <p className="text-sm text-muted-foreground text-center py-6">No mentors match your search</p>
+                      )}
                     </div>
                   </div>
 
-                  {/* Action bar */}
-                  <div className="border-t border-border flex">
-                    <button onClick={() => setSelectedGroupId(isManaging ? null : g.id)}
-                      className={cn("flex-1 flex items-center justify-center gap-1.5 py-2 text-xs font-semibold transition-colors", isManaging ? "text-primary bg-primary/5" : "text-muted-foreground hover:text-foreground hover:bg-muted/40")}
-                    >
-                      <Users className="w-3.5 h-3.5" /> {isManaging ? "Close" : "Manage"}
-                    </button>
-                    <div className="w-px bg-border" />
-                    <button onClick={() => deleteGroup(g.id)}
-                      className="flex items-center justify-center gap-1.5 px-4 py-2 text-xs font-semibold text-muted-foreground hover:text-red-600 hover:bg-red-50/60 transition-colors"
-                    >
-                      <Trash2 className="w-3.5 h-3.5" />
-                    </button>
-                  </div>
-
-                  {/* Inline manage panel */}
-                  {isManaging && (
-                    <div className="border-t border-primary/20 bg-primary/[0.02] p-3 space-y-2">
-                      {/* Toggle each mentor with checkboxes */}
-                      <p className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">Toggle members</p>
-                      <div className="max-h-[180px] overflow-y-auto space-y-0.5">
-                        {mentors.map(m => {
-                          const isMember = g.memberIds.includes(m.id);
-                          return (
-                            <label key={m.id} className={cn("flex items-center gap-2.5 px-2.5 py-2 rounded-md cursor-pointer transition-colors", isMember ? "bg-primary/10" : "hover:bg-muted/40")}>
-                              <input type="checkbox" checked={isMember} onChange={() => toggleMentorInGroup(g.id, m.id)}
-                                className="w-3.5 h-3.5 rounded-sm border-border accent-primary"
-                              />
-                              <div className={cn("w-6 h-6 rounded-full flex items-center justify-center text-[9px] font-bold shrink-0",
-                                { "bg-blue-100 text-blue-700": m.avatarTone === "blue", "bg-violet-100 text-violet-700": m.avatarTone === "purple", "bg-rose-100 text-rose-700": m.avatarTone === "rose", "bg-amber-100 text-amber-700": m.avatarTone === "amber", "bg-emerald-100 text-emerald-700": m.avatarTone === "green", "bg-slate-200 text-slate-700": m.avatarTone === "slate" }
-                              )}>
-                                {m.name.split(" ").map(n => n[0]).slice(0, 2).join("").toUpperCase()}
-                              </div>
-                              <div className="flex-1 min-w-0">
-                                <p className="text-xs font-semibold text-foreground truncate">{m.name}</p>
-                                <p className="text-[11px] text-muted-foreground truncate">{m.specialty}</p>
-                              </div>
-                            </label>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  )}
-                </div>
-              );
-            })}
-
-            {/* "Add group" card */}
-            <button onClick={() => setIsNewGroupOpen(true)}
-              className="border-2 border-dashed border-border rounded-lg flex flex-col items-center justify-center gap-2 py-10 text-muted-foreground hover:border-primary/40 hover:text-primary transition-colors min-h-[160px]"
-            >
-              <Plus className="w-5 h-5" />
-              <span className="text-xs font-semibold">New Group</span>
-            </button>
-          </div>
-
-          {/* New Group Modal */}
-          {isNewGroupOpen && (
-            <Modal isOpen={isNewGroupOpen} onClose={() => setIsNewGroupOpen(false)} title="Create Group" size="md">
-              <div className="space-y-4">
-                <div>
-                  <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-1.5 block">Group Name</label>
-                  <Input value={newGroupName} onChange={e => setNewGroupName(e.target.value)} placeholder="e.g. Youth Ministry" />
-                </div>
-                <div>
-                  <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-1.5 block">Description</label>
-                  <Input value={newGroupDesc} onChange={e => setNewGroupDesc(e.target.value)} placeholder="Brief description of this group" />
-                </div>
-                <div>
-                  <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-1.5 block">Icon</label>
-                  <div className="flex flex-wrap gap-1.5">
-                    {Object.keys(GROUP_ICON_MAP).map(k => {
-                      const I = GROUP_ICON_MAP[k];
-                      return (
-                        <button key={k} onClick={() => setNewGroupIcon(k)} className={cn("w-9 h-9 rounded-sm flex items-center justify-center border transition-colors", newGroupIcon === k ? "border-primary bg-primary/10 text-primary" : "border-border text-muted-foreground hover:border-primary/40")}>
-                          <I className="w-4 h-4" />
-                        </button>
-                      );
-                    })}
+                  {/* Footer */}
+                  <div className="flex items-center justify-between pt-2 border-t border-border">
+                    <Button variant="outline" size="sm" onClick={() => deleteGroup(managingGroup.id)} className="text-red-600 hover:text-red-700 hover:bg-red-50">
+                      <Trash2 className="w-3.5 h-3.5" /> Delete Group
+                    </Button>
+                    <Button size="sm" onClick={closeManageGroup}>Done</Button>
                   </div>
                 </div>
-                <div className="flex justify-end gap-2 pt-2 border-t border-border">
-                  <Button variant="outline" size="sm" onClick={() => setIsNewGroupOpen(false)}>Cancel</Button>
-                  <Button size="sm" disabled={!newGroupName.trim()} onClick={handleCreateGroup}><Plus className="w-3.5 h-3.5" /> Create</Button>
-                </div>
-              </div>
-            </Modal>
-          )}
-        </>
-      )}
+              </Modal>
+            )}
+          </>
+        );
+      })()}
 
       {/* ═══════════════ TAB: FORMS ═══════════════ */}
       {activeTab === "forms" && (
