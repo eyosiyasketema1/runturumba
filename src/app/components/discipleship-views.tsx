@@ -2641,7 +2641,7 @@ export function MentorsView({
                             ))}
                             {tpl.fields.length > 3 && <span className="text-[10px] font-medium px-1.5 py-0.5 rounded bg-muted text-muted-foreground">+{tpl.fields.length - 3}</span>}
                           </div>
-                          <div className="flex gap-1.5 mb-2">
+                          <div className="flex gap-1.5">
                             <Button size="sm" className="flex-1 text-xs h-8" onClick={() => openInviteWithForm(tpl.id)}>
                               <Send className="w-3.5 h-3.5" /> Send This Form
                             </Button>
@@ -2650,16 +2650,6 @@ export function MentorsView({
                             </Button>
                             <Button variant="outline" size="sm" className="text-xs h-8" onClick={() => openFormPreview(tpl)}>
                               <Eye className="w-3.5 h-3.5" /> Preview
-                            </Button>
-                          </div>
-                          <div className="flex gap-1.5">
-                            <Button variant="outline" size="sm" className="text-xs h-7 flex-1" onClick={() => openFormEdit(tpl)}>
-                              <Edit2 className="w-3 h-3" /> Edit
-                            </Button>
-                            <Button variant="outline" size="sm" className="text-xs h-7 text-red-600 hover:text-red-700 hover:bg-red-50"
-                              onClick={() => { setFormTemplates(prev => prev.filter(f => f.id !== tpl.id)); toast.success("Form deleted"); }}
-                            >
-                              <Trash2 className="w-3 h-3" /> Delete
                             </Button>
                           </div>
                         </div>
