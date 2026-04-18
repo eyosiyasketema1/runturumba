@@ -2530,7 +2530,7 @@ export function MentorsView({
                         </div>
                         <div className="flex gap-1.5">
                           <Button size="sm" className="flex-1 text-xs h-8" onClick={() => openInviteWithForm(tpl.id)}>
-                            <Send className="w-3.5 h-3.5" /> Send This Template
+                            <Send className="w-3.5 h-3.5" /> Send This Form
                           </Button>
                           <Button variant="outline" size="sm" className="text-xs h-8" onClick={() => openFormPreview(tpl)}>
                             <Eye className="w-3.5 h-3.5" /> Preview
@@ -2564,7 +2564,7 @@ export function MentorsView({
                           </div>
                           <div className="flex gap-1.5">
                             <Button size="sm" className="flex-1 text-xs h-8" variant="outline" onClick={() => openInviteWithForm(tpl.id)}>
-                              <Send className="w-3.5 h-3.5" /> Send This Template
+                              <Send className="w-3.5 h-3.5" /> Send This Form
                             </Button>
                             <Button variant="outline" size="sm" className="text-xs h-8" onClick={() => openFormPreview(tpl)}>
                               <Eye className="w-3.5 h-3.5" /> Preview
@@ -2682,48 +2682,49 @@ export function MentorsView({
             </table>
           </div>
 
-          {/* Send Invitation Modal */}
-          {isInviteOpen && (
-            <Modal isOpen={isInviteOpen} onClose={() => setIsInviteOpen(false)} title="Send Mentor Invitation" size="lg">
-              <div className="space-y-4">
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-1.5 block">Name</label>
-                    <Input value={invName} onChange={e => setInvName(e.target.value)} placeholder="Mentor's name" />
-                  </div>
-                  <div>
-                    <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-1.5 block">Email <span className="text-red-500">*</span></label>
-                    <Input value={invEmail} onChange={e => setInvEmail(e.target.value)} placeholder="mentor@email.com" type="email" />
-                  </div>
-                </div>
-                <div>
-                  <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-1.5 block">Select Form <span className="text-red-500">*</span></label>
-                  <div className="max-h-[200px] overflow-y-auto border border-border rounded-sm">
-                    {formTemplates.map(f => (
-                      <button key={f.id} onClick={() => setInvFormId(f.id)}
-                        className={cn("w-full flex items-center justify-between px-3 py-2.5 text-left text-sm border-b border-border/50 last:border-0 transition-colors", invFormId === f.id ? "bg-primary/10 text-primary font-bold" : "hover:bg-muted/40")}
-                      >
-                        <div><p className="font-semibold">{f.name}</p><p className="text-xs text-muted-foreground">{f.specialty} · {f.fields.length} fields</p></div>
-                        {invFormId === f.id && <CheckCircle2 className="w-4 h-4 text-primary shrink-0" />}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-                <div>
-                  <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-1.5 block">Personal Message (optional)</label>
-                  <textarea rows={3} value={invMessage} onChange={e => setInvMessage(e.target.value)} placeholder="Add a personal note to the invitation email..."
-                    className="w-full px-3 py-2 border border-input text-sm bg-background focus:ring-1 focus:ring-ring outline-none resize-none" />
-                </div>
-                <div className="flex justify-end gap-2 pt-2 border-t border-border">
-                  <Button variant="outline" size="sm" onClick={() => setIsInviteOpen(false)}>Cancel</Button>
-                  <Button size="sm" disabled={!invEmail.trim() || !invFormId} onClick={sendInvitation}>
-                    <Mail className="w-3.5 h-3.5" /> Send Invitation
-                  </Button>
-                </div>
-              </div>
-            </Modal>
-          )}
         </>
+      )}
+
+      {/* Send Invitation Modal — rendered outside tabs so it works from Forms or Invitations */}
+      {isInviteOpen && (
+        <Modal isOpen={isInviteOpen} onClose={() => setIsInviteOpen(false)} title="Send Mentor Invitation" size="lg">
+          <div className="space-y-4">
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-1.5 block">Name</label>
+                <Input value={invName} onChange={e => setInvName(e.target.value)} placeholder="Mentor's name" />
+              </div>
+              <div>
+                <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-1.5 block">Email <span className="text-red-500">*</span></label>
+                <Input value={invEmail} onChange={e => setInvEmail(e.target.value)} placeholder="mentor@email.com" type="email" />
+              </div>
+            </div>
+            <div>
+              <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-1.5 block">Select Form <span className="text-red-500">*</span></label>
+              <div className="max-h-[200px] overflow-y-auto border border-border rounded-sm">
+                {formTemplates.map(f => (
+                  <button key={f.id} onClick={() => setInvFormId(f.id)}
+                    className={cn("w-full flex items-center justify-between px-3 py-2.5 text-left text-sm border-b border-border/50 last:border-0 transition-colors", invFormId === f.id ? "bg-primary/10 text-primary font-bold" : "hover:bg-muted/40")}
+                  >
+                    <div><p className="font-semibold">{f.name}</p><p className="text-xs text-muted-foreground">{f.specialty} · {f.fields.length} fields</p></div>
+                    {invFormId === f.id && <CheckCircle2 className="w-4 h-4 text-primary shrink-0" />}
+                  </button>
+                ))}
+              </div>
+            </div>
+            <div>
+              <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-1.5 block">Personal Message (optional)</label>
+              <textarea rows={3} value={invMessage} onChange={e => setInvMessage(e.target.value)} placeholder="Add a personal note to the invitation email..."
+                className="w-full px-3 py-2 border border-input text-sm bg-background focus:ring-1 focus:ring-ring outline-none resize-none" />
+            </div>
+            <div className="flex justify-end gap-2 pt-2 border-t border-border">
+              <Button variant="outline" size="sm" onClick={() => setIsInviteOpen(false)}>Cancel</Button>
+              <Button size="sm" disabled={!invEmail.trim() || !invFormId} onClick={sendInvitation}>
+                <Mail className="w-3.5 h-3.5" /> Send Invitation
+              </Button>
+            </div>
+          </div>
+        </Modal>
       )}
 
       {/* Create + Edit share the same modal to keep the form logic in one place */}
