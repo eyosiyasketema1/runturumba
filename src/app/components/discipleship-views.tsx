@@ -6,7 +6,7 @@ import {
   Calendar, Download, Share2, Bell, ArrowRight, Flame, Droplets, UsersRound,
   TrendingUp, ChevronUp, MessageCircle, Languages, Filter as FilterIcon,
   GitBranch, Cross, Church, Baby, Headphones, Lightbulb, Handshake, Megaphone,
-  Home, Leaf, Sun, Shield, Crown, Waypoints
+  Home, Leaf, Sun, Shield, Crown, Waypoints, Link2
 } from "lucide-react";
 import {
   cn,
@@ -2545,6 +2545,9 @@ export function MentorsView({
                           <Button size="sm" className="flex-1 text-xs h-8" onClick={() => openInviteWithForm(tpl.id)}>
                             <Send className="w-3.5 h-3.5" /> Send This Form
                           </Button>
+                          <Button variant="outline" size="sm" className="text-xs h-8" onClick={() => { navigator.clipboard.writeText(`${window.location.origin}/forms/${tpl.id}`); toast.success("Link copied!"); }}>
+                            <Link2 className="w-3.5 h-3.5" /> Copy Link
+                          </Button>
                           <Button variant="outline" size="sm" className="text-xs h-8" onClick={() => openFormPreview(tpl)}>
                             <Eye className="w-3.5 h-3.5" /> Preview
                           </Button>
@@ -2578,6 +2581,9 @@ export function MentorsView({
                           <div className="flex gap-1.5">
                             <Button size="sm" className="flex-1 text-xs h-8" variant="outline" onClick={() => openInviteWithForm(tpl.id)}>
                               <Send className="w-3.5 h-3.5" /> Send This Form
+                            </Button>
+                            <Button variant="outline" size="sm" className="text-xs h-8" onClick={() => { navigator.clipboard.writeText(`${window.location.origin}/forms/${tpl.id}`); toast.success("Link copied!"); }}>
+                              <Link2 className="w-3.5 h-3.5" /> Copy Link
                             </Button>
                             <Button variant="outline" size="sm" className="text-xs h-8" onClick={() => openFormPreview(tpl)}>
                               <Eye className="w-3.5 h-3.5" /> Preview
@@ -2630,6 +2636,9 @@ export function MentorsView({
                           <div className="flex gap-1.5">
                             <Button size="sm" className="text-xs h-7 flex-1" onClick={() => openInviteWithForm(tpl.id)}>
                               <Send className="w-3 h-3" /> Send
+                            </Button>
+                            <Button variant="outline" size="sm" className="text-xs h-7" onClick={() => { navigator.clipboard.writeText(`${window.location.origin}/forms/${tpl.id}`); toast.success("Link copied!"); }}>
+                              <Link2 className="w-3 h-3" />
                             </Button>
                             <Button variant="outline" size="sm" className="text-xs h-7" onClick={() => openFormPreview(tpl)}>
                               <Eye className="w-3 h-3" /> Preview
