@@ -1904,31 +1904,44 @@ export function MentorsView({
   // ── Invitations state ──
   const [invitations, setInvitations] = useState<MentorInvitation[]>(INITIAL_INVITATIONS);
   const [isInviteOpen, setIsInviteOpen] = useState(false);
-  const [invEmail, setInvEmail] = useState("");
+  const [invEmails, setInvEmails] = useState<string[]>([]);
+  const [invEmailInput, setInvEmailInput] = useState("");
   const [invName, setInvName] = useState("");
   const [invFormId, setInvFormId] = useState("");
   const [invMessage, setInvMessage] = useState("");
 
+  const addInvEmail = () => {
+    const email = invEmailInput.trim();
+    if (!email) return;
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { toast.error("Invalid email address"); return; }
+    if (invEmails.includes(email)) { toast.error("Email already added"); return; }
+    setInvEmails(prev => [...prev, email]);
+    setInvEmailInput("");
+  };
+  const removeInvEmail = (email: string) => setInvEmails(prev => prev.filter(e => e !== email));
+
   const sendInvitation = () => {
-    if (!invEmail.trim() || !invFormId) { toast.error("Email and form selection are required"); return; }
+    if (invEmails.length === 0 || !invFormId) { toast.error("At least one email and form selection are required"); return; }
     const formName = formTemplates.find(f => f.id === invFormId)?.name ?? "Unknown";
-    setInvitations(prev => [{
-      id: `inv-${Date.now()}`,
-      email: invEmail.trim(),
-      name: invName.trim() || invEmail.trim(),
+    const newInvs = invEmails.map((email, i) => ({
+      id: `inv-${Date.now()}-${i}`,
+      email,
+      name: invName.trim() || email,
       formId: invFormId,
       formName,
       message: invMessage,
-      status: "sent",
+      status: "sent" as const,
       sentAt: new Date().toISOString(),
-    }, ...prev]);
-    setInvEmail(""); setInvName(""); setInvFormId(""); setInvMessage(""); setIsInviteOpen(false);
-    toast.success(`Invitation sent to ${invEmail}`);
+    }));
+    setInvitations(prev => [...newInvs, ...prev]);
+    setInvEmails([]); setInvEmailInput(""); setInvName(""); setInvFormId(""); setInvMessage(""); setIsInviteOpen(false);
+    toast.success(`Invitation sent to ${invEmails.length} recipient${invEmails.length > 1 ? "s" : ""}`);
   };
 
   const openInviteWithForm = (formId: string) => {
     setInvFormId(formId);
-    setInvEmail("");
+    setInvEmails([]);
+    setInvEmailInput("");
     setInvName("");
     setInvMessage("");
     setIsInviteOpen(true);
@@ -2689,15 +2702,34 @@ export function MentorsView({
       {isInviteOpen && (
         <Modal isOpen={isInviteOpen} onClose={() => setIsInviteOpen(false)} title="Send Mentor Invitation" size="lg">
           <div className="space-y-4">
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-1.5 block">Name</label>
-                <Input value={invName} onChange={e => setInvName(e.target.value)} placeholder="Mentor's name" />
+            <div>
+              <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-1.5 block">Name <span className="text-xs font-normal normal-case text-muted-foreground">(optional)</span></label>
+              <Input value={invName} onChange={e => setInvName(e.target.value)} placeholder="Mentor's name" />
+            </div>
+            <div>
+              <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-1.5 block">Email Addresses <span className="text-red-500">*</span></label>
+              <div className="flex gap-2">
+                <Input
+                  value={invEmailInput}
+                  onChange={e => setInvEmailInput(e.target.value)}
+                  onKeyDown={e => { if (e.key === "Enter") { e.preventDefault(); addInvEmail(); } }}
+                  placeholder="mentor@email.com"
+                  type="email"
+                  className="flex-1"
+                />
+                <Button variant="outline" size="sm" onClick={addInvEmail}>Add</Button>
               </div>
-              <div>
-                <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-1.5 block">Email <span className="text-red-500">*</span></label>
-                <Input value={invEmail} onChange={e => setInvEmail(e.target.value)} placeholder="mentor@email.com" type="email" />
-              </div>
+              {invEmails.length > 0 && (
+                <div className="flex flex-wrap gap-1.5 mt-2">
+                  {invEmails.map(email => (
+                    <span key={email} className="inline-flex items-center gap-1 px-2 py-1 bg-primary/10 text-primary text-xs font-medium rounded-full">
+                      {email}
+                      <button onClick={() => removeInvEmail(email)} className="hover:text-red-500 transition-colors"><X className="w-3 h-3" /></button>
+                    </span>
+                  ))}
+                </div>
+              )}
+              <p className="text-[11px] text-muted-foreground mt-1">Type an email and press Enter or click Add. You can send to multiple recipients.</p>
             </div>
             <div>
               <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-1.5 block">Select Form <span className="text-red-500">*</span></label>
@@ -2719,7 +2751,7 @@ export function MentorsView({
             </div>
             <div className="flex justify-end gap-2 pt-2 border-t border-border">
               <Button variant="outline" size="sm" onClick={() => setIsInviteOpen(false)}>Cancel</Button>
-              <Button size="sm" disabled={!invEmail.trim() || !invFormId} onClick={sendInvitation}>
+              <Button size="sm" disabled={invEmails.length === 0 || !invFormId} onClick={sendInvitation}>
                 <Mail className="w-3.5 h-3.5" /> Send Invitation
               </Button>
             </div>
