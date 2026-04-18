@@ -5,7 +5,8 @@ import {
   Clock, AlertCircle, Heart, BookOpen, HandHeart, Star, Globe, MapPin,
   Calendar, Download, Share2, Bell, ArrowRight, Flame, Droplets, UsersRound,
   TrendingUp, ChevronUp, MessageCircle, Languages, Filter as FilterIcon,
-  GitBranch
+  GitBranch, Cross, Church, Baby, Headphones, Lightbulb, Handshake, Megaphone,
+  Home, Leaf, Sun, Shield, Crown, Waypoints
 } from "lucide-react";
 import {
   cn,
@@ -1508,6 +1509,8 @@ type MentorInvitation = {
 const GROUP_ICON_MAP: Record<string, any> = {
   Heart, BookOpen, Star, Globe, Users, ShieldCheck, HandHeart,
   Flame, Droplets, Activity, UsersRound, UserCheck, Bell, Calendar,
+  Cross, Church, Baby, Headphones, Lightbulb, Handshake, Megaphone,
+  Home, Leaf, Sun, Shield, Crown, Waypoints, MessageCircle,
 };
 
 const INITIAL_MENTOR_GROUPS: MentorGroup[] = [
@@ -1973,15 +1976,17 @@ export function MentorsView({
 
             {/* ── Create Group Modal ── */}
             {isNewGroupOpen && (
-              <Modal isOpen onClose={() => setIsNewGroupOpen(false)} title="Create Group" size="md">
+              <Modal isOpen onClose={() => setIsNewGroupOpen(false)} title="Create Group" size="lg">
                 <div className="space-y-4">
-                  <div>
-                    <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-1.5 block">Group Name</label>
-                    <Input value={editGroupName} onChange={e => setEditGroupName(e.target.value)} placeholder="e.g. Youth Ministry" />
-                  </div>
-                  <div>
-                    <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-1.5 block">Description</label>
-                    <Input value={editGroupDesc} onChange={e => setEditGroupDesc(e.target.value)} placeholder="Brief description of this group" />
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-1.5 block">Group Name</label>
+                      <Input value={editGroupName} onChange={e => setEditGroupName(e.target.value)} placeholder="e.g. Youth Ministry" />
+                    </div>
+                    <div>
+                      <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-1.5 block">Description</label>
+                      <Input value={editGroupDesc} onChange={e => setEditGroupDesc(e.target.value)} placeholder="Brief description of this group" />
+                    </div>
                   </div>
                   <div>
                     <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-1.5 block">Icon</label>
@@ -2006,7 +2011,7 @@ export function MentorsView({
 
             {/* ── Manage Group Modal ── */}
             {managingGroup && (
-              <Modal isOpen onClose={closeManageGroup} title="Manage Group" size="lg">
+              <Modal isOpen onClose={closeManageGroup} title="Manage Group" size="2xl">
                 <div className="space-y-5">
                   {/* Editable group details */}
                   <div className="space-y-3">
@@ -2051,7 +2056,7 @@ export function MentorsView({
                       </div>
                     </div>
 
-                    <div className="max-h-[300px] overflow-y-auto space-y-0.5 border border-border rounded-lg p-1">
+                    <div className="max-h-[400px] overflow-y-auto space-y-0.5 border border-border rounded-lg p-1">
                       {filteredMentorsForGroup.map(m => {
                         const isMember = managingGroup.memberIds.includes(m.id);
                         return (
