@@ -1670,18 +1670,6 @@ export function MentorsView({
     return list;
   }, [mentors, query, status, exp, sort]);
 
-  // Drill into a profile — full-page replacement.
-  if (selected) {
-    return (
-      <MentorDetailView
-        mentor={selected}
-        onBack={() => setSelectedId(null)}
-        onEdit={() => { setEditingId(selected.id); setSelectedId(null); }}
-        onStatusChange={(s) => setMentors(list => list.map(x => x.id === selected.id ? { ...x, status: s, statusTone: s === "Active" ? "green" : s === "Retired" ? "slate" : "amber" } : x))}
-      />
-    );
-  }
-
   const totalActive     = mentors.filter(m => m.status === "Active").length;
   const avgLoad         = mentors.length === 0 ? 0 : Math.round(mentors.reduce((s, m) => s + m.load, 0) / mentors.length);
   const availableSlots  = mentors.reduce((acc, m) => {
@@ -1812,6 +1800,18 @@ export function MentorsView({
     setInvEmail(""); setInvName(""); setInvFormId(""); setInvMessage(""); setIsInviteOpen(false);
     toast.success(`Invitation sent to ${invEmail}`);
   };
+
+  // Drill into a profile — full-page replacement.
+  if (selected) {
+    return (
+      <MentorDetailView
+        mentor={selected}
+        onBack={() => setSelectedId(null)}
+        onEdit={() => { setEditingId(selected.id); setSelectedId(null); }}
+        onStatusChange={(s) => setMentors(list => list.map(x => x.id === selected.id ? { ...x, status: s, statusTone: s === "Active" ? "green" : s === "Retired" ? "slate" : "amber" } : x))}
+      />
+    );
+  }
 
   // ── Tab labels ──
   const TABS: { key: typeof activeTab; label: string; icon: any; count?: number }[] = [
