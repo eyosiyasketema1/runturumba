@@ -1507,6 +1507,7 @@ type FormFieldDef = {
 type MentorFormTemplate = {
   id: string;
   name: string;
+  description: string;
   specialty: string;
   fields: FormFieldDef[];
   submissions: number;
@@ -1573,7 +1574,7 @@ const FORM_FIELD_TYPES: { type: FormFieldDef["type"]; label: string; icon: any }
 
 const INITIAL_FORM_TEMPLATES: MentorFormTemplate[] = [
   {
-    id: "tpl-1", name: "General Mentor Application", specialty: "General",
+    id: "tpl-1", name: "General Mentor Application", description: "A comprehensive application form for prospective mentors covering their background, specialty, and testimony.", specialty: "General",
     fields: [
       { id: "f1", type: "text",     label: "Full Name",           required: true },
       { id: "f2", type: "email",    label: "Email Address",       required: true },
@@ -1586,7 +1587,7 @@ const INITIAL_FORM_TEMPLATES: MentorFormTemplate[] = [
     submissions: 12,
   },
   {
-    id: "tpl-2", name: "Youth Ministry Application", specialty: "Youth",
+    id: "tpl-2", name: "Youth Ministry Application", description: "Designed for those called to mentor young people, covering age groups and relevant topics.", specialty: "Youth",
     fields: [
       { id: "f1", type: "text",     label: "Full Name",           required: true },
       { id: "f2", type: "email",    label: "Email Address",       required: true },
@@ -1597,7 +1598,7 @@ const INITIAL_FORM_TEMPLATES: MentorFormTemplate[] = [
     submissions: 5,
   },
   {
-    id: "tpl-3", name: "Marriage Counseling Application", specialty: "Marriage",
+    id: "tpl-3", name: "Marriage Counseling Application", description: "For couples or individuals interested in marriage mentoring and pre-marital counseling.", specialty: "Marriage",
     fields: [
       { id: "f1", type: "text",     label: "Full Name",           required: true },
       { id: "f2", type: "email",    label: "Email Address",       required: true },
@@ -1611,7 +1612,7 @@ const INITIAL_FORM_TEMPLATES: MentorFormTemplate[] = [
 
 const BROWSE_TEMPLATES: MentorFormTemplate[] = [
   {
-    id: "browse-1", name: "Addiction Recovery Mentor", specialty: "Addiction Recovery",
+    id: "browse-1", name: "Addiction Recovery Mentor", description: "For mentors with experience or training in addiction recovery support.", specialty: "Addiction Recovery",
     fields: [
       { id: "b1f1", type: "text",     label: "Full Name",               required: true },
       { id: "b1f2", type: "email",    label: "Email Address",           required: true },
@@ -1623,7 +1624,7 @@ const BROWSE_TEMPLATES: MentorFormTemplate[] = [
     submissions: 0,
   },
   {
-    id: "browse-2", name: "Prayer Ministry Volunteer", specialty: "Prayer",
+    id: "browse-2", name: "Prayer Ministry Volunteer", description: "For those called to intercessory prayer and prayer ministry leadership.", specialty: "Prayer",
     fields: [
       { id: "b2f1", type: "text",     label: "Full Name",               required: true },
       { id: "b2f2", type: "email",    label: "Email",                   required: true },
@@ -1635,7 +1636,7 @@ const BROWSE_TEMPLATES: MentorFormTemplate[] = [
     submissions: 0,
   },
   {
-    id: "browse-3", name: "Leadership Pipeline", specialty: "Leadership",
+    id: "browse-3", name: "Leadership Pipeline", description: "Identify and develop emerging church leaders through structured mentoring.", specialty: "Leadership",
     fields: [
       { id: "b3f1", type: "text",     label: "Full Name",               required: true },
       { id: "b3f2", type: "email",    label: "Email",                   required: true },
@@ -1648,7 +1649,7 @@ const BROWSE_TEMPLATES: MentorFormTemplate[] = [
     submissions: 0,
   },
   {
-    id: "browse-4", name: "Family & Parenting Mentor", specialty: "Family",
+    id: "browse-4", name: "Family & Parenting Mentor", description: "For experienced parents willing to mentor families through various life stages.", specialty: "Family",
     fields: [
       { id: "b4f1", type: "text",     label: "Full Name",               required: true },
       { id: "b4f2", type: "email",    label: "Email",                   required: true },
@@ -1660,7 +1661,7 @@ const BROWSE_TEMPLATES: MentorFormTemplate[] = [
     submissions: 0,
   },
   {
-    id: "browse-5", name: "Grief & Loss Support", specialty: "Grief",
+    id: "browse-5", name: "Grief & Loss Support", description: "For those with counseling training or lived experience in grief and loss.", specialty: "Grief",
     fields: [
       { id: "b5f1", type: "text",     label: "Full Name",               required: true },
       { id: "b5f2", type: "email",    label: "Email",                   required: true },
@@ -1671,7 +1672,7 @@ const BROWSE_TEMPLATES: MentorFormTemplate[] = [
     submissions: 0,
   },
   {
-    id: "browse-6", name: "Worship Team Application", specialty: "Worship",
+    id: "browse-6", name: "Worship Team Application", description: "Application for musicians and worship leaders to join the worship ministry.", specialty: "Worship",
     fields: [
       { id: "b6f1", type: "text",     label: "Full Name",               required: true },
       { id: "b6f2", type: "email",    label: "Email",                   required: true },
@@ -1898,6 +1899,7 @@ export function MentorsView({
   const [editingFormId, setEditingFormId] = useState<string | null>(null); // null = creating new
   const [builderFields, setBuilderFields] = useState<FormFieldDef[]>([]);
   const [builderName, setBuilderName] = useState("");
+  const [builderDescription, setBuilderDescription] = useState("");
   const [builderSpecialty, setBuilderSpecialty] = useState("");
   const [dragIdx, setDragIdx] = useState<number | null>(null);
   const [showBrowseTemplates, setShowBrowseTemplates] = useState(false);
@@ -1921,7 +1923,7 @@ export function MentorsView({
   };
   const closeFormBuilder = () => {
     setIsFormBuilderOpen(false); setEditingFormId(null); setFormViewMode("edit");
-    setBuilderFields([]); setBuilderName(""); setBuilderSpecialty("");
+    setBuilderFields([]); setBuilderName(""); setBuilderDescription(""); setBuilderSpecialty("");
   };
   const saveForm = () => {
     if (!builderName.trim()) { toast.error("Form name is required"); return; }
@@ -1930,13 +1932,14 @@ export function MentorsView({
     if (emptyLabels.length > 0) { toast.error(`${emptyLabels.length} field${emptyLabels.length > 1 ? "s" : ""} missing a label`); return; }
     if (editingFormId) {
       // Update existing
-      setFormTemplates(prev => prev.map(f => f.id === editingFormId ? { ...f, name: builderName.trim(), specialty: builderSpecialty || "General", fields: builderFields } : f));
+      setFormTemplates(prev => prev.map(f => f.id === editingFormId ? { ...f, name: builderName.trim(), description: builderDescription.trim(), specialty: builderSpecialty || "General", fields: builderFields } : f));
       toast.success(`Form "${builderName}" updated`);
     } else {
       // Create new
       const newTpl: MentorFormTemplate = {
         id: `tpl-${Date.now()}`,
         name: builderName.trim(),
+        description: builderDescription.trim(),
         specialty: builderSpecialty || "General",
         fields: builderFields,
         submissions: 0,
@@ -1955,6 +1958,7 @@ export function MentorsView({
   const openFormPreview = (tpl: MentorFormTemplate) => {
     setEditingFormId(tpl.id);
     setBuilderName(tpl.name);
+    setBuilderDescription(tpl.description || "");
     setBuilderSpecialty(tpl.specialty);
     setBuilderFields(tpl.fields.map(f => ({ ...f })));
     setFormViewMode("view");
@@ -1963,6 +1967,7 @@ export function MentorsView({
   const openFormEdit = (tpl: MentorFormTemplate) => {
     setEditingFormId(tpl.id);
     setBuilderName(tpl.name);
+    setBuilderDescription(tpl.description || "");
     setBuilderSpecialty(tpl.specialty);
     setBuilderFields(tpl.fields.map(f => ({ ...f })));
     setFormViewMode("edit");
@@ -1970,13 +1975,14 @@ export function MentorsView({
   };
   const openNewForm = () => {
     setEditingFormId(null);
-    setBuilderFields([]); setBuilderName(""); setBuilderSpecialty("");
+    setBuilderFields([]); setBuilderName(""); setBuilderDescription(""); setBuilderSpecialty("");
     setFormViewMode("edit");
     setIsFormBuilderOpen(true);
   };
   const loadTemplate = (tpl: MentorFormTemplate) => {
     setEditingFormId(null);
     setBuilderName(tpl.name + " (copy)");
+    setBuilderDescription(tpl.description || "");
     setBuilderSpecialty(tpl.specialty);
     setBuilderFields(tpl.fields.map(f => ({ ...f, id: `f-${Date.now()}-${Math.random().toString(36).slice(2,5)}` })));
     setFormViewMode("edit");
@@ -2091,10 +2097,17 @@ export function MentorsView({
         subtitle="Manage mentor profiles, groups, forms, and invitations"
         actions={(
           <div className="flex items-center gap-2">
-            {activeTab === "all" && canCreate && (
-              <Button onClick={() => setIsNewOpen(true)}>
-                <Plus className="w-4 h-4" /> New Mentor
-              </Button>
+            {activeTab === "all" && (
+              <>
+                {canCreate && (
+                  <Button variant="outline" onClick={() => setIsNewOpen(true)}>
+                    <Plus className="w-4 h-4" /> New Mentor
+                  </Button>
+                )}
+                <Button onClick={() => setIsInviteOpen(true)}>
+                  <Mail className="w-4 h-4" /> Send Invitation
+                </Button>
+              </>
             )}
             {activeTab === "groups" && (
               <Button onClick={() => setIsNewGroupOpen(true)}>
@@ -2604,16 +2617,22 @@ export function MentorsView({
                 <div className="border-b border-border p-4 flex items-center justify-between">
                   <div className="flex items-center gap-3 flex-1">
                     {isViewing ? (
-                      <div className="flex items-center gap-3">
-                        <h3 className="text-lg font-bold text-foreground">{builderName}</h3>
-                        <Chip tone="blue">{builderSpecialty || "General"}</Chip>
-                        <Chip tone="slate">{builderFields.length} fields</Chip>
+                      <div>
+                        <div className="flex items-center gap-3">
+                          <h3 className="text-lg font-bold text-foreground">{builderName}</h3>
+                          <Chip tone="blue">{builderSpecialty || "General"}</Chip>
+                          <Chip tone="slate">{builderFields.length} fields</Chip>
+                        </div>
+                        {builderDescription && <p className="text-xs text-muted-foreground mt-1">{builderDescription}</p>}
                       </div>
                     ) : (
-                      <>
-                        <Input value={builderName} onChange={e => setBuilderName(e.target.value)} placeholder="Form name..." className="max-w-[280px] font-bold" />
-                        <Input value={builderSpecialty} onChange={e => setBuilderSpecialty(e.target.value)} placeholder="Specialty (e.g. Youth)" className="max-w-[180px]" />
-                      </>
+                      <div className="space-y-2 flex-1">
+                        <div className="flex items-center gap-3">
+                          <Input value={builderName} onChange={e => setBuilderName(e.target.value)} placeholder="Form name..." className="max-w-[280px] font-bold" />
+                          <Input value={builderSpecialty} onChange={e => setBuilderSpecialty(e.target.value)} placeholder="Specialty (e.g. Youth)" className="max-w-[180px]" />
+                        </div>
+                        <Input value={builderDescription} onChange={e => setBuilderDescription(e.target.value)} placeholder="Brief description of this form..." className="text-sm" />
+                      </div>
                     )}
                   </div>
                   <div className="flex items-center gap-2">
