@@ -1891,104 +1891,105 @@ export function MentorsView({
       {/* ═══════════════ TAB: GROUPS ═══════════════ */}
       {activeTab === "groups" && (
         <>
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
-            <StatCard label="Total Groups" value={mentorGroups.length} icon={UsersRound} tone="blue" />
-            <StatCard label="Mentors in Groups" value={new Set(mentorGroups.flatMap(g => g.memberIds)).size} icon={Users} tone="green" />
-            <StatCard label="Avg. Group Size" value={mentorGroups.length === 0 ? 0 : Math.round(mentorGroups.reduce((s, g) => s + g.memberIds.length, 0) / mentorGroups.length)} icon={Activity} tone="amber" />
-            <StatCard label="Unassigned" value={mentors.filter(m => !mentorGroups.some(g => g.memberIds.includes(m.id))).length} icon={AlertCircle} tone="purple" subtitle="not in any group" />
-          </div>
-
-          <div className="flex gap-4">
-            {/* Group list */}
-            <div className="w-[300px] shrink-0 space-y-2">
-              {mentorGroups.map(g => {
-                const Icon = GROUP_ICON_MAP[g.icon] || Users;
-                return (
-                  <button key={g.id} onClick={() => setSelectedGroupId(g.id)}
-                    className={cn(
-                      "w-full flex items-center gap-3 p-3 border rounded-sm text-left transition-all",
-                      selectedGroupId === g.id ? "border-primary bg-primary/5" : "border-border bg-card hover:border-primary/40"
-                    )}
-                  >
-                    <div className={cn("w-9 h-9 rounded-sm flex items-center justify-center shrink-0", selectedGroupId === g.id ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground")}>
-                      <Icon className="w-4 h-4" />
+          {/* Compact card grid */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
+            {mentorGroups.map(g => {
+              const Icon = GROUP_ICON_MAP[g.icon] || Users;
+              const members = mentors.filter(m => g.memberIds.includes(m.id));
+              const isManaging = selectedGroupId === g.id;
+              return (
+                <div key={g.id} className={cn("bg-card border rounded-lg transition-all", isManaging ? "border-primary ring-1 ring-primary/20" : "border-border hover:border-foreground/15")}>
+                  <div className="p-4">
+                    <div className="flex items-start gap-3 mb-3">
+                      <div className={cn("w-10 h-10 rounded-lg flex items-center justify-center shrink-0", isManaging ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground")}>
+                        <Icon className="w-5 h-5" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-bold text-foreground truncate">{g.name}</p>
+                        <p className="text-xs text-muted-foreground line-clamp-1">{g.description}</p>
+                      </div>
                     </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-bold text-foreground truncate">{g.name}</p>
-                      <p className="text-xs text-muted-foreground">{g.memberIds.length} mentor{g.memberIds.length !== 1 ? "s" : ""}</p>
-                    </div>
-                  </button>
-                );
-              })}
-            </div>
 
-            {/* Group detail */}
-            <div className="flex-1 bg-card border border-border rounded-sm p-5">
-              {selectedGroupId ? (() => {
-                const group = mentorGroups.find(g => g.id === selectedGroupId);
-                if (!group) return null;
-                const members = mentors.filter(m => group.memberIds.includes(m.id));
-                const nonMembers = mentors.filter(m => !group.memberIds.includes(m.id));
-                return (
-                  <div className="space-y-4">
+                    {/* Member avatar stack */}
                     <div className="flex items-center justify-between">
-                      <div>
-                        <h3 className="text-lg font-bold text-foreground">{group.name}</h3>
-                        <p className="text-sm text-muted-foreground">{group.description}</p>
-                      </div>
-                      <Button variant="outline" size="sm" onClick={() => deleteGroup(group.id)} className="text-red-600 hover:text-red-700 hover:bg-red-50">
-                        <Trash2 className="w-3.5 h-3.5" /> Delete
-                      </Button>
-                    </div>
-
-                    {/* Current members */}
-                    <div>
-                      <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-2">Members ({members.length})</p>
-                      {members.length === 0 ? (
-                        <p className="text-sm text-muted-foreground py-4 text-center">No mentors in this group yet</p>
-                      ) : (
-                        <div className="space-y-1">
-                          {members.map(m => (
-                            <div key={m.id} className="flex items-center justify-between gap-2 px-3 py-2 bg-muted/20 rounded-sm">
-                              <div className="flex items-center gap-2.5">
-                                <Avatar name={m.name} tone={m.avatarTone} size="sm" />
-                                <div><p className="text-sm font-semibold">{m.name}</p><p className="text-xs text-muted-foreground">{m.specialty}</p></div>
+                      <div className="flex items-center">
+                        {members.length === 0 ? (
+                          <span className="text-xs text-muted-foreground">No members</span>
+                        ) : (
+                          <div className="flex -space-x-2">
+                            {members.slice(0, 4).map(m => (
+                              <div key={m.id} className={cn("w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-bold ring-2 ring-card",
+                                { "bg-blue-100 text-blue-700": m.avatarTone === "blue", "bg-violet-100 text-violet-700": m.avatarTone === "purple", "bg-rose-100 text-rose-700": m.avatarTone === "rose", "bg-amber-100 text-amber-700": m.avatarTone === "amber", "bg-emerald-100 text-emerald-700": m.avatarTone === "green", "bg-slate-200 text-slate-700": m.avatarTone === "slate" }
+                              )} title={m.name}>
+                                {m.name.split(" ").map(n => n[0]).slice(0, 2).join("").toUpperCase()}
                               </div>
-                              <button onClick={() => toggleMentorInGroup(group.id, m.id)} className="text-xs font-bold text-red-500 hover:text-red-700 px-2 py-1 hover:bg-red-50 rounded transition-colors">Remove</button>
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-
-                    {/* Add mentors */}
-                    <div>
-                      <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-2">Add Mentors</p>
-                      <div className="max-h-[200px] overflow-y-auto space-y-1 border border-border rounded-sm p-1">
-                        {nonMembers.length === 0 ? (
-                          <p className="text-xs text-muted-foreground py-3 text-center">All mentors are in this group</p>
-                        ) : nonMembers.map(m => (
-                          <button key={m.id} onClick={() => toggleMentorInGroup(group.id, m.id)}
-                            className="w-full flex items-center justify-between gap-2 px-3 py-2 hover:bg-muted/30 rounded-sm transition-colors text-left"
-                          >
-                            <div className="flex items-center gap-2.5">
-                              <Avatar name={m.name} tone={m.avatarTone} size="sm" />
-                              <div><p className="text-sm font-semibold">{m.name}</p><p className="text-xs text-muted-foreground">{m.specialty}</p></div>
-                            </div>
-                            <Plus className="w-4 h-4 text-primary" />
-                          </button>
-                        ))}
+                            ))}
+                            {members.length > 4 && (
+                              <div className="w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-bold ring-2 ring-card bg-muted text-muted-foreground">
+                                +{members.length - 4}
+                              </div>
+                            )}
+                          </div>
+                        )}
                       </div>
+                      <span className="text-xs font-semibold text-muted-foreground tabular-nums">{g.memberIds.length}</span>
                     </div>
                   </div>
-                );
-              })() : (
-                <div className="flex flex-col items-center justify-center h-full py-16 text-center">
-                  <UsersRound className="w-12 h-12 text-muted-foreground/20 mb-3" />
-                  <p className="text-sm text-muted-foreground">Select a group to manage members</p>
+
+                  {/* Action bar */}
+                  <div className="border-t border-border flex">
+                    <button onClick={() => setSelectedGroupId(isManaging ? null : g.id)}
+                      className={cn("flex-1 flex items-center justify-center gap-1.5 py-2 text-xs font-semibold transition-colors", isManaging ? "text-primary bg-primary/5" : "text-muted-foreground hover:text-foreground hover:bg-muted/40")}
+                    >
+                      <Users className="w-3.5 h-3.5" /> {isManaging ? "Close" : "Manage"}
+                    </button>
+                    <div className="w-px bg-border" />
+                    <button onClick={() => deleteGroup(g.id)}
+                      className="flex items-center justify-center gap-1.5 px-4 py-2 text-xs font-semibold text-muted-foreground hover:text-red-600 hover:bg-red-50/60 transition-colors"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+
+                  {/* Inline manage panel */}
+                  {isManaging && (
+                    <div className="border-t border-primary/20 bg-primary/[0.02] p-3 space-y-2">
+                      {/* Toggle each mentor with checkboxes */}
+                      <p className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">Toggle members</p>
+                      <div className="max-h-[180px] overflow-y-auto space-y-0.5">
+                        {mentors.map(m => {
+                          const isMember = g.memberIds.includes(m.id);
+                          return (
+                            <label key={m.id} className={cn("flex items-center gap-2.5 px-2.5 py-2 rounded-md cursor-pointer transition-colors", isMember ? "bg-primary/10" : "hover:bg-muted/40")}>
+                              <input type="checkbox" checked={isMember} onChange={() => toggleMentorInGroup(g.id, m.id)}
+                                className="w-3.5 h-3.5 rounded-sm border-border accent-primary"
+                              />
+                              <div className={cn("w-6 h-6 rounded-full flex items-center justify-center text-[9px] font-bold shrink-0",
+                                { "bg-blue-100 text-blue-700": m.avatarTone === "blue", "bg-violet-100 text-violet-700": m.avatarTone === "purple", "bg-rose-100 text-rose-700": m.avatarTone === "rose", "bg-amber-100 text-amber-700": m.avatarTone === "amber", "bg-emerald-100 text-emerald-700": m.avatarTone === "green", "bg-slate-200 text-slate-700": m.avatarTone === "slate" }
+                              )}>
+                                {m.name.split(" ").map(n => n[0]).slice(0, 2).join("").toUpperCase()}
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <p className="text-xs font-semibold text-foreground truncate">{m.name}</p>
+                                <p className="text-[11px] text-muted-foreground truncate">{m.specialty}</p>
+                              </div>
+                            </label>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
                 </div>
-              )}
-            </div>
+              );
+            })}
+
+            {/* "Add group" card */}
+            <button onClick={() => setIsNewGroupOpen(true)}
+              className="border-2 border-dashed border-border rounded-lg flex flex-col items-center justify-center gap-2 py-10 text-muted-foreground hover:border-primary/40 hover:text-primary transition-colors min-h-[160px]"
+            >
+              <Plus className="w-5 h-5" />
+              <span className="text-xs font-semibold">New Group</span>
+            </button>
           </div>
 
           {/* New Group Modal */}
