@@ -2337,50 +2337,83 @@ export function MentorsView({
                 </div>
 
                 {isViewing ? (
-                  /* ── View-only preview ── */
-                  <div className="p-6 max-w-[640px] mx-auto space-y-4">
+                  /* ── Interactive preview ── */
+                  <div className="p-6 max-w-[640px] mx-auto space-y-5">
                     {builderFields.length === 0 ? (
                       <p className="text-sm text-muted-foreground text-center py-10">This form has no fields yet.</p>
-                    ) : builderFields.map(f => {
-                      const ft = FORM_FIELD_TYPES.find(t => t.type === f.type);
-                      return (
-                        <div key={f.id} className="space-y-1.5">
-                          <label className="text-sm font-semibold text-foreground">
-                            {f.label || "(no label)"} {f.required && <span className="text-red-500">*</span>}
-                          </label>
-                          {f.type === "textarea" ? (
-                            <div className="w-full h-20 border border-border rounded-md bg-muted/20" />
-                          ) : f.type === "select" ? (
-                            <div className="w-full h-10 border border-border rounded-md bg-muted/20 flex items-center px-3">
-                              <span className="text-xs text-muted-foreground">Select {f.label?.toLowerCase() || "option"}...</span>
-                              <ChevronDown className="w-3.5 h-3.5 text-muted-foreground ml-auto" />
-                            </div>
-                          ) : f.type === "checkbox" ? (
-                            <div className="flex items-center gap-2">
-                              <div className="w-4 h-4 border border-border rounded-sm bg-muted/20" />
-                              <span className="text-sm text-muted-foreground">{f.label}</span>
-                            </div>
-                          ) : f.type === "checkbox_group" && f.options ? (
-                            <div className="space-y-1.5">
-                              {f.options.map((opt, oi) => (
-                                <div key={oi} className="flex items-center gap-2">
-                                  <div className="w-4 h-4 border border-border rounded-sm bg-muted/20" />
-                                  <span className="text-sm text-muted-foreground">{opt}</span>
+                    ) : (
+                      <>
+                        {builderFields.map(f => {
+                          const ft = FORM_FIELD_TYPES.find(t => t.type === f.type);
+                          return (
+                            <div key={f.id} className="space-y-1.5">
+                              <label className="text-sm font-semibold text-foreground">
+                                {f.label || "(no label)"} {f.required && <span className="text-red-500">*</span>}
+                              </label>
+                              {f.type === "textarea" ? (
+                                <textarea
+                                  className="w-full h-24 border border-border rounded-md bg-background px-3 py-2 text-sm text-foreground resize-y focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-colors"
+                                  placeholder={`Enter ${f.label?.toLowerCase() || "text"}...`}
+                                />
+                              ) : f.type === "select" ? (
+                                <select className="w-full h-10 border border-border rounded-md bg-background px-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-colors appearance-none cursor-pointer">
+                                  <option value="">Select {f.label?.toLowerCase() || "option"}...</option>
+                                  {f.options?.map((opt, oi) => (
+                                    <option key={oi} value={opt}>{opt}</option>
+                                  ))}
+                                </select>
+                              ) : f.type === "checkbox" ? (
+                                <label className="flex items-center gap-2.5 cursor-pointer group">
+                                  <input type="checkbox" className="w-4 h-4 accent-primary rounded cursor-pointer" />
+                                  <span className="text-sm text-foreground group-hover:text-primary transition-colors">{f.label}</span>
+                                </label>
+                              ) : f.type === "checkbox_group" && f.options ? (
+                                <div className="space-y-2">
+                                  {f.options.map((opt, oi) => (
+                                    <label key={oi} className="flex items-center gap-2.5 cursor-pointer group">
+                                      <input type="checkbox" className="w-4 h-4 accent-primary rounded cursor-pointer" />
+                                      <span className="text-sm text-foreground group-hover:text-primary transition-colors">{opt}</span>
+                                    </label>
+                                  ))}
                                 </div>
-                              ))}
+                              ) : f.type === "file" ? (
+                                <label className="w-full h-24 border-2 border-dashed border-border rounded-md bg-muted/5 flex flex-col items-center justify-center cursor-pointer hover:border-primary/40 hover:bg-primary/5 transition-colors">
+                                  <Download className="w-5 h-5 text-muted-foreground mb-1" />
+                                  <span className="text-xs font-medium text-muted-foreground">Drop file here or click to upload</span>
+                                  <input type="file" className="hidden" />
+                                </label>
+                              ) : f.type === "number" ? (
+                                <input
+                                  type="number"
+                                  className="w-full h-10 border border-border rounded-md bg-background px-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-colors"
+                                  placeholder={`Enter ${f.label?.toLowerCase() || "number"}...`}
+                                />
+                              ) : f.type === "date" ? (
+                                <input
+                                  type="date"
+                                  className="w-full h-10 border border-border rounded-md bg-background px-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-colors cursor-pointer"
+                                />
+                              ) : f.type === "email" ? (
+                                <input
+                                  type="email"
+                                  className="w-full h-10 border border-border rounded-md bg-background px-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-colors"
+                                  placeholder={`Enter ${f.label?.toLowerCase() || "email"}...`}
+                                />
+                              ) : (
+                                <input
+                                  type="text"
+                                  className="w-full h-10 border border-border rounded-md bg-background px-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-colors"
+                                  placeholder={`Enter ${f.label?.toLowerCase() || "text"}...`}
+                                />
+                              )}
                             </div>
-                          ) : f.type === "file" ? (
-                            <div className="w-full h-20 border-2 border-dashed border-border rounded-md bg-muted/10 flex items-center justify-center">
-                              <span className="text-xs text-muted-foreground">Drop file here or click to upload</span>
-                            </div>
-                          ) : (
-                            <div className="w-full h-10 border border-border rounded-md bg-muted/20 flex items-center px-3">
-                              <span className="text-xs text-muted-foreground">{ft?.label || f.type}...</span>
-                            </div>
-                          )}
+                          );
+                        })}
+                        <div className="pt-4 border-t border-border">
+                          <Button size="sm" className="w-full" onClick={() => {}}><CheckCircle2 className="w-4 h-4" /> Submit</Button>
                         </div>
-                      );
-                    })}
+                      </>
+                    )}
                   </div>
                 ) : (
                   /* ── Edit mode ── */
