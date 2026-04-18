@@ -1926,6 +1926,14 @@ export function MentorsView({
     toast.success(`Invitation sent to ${invEmail}`);
   };
 
+  const openInviteWithForm = (formId: string) => {
+    setInvFormId(formId);
+    setInvEmail("");
+    setInvName("");
+    setInvMessage("");
+    setIsInviteOpen(true);
+  };
+
   // Drill into a profile — full-page replacement.
   if (selected) {
     return (
@@ -2521,8 +2529,8 @@ export function MentorsView({
                           {tpl.fields.length > 3 && <span className="text-[10px] font-medium px-1.5 py-0.5 rounded bg-muted text-muted-foreground">+{tpl.fields.length - 3}</span>}
                         </div>
                         <div className="flex gap-1.5">
-                          <Button size="sm" className="flex-1 text-xs h-8" onClick={() => loadTemplate(tpl)}>
-                            <Plus className="w-3.5 h-3.5" /> Use Template
+                          <Button size="sm" className="flex-1 text-xs h-8" onClick={() => openInviteWithForm(tpl.id)}>
+                            <Send className="w-3.5 h-3.5" /> Send This Template
                           </Button>
                           <Button variant="outline" size="sm" className="text-xs h-8" onClick={() => openFormPreview(tpl)}>
                             <Eye className="w-3.5 h-3.5" /> Preview
@@ -2555,8 +2563,8 @@ export function MentorsView({
                             {tpl.fields.length > 3 && <span className="text-[10px] font-medium px-1.5 py-0.5 rounded bg-muted text-muted-foreground">+{tpl.fields.length - 3}</span>}
                           </div>
                           <div className="flex gap-1.5">
-                            <Button size="sm" className="flex-1 text-xs h-8" variant="outline" onClick={() => loadTemplate(tpl)}>
-                              <Plus className="w-3.5 h-3.5" /> Use Template
+                            <Button size="sm" className="flex-1 text-xs h-8" variant="outline" onClick={() => openInviteWithForm(tpl.id)}>
+                              <Send className="w-3.5 h-3.5" /> Send This Template
                             </Button>
                             <Button variant="outline" size="sm" className="text-xs h-8" onClick={() => openFormPreview(tpl)}>
                               <Eye className="w-3.5 h-3.5" /> Preview
@@ -2607,10 +2615,13 @@ export function MentorsView({
                             {tpl.fields.length > 4 && <span className="text-[10px] font-medium px-1.5 py-0.5 rounded bg-muted text-muted-foreground">+{tpl.fields.length - 4}</span>}
                           </div>
                           <div className="flex gap-1.5">
+                            <Button size="sm" className="text-xs h-7 flex-1" onClick={() => openInviteWithForm(tpl.id)}>
+                              <Send className="w-3 h-3" /> Send
+                            </Button>
                             <Button variant="outline" size="sm" className="text-xs h-7" onClick={() => openFormPreview(tpl)}>
                               <Eye className="w-3 h-3" /> Preview
                             </Button>
-                            <Button variant="outline" size="sm" className="text-xs h-7 flex-1" onClick={() => openFormEdit(tpl)}>
+                            <Button variant="outline" size="sm" className="text-xs h-7" onClick={() => openFormEdit(tpl)}>
                               <Edit2 className="w-3 h-3" /> Edit
                             </Button>
                             <Button variant="outline" size="sm" className="text-xs h-7 text-red-600 hover:text-red-700 hover:bg-red-50"
