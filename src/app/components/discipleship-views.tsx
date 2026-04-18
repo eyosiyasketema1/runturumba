@@ -1846,6 +1846,9 @@ export function MentorsView({
   };
   const saveForm = () => {
     if (!builderName.trim()) { toast.error("Form name is required"); return; }
+    if (builderFields.length === 0) { toast.error("Add at least one field"); return; }
+    const emptyLabels = builderFields.filter(f => !f.label?.trim());
+    if (emptyLabels.length > 0) { toast.error(`${emptyLabels.length} field${emptyLabels.length > 1 ? "s" : ""} missing a label`); return; }
     if (editingFormId) {
       // Update existing
       setFormTemplates(prev => prev.map(f => f.id === editingFormId ? { ...f, name: builderName.trim(), specialty: builderSpecialty || "General", fields: builderFields } : f));
@@ -2618,38 +2621,45 @@ export function MentorsView({
                       {userForms.map(tpl => (
                         <div key={tpl.id} className="bg-card border border-border rounded-lg p-4 hover:border-primary/40 transition-colors">
                           <div className="flex items-start justify-between mb-2">
-                            <div>
-                              <h4 className="text-sm font-bold text-foreground">{tpl.name}</h4>
-                              <div className="flex items-center gap-1.5 mt-0.5">
-                                <Chip tone="purple">{tpl.specialty}</Chip>
-                                <span className="text-[11px] text-muted-foreground">{tpl.fields.length} fields</span>
+                            <div className="flex items-start gap-2">
+                              <div className="w-8 h-8 rounded-lg bg-purple-50 text-purple-600 flex items-center justify-center shrink-0">
+                                <FileText className="w-4 h-4" />
+                              </div>
+                              <div>
+                                <h4 className="text-sm font-bold text-foreground">{tpl.name}</h4>
+                                <div className="flex items-center gap-1.5 mt-0.5">
+                                  <Chip tone="purple">{tpl.specialty}</Chip>
+                                  <span className="text-[11px] text-muted-foreground">{tpl.fields.length} fields</span>
+                                  <span className="text-[11px] text-muted-foreground">· {tpl.submissions} submissions</span>
+                                </div>
                               </div>
                             </div>
-                            <span className="text-xs text-muted-foreground">{tpl.submissions} submissions</span>
                           </div>
                           <div className="flex flex-wrap gap-1 mb-3">
-                            {tpl.fields.slice(0, 4).map(f => (
+                            {tpl.fields.slice(0, 3).map(f => (
                               <span key={f.id} className="text-[10px] font-medium px-1.5 py-0.5 rounded bg-muted text-muted-foreground">{f.label || f.type}</span>
                             ))}
-                            {tpl.fields.length > 4 && <span className="text-[10px] font-medium px-1.5 py-0.5 rounded bg-muted text-muted-foreground">+{tpl.fields.length - 4}</span>}
+                            {tpl.fields.length > 3 && <span className="text-[10px] font-medium px-1.5 py-0.5 rounded bg-muted text-muted-foreground">+{tpl.fields.length - 3}</span>}
+                          </div>
+                          <div className="flex gap-1.5 mb-2">
+                            <Button size="sm" className="flex-1 text-xs h-8" onClick={() => openInviteWithForm(tpl.id)}>
+                              <Send className="w-3.5 h-3.5" /> Send This Form
+                            </Button>
+                            <Button variant="outline" size="sm" className="text-xs h-8" onClick={() => { navigator.clipboard.writeText(`${window.location.origin}/forms/${tpl.id}`); toast.success("Link copied!"); }}>
+                              <Link2 className="w-3.5 h-3.5" /> Copy Link
+                            </Button>
+                            <Button variant="outline" size="sm" className="text-xs h-8" onClick={() => openFormPreview(tpl)}>
+                              <Eye className="w-3.5 h-3.5" /> Preview
+                            </Button>
                           </div>
                           <div className="flex gap-1.5">
-                            <Button size="sm" className="text-xs h-7 flex-1" onClick={() => openInviteWithForm(tpl.id)}>
-                              <Send className="w-3 h-3" /> Send
-                            </Button>
-                            <Button variant="outline" size="sm" className="text-xs h-7" onClick={() => { navigator.clipboard.writeText(`${window.location.origin}/forms/${tpl.id}`); toast.success("Link copied!"); }}>
-                              <Link2 className="w-3 h-3" />
-                            </Button>
-                            <Button variant="outline" size="sm" className="text-xs h-7" onClick={() => openFormPreview(tpl)}>
-                              <Eye className="w-3 h-3" /> Preview
-                            </Button>
-                            <Button variant="outline" size="sm" className="text-xs h-7" onClick={() => openFormEdit(tpl)}>
+                            <Button variant="outline" size="sm" className="text-xs h-7 flex-1" onClick={() => openFormEdit(tpl)}>
                               <Edit2 className="w-3 h-3" /> Edit
                             </Button>
                             <Button variant="outline" size="sm" className="text-xs h-7 text-red-600 hover:text-red-700 hover:bg-red-50"
                               onClick={() => { setFormTemplates(prev => prev.filter(f => f.id !== tpl.id)); toast.success("Form deleted"); }}
                             >
-                              <Trash2 className="w-3 h-3" />
+                              <Trash2 className="w-3 h-3" /> Delete
                             </Button>
                           </div>
                         </div>
