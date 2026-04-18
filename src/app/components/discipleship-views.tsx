@@ -1613,30 +1613,34 @@ export function MentorsView({
   matches?: Match[];
 }) {
   const derivedMentors = useMemo<MentorRow[]>(() => {
+    const seedIds = new Set(INITIAL_MENTORS_DATA.map(m => m.id));
     if (!sharedUsers?.length) return INITIAL_MENTORS_DATA;
     const mentorUsers = sharedUsers.filter(u => u.mentorProfile);
     if (!mentorUsers.length) return INITIAL_MENTORS_DATA;
     const avatarTones: ("blue" | "purple" | "rose" | "amber" | "green" | "slate")[] = ["blue", "purple", "rose", "amber", "green", "slate"];
-    return mentorUsers.map((u, i) => {
-      const p = u.mentorProfile!;
-      return {
-        id: u.id,
-        name: u.name,
-        email: u.email,
-        specialty: p.specialty,
-        languages: p.languages,
-        capacity: p.capacity,
-        load: p.load,
-        status: (p.load >= 100 ? "Unavailable" : "Active") as MentorRow["status"],
-        statusTone: p.load >= 100 ? "amber" : "green",
-        avatarTone: avatarTones[i % avatarTones.length],
-        experience: p.experience,
-        gender: p.gender,
-        strengths: p.strengths,
-        bio: p.bio,
-        joined: p.joined,
-      };
-    });
+    const fromShared: MentorRow[] = mentorUsers
+      .filter(u => !seedIds.has(u.id))
+      .map((u, i) => {
+        const p = u.mentorProfile!;
+        return {
+          id: u.id,
+          name: u.name,
+          email: u.email,
+          specialty: p.specialty,
+          languages: p.languages,
+          capacity: p.capacity,
+          load: p.load,
+          status: (p.load >= 100 ? "Unavailable" : "Active") as MentorRow["status"],
+          statusTone: p.load >= 100 ? "amber" : "green",
+          avatarTone: avatarTones[i % avatarTones.length],
+          experience: p.experience,
+          gender: p.gender,
+          strengths: p.strengths,
+          bio: p.bio,
+          joined: p.joined,
+        };
+      });
+    return [...INITIAL_MENTORS_DATA, ...fromShared];
   }, [sharedUsers]);
 
   const [mentors, setMentors] = useState<MentorRow[]>(derivedMentors);
