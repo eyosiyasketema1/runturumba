@@ -1815,6 +1815,8 @@ export function MentorsView({
   const [formTemplates, setFormTemplates] = useState<MentorFormTemplate[]>(INITIAL_FORM_TEMPLATES);
   const [activeFormId, setActiveFormId] = useState<string | null>(null);
   const [isFormBuilderOpen, setIsFormBuilderOpen] = useState(false);
+  const [formViewMode, setFormViewMode] = useState<"view" | "edit">("edit");
+  const [editingFormId, setEditingFormId] = useState<string | null>(null); // null = creating new
   const [builderFields, setBuilderFields] = useState<FormFieldDef[]>([]);
   const [builderName, setBuilderName] = useState("");
   const [builderSpecialty, setBuilderSpecialty] = useState("");
@@ -1838,23 +1840,64 @@ export function MentorsView({
     });
     setDragIdx(null);
   };
+  const closeFormBuilder = () => {
+    setIsFormBuilderOpen(false); setEditingFormId(null); setFormViewMode("edit");
+    setBuilderFields([]); setBuilderName(""); setBuilderSpecialty("");
+  };
   const saveForm = () => {
     if (!builderName.trim()) { toast.error("Form name is required"); return; }
-    const newTpl: MentorFormTemplate = {
-      id: `tpl-${Date.now()}`,
-      name: builderName.trim(),
-      specialty: builderSpecialty || "General",
-      fields: builderFields,
-      submissions: 0,
-    };
-    setFormTemplates(prev => [newTpl, ...prev]);
-    setIsFormBuilderOpen(false); setBuilderFields([]); setBuilderName(""); setBuilderSpecialty("");
-    toast.success(`Form "${newTpl.name}" created`);
+    if (editingFormId) {
+      // Update existing
+      setFormTemplates(prev => prev.map(f => f.id === editingFormId ? { ...f, name: builderName.trim(), specialty: builderSpecialty || "General", fields: builderFields } : f));
+      toast.success(`Form "${builderName}" updated`);
+    } else {
+      // Create new
+      const newTpl: MentorFormTemplate = {
+        id: `tpl-${Date.now()}`,
+        name: builderName.trim(),
+        specialty: builderSpecialty || "General",
+        fields: builderFields,
+        submissions: 0,
+      };
+      setFormTemplates(prev => [newTpl, ...prev]);
+      toast.success(`Form "${newTpl.name}" created`);
+    }
+    closeFormBuilder();
+  };
+  const deleteFormFromBuilder = () => {
+    if (!editingFormId) return;
+    setFormTemplates(prev => prev.filter(f => f.id !== editingFormId));
+    closeFormBuilder();
+    toast.success("Form deleted");
+  };
+  const openFormPreview = (tpl: MentorFormTemplate) => {
+    setEditingFormId(tpl.id);
+    setBuilderName(tpl.name);
+    setBuilderSpecialty(tpl.specialty);
+    setBuilderFields(tpl.fields.map(f => ({ ...f })));
+    setFormViewMode("view");
+    setIsFormBuilderOpen(true);
+  };
+  const openFormEdit = (tpl: MentorFormTemplate) => {
+    setEditingFormId(tpl.id);
+    setBuilderName(tpl.name);
+    setBuilderSpecialty(tpl.specialty);
+    setBuilderFields(tpl.fields.map(f => ({ ...f })));
+    setFormViewMode("edit");
+    setIsFormBuilderOpen(true);
+  };
+  const openNewForm = () => {
+    setEditingFormId(null);
+    setBuilderFields([]); setBuilderName(""); setBuilderSpecialty("");
+    setFormViewMode("edit");
+    setIsFormBuilderOpen(true);
   };
   const loadTemplate = (tpl: MentorFormTemplate) => {
+    setEditingFormId(null);
     setBuilderName(tpl.name + " (copy)");
     setBuilderSpecialty(tpl.specialty);
     setBuilderFields(tpl.fields.map(f => ({ ...f, id: `f-${Date.now()}-${Math.random().toString(36).slice(2,5)}` })));
+    setFormViewMode("edit");
     setIsFormBuilderOpen(true);
   };
 
@@ -2249,91 +2292,165 @@ export function MentorsView({
 
       {/* ═══════════════ TAB: FORMS ═══════════════ */}
       {activeTab === "forms" && (() => {
-        const userForms = formTemplates.filter(f => f.id.startsWith("tpl-") && !INITIAL_FORM_TEMPLATES.some(t => t.id === f.id));
+        const userForms = formTemplates.filter(f => !INITIAL_FORM_TEMPLATES.some(t => t.id === f.id));
         const builtInTemplates = INITIAL_FORM_TEMPLATES;
-        const showBrowse = showBrowseTemplates;
-        const setShowBrowse = setShowBrowseTemplates;
+        const isViewing = formViewMode === "view";
         return (
           <>
             {isFormBuilderOpen ? (
-              /* ── Form Builder ── */
+              /* ── Form Builder / Preview ── */
               <div className="bg-card border border-border rounded-lg overflow-hidden">
+                {/* Header */}
                 <div className="border-b border-border p-4 flex items-center justify-between">
                   <div className="flex items-center gap-3 flex-1">
-                    <Input value={builderName} onChange={e => setBuilderName(e.target.value)} placeholder="Form name..." className="max-w-[280px] font-bold" />
-                    <Input value={builderSpecialty} onChange={e => setBuilderSpecialty(e.target.value)} placeholder="Specialty (e.g. Youth)" className="max-w-[180px]" />
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Button variant="outline" size="sm" onClick={() => setIsFormBuilderOpen(false)}>Cancel</Button>
-                    <Button size="sm" onClick={saveForm}><CheckCircle2 className="w-3.5 h-3.5" /> Save Form</Button>
-                  </div>
-                </div>
-                <div className="flex">
-                  {/* Field palette */}
-                  <div className="w-[200px] border-r border-border p-3 space-y-1.5 shrink-0 bg-muted/10">
-                    <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-2">Add Field</p>
-                    {FORM_FIELD_TYPES.map(ft => (
-                      <button key={ft.type} onClick={() => addField(ft.type)}
-                        className="w-full flex items-center gap-2 px-3 py-2 text-sm text-left rounded-sm hover:bg-muted/50 transition-colors border border-transparent hover:border-border"
-                      >
-                        <ft.icon className="w-3.5 h-3.5 text-muted-foreground" />
-                        {ft.label}
-                      </button>
-                    ))}
-                  </div>
-                  {/* Canvas */}
-                  <div className="flex-1 p-5 min-h-[350px]">
-                    {builderFields.length === 0 ? (
-                      <div className="flex flex-col items-center justify-center h-full py-16 text-center border-2 border-dashed border-border rounded-sm">
-                        <FileText className="w-10 h-10 text-muted-foreground/20 mb-3" />
-                        <p className="text-sm text-muted-foreground">Click fields on the left to add them</p>
-                        <p className="text-xs text-muted-foreground mt-1">Drag to reorder</p>
+                    {isViewing ? (
+                      <div className="flex items-center gap-3">
+                        <h3 className="text-lg font-bold text-foreground">{builderName}</h3>
+                        <Chip tone="blue">{builderSpecialty || "General"}</Chip>
+                        <Chip tone="slate">{builderFields.length} fields</Chip>
                       </div>
                     ) : (
-                      <div className="space-y-2">
-                        {builderFields.map((f, idx) => (
-                          <div
-                            key={f.id}
-                            draggable
-                            onDragStart={() => setDragIdx(idx)}
-                            onDragOver={e => e.preventDefault()}
-                            onDrop={() => handleDrop(idx)}
-                            className={cn("flex items-start gap-3 p-3 border rounded-sm bg-background transition-all group", dragIdx === idx ? "opacity-50 border-primary" : "border-border hover:border-primary/40")}
-                          >
-                            <div className="cursor-grab text-muted-foreground hover:text-foreground mt-1">
-                              <GripVertical className="w-4 h-4" />
-                            </div>
-                            <div className="flex-1 space-y-2">
-                              <div className="flex items-center gap-2">
-                                <Chip tone="slate">{FORM_FIELD_TYPES.find(t => t.type === f.type)?.label ?? f.type}</Chip>
-                                <Input value={f.label} onChange={e => updateField(f.id, { label: e.target.value })} placeholder="Field label..." className="h-8 text-sm flex-1" />
-                              </div>
-                              {(f.type === "select" || f.type === "checkbox_group") && f.options && (
-                                <div className="pl-1 space-y-1">
-                                  {f.options.map((opt, oi) => (
-                                    <div key={oi} className="flex items-center gap-2">
-                                      <span className="text-xs text-muted-foreground w-4">{oi + 1}.</span>
-                                      <Input value={opt} onChange={e => { const o = [...f.options!]; o[oi] = e.target.value; updateField(f.id, { options: o }); }} className="h-7 text-xs flex-1" />
-                                      <button onClick={() => { const o = f.options!.filter((_, i) => i !== oi); updateField(f.id, { options: o }); }} className="text-muted-foreground hover:text-red-500"><X className="w-3 h-3" /></button>
-                                    </div>
-                                  ))}
-                                  <button onClick={() => updateField(f.id, { options: [...(f.options || []), `Option ${(f.options?.length || 0) + 1}`] })} className="text-xs font-semibold text-primary hover:text-primary/80">+ Add option</button>
-                                </div>
-                              )}
-                            </div>
-                            <div className="flex items-center gap-2 shrink-0">
-                              <label className="flex items-center gap-1 text-xs text-muted-foreground">
-                                <input type="checkbox" checked={f.required} onChange={e => updateField(f.id, { required: e.target.checked })} className="accent-primary" />
-                                Req
-                              </label>
-                              <button onClick={() => removeField(f.id)} className="text-muted-foreground hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity"><Trash2 className="w-3.5 h-3.5" /></button>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
+                      <>
+                        <Input value={builderName} onChange={e => setBuilderName(e.target.value)} placeholder="Form name..." className="max-w-[280px] font-bold" />
+                        <Input value={builderSpecialty} onChange={e => setBuilderSpecialty(e.target.value)} placeholder="Specialty (e.g. Youth)" className="max-w-[180px]" />
+                      </>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-2">
+                    {isViewing ? (
+                      <>
+                        <Button variant="outline" size="sm" onClick={closeFormBuilder}>Close</Button>
+                        <Button size="sm" onClick={() => setFormViewMode("edit")}><Edit2 className="w-3.5 h-3.5" /> Edit</Button>
+                      </>
+                    ) : (
+                      <>
+                        {editingFormId && (
+                          <Button variant="outline" size="sm" onClick={deleteFormFromBuilder} className="text-red-600 hover:text-red-700 hover:bg-red-50">
+                            <Trash2 className="w-3.5 h-3.5" /> Delete
+                          </Button>
+                        )}
+                        <Button variant="outline" size="sm" onClick={closeFormBuilder}>Cancel</Button>
+                        <Button size="sm" onClick={saveForm}><CheckCircle2 className="w-3.5 h-3.5" /> {editingFormId ? "Save Changes" : "Save Form"}</Button>
+                      </>
                     )}
                   </div>
                 </div>
+
+                {isViewing ? (
+                  /* ── View-only preview ── */
+                  <div className="p-6 max-w-[640px] mx-auto space-y-4">
+                    {builderFields.length === 0 ? (
+                      <p className="text-sm text-muted-foreground text-center py-10">This form has no fields yet.</p>
+                    ) : builderFields.map(f => {
+                      const ft = FORM_FIELD_TYPES.find(t => t.type === f.type);
+                      return (
+                        <div key={f.id} className="space-y-1.5">
+                          <label className="text-sm font-semibold text-foreground">
+                            {f.label || "(no label)"} {f.required && <span className="text-red-500">*</span>}
+                          </label>
+                          {f.type === "textarea" ? (
+                            <div className="w-full h-20 border border-border rounded-md bg-muted/20" />
+                          ) : f.type === "select" ? (
+                            <div className="w-full h-10 border border-border rounded-md bg-muted/20 flex items-center px-3">
+                              <span className="text-xs text-muted-foreground">Select {f.label?.toLowerCase() || "option"}...</span>
+                              <ChevronDown className="w-3.5 h-3.5 text-muted-foreground ml-auto" />
+                            </div>
+                          ) : f.type === "checkbox" ? (
+                            <div className="flex items-center gap-2">
+                              <div className="w-4 h-4 border border-border rounded-sm bg-muted/20" />
+                              <span className="text-sm text-muted-foreground">{f.label}</span>
+                            </div>
+                          ) : f.type === "checkbox_group" && f.options ? (
+                            <div className="space-y-1.5">
+                              {f.options.map((opt, oi) => (
+                                <div key={oi} className="flex items-center gap-2">
+                                  <div className="w-4 h-4 border border-border rounded-sm bg-muted/20" />
+                                  <span className="text-sm text-muted-foreground">{opt}</span>
+                                </div>
+                              ))}
+                            </div>
+                          ) : f.type === "file" ? (
+                            <div className="w-full h-20 border-2 border-dashed border-border rounded-md bg-muted/10 flex items-center justify-center">
+                              <span className="text-xs text-muted-foreground">Drop file here or click to upload</span>
+                            </div>
+                          ) : (
+                            <div className="w-full h-10 border border-border rounded-md bg-muted/20 flex items-center px-3">
+                              <span className="text-xs text-muted-foreground">{ft?.label || f.type}...</span>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  /* ── Edit mode ── */
+                  <div className="flex">
+                    {/* Field palette */}
+                    <div className="w-[200px] border-r border-border p-3 space-y-1.5 shrink-0 bg-muted/10">
+                      <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-2">Add Field</p>
+                      {FORM_FIELD_TYPES.map(ft => (
+                        <button key={ft.type} onClick={() => addField(ft.type)}
+                          className="w-full flex items-center gap-2 px-3 py-2 text-sm text-left rounded-sm hover:bg-muted/50 transition-colors border border-transparent hover:border-border"
+                        >
+                          <ft.icon className="w-3.5 h-3.5 text-muted-foreground" />
+                          {ft.label}
+                        </button>
+                      ))}
+                    </div>
+                    {/* Canvas */}
+                    <div className="flex-1 p-5 min-h-[350px]">
+                      {builderFields.length === 0 ? (
+                        <div className="flex flex-col items-center justify-center h-full py-16 text-center border-2 border-dashed border-border rounded-sm">
+                          <FileText className="w-10 h-10 text-muted-foreground/20 mb-3" />
+                          <p className="text-sm text-muted-foreground">Click fields on the left to add them</p>
+                          <p className="text-xs text-muted-foreground mt-1">Drag to reorder</p>
+                        </div>
+                      ) : (
+                        <div className="space-y-2">
+                          {builderFields.map((f, idx) => (
+                            <div
+                              key={f.id}
+                              draggable
+                              onDragStart={() => setDragIdx(idx)}
+                              onDragOver={e => e.preventDefault()}
+                              onDrop={() => handleDrop(idx)}
+                              className={cn("flex items-start gap-3 p-3 border rounded-sm bg-background transition-all group", dragIdx === idx ? "opacity-50 border-primary" : "border-border hover:border-primary/40")}
+                            >
+                              <div className="cursor-grab text-muted-foreground hover:text-foreground mt-1">
+                                <GripVertical className="w-4 h-4" />
+                              </div>
+                              <div className="flex-1 space-y-2">
+                                <div className="flex items-center gap-2">
+                                  <Chip tone="slate">{FORM_FIELD_TYPES.find(t => t.type === f.type)?.label ?? f.type}</Chip>
+                                  <Input value={f.label} onChange={e => updateField(f.id, { label: e.target.value })} placeholder="Field label..." className="h-8 text-sm flex-1" />
+                                </div>
+                                {(f.type === "select" || f.type === "checkbox_group") && f.options && (
+                                  <div className="pl-1 space-y-1">
+                                    {f.options.map((opt, oi) => (
+                                      <div key={oi} className="flex items-center gap-2">
+                                        <span className="text-xs text-muted-foreground w-4">{oi + 1}.</span>
+                                        <Input value={opt} onChange={e => { const o = [...f.options!]; o[oi] = e.target.value; updateField(f.id, { options: o }); }} className="h-7 text-xs flex-1" />
+                                        <button onClick={() => { const o = f.options!.filter((_, i) => i !== oi); updateField(f.id, { options: o }); }} className="text-muted-foreground hover:text-red-500"><X className="w-3 h-3" /></button>
+                                      </div>
+                                    ))}
+                                    <button onClick={() => updateField(f.id, { options: [...(f.options || []), `Option ${(f.options?.length || 0) + 1}`] })} className="text-xs font-semibold text-primary hover:text-primary/80">+ Add option</button>
+                                  </div>
+                                )}
+                              </div>
+                              <div className="flex items-center gap-2 shrink-0">
+                                <label className="flex items-center gap-1 text-xs text-muted-foreground">
+                                  <input type="checkbox" checked={f.required} onChange={e => updateField(f.id, { required: e.target.checked })} className="accent-primary" />
+                                  Req
+                                </label>
+                                <button onClick={() => removeField(f.id)} className="text-muted-foreground hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity"><Trash2 className="w-3.5 h-3.5" /></button>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
               </div>
             ) : (
               <div className="space-y-6">
@@ -2344,26 +2461,23 @@ export function MentorsView({
                       <h3 className="text-sm font-bold text-foreground">Templates</h3>
                       <p className="text-xs text-muted-foreground">Start from a pre-built template or browse more</p>
                     </div>
-                    <Button variant="outline" size="sm" onClick={() => setShowBrowse(!showBrowse)}>
-                      <Search className="w-3.5 h-3.5" /> {showBrowse ? "Hide Templates" : "Browse Templates"}
+                    <Button variant="outline" size="sm" onClick={() => setShowBrowseTemplates(!showBrowseTemplates)}>
+                      <Search className="w-3.5 h-3.5" /> {showBrowseTemplates ? "Hide Templates" : "Browse Templates"}
                     </Button>
                   </div>
 
-                  {/* Quick template cards — always visible */}
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                    {(showBrowse ? builtInTemplates : builtInTemplates.slice(0, 3)).map(tpl => (
+                    {(showBrowseTemplates ? builtInTemplates : builtInTemplates.slice(0, 3)).map(tpl => (
                       <div key={tpl.id} className="bg-card border border-border rounded-lg p-4 hover:border-primary/40 transition-colors">
-                        <div className="flex items-start justify-between mb-2">
-                          <div className="flex items-center gap-2">
-                            <div className="w-8 h-8 rounded-lg bg-primary/10 text-primary flex items-center justify-center shrink-0">
-                              <FileText className="w-4 h-4" />
-                            </div>
-                            <div>
-                              <h4 className="text-sm font-bold text-foreground">{tpl.name}</h4>
-                              <div className="flex items-center gap-1.5 mt-0.5">
-                                <Chip tone="blue">{tpl.specialty}</Chip>
-                                <span className="text-[11px] text-muted-foreground">{tpl.fields.length} fields</span>
-                              </div>
+                        <div className="flex items-start gap-2 mb-2">
+                          <div className="w-8 h-8 rounded-lg bg-primary/10 text-primary flex items-center justify-center shrink-0">
+                            <FileText className="w-4 h-4" />
+                          </div>
+                          <div>
+                            <h4 className="text-sm font-bold text-foreground">{tpl.name}</h4>
+                            <div className="flex items-center gap-1.5 mt-0.5">
+                              <Chip tone="blue">{tpl.specialty}</Chip>
+                              <span className="text-[11px] text-muted-foreground">{tpl.fields.length} fields</span>
                             </div>
                           </div>
                         </div>
@@ -2377,27 +2491,15 @@ export function MentorsView({
                           <Button size="sm" className="flex-1 text-xs h-8" onClick={() => loadTemplate(tpl)}>
                             <Plus className="w-3.5 h-3.5" /> Use Template
                           </Button>
-                          <Button variant="outline" size="sm" className="text-xs h-8" onClick={() => setActiveFormId(tpl.id === activeFormId ? null : tpl.id)}>
-                            {activeFormId === tpl.id ? "Hide" : "Preview"}
+                          <Button variant="outline" size="sm" className="text-xs h-8" onClick={() => openFormPreview(tpl)}>
+                            <Eye className="w-3.5 h-3.5" /> Preview
                           </Button>
                         </div>
-                        {activeFormId === tpl.id && (
-                          <div className="mt-3 pt-3 border-t border-border space-y-2">
-                            {tpl.fields.map(f => (
-                              <div key={f.id} className="flex items-center gap-2 text-xs">
-                                <span className="text-muted-foreground w-20 shrink-0 font-semibold">{FORM_FIELD_TYPES.find(t => t.type === f.type)?.label ?? f.type}</span>
-                                <span className="text-foreground">{f.label || "(no label)"}</span>
-                                {f.required && <span className="text-red-500">*</span>}
-                              </div>
-                            ))}
-                          </div>
-                        )}
                       </div>
                     ))}
                   </div>
 
-                  {/* Browse templates expanded — extra templates from system */}
-                  {showBrowse && (
+                  {showBrowseTemplates && (
                     <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                       {BROWSE_TEMPLATES.map(tpl => (
                         <div key={tpl.id} className="bg-card border border-dashed border-border rounded-lg p-4 hover:border-primary/40 transition-colors">
@@ -2419,9 +2521,14 @@ export function MentorsView({
                             ))}
                             {tpl.fields.length > 3 && <span className="text-[10px] font-medium px-1.5 py-0.5 rounded bg-muted text-muted-foreground">+{tpl.fields.length - 3}</span>}
                           </div>
-                          <Button size="sm" className="w-full text-xs h-8" variant="outline" onClick={() => loadTemplate(tpl)}>
-                            <Plus className="w-3.5 h-3.5" /> Use Template
-                          </Button>
+                          <div className="flex gap-1.5">
+                            <Button size="sm" className="flex-1 text-xs h-8" variant="outline" onClick={() => loadTemplate(tpl)}>
+                              <Plus className="w-3.5 h-3.5" /> Use Template
+                            </Button>
+                            <Button variant="outline" size="sm" className="text-xs h-8" onClick={() => openFormPreview(tpl)}>
+                              <Eye className="w-3.5 h-3.5" /> Preview
+                            </Button>
+                          </div>
                         </div>
                       ))}
                     </div>
@@ -2442,7 +2549,7 @@ export function MentorsView({
                       <FileText className="w-10 h-10 text-muted-foreground/20 mb-3" />
                       <p className="text-sm text-muted-foreground">No custom forms yet</p>
                       <p className="text-xs text-muted-foreground mt-1">Use a template above or create one from scratch</p>
-                      <Button size="sm" className="mt-3" onClick={() => { setBuilderFields([]); setBuilderName(""); setBuilderSpecialty(""); setIsFormBuilderOpen(true); }}>
+                      <Button size="sm" className="mt-3" onClick={openNewForm}>
                         <Plus className="w-3.5 h-3.5" /> Create from Scratch
                       </Button>
                     </div>
@@ -2467,9 +2574,11 @@ export function MentorsView({
                             {tpl.fields.length > 4 && <span className="text-[10px] font-medium px-1.5 py-0.5 rounded bg-muted text-muted-foreground">+{tpl.fields.length - 4}</span>}
                           </div>
                           <div className="flex gap-1.5">
-                            <Button variant="outline" size="sm" className="text-xs h-7 flex-1" onClick={() => loadTemplate(tpl)}>Edit Copy</Button>
-                            <Button variant="outline" size="sm" className="text-xs h-7" onClick={() => setActiveFormId(tpl.id === activeFormId ? null : tpl.id)}>
-                              {activeFormId === tpl.id ? "Hide" : "Preview"}
+                            <Button variant="outline" size="sm" className="text-xs h-7" onClick={() => openFormPreview(tpl)}>
+                              <Eye className="w-3 h-3" /> Preview
+                            </Button>
+                            <Button variant="outline" size="sm" className="text-xs h-7 flex-1" onClick={() => openFormEdit(tpl)}>
+                              <Edit2 className="w-3 h-3" /> Edit
                             </Button>
                             <Button variant="outline" size="sm" className="text-xs h-7 text-red-600 hover:text-red-700 hover:bg-red-50"
                               onClick={() => { setFormTemplates(prev => prev.filter(f => f.id !== tpl.id)); toast.success("Form deleted"); }}
@@ -2477,17 +2586,6 @@ export function MentorsView({
                               <Trash2 className="w-3 h-3" />
                             </Button>
                           </div>
-                          {activeFormId === tpl.id && (
-                            <div className="mt-3 pt-3 border-t border-border space-y-2">
-                              {tpl.fields.map(f => (
-                                <div key={f.id} className="flex items-center gap-2 text-xs">
-                                  <span className="text-muted-foreground w-20 shrink-0 font-semibold">{FORM_FIELD_TYPES.find(t => t.type === f.type)?.label ?? f.type}</span>
-                                  <span className="text-foreground">{f.label || "(no label)"}</span>
-                                  {f.required && <span className="text-red-500">*</span>}
-                                </div>
-                              ))}
-                            </div>
-                          )}
                         </div>
                       ))}
                     </div>
