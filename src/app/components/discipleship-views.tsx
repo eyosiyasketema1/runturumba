@@ -2034,17 +2034,20 @@ export function MentorsView({
   const [responsesFormId, setResponsesFormId] = useState<string | null>(null);
   const [selectedSubId, setSelectedSubId] = useState<string | null>(null);
   const [reviewNoteInput, setReviewNoteInput] = useState("");
+  const [reviewAction, setReviewAction] = useState<"rejected" | "resubmit" | null>(null);
 
   const openResponses = (formId: string) => {
     setResponsesFormId(formId);
     setSelectedSubId(null);
     setReviewNoteInput("");
+    setReviewAction(null);
     setIsFormBuilderOpen(false);
   };
   const closeResponses = () => {
     setResponsesFormId(null);
     setSelectedSubId(null);
     setReviewNoteInput("");
+    setReviewAction(null);
   };
   const reviewSubmission = (subId: string, status: "approved" | "rejected" | "resubmit") => {
     setSubmissions(prev => prev.map(s => s.id === subId ? { ...s, status, reviewNote: reviewNoteInput, reviewedAt: new Date().toISOString() } : s));
@@ -2058,6 +2061,7 @@ export function MentorsView({
     }
     setSelectedSubId(null);
     setReviewNoteInput("");
+    setReviewAction(null);
   };
 
   // ── Drill into a profile — full-page replacement.
@@ -2465,7 +2469,7 @@ export function MentorsView({
                   <div className="bg-card border border-border rounded-lg overflow-hidden">
                     <div className="border-b border-border p-4 flex items-center justify-between">
                       <div className="flex items-center gap-3">
-                        <button onClick={() => { setSelectedSubId(null); setReviewNoteInput(""); }} className="p-1.5 rounded-md hover:bg-muted transition-colors">
+                        <button onClick={() => { setSelectedSubId(null); setReviewNoteInput(""); setReviewAction(null); }} className="p-1.5 rounded-md hover:bg-muted transition-colors">
                           <ArrowLeft className="w-4 h-4" />
                         </button>
                         <Avatar name={selectedSub.respondentName} tone="blue" />
@@ -2503,27 +2507,51 @@ export function MentorsView({
 
                     {/* Action area */}
                     <div className="border-t border-border p-4 space-y-3">
-                      <div>
-                        <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-1.5 block">Review Note <span className="text-xs font-normal normal-case text-muted-foreground">(optional — visible to applicant on rejection/resubmit)</span></label>
-                        <textarea
-                          rows={2}
-                          value={reviewNoteInput}
-                          onChange={e => setReviewNoteInput(e.target.value)}
-                          placeholder="Add a note for the applicant..."
-                          className="w-full px-3 py-2 border border-input text-sm bg-background focus:ring-1 focus:ring-ring outline-none resize-none rounded-md"
-                        />
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <Button size="sm" onClick={() => reviewSubmission(selectedSub.id, "approved")} className="bg-green-600 hover:bg-green-700 text-white">
-                          <CheckCircle2 className="w-3.5 h-3.5" /> Approve as Mentor
-                        </Button>
-                        <Button size="sm" variant="outline" onClick={() => reviewSubmission(selectedSub.id, "resubmit")} className="text-amber-600 border-amber-300 hover:bg-amber-50">
-                          <RefreshCw className="w-3.5 h-3.5" /> Request Resubmission
-                        </Button>
-                        <Button size="sm" variant="outline" onClick={() => reviewSubmission(selectedSub.id, "rejected")} className="text-red-600 border-red-300 hover:bg-red-50">
-                          <XCircle className="w-3.5 h-3.5" /> Reject
-                        </Button>
-                      </div>
+                      {reviewAction === null ? (
+                        /* ── Choose an action ── */
+                        <div className="flex items-center gap-2">
+                          <Button size="sm" onClick={() => reviewSubmission(selectedSub.id, "approved")} className="bg-green-600 hover:bg-green-700 text-white">
+                            <CheckCircle2 className="w-3.5 h-3.5" /> Approve as Mentor
+                          </Button>
+                          <Button size="sm" variant="outline" onClick={() => setReviewAction("resubmit")} className="text-amber-600 border-amber-300 hover:bg-amber-50">
+                            <RefreshCw className="w-3.5 h-3.5" /> Request Resubmission
+                          </Button>
+                          <Button size="sm" variant="outline" onClick={() => setReviewAction("rejected")} className="text-red-600 border-red-300 hover:bg-red-50">
+                            <XCircle className="w-3.5 h-3.5" /> Reject
+                          </Button>
+                        </div>
+                      ) : (
+                        /* ── Reason input for reject / resubmit ── */
+                        <div className="space-y-3 p-3 rounded-md border border-border bg-muted/20">
+                          <div className="flex items-center gap-2">
+                            {reviewAction === "rejected" ? <XCircle className="w-4 h-4 text-red-500" /> : <RefreshCw className="w-4 h-4 text-amber-500" />}
+                            <p className="text-sm font-bold text-foreground">
+                              {reviewAction === "rejected" ? "Reject Application" : "Request Resubmission"}
+                            </p>
+                          </div>
+                          <div>
+                            <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-1.5 block">
+                              Reason <span className="text-xs font-normal normal-case text-muted-foreground">(optional — will be sent to the applicant)</span>
+                            </label>
+                            <textarea
+                              rows={3}
+                              value={reviewNoteInput}
+                              onChange={e => setReviewNoteInput(e.target.value)}
+                              placeholder={reviewAction === "rejected" ? "Explain why the application was not accepted..." : "Let them know what to update before resubmitting..."}
+                              className="w-full px-3 py-2 border border-input text-sm bg-background focus:ring-1 focus:ring-ring outline-none resize-none rounded-md"
+                              autoFocus
+                            />
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <Button size="sm" onClick={() => reviewSubmission(selectedSub.id, reviewAction)}
+                              className={reviewAction === "rejected" ? "bg-red-600 hover:bg-red-700 text-white" : "bg-amber-600 hover:bg-amber-700 text-white"}
+                            >
+                              {reviewAction === "rejected" ? <><XCircle className="w-3.5 h-3.5" /> Confirm Rejection</> : <><RefreshCw className="w-3.5 h-3.5" /> Send Resubmission Request</>}
+                            </Button>
+                            <Button size="sm" variant="outline" onClick={() => { setReviewAction(null); setReviewNoteInput(""); }}>Cancel</Button>
+                          </div>
+                        </div>
+                      )}
                     </div>
                   </div>
                 ) : (
