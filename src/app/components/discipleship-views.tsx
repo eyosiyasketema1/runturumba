@@ -1483,7 +1483,7 @@ const EXPERIENCE_LEVELS = ["Beginner", "Intermediate", "Experienced", "Senior"] 
 const ALL_LANGUAGES = [
   { code: "EN", label: "English" }, { code: "AM", label: "Amharic" }, { code: "OM", label: "Afaan Oromoo" },
 ];
-const ALL_SPECIALTIES = ["New Believers", "Youth", "Women", "Men", "Grief", "Prayer", "Apologetics", "Bible Study", "Marriage", "Addiction recovery"];
+const ALL_SPECIALTIES = ["New Believers", "Youth", "Women", "Men", "Grief", "Prayer", "Apologetics", "Bible Study", "Marriage", "Addiction Recovery", "Leadership", "Outreach", "Evangelism", "Family", "Worship", "Counseling", "Theology", "Children", "Accountability"];
 const ALL_STRENGTHS  = ["Empathy", "Bible knowledge", "Prayer", "Patience", "Counseling", "Apologetics", "Teaching", "Storytelling", "Pastoral care", "Study planning"];
 
 // ── Mentor Groups types & data ──
@@ -1492,6 +1492,7 @@ type MentorGroup = {
   name: string;
   description: string;
   icon: string;
+  tags: string[];
   memberIds: string[];
 };
 
@@ -1530,18 +1531,18 @@ const GROUP_ICON_MAP: Record<string, any> = {
 };
 
 const INITIAL_MENTOR_GROUPS: MentorGroup[] = [
-  { id: "grp-1",  name: "Marriage",           description: "Mentors specialising in marriage counseling and couple guidance",    icon: "Heart",       memberIds: ["m1", "m5", "m14"] },
-  { id: "grp-2",  name: "Addiction Recovery",  description: "Supporting seekers through addiction recovery journeys",           icon: "ShieldCheck", memberIds: ["m8"] },
-  { id: "grp-3",  name: "Youth",              description: "Young adult and teen discipleship specialists",                     icon: "Star",        memberIds: ["m2", "m6", "m12", "m17"] },
-  { id: "grp-4",  name: "Women's Ministry",   description: "Women mentoring women in faith and life",                          icon: "HandHeart",   memberIds: ["m3", "m6", "m11", "m14", "m18"] },
-  { id: "grp-5",  name: "Men's Ministry",     description: "Brotherhood, accountability, and spiritual growth for men",        icon: "Shield",      memberIds: ["m1", "m13", "m8"] },
-  { id: "grp-6",  name: "Prayer",             description: "Dedicated intercessors and prayer mentors",                        icon: "Flame",       memberIds: ["m3", "m9", "m14", "m20"] },
-  { id: "grp-7",  name: "Counseling",         description: "Pastoral and biblical counseling specialists",                     icon: "Headphones",  memberIds: ["m1", "m3", "m11", "m18"] },
-  { id: "grp-8",  name: "New Believers",       description: "Foundations of faith for those just starting their walk",          icon: "Droplets",    memberIds: ["m1", "m4", "m12", "m20"] },
-  { id: "grp-9",  name: "Leadership",         description: "Training and equipping emerging leaders",                          icon: "Crown",       memberIds: ["m7", "m10", "m19"] },
-  { id: "grp-10", name: "Worship",            description: "Worship ministry leadership and spiritual formation through music", icon: "Church",      memberIds: ["m9", "m17"] },
-  { id: "grp-11", name: "Outreach",           description: "Evangelism, missions, and community engagement",                   icon: "Globe",       memberIds: ["m2", "m7", "m15"] },
-  { id: "grp-12", name: "Family",             description: "Parenting, family dynamics, and household discipleship",            icon: "Home",        memberIds: ["m5", "m16", "m4"] },
+  { id: "grp-1",  name: "Marriage",           description: "Mentors specialising in marriage counseling and couple guidance",    icon: "Heart",       tags: ["Marriage", "Counseling", "Family"],              memberIds: ["m1", "m5", "m14"] },
+  { id: "grp-2",  name: "Addiction Recovery",  description: "Supporting seekers through addiction recovery journeys",           icon: "ShieldCheck", tags: ["Addiction Recovery", "Counseling"],               memberIds: ["m8"] },
+  { id: "grp-3",  name: "Youth",              description: "Young adult and teen discipleship specialists",                     icon: "Star",        tags: ["Youth", "Apologetics"],                          memberIds: ["m2", "m6", "m12", "m17"] },
+  { id: "grp-4",  name: "Women's Ministry",   description: "Women mentoring women in faith and life",                          icon: "HandHeart",   tags: ["Women", "Prayer", "Counseling"],                 memberIds: ["m3", "m6", "m11", "m14", "m18"] },
+  { id: "grp-5",  name: "Men's Ministry",     description: "Brotherhood, accountability, and spiritual growth for men",        icon: "Shield",      tags: ["Men", "Accountability"],                         memberIds: ["m1", "m13", "m8"] },
+  { id: "grp-6",  name: "Prayer",             description: "Dedicated intercessors and prayer mentors",                        icon: "Flame",       tags: ["Prayer", "Worship"],                             memberIds: ["m3", "m9", "m14", "m20"] },
+  { id: "grp-7",  name: "Counseling",         description: "Pastoral and biblical counseling specialists",                     icon: "Headphones",  tags: ["Counseling", "Grief"],                           memberIds: ["m1", "m3", "m11", "m18"] },
+  { id: "grp-8",  name: "New Believers",       description: "Foundations of faith for those just starting their walk",          icon: "Droplets",    tags: ["New Believers", "Bible Study"],                   memberIds: ["m1", "m4", "m12", "m20"] },
+  { id: "grp-9",  name: "Leadership",         description: "Training and equipping emerging leaders",                          icon: "Crown",       tags: ["Leadership", "Theology"],                        memberIds: ["m7", "m10", "m19"] },
+  { id: "grp-10", name: "Worship",            description: "Worship ministry leadership and spiritual formation through music", icon: "Church",      tags: ["Worship", "Prayer", "Youth"],                    memberIds: ["m9", "m17"] },
+  { id: "grp-11", name: "Outreach",           description: "Evangelism, missions, and community engagement",                   icon: "Globe",       tags: ["Outreach", "Evangelism", "Apologetics"],          memberIds: ["m2", "m7", "m15"] },
+  { id: "grp-12", name: "Family",             description: "Parenting, family dynamics, and household discipleship",            icon: "Home",        tags: ["Family", "Children", "Marriage"],                 memberIds: ["m5", "m16", "m4"] },
 ];
 
 const FORM_FIELD_TYPES: { type: FormFieldDef["type"]; label: string; icon: any }[] = [
@@ -1688,34 +1689,40 @@ export function MentorsView({
   const [editGroupName, setEditGroupName] = useState("");
   const [editGroupDesc, setEditGroupDesc] = useState("");
   const [editGroupIcon, setEditGroupIcon] = useState("Heart");
+  const [editGroupTags, setEditGroupTags] = useState<string[]>([]);
   const [groupMemberSearch, setGroupMemberSearch] = useState("");
+
+  const toggleGroupTag = (tag: string) => {
+    setEditGroupTags(prev => prev.includes(tag) ? prev.filter(t => t !== tag) : [...prev, tag]);
+  };
 
   const openManageGroup = (g: MentorGroup) => {
     setSelectedGroupId(g.id);
     setEditGroupName(g.name);
     setEditGroupDesc(g.description);
     setEditGroupIcon(g.icon);
+    setEditGroupTags(g.tags);
     setGroupMemberSearch("");
   };
   const closeManageGroup = () => {
     setSelectedGroupId(null);
-    setEditGroupName(""); setEditGroupDesc(""); setEditGroupIcon("Heart"); setGroupMemberSearch("");
+    setEditGroupName(""); setEditGroupDesc(""); setEditGroupIcon("Heart"); setEditGroupTags([]); setGroupMemberSearch("");
   };
   const openNewGroup = () => {
     setSelectedGroupId(null);
-    setEditGroupName(""); setEditGroupDesc(""); setEditGroupIcon("Heart"); setGroupMemberSearch("");
+    setEditGroupName(""); setEditGroupDesc(""); setEditGroupIcon("Heart"); setEditGroupTags([]); setGroupMemberSearch("");
     setIsNewGroupOpen(true);
   };
   const handleCreateGroup = () => {
     if (!editGroupName.trim()) return;
-    setMentorGroups(prev => [...prev, { id: `grp-${Date.now()}`, name: editGroupName.trim(), description: editGroupDesc.trim(), icon: editGroupIcon, memberIds: [] }]);
+    setMentorGroups(prev => [...prev, { id: `grp-${Date.now()}`, name: editGroupName.trim(), description: editGroupDesc.trim(), icon: editGroupIcon, tags: editGroupTags, memberIds: [] }]);
     setIsNewGroupOpen(false);
-    setEditGroupName(""); setEditGroupDesc(""); setEditGroupIcon("Heart");
+    setEditGroupName(""); setEditGroupDesc(""); setEditGroupIcon("Heart"); setEditGroupTags([]);
     toast.success(`Group "${editGroupName}" created`);
   };
   const saveGroupEdits = () => {
     if (!selectedGroupId || !editGroupName.trim()) return;
-    setMentorGroups(prev => prev.map(g => g.id === selectedGroupId ? { ...g, name: editGroupName.trim(), description: editGroupDesc.trim(), icon: editGroupIcon } : g));
+    setMentorGroups(prev => prev.map(g => g.id === selectedGroupId ? { ...g, name: editGroupName.trim(), description: editGroupDesc.trim(), icon: editGroupIcon, tags: editGroupTags } : g));
     toast.success("Group updated");
   };
   const toggleMentorInGroup = (groupId: string, mentorId: string) => {
@@ -1942,6 +1949,15 @@ export function MentorsView({
           const q = groupMemberSearch.toLowerCase();
           return !q || m.name.toLowerCase().includes(q) || m.specialty.toLowerCase().includes(q);
         });
+        // Sort: suggested mentors (specialty matches group tags) first
+        const sortedMentorsForGroup = managingGroup ? [...filteredMentorsForGroup].sort((a, b) => {
+          const tagsLower = editGroupTags.map(t => t.toLowerCase());
+          const aMatch = tagsLower.some(t => a.specialty.toLowerCase().includes(t));
+          const bMatch = tagsLower.some(t => b.specialty.toLowerCase().includes(t));
+          if (aMatch && !bMatch) return -1;
+          if (!aMatch && bMatch) return 1;
+          return 0;
+        }) : filteredMentorsForGroup;
         return (
           <>
             {/* Card grid */}
@@ -1953,7 +1969,7 @@ export function MentorsView({
                   <button key={g.id} onClick={() => openManageGroup(g)}
                     className="bg-card border border-border rounded-lg p-4 text-left hover:border-foreground/15 hover:shadow-sm transition-all group"
                   >
-                    <div className="flex items-start gap-3 mb-3">
+                    <div className="flex items-start gap-3 mb-2">
                       <div className="w-10 h-10 rounded-lg flex items-center justify-center shrink-0 bg-muted text-muted-foreground group-hover:bg-primary/10 group-hover:text-primary transition-colors">
                         <Icon className="w-5 h-5" />
                       </div>
@@ -1962,6 +1978,14 @@ export function MentorsView({
                         <p className="text-xs text-muted-foreground line-clamp-1">{g.description}</p>
                       </div>
                     </div>
+                    {g.tags.length > 0 && (
+                      <div className="flex flex-wrap gap-1 mb-3">
+                        {g.tags.slice(0, 3).map(t => (
+                          <span key={t} className="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-primary/8 text-primary">{t}</span>
+                        ))}
+                        {g.tags.length > 3 && <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-muted text-muted-foreground">+{g.tags.length - 3}</span>}
+                      </div>
+                    )}
                     <div className="flex items-center justify-between">
                       {members.length === 0 ? (
                         <span className="text-xs text-muted-foreground">No members</span>
@@ -2019,6 +2043,21 @@ export function MentorsView({
                       })}
                     </div>
                   </div>
+                  <div>
+                    <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-1.5 block">Specialties</label>
+                    <div className="flex flex-wrap gap-1.5">
+                      {ALL_SPECIALTIES.map(tag => (
+                        <button key={tag} onClick={() => toggleGroupTag(tag)}
+                          className={cn("text-xs font-semibold px-2.5 py-1.5 rounded-md border transition-colors",
+                            editGroupTags.includes(tag) ? "border-primary bg-primary/10 text-primary" : "border-border text-muted-foreground hover:border-primary/40"
+                          )}
+                        >{tag}</button>
+                      ))}
+                    </div>
+                    {editGroupTags.length > 0 && (
+                      <p className="text-[11px] text-muted-foreground mt-1.5">Selected: {editGroupTags.join(", ")}</p>
+                    )}
+                  </div>
                   <div className="flex justify-end gap-2 pt-2 border-t border-border">
                     <Button variant="outline" size="sm" onClick={() => setIsNewGroupOpen(false)}>Cancel</Button>
                     <Button size="sm" disabled={!editGroupName.trim()} onClick={handleCreateGroup}><Plus className="w-3.5 h-3.5" /> Create</Button>
@@ -2028,12 +2067,15 @@ export function MentorsView({
             )}
 
             {/* ── Manage Group Modal ── */}
-            {managingGroup && (
-              <Modal isOpen onClose={closeManageGroup} title="Manage Group" size="2xl">
-                <div className="space-y-5">
-                  {/* Editable group details */}
-                  <div className="space-y-3">
-                    <div className="flex items-start gap-3">
+            {managingGroup && (() => {
+              const tagsLower = editGroupTags.map(t => t.toLowerCase());
+              const isSuggested = (m: MentorRow) => tagsLower.length > 0 && tagsLower.some(t => m.specialty.toLowerCase().includes(t));
+              const hasDetailChanged = editGroupName !== managingGroup.name || editGroupDesc !== managingGroup.description || editGroupIcon !== managingGroup.icon || JSON.stringify(editGroupTags) !== JSON.stringify(managingGroup.tags);
+              return (
+                <Modal isOpen onClose={closeManageGroup} title="Manage Group" size="2xl">
+                  <div className="space-y-5">
+                    {/* Editable group details */}
+                    <div className="space-y-3">
                       <div>
                         <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-1.5 block">Icon</label>
                         <div className="flex flex-wrap gap-1">
@@ -2047,8 +2089,6 @@ export function MentorsView({
                           })}
                         </div>
                       </div>
-                    </div>
-                    <div className="space-y-3">
                       <div>
                         <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-1.5 block">Name</label>
                         <Input value={editGroupName} onChange={e => setEditGroupName(e.target.value)} />
@@ -2057,59 +2097,77 @@ export function MentorsView({
                         <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-1.5 block">Description</label>
                         <Input value={editGroupDesc} onChange={e => setEditGroupDesc(e.target.value)} />
                       </div>
+                      <div>
+                        <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-1.5 block">Specialties</label>
+                        <div className="flex flex-wrap gap-1.5">
+                          {ALL_SPECIALTIES.map(tag => (
+                            <button key={tag} onClick={() => toggleGroupTag(tag)}
+                              className={cn("text-xs font-semibold px-2.5 py-1.5 rounded-md border transition-colors",
+                                editGroupTags.includes(tag) ? "border-primary bg-primary/10 text-primary" : "border-border text-muted-foreground hover:border-primary/40"
+                              )}
+                            >{tag}</button>
+                          ))}
+                        </div>
+                      </div>
+                      {hasDetailChanged && (
+                        <Button size="sm" onClick={saveGroupEdits}>Save Changes</Button>
+                      )}
                     </div>
-                    {/* Save details if changed */}
-                    {(editGroupName !== managingGroup.name || editGroupDesc !== managingGroup.description || editGroupIcon !== managingGroup.icon) && (
-                      <Button size="sm" onClick={saveGroupEdits}>Save Changes</Button>
-                    )}
-                  </div>
 
-                  {/* Members section */}
-                  <div className="border-t border-border pt-4">
-                    <div className="flex items-center justify-between mb-3">
-                      <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Members ({managingGroup.memberIds.length})</p>
-                      <div className="relative w-[200px]">
-                        <Search className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none" />
-                        <Input value={groupMemberSearch} onChange={e => setGroupMemberSearch(e.target.value)} placeholder="Search mentors..." className="pl-8 h-8 text-xs" />
+                    {/* Members section */}
+                    <div className="border-t border-border pt-4">
+                      <div className="flex items-center justify-between mb-3">
+                        <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider">
+                          Members ({managingGroup.memberIds.length})
+                          {editGroupTags.length > 0 && <span className="text-primary ml-1.5 normal-case">· suggested mentors shown first</span>}
+                        </p>
+                        <div className="relative w-[200px]">
+                          <Search className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none" />
+                          <Input value={groupMemberSearch} onChange={e => setGroupMemberSearch(e.target.value)} placeholder="Search mentors..." className="pl-8 h-8 text-xs" />
+                        </div>
+                      </div>
+
+                      <div className="max-h-[400px] overflow-y-auto space-y-0.5 border border-border rounded-lg p-1">
+                        {sortedMentorsForGroup.map(m => {
+                          const isMember = managingGroup.memberIds.includes(m.id);
+                          const suggested = isSuggested(m);
+                          return (
+                            <label key={m.id} className={cn(
+                              "flex items-center gap-3 px-3 py-2.5 rounded-md cursor-pointer transition-colors",
+                              isMember ? "bg-primary/8" : suggested ? "bg-amber-50/60" : "hover:bg-muted/40"
+                            )}>
+                              <input type="checkbox" checked={isMember} onChange={() => toggleMentorInGroup(managingGroup.id, m.id)}
+                                className="w-4 h-4 rounded border-border accent-primary shrink-0"
+                              />
+                              <Avatar name={m.name} tone={m.avatarTone} />
+                              <div className="flex-1 min-w-0">
+                                <p className="text-sm font-semibold text-foreground truncate">{m.name}</p>
+                                <p className="text-xs text-muted-foreground truncate">{m.specialty}</p>
+                              </div>
+                              <div className="flex items-center gap-1.5 shrink-0">
+                                {suggested && !isMember && <Chip tone="amber">Suggested</Chip>}
+                                <Chip tone={isMember ? "green" : "slate"}>{isMember ? "In group" : "Not added"}</Chip>
+                              </div>
+                            </label>
+                          );
+                        })}
+                        {sortedMentorsForGroup.length === 0 && (
+                          <p className="text-sm text-muted-foreground text-center py-6">No mentors match your search</p>
+                        )}
                       </div>
                     </div>
 
-                    <div className="max-h-[400px] overflow-y-auto space-y-0.5 border border-border rounded-lg p-1">
-                      {filteredMentorsForGroup.map(m => {
-                        const isMember = managingGroup.memberIds.includes(m.id);
-                        return (
-                          <label key={m.id} className={cn(
-                            "flex items-center gap-3 px-3 py-2.5 rounded-md cursor-pointer transition-colors",
-                            isMember ? "bg-primary/8" : "hover:bg-muted/40"
-                          )}>
-                            <input type="checkbox" checked={isMember} onChange={() => toggleMentorInGroup(managingGroup.id, m.id)}
-                              className="w-4 h-4 rounded border-border accent-primary shrink-0"
-                            />
-                            <Avatar name={m.name} tone={m.avatarTone} />
-                            <div className="flex-1 min-w-0">
-                              <p className="text-sm font-semibold text-foreground truncate">{m.name}</p>
-                              <p className="text-xs text-muted-foreground truncate">{m.specialty}</p>
-                            </div>
-                            <Chip tone={isMember ? "green" : "slate"}>{isMember ? "In group" : "Not added"}</Chip>
-                          </label>
-                        );
-                      })}
-                      {filteredMentorsForGroup.length === 0 && (
-                        <p className="text-sm text-muted-foreground text-center py-6">No mentors match your search</p>
-                      )}
+                    {/* Footer */}
+                    <div className="flex items-center justify-between pt-2 border-t border-border">
+                      <Button variant="outline" size="sm" onClick={() => deleteGroup(managingGroup.id)} className="text-red-600 hover:text-red-700 hover:bg-red-50">
+                        <Trash2 className="w-3.5 h-3.5" /> Delete Group
+                      </Button>
+                      <Button size="sm" onClick={closeManageGroup}>Done</Button>
                     </div>
                   </div>
-
-                  {/* Footer */}
-                  <div className="flex items-center justify-between pt-2 border-t border-border">
-                    <Button variant="outline" size="sm" onClick={() => deleteGroup(managingGroup.id)} className="text-red-600 hover:text-red-700 hover:bg-red-50">
-                      <Trash2 className="w-3.5 h-3.5" /> Delete Group
-                    </Button>
-                    <Button size="sm" onClick={closeManageGroup}>Done</Button>
-                  </div>
-                </div>
-              </Modal>
-            )}
+                </Modal>
+              );
+            })()}
           </>
         );
       })()}
