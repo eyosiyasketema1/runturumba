@@ -29,6 +29,7 @@ const settingsNav = [
   { id: "security", label: "Security", icon: Shield, description: "Password & authentication" },
   { id: "api", label: "API & Integrations", icon: Key, description: "API keys & developer tools" },
   { id: "ai", label: "AI Configuration", icon: Sparkles, description: "AI skillsets, logic & keys" },
+  { id: "terminology", label: "Terminology", icon: Globe, description: "Customize labels & terms" },
 ];
 
 // --- Section Header ---
@@ -1015,6 +1016,7 @@ export const SettingsView = ({
             {activeSection === "security" && <SecuritySection />}
             {activeSection === "api" && <ApiSection />}
             {activeSection === "ai" && <AISection />}
+            {activeSection === "terminology" && <TerminologySection />}
           </div>
         </div>
       </Card>
@@ -1461,6 +1463,192 @@ const AISection = () => {
           )}
         </CardContent>
       </Card>
+    </motion.div>
+  );
+};
+
+// --- Terminology Section ---
+type TermEntry = {
+  id: string;
+  key: string;
+  defaultLabel: string;
+  customLabel: string;
+  description: string;
+};
+
+const DEFAULT_TERMS: TermEntry[] = [
+  { id: "t-1",  key: "seeker",          defaultLabel: "Seeker",           customLabel: "", description: "A person exploring faith or being discipled" },
+  { id: "t-2",  key: "mentor",          defaultLabel: "Mentor",           customLabel: "", description: "A person guiding a seeker in their journey" },
+  { id: "t-3",  key: "mentor_coach",    defaultLabel: "Mentor Coach",     customLabel: "", description: "A leader who oversees and trains mentors" },
+  { id: "t-4",  key: "journey",         defaultLabel: "Journey",          customLabel: "", description: "A seeker's discipleship path or automation flow" },
+  { id: "t-5",  key: "milestone",       defaultLabel: "Milestone",        customLabel: "", description: "A key achievement in a seeker's faith journey" },
+  { id: "t-6",  key: "group",           defaultLabel: "Group",            customLabel: "", description: "A collection of mentors or seekers organized together" },
+  { id: "t-7",  key: "devotional",      defaultLabel: "Devotional",       customLabel: "", description: "A piece of spiritual content (Bible study, reading, etc.)" },
+  { id: "t-8",  key: "campaign",        defaultLabel: "Campaign",         customLabel: "", description: "A structured outreach or content series" },
+  { id: "t-9",  key: "contact",         defaultLabel: "Contact",          customLabel: "", description: "A person in the system (seeker, mentor, or other)" },
+  { id: "t-10", key: "invitation",      defaultLabel: "Invitation",       customLabel: "", description: "A form sent to a prospective mentor to apply" },
+  { id: "t-11", key: "automation",      defaultLabel: "Automation",       customLabel: "", description: "An automated workflow or journey builder flow" },
+  { id: "t-12", key: "decision",        defaultLabel: "Decision",         customLabel: "", description: "The stage where a seeker makes a faith commitment" },
+  { id: "t-13", key: "baptism",         defaultLabel: "Baptism",          customLabel: "", description: "The sacrament of baptism as a milestone" },
+  { id: "t-14", key: "salvation",       defaultLabel: "Salvation",        customLabel: "", description: "The journey type focused on accepting Christ" },
+  { id: "t-15", key: "discipleship",    defaultLabel: "Discipleship",     customLabel: "", description: "The overall process of growing in faith" },
+  { id: "t-16", key: "congregation",    defaultLabel: "Congregation",     customLabel: "", description: "The church community or local body" },
+  { id: "t-17", key: "small_group",     defaultLabel: "Small Group",      customLabel: "", description: "An intimate group for study, prayer, or fellowship" },
+  { id: "t-18", key: "prayer_partner",  defaultLabel: "Prayer Partner",   customLabel: "", description: "A person paired with another for prayer support" },
+];
+
+const TerminologySection = () => {
+  const [terms, setTerms] = useState<TermEntry[]>(DEFAULT_TERMS);
+  const [searchQ, setSearchQ] = useState("");
+  const [showAddCustom, setShowAddCustom] = useState(false);
+  const [newKey, setNewKey] = useState("");
+  const [newDefault, setNewDefault] = useState("");
+  const [newDesc, setNewDesc] = useState("");
+
+  const filtered = terms.filter(t =>
+    t.defaultLabel.toLowerCase().includes(searchQ.toLowerCase()) ||
+    t.customLabel.toLowerCase().includes(searchQ.toLowerCase()) ||
+    t.key.toLowerCase().includes(searchQ.toLowerCase())
+  );
+
+  const updateTerm = (id: string, customLabel: string) => {
+    setTerms(prev => prev.map(t => t.id === id ? { ...t, customLabel } : t));
+  };
+
+  const resetTerm = (id: string) => {
+    setTerms(prev => prev.map(t => t.id === id ? { ...t, customLabel: "" } : t));
+  };
+
+  const addCustomTerm = () => {
+    if (!newKey.trim() || !newDefault.trim()) { toast.error("Key and default label are required"); return; }
+    setTerms(prev => [...prev, { id: `t-${Date.now()}`, key: newKey.trim().toLowerCase().replace(/\s+/g, "_"), defaultLabel: newDefault.trim(), customLabel: "", description: newDesc.trim() }]);
+    setNewKey(""); setNewDefault(""); setNewDesc(""); setShowAddCustom(false);
+    toast.success("Custom term added");
+  };
+
+  const customizedCount = terms.filter(t => t.customLabel.trim()).length;
+
+  const handleSave = () => {
+    toast.success(`Terminology saved — ${customizedCount} term${customizedCount !== 1 ? "s" : ""} customized`);
+  };
+
+  const handleResetAll = () => {
+    setTerms(prev => prev.map(t => ({ ...t, customLabel: "" })));
+    toast.success("All terms reset to defaults");
+  };
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 8 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.25 }}
+      className="space-y-6"
+    >
+      <SectionHeader title="Terminology" description="Customize the words used throughout the platform to match your organization's language and culture." />
+      <Separator />
+
+      {/* Info banner */}
+      <div className="flex items-start gap-3 p-4 rounded-lg border border-blue-200 bg-blue-50">
+        <Globe className="w-5 h-5 text-blue-600 shrink-0 mt-0.5" />
+        <div>
+          <p className="text-sm font-semibold text-blue-800">Make Turumba speak your language</p>
+          <p className="text-xs text-blue-600 leading-relaxed mt-1">
+            Every organization has its own vocabulary. Some call them "seekers," others say "new believers" or "students." Customize terms below and they will be reflected across the entire platform — dashboards, forms, automations, and more.
+          </p>
+        </div>
+      </div>
+
+      {/* Search + actions */}
+      <div className="flex items-center gap-3">
+        <div className="relative flex-1">
+          <input
+            value={searchQ}
+            onChange={e => setSearchQ(e.target.value)}
+            placeholder="Search terms..."
+            className="w-full h-9 pl-3 pr-3 border border-input rounded-md bg-background text-sm focus:outline-none focus:ring-1 focus:ring-ring"
+          />
+        </div>
+        <Badge variant="secondary" className="text-xs shrink-0">{customizedCount} customized</Badge>
+        <Button size="sm" variant="outline" onClick={() => setShowAddCustom(!showAddCustom)}>
+          {showAddCustom ? <X className="w-3.5 h-3.5" /> : <Plus className="w-3.5 h-3.5" />}
+          {showAddCustom ? "Cancel" : "Add Term"}
+        </Button>
+      </div>
+
+      {/* Add custom term form */}
+      {showAddCustom && (
+        <div className="p-4 border border-dashed border-primary/30 rounded-lg bg-primary/5 space-y-3">
+          <div className="grid grid-cols-2 gap-3">
+            <FormField label="Term Key" description="Internal identifier (e.g. small_group)">
+              <Input value={newKey} onChange={e => setNewKey(e.target.value)} placeholder="e.g. fellowship" />
+            </FormField>
+            <FormField label="Default Label" description="The standard name for this term">
+              <Input value={newDefault} onChange={e => setNewDefault(e.target.value)} placeholder="e.g. Fellowship" />
+            </FormField>
+          </div>
+          <FormField label="Description" description="What this term refers to">
+            <Input value={newDesc} onChange={e => setNewDesc(e.target.value)} placeholder="e.g. A gathering for worship and community" />
+          </FormField>
+          <Button size="sm" onClick={addCustomTerm}><Check className="w-3.5 h-3.5" /> Add Term</Button>
+        </div>
+      )}
+
+      {/* Terms table */}
+      <Card>
+        <CardContent className="p-0">
+          <table className="w-full">
+            <thead>
+              <tr className="bg-muted/40 border-b border-border text-xs uppercase tracking-wider text-muted-foreground">
+                <th className="px-4 py-3 text-left font-semibold">Default Term</th>
+                <th className="px-4 py-3 text-left font-semibold">Your Custom Term</th>
+                <th className="px-4 py-3 text-left font-semibold">Description</th>
+                <th className="px-4 py-3 text-right font-semibold w-20">Reset</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filtered.length === 0 ? (
+                <tr><td colSpan={4} className="px-4 py-8 text-center text-sm text-muted-foreground">No terms match your search.</td></tr>
+              ) : filtered.map(t => (
+                <tr key={t.id} className="border-b border-border last:border-0 hover:bg-muted/20 transition-colors">
+                  <td className="px-4 py-3">
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm font-semibold text-foreground">{t.defaultLabel}</span>
+                      {t.customLabel.trim() && <Badge variant="default" className="text-[10px]">Customized</Badge>}
+                    </div>
+                    <span className="text-[11px] text-muted-foreground font-mono">{t.key}</span>
+                  </td>
+                  <td className="px-4 py-3">
+                    <Input
+                      value={t.customLabel}
+                      onChange={e => updateTerm(t.id, e.target.value)}
+                      placeholder={t.defaultLabel}
+                      className="h-8 text-sm max-w-[200px]"
+                    />
+                  </td>
+                  <td className="px-4 py-3 text-xs text-muted-foreground max-w-[240px]">{t.description}</td>
+                  <td className="px-4 py-3 text-right">
+                    {t.customLabel.trim() && (
+                      <Button variant="ghost" size="sm" className="h-7 text-xs text-muted-foreground hover:text-foreground" onClick={() => resetTerm(t.id)}>
+                        Reset
+                      </Button>
+                    )}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </CardContent>
+      </Card>
+
+      {/* Save / Reset All */}
+      <div className="flex items-center justify-between">
+        <Button variant="outline" size="sm" onClick={handleResetAll}>
+          Reset All to Defaults
+        </Button>
+        <Button size="sm" onClick={handleSave}>
+          <Save className="w-3.5 h-3.5" /> Save Terminology
+        </Button>
+      </div>
     </motion.div>
   );
 };
