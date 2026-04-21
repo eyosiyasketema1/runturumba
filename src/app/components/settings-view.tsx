@@ -1499,6 +1499,7 @@ const DEFAULT_TERMS: TermEntry[] = [
 
 const TerminologySection = () => {
   const [terms, setTerms] = useState<TermEntry[]>(DEFAULT_TERMS);
+  const [savedValues, setSavedValues] = useState<Record<string, string>>({});
   const [searchQ, setSearchQ] = useState("");
   const [showAddCustom, setShowAddCustom] = useState(false);
   const [newKey, setNewKey] = useState("");
@@ -1515,8 +1516,20 @@ const TerminologySection = () => {
     setTerms(prev => prev.map(t => t.id === id ? { ...t, customLabel } : t));
   };
 
+  const saveTerm = (t: TermEntry) => {
+    setSavedValues(prev => ({ ...prev, [t.id]: t.customLabel }));
+    toast.success(`"${t.defaultLabel}" saved as "${t.customLabel}"`);
+  };
+
+  const isDirty = (t: TermEntry) => {
+    const saved = savedValues[t.id];
+    if (saved === undefined) return t.customLabel.trim() !== "";
+    return t.customLabel !== saved;
+  };
+
   const resetTerm = (id: string) => {
     setTerms(prev => prev.map(t => t.id === id ? { ...t, customLabel: "" } : t));
+    setSavedValues(prev => { const next = { ...prev }; delete next[id]; return next; });
   };
 
   const addCustomTerm = () => {
@@ -1534,6 +1547,7 @@ const TerminologySection = () => {
 
   const handleResetAll = () => {
     setTerms(prev => prev.map(t => ({ ...t, customLabel: "" })));
+    setSavedValues({});
     toast.success("All terms reset to defaults");
   };
 
@@ -1631,10 +1645,13 @@ const TerminologySection = () => {
                     <td className="px-4 py-3 text-xs text-muted-foreground max-w-[240px]">{t.description}</td>
                     <td className="px-4 py-3 text-right">
                       <div className="flex items-center justify-end gap-1">
-                        {t.customLabel.trim() && (
-                          <Button size="sm" className="h-7 text-xs" onClick={() => { toast.success(`"${t.defaultLabel}" saved as "${t.customLabel}"`); }}>
+                        {isDirty(t) && (
+                          <Button size="sm" className="h-7 text-xs" onClick={() => saveTerm(t)}>
                             <Save className="w-3 h-3" /> Save
                           </Button>
+                        )}
+                        {t.customLabel.trim() && !isDirty(t) && (
+                          <Badge variant="secondary" className="text-[10px] mr-1">Saved</Badge>
                         )}
                         {t.customLabel.trim() && (
                           <Button variant="ghost" size="sm" className="h-7 text-xs text-muted-foreground hover:text-foreground" onClick={() => resetTerm(t.id)}>
