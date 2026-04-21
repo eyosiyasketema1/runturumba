@@ -1486,6 +1486,18 @@ const ALL_LANGUAGES = [
 const ALL_SPECIALTIES = ["New Believers", "Youth", "Women", "Men", "Grief", "Prayer", "Apologetics", "Bible Study", "Marriage", "Addiction Recovery", "Leadership", "Outreach", "Evangelism", "Family", "Worship", "Counseling", "Theology", "Children", "Accountability"];
 const ALL_STRENGTHS  = ["Empathy", "Bible knowledge", "Prayer", "Patience", "Counseling", "Apologetics", "Teaching", "Storytelling", "Pastoral care", "Study planning"];
 
+const DEFAULT_FORM_FIELDS: FormFieldDef[] = [
+  { id: "df-name",       type: "text",           label: "Full Name",           required: true },
+  { id: "df-email",      type: "email",          label: "Email Address",       required: true },
+  { id: "df-phone",      type: "phone",          label: "Phone Number",        required: false },
+  { id: "df-gender",     type: "select",         label: "Gender",              required: true, options: ["Male", "Female"] },
+  { id: "df-specialty",  type: "checkbox_group",  label: "Area of Specialty",   required: true, options: [...ALL_SPECIALTIES] },
+  { id: "df-experience", type: "select",         label: "Experience Level",    required: true, options: [...EXPERIENCE_LEVELS] },
+  { id: "df-languages",  type: "checkbox_group",  label: "Languages",           required: true, options: ALL_LANGUAGES.map(l => l.label) },
+  { id: "df-strengths",  type: "checkbox_group",  label: "Key Strengths",       required: false, options: [...ALL_STRENGTHS] },
+  { id: "df-bio",        type: "textarea",       label: "Brief Bio / Testimony", required: false },
+];
+
 // ── Mentor Groups types & data ──
 type MentorGroup = {
   id: string;
@@ -1975,7 +1987,7 @@ export function MentorsView({
   };
   const openNewForm = () => {
     setEditingFormId(null);
-    setBuilderFields([]); setBuilderName(""); setBuilderDescription(""); setBuilderSpecialty("");
+    setBuilderFields(DEFAULT_FORM_FIELDS.map(f => ({ ...f, id: `f-${Date.now()}-${Math.random().toString(36).slice(2,5)}` }))); setBuilderName(""); setBuilderDescription(""); setBuilderSpecialty("");
     setFormViewMode("edit");
     setIsFormBuilderOpen(true);
   };
