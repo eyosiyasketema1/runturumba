@@ -26,7 +26,7 @@ import {
 } from "./ui/dropdown-menu";
 import { Modal } from "./shared-ui";
 import { toast } from "sonner";
-import { ArrowLeft, Eye, Trash2, MessageSquare as MessageSquareIcon, Archive, RefreshCw, Zap, HelpCircle, UserPlus, X, GripVertical, Mail, Tag, ListOrdered, UserCheck } from "lucide-react";
+import { ArrowLeft, Eye, Trash2, MessageSquare as MessageSquareIcon, Archive, RefreshCw, Zap, HelpCircle, UserPlus, X, GripVertical, Mail, Tag, ListOrdered, UserCheck, Upload, FileSpreadsheet, AlertTriangle } from "lucide-react";
 import {
   AreaChart, Area, PieChart, Pie, Cell, XAxis, YAxis, Tooltip, ResponsiveContainer
 } from "recharts";
@@ -652,6 +652,258 @@ function QuickAction({
 }
 
 // ============================================================================
+// IMPORT MODAL (shared by Seekers & Mentors)
+// ============================================================================
+
+type ImportField = { key: string; label: string; required?: boolean };
+
+const SEEKER_IMPORT_FIELDS: ImportField[] = [
+  { key: "name", label: "Full Name", required: true },
+  { key: "email", label: "Email Address", required: true },
+  { key: "maturity", label: "Maturity Level" },
+  { key: "campaign", label: "Campaign / Program" },
+  { key: "status", label: "Status" },
+];
+
+const MENTOR_IMPORT_FIELDS: ImportField[] = [
+  { key: "name", label: "Full Name", required: true },
+  { key: "email", label: "Email Address", required: true },
+  { key: "specialty", label: "Area of Specialty" },
+  { key: "experience", label: "Experience Level" },
+  { key: "gender", label: "Gender" },
+  { key: "languages", label: "Languages" },
+  { key: "strengths", label: "Key Strengths" },
+  { key: "bio", label: "Brief Bio" },
+  { key: "capacity", label: "Capacity (e.g. 0/5)" },
+];
+
+type ImportRow = Record<string, string>;
+
+function ImportModal({
+  isOpen, onClose, entityType, fields, onImport,
+}: {
+  isOpen: boolean; onClose: () => void;
+  entityType: "seekers" | "mentors";
+  fields: ImportField[];
+  onImport: (rows: ImportRow[]) => void;
+}) {
+  const [step, setStep] = useState<"upload" | "mapping" | "preview">("upload");
+  const [fileName, setFileName] = useState("");
+  const [rawRows, setRawRows] = useState<ImportRow[]>([]);
+  const [headers, setHeaders] = useState<string[]>([]);
+  const [mapping, setMapping] = useState<Record<string, string>>({});
+  const [errors, setErrors] = useState<string[]>([]);
+
+  const reset = () => { setStep("upload"); setFileName(""); setRawRows([]); setHeaders([]); setMapping({}); setErrors([]); };
+  const handleClose = () => { reset(); onClose(); };
+
+  const parseCSV = (text: string) => {
+    const lines = text.split(/\r?\n/).filter(l => l.trim());
+    if (lines.length < 2) { setErrors(["File must have a header row and at least one data row."]); return; }
+    const hdrs = lines[0].split(",").map(h => h.trim().replace(/^"|"$/g, ""));
+    setHeaders(hdrs);
+    const rows = lines.slice(1).map(line => {
+      const vals = line.split(",").map(v => v.trim().replace(/^"|"$/g, ""));
+      const row: ImportRow = {};
+      hdrs.forEach((h, i) => { row[h] = vals[i] || ""; });
+      return row;
+    });
+    setRawRows(rows);
+    // auto-map by fuzzy match
+    const autoMap: Record<string, string> = {};
+    fields.forEach(f => {
+      const match = hdrs.find(h => h.toLowerCase().replace(/[_\s]/g, "") === f.key.toLowerCase().replace(/[_\s]/g, ""))
+        || hdrs.find(h => h.toLowerCase().includes(f.key.toLowerCase()))
+        || hdrs.find(h => f.label.toLowerCase().includes(h.toLowerCase()));
+      if (match) autoMap[f.key] = match;
+    });
+    setMapping(autoMap);
+    setStep("mapping");
+    setErrors([]);
+  };
+
+  const handleFile = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setFileName(file.name);
+    const ext = file.name.split(".").pop()?.toLowerCase();
+    if (ext === "csv" || ext === "txt") {
+      const reader = new FileReader();
+      reader.onload = (ev) => parseCSV(ev.target?.result as string);
+      reader.readAsText(file);
+    } else if (ext === "xlsx" || ext === "xls") {
+      // For demo: we simulate parsing Excel by reading as CSV-like
+      // In production you'd use SheetJS here
+      setErrors([]);
+      const reader = new FileReader();
+      reader.onload = (ev) => {
+        try {
+          // Simulate reading first sheet as CSV text
+          const text = ev.target?.result as string;
+          parseCSV(text);
+        } catch {
+          setErrors(["Could not parse Excel file. Please try exporting as CSV."]);
+        }
+      };
+      reader.readAsText(file);
+    } else {
+      setErrors(["Unsupported file format. Please use .csv or .xlsx"]);
+    }
+  };
+
+  const goToPreview = () => {
+    const errs: string[] = [];
+    fields.filter(f => f.required).forEach(f => {
+      if (!mapping[f.key]) errs.push(`"${f.label}" is required and must be mapped.`);
+    });
+    if (errs.length) { setErrors(errs); return; }
+    setErrors([]);
+    setStep("preview");
+  };
+
+  const mappedRows = rawRows.map(row => {
+    const mapped: ImportRow = {};
+    fields.forEach(f => {
+      const hdr = mapping[f.key];
+      mapped[f.key] = hdr ? (row[hdr] || "") : "";
+    });
+    return mapped;
+  });
+
+  const validRows = mappedRows.filter(r => fields.filter(f => f.required).every(f => r[f.key]?.trim()));
+  const invalidCount = mappedRows.length - validRows.length;
+
+  const handleImport = () => {
+    if (validRows.length === 0) { setErrors(["No valid rows to import."]); return; }
+    onImport(validRows);
+    toast.success(`Imported ${validRows.length} ${entityType}`);
+    handleClose();
+  };
+
+  if (!isOpen) return null;
+
+  return (
+    <Modal isOpen={isOpen} onClose={handleClose} title={`Import ${entityType === "seekers" ? "Seekers" : "Mentors"}`} size="lg">
+      <div className="space-y-4">
+        {/* Step indicator */}
+        <div className="flex items-center gap-2 text-xs font-medium">
+          {["Upload File", "Map Columns", "Preview & Import"].map((label, i) => {
+            const stepIdx = i === 0 ? "upload" : i === 1 ? "mapping" : "preview";
+            const active = step === stepIdx;
+            const done = (step === "mapping" && i === 0) || (step === "preview" && i < 2);
+            return (
+              <React.Fragment key={label}>
+                {i > 0 && <div className="h-px flex-1 bg-border" />}
+                <span className={cn("px-2 py-1 rounded-full", active ? "bg-primary text-primary-foreground" : done ? "bg-green-100 text-green-700" : "bg-muted text-muted-foreground")}>{i + 1}. {label}</span>
+              </React.Fragment>
+            );
+          })}
+        </div>
+
+        {errors.length > 0 && (
+          <div className="bg-red-50 border border-red-200 rounded-md p-3 space-y-1">
+            {errors.map((err, i) => (
+              <p key={i} className="text-xs text-red-700 flex items-center gap-1.5"><AlertTriangle className="w-3 h-3 shrink-0" />{err}</p>
+            ))}
+          </div>
+        )}
+
+        {/* Step 1: Upload */}
+        {step === "upload" && (
+          <div className="border-2 border-dashed border-border rounded-lg p-8 text-center space-y-3">
+            <Upload className="w-10 h-10 mx-auto text-muted-foreground" />
+            <div>
+              <p className="text-sm font-semibold">Drag & drop or click to upload</p>
+              <p className="text-xs text-muted-foreground mt-1">Supported formats: CSV, Excel (.xlsx)</p>
+            </div>
+            <label className="inline-block cursor-pointer">
+              <input type="file" accept=".csv,.xlsx,.xls" className="hidden" onChange={handleFile} />
+              <span className="inline-flex items-center gap-1.5 px-4 py-2 bg-primary text-primary-foreground text-sm font-medium rounded-md hover:bg-primary/90 transition-colors">
+                <FileSpreadsheet className="w-4 h-4" /> Choose File
+              </span>
+            </label>
+            {fileName && <p className="text-xs text-muted-foreground">Selected: <span className="font-medium text-foreground">{fileName}</span></p>}
+
+            <div className="pt-3 border-t border-border mt-4">
+              <p className="text-xs font-semibold text-muted-foreground mb-2">Expected columns for {entityType}:</p>
+              <div className="flex flex-wrap gap-1.5 justify-center">
+                {fields.map(f => (
+                  <span key={f.key} className={cn("px-2 py-0.5 rounded-full text-xs", f.required ? "bg-primary/10 text-primary font-medium" : "bg-muted text-muted-foreground")}>
+                    {f.label}{f.required ? " *" : ""}
+                  </span>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Step 2: Mapping */}
+        {step === "mapping" && (
+          <div className="space-y-3">
+            <p className="text-sm text-muted-foreground">Map your file columns to {entityType} fields. We auto-mapped what we could.</p>
+            <div className="bg-muted/30 rounded-lg border border-border divide-y divide-border">
+              {fields.map(f => (
+                <div key={f.key} className="flex items-center justify-between px-4 py-2.5">
+                  <span className="text-sm font-medium">{f.label}{f.required ? <span className="text-red-500 ml-0.5">*</span> : ""}</span>
+                  <select value={mapping[f.key] || ""} onChange={e => setMapping(prev => ({ ...prev, [f.key]: e.target.value }))}
+                    className="h-8 w-48 rounded-md border border-input bg-background px-2 text-sm text-foreground focus:ring-1 focus:ring-ring outline-none">
+                    <option value="">— Skip —</option>
+                    {headers.map(h => <option key={h} value={h}>{h}</option>)}
+                  </select>
+                </div>
+              ))}
+            </div>
+            <p className="text-xs text-muted-foreground">Found <span className="font-semibold text-foreground">{rawRows.length}</span> rows and <span className="font-semibold text-foreground">{headers.length}</span> columns in your file.</p>
+            <div className="flex items-center justify-between pt-2">
+              <Button variant="outline" size="sm" onClick={() => { setStep("upload"); setErrors([]); }}>Back</Button>
+              <Button size="sm" onClick={goToPreview}>Continue to Preview</Button>
+            </div>
+          </div>
+        )}
+
+        {/* Step 3: Preview */}
+        {step === "preview" && (
+          <div className="space-y-3">
+            <div className="flex items-center gap-3 text-sm">
+              <span className="px-2 py-1 rounded-full bg-green-100 text-green-700 text-xs font-medium">{validRows.length} valid</span>
+              {invalidCount > 0 && <span className="px-2 py-1 rounded-full bg-red-100 text-red-700 text-xs font-medium">{invalidCount} skipped (missing required fields)</span>}
+            </div>
+            <div className="max-h-[250px] overflow-auto border border-border rounded-lg">
+              <table className="w-full text-xs">
+                <thead className="bg-muted/40 sticky top-0">
+                  <tr>
+                    <th className="px-3 py-2 text-left font-semibold text-muted-foreground">#</th>
+                    {fields.map(f => <th key={f.key} className="px-3 py-2 text-left font-semibold text-muted-foreground">{f.label}</th>)}
+                  </tr>
+                </thead>
+                <tbody>
+                  {mappedRows.slice(0, 50).map((row, i) => {
+                    const isValid = fields.filter(f => f.required).every(f => row[f.key]?.trim());
+                    return (
+                      <tr key={i} className={cn("border-t border-border", !isValid && "bg-red-50/50 opacity-60")}>
+                        <td className="px-3 py-1.5 text-muted-foreground">{i + 1}</td>
+                        {fields.map(f => <td key={f.key} className="px-3 py-1.5 max-w-[150px] truncate">{row[f.key] || <span className="text-muted-foreground italic">—</span>}</td>)}
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+            {mappedRows.length > 50 && <p className="text-xs text-muted-foreground">Showing first 50 of {mappedRows.length} rows.</p>}
+            <div className="flex items-center justify-between pt-2">
+              <Button variant="outline" size="sm" onClick={() => { setStep("mapping"); setErrors([]); }}>Back</Button>
+              <Button size="sm" onClick={handleImport} disabled={validRows.length === 0} className={validRows.length === 0 ? "opacity-50 cursor-not-allowed" : ""}>
+                <Upload className="w-3.5 h-3.5" /> Import {validRows.length} {entityType}
+              </Button>
+            </div>
+          </div>
+        )}
+      </div>
+    </Modal>
+  );
+}
+
+// ============================================================================
 // SEEKERS
 // ============================================================================
 
@@ -736,6 +988,25 @@ export function SeekersView({
   const [sort, setSort]           = useState<SortKey>("newest");
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [isNewOpen, setIsNewOpen] = useState(false);
+  const [isImportOpen, setIsImportOpen] = useState(false);
+
+  const handleSeekerImport = (rows: ImportRow[]) => {
+    const avatarTones: ("blue" | "purple" | "rose" | "amber" | "green" | "slate")[] = ["blue", "purple", "rose", "amber", "green", "slate"];
+    const newSeekers: SeekerRow[] = rows.map((r, i) => ({
+      id: `s-imp-${Date.now()}-${i}`,
+      name: r.name || "Unknown",
+      email: r.email || "—",
+      maturity: r.maturity || "Interested",
+      maturityTone: "orange",
+      campaign: r.campaign || "—",
+      engagement: 0,
+      engagementTone: "red" as const,
+      status: r.status || "Pending",
+      statusTone: "amber",
+      avatarTone: avatarTones[i % avatarTones.length],
+    }));
+    setSeekers(prev => [...newSeekers, ...prev]);
+  };
 
   const selected = seekers.find(s => s.id === selectedId) || null;
 
@@ -775,9 +1046,14 @@ export function SeekersView({
         title="Seekers"
         subtitle="Manage and track seeker journeys"
         actions={canCreate && (
-          <Button onClick={() => setIsNewOpen(true)}>
-            <Plus className="w-4 h-4" /> New Seeker
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button variant="outline" onClick={() => setIsImportOpen(true)}>
+              <Upload className="w-4 h-4" /> Import
+            </Button>
+            <Button onClick={() => setIsNewOpen(true)}>
+              <Plus className="w-4 h-4" /> New Seeker
+            </Button>
+          </div>
         )}
       />
 
@@ -910,6 +1186,14 @@ export function SeekersView({
           toast.success(`${draft.name} added — AI classification pending`);
           setIsNewOpen(false);
         }}
+      />
+
+      <ImportModal
+        isOpen={isImportOpen}
+        onClose={() => setIsImportOpen(false)}
+        entityType="seekers"
+        fields={SEEKER_IMPORT_FIELDS}
+        onImport={handleSeekerImport}
       />
     </div>
   );
@@ -1819,6 +2103,29 @@ export function MentorsView({
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [isNewOpen, setIsNewOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [isMentorImportOpen, setIsMentorImportOpen] = useState(false);
+
+  const handleMentorImport = (rows: ImportRow[]) => {
+    const avatarTones: ("blue" | "purple" | "rose" | "amber" | "green" | "slate")[] = ["blue", "purple", "rose", "amber", "green", "slate"];
+    const newMentors: MentorRow[] = rows.map((r, i) => ({
+      id: `m-imp-${Date.now()}-${i}`,
+      name: r.name || "Unknown",
+      email: r.email || "—",
+      specialty: r.specialty || "General",
+      languages: r.languages || "EN",
+      capacity: r.capacity || "0/5",
+      load: 0,
+      status: "Active" as const,
+      statusTone: "green",
+      avatarTone: avatarTones[i % avatarTones.length],
+      experience: (r.experience as MentorRow["experience"]) || "Beginner",
+      gender: (r.gender?.toLowerCase() === "female" ? "female" : "male") as MentorRow["gender"],
+      strengths: r.strengths ? r.strengths.split(",").map(s => s.trim()) : [],
+      bio: r.bio || "",
+      joined: new Date().toISOString().split("T")[0],
+    }));
+    setMentors(prev => [...newMentors, ...prev]);
+  };
 
   const selected = mentors.find(m => m.id === selectedId) || null;
   const editing  = mentors.find(m => m.id === editingId) || null;
@@ -2137,6 +2444,9 @@ export function MentorsView({
           <div className="flex items-center gap-2">
             {activeTab === "all" && (
               <>
+                <Button variant="outline" onClick={() => setIsMentorImportOpen(true)}>
+                  <Upload className="w-4 h-4" /> Import
+                </Button>
                 {canCreate && (
                   <Button variant="outline" onClick={() => setIsNewOpen(true)}>
                     <Plus className="w-4 h-4" /> New Mentor
@@ -3184,6 +3494,14 @@ export function MentorsView({
           setIsNewOpen(false);
           setEditingId(null);
         }}
+      />
+
+      <ImportModal
+        isOpen={isMentorImportOpen}
+        onClose={() => setIsMentorImportOpen(false)}
+        entityType="mentors"
+        fields={MENTOR_IMPORT_FIELDS}
+        onImport={handleMentorImport}
       />
     </div>
   );
