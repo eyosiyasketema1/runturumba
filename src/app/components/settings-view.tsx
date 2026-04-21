@@ -1602,51 +1602,64 @@ const TerminologySection = () => {
                 <th className="px-4 py-3 text-left font-semibold">Default Term</th>
                 <th className="px-4 py-3 text-left font-semibold">Your Custom Term</th>
                 <th className="px-4 py-3 text-left font-semibold">Description</th>
-                <th className="px-4 py-3 text-right font-semibold w-20">Reset</th>
+                <th className="px-4 py-3 text-right font-semibold w-36">Actions</th>
               </tr>
             </thead>
             <tbody>
               {filtered.length === 0 ? (
                 <tr><td colSpan={4} className="px-4 py-8 text-center text-sm text-muted-foreground">No terms match your search.</td></tr>
-              ) : filtered.map(t => (
-                <tr key={t.id} className="border-b border-border last:border-0 hover:bg-muted/20 transition-colors">
-                  <td className="px-4 py-3">
-                    <div className="flex items-center gap-2">
-                      <span className="text-sm font-semibold text-foreground">{t.defaultLabel}</span>
-                      {t.customLabel.trim() && <Badge variant="default" className="text-[10px]">Customized</Badge>}
-                    </div>
-                    <span className="text-[11px] text-muted-foreground font-mono">{t.key}</span>
-                  </td>
-                  <td className="px-4 py-3">
-                    <Input
-                      value={t.customLabel}
-                      onChange={e => updateTerm(t.id, e.target.value)}
-                      placeholder={t.defaultLabel}
-                      className="h-8 text-sm max-w-[200px]"
-                    />
-                  </td>
-                  <td className="px-4 py-3 text-xs text-muted-foreground max-w-[240px]">{t.description}</td>
-                  <td className="px-4 py-3 text-right">
-                    {t.customLabel.trim() && (
-                      <Button variant="ghost" size="sm" className="h-7 text-xs text-muted-foreground hover:text-foreground" onClick={() => resetTerm(t.id)}>
-                        Reset
-                      </Button>
-                    )}
-                  </td>
-                </tr>
-              ))}
+              ) : filtered.map(t => {
+                const isBuiltIn = DEFAULT_TERMS.some(d => d.id === t.id);
+                return (
+                  <tr key={t.id} className="border-b border-border last:border-0 hover:bg-muted/20 transition-colors">
+                    <td className="px-4 py-3">
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm font-semibold text-foreground">{t.defaultLabel}</span>
+                        {t.customLabel.trim() && <Badge variant="default" className="text-[10px]">Customized</Badge>}
+                        {!isBuiltIn && <Badge variant="secondary" className="text-[10px]">Custom</Badge>}
+                      </div>
+                      <span className="text-[11px] text-muted-foreground font-mono">{t.key}</span>
+                    </td>
+                    <td className="px-4 py-3">
+                      <Input
+                        value={t.customLabel}
+                        onChange={e => updateTerm(t.id, e.target.value)}
+                        placeholder={t.defaultLabel}
+                        className="h-8 text-sm max-w-[200px]"
+                      />
+                    </td>
+                    <td className="px-4 py-3 text-xs text-muted-foreground max-w-[240px]">{t.description}</td>
+                    <td className="px-4 py-3 text-right">
+                      <div className="flex items-center justify-end gap-1">
+                        {t.customLabel.trim() && (
+                          <Button size="sm" className="h-7 text-xs" onClick={() => { toast.success(`"${t.defaultLabel}" saved as "${t.customLabel}"`); }}>
+                            <Save className="w-3 h-3" /> Save
+                          </Button>
+                        )}
+                        {t.customLabel.trim() && (
+                          <Button variant="ghost" size="sm" className="h-7 text-xs text-muted-foreground hover:text-foreground" onClick={() => resetTerm(t.id)}>
+                            Reset
+                          </Button>
+                        )}
+                        {!isBuiltIn && (
+                          <Button variant="ghost" size="sm" className="h-7 w-7 p-0 text-muted-foreground hover:text-red-500" onClick={() => { setTerms(prev => prev.filter(x => x.id !== t.id)); toast.success(`"${t.defaultLabel}" removed`); }}>
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </Button>
+                        )}
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </CardContent>
       </Card>
 
-      {/* Save / Reset All */}
-      <div className="flex items-center justify-between">
+      {/* Reset All — bottom utility */}
+      <div className="flex items-center justify-end">
         <Button variant="outline" size="sm" onClick={handleResetAll}>
           Reset All to Defaults
-        </Button>
-        <Button size="sm" onClick={handleSave}>
-          <Save className="w-3.5 h-3.5" /> Save Terminology
         </Button>
       </div>
     </motion.div>
