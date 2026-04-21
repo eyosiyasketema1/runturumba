@@ -1511,44 +1511,44 @@ function ConversationToolbar({
 // Generates contextual pill-style reply suggestions based on the conversation
 // context, contact maturity, and journey stage.
 
-type AISuggestion = { id: string; text: string; tone: "primary" | "green" | "amber" | "purple" };
+type AISuggestion = { id: string; text: string };
 
 const AI_SUGGESTION_BANK: Record<string, AISuggestion[]> = {
   greeting: [
-    { id: "sg1", text: "Hi! Thank you for reaching out. How can I help you today?", tone: "primary" },
-    { id: "sg2", text: "Welcome! I'm glad you're here. What's on your mind?", tone: "green" },
-    { id: "sg3", text: "Peace be with you! How are you doing today?", tone: "purple" },
+    { id: "sg1", text: "Hi! Thank you for reaching out. How can I help you today?" },
+    { id: "sg2", text: "Welcome! I'm glad you're here. What's on your mind?" },
+    { id: "sg3", text: "Peace be with you! How are you doing today?" },
   ],
   question: [
-    { id: "sq1", text: "That's a great question! Let me share some thoughts...", tone: "primary" },
-    { id: "sq2", text: "I appreciate you asking. Here's what I've found helpful...", tone: "green" },
-    { id: "sq3", text: "Let me point you to a resource that covers this well.", tone: "amber" },
+    { id: "sq1", text: "That's a great question! Let me share some thoughts..." },
+    { id: "sq2", text: "I appreciate you asking. Here's what I've found helpful..." },
+    { id: "sq3", text: "Let me point you to a resource that covers this well." },
   ],
   struggle: [
-    { id: "ss1", text: "Thank you for sharing that. I'm here for you and we can work through this together.", tone: "primary" },
-    { id: "ss2", text: "I understand this is difficult. Would you like to talk more about it?", tone: "green" },
-    { id: "ss3", text: "You're not alone in this. Let's set up a time to discuss further.", tone: "purple" },
+    { id: "ss1", text: "Thank you for sharing that. I'm here for you and we can work through this together." },
+    { id: "ss2", text: "I understand this is difficult. Would you like to talk more about it?" },
+    { id: "ss3", text: "You're not alone in this. Let's set up a time to discuss further." },
   ],
   encouragement: [
-    { id: "se1", text: "That's wonderful progress! I'm really encouraged by your growth.", tone: "green" },
-    { id: "se2", text: "Keep going — you're doing amazing! God is faithful.", tone: "primary" },
-    { id: "se3", text: "I love hearing this. Would you like to share your testimony with the group?", tone: "purple" },
+    { id: "se1", text: "That's wonderful progress! I'm really encouraged by your growth." },
+    { id: "se2", text: "Keep going — you're doing amazing! God is faithful." },
+    { id: "se3", text: "I love hearing this. Would you like to share your testimony with the group?" },
   ],
   followup: [
-    { id: "sf1", text: "Just checking in — how are things going since we last spoke?", tone: "primary" },
-    { id: "sf2", text: "I've been thinking about our conversation. How are you feeling?", tone: "green" },
-    { id: "sf3", text: "Have you had a chance to try what we discussed?", tone: "amber" },
+    { id: "sf1", text: "Just checking in — how are things going since we last spoke?" },
+    { id: "sf2", text: "I've been thinking about our conversation. How are you feeling?" },
+    { id: "sf3", text: "Have you had a chance to try what we discussed?" },
   ],
   prayer: [
-    { id: "sp1", text: "I'll be praying for you. Is there anything specific you'd like me to focus on?", tone: "purple" },
-    { id: "sp2", text: "Let's pray together. When works best for you?", tone: "primary" },
-    { id: "sp3", text: "Thank you for sharing that prayer request. God hears you.", tone: "green" },
+    { id: "sp1", text: "I'll be praying for you. Is there anything specific you'd like me to focus on?" },
+    { id: "sp2", text: "Let's pray together. When works best for you?" },
+    { id: "sp3", text: "Thank you for sharing that prayer request. God hears you." },
   ],
   general: [
-    { id: "sg1", text: "Thank you for sharing! Would you like to discuss this further?", tone: "primary" },
-    { id: "sg2", text: "I appreciate you reaching out. How can I support you?", tone: "green" },
-    { id: "sg3", text: "That's really insightful. Let me share a related resource.", tone: "amber" },
-    { id: "sg4", text: "Would you like to schedule a time to meet and talk?", tone: "purple" },
+    { id: "sg1", text: "Thank you for sharing! Would you like to discuss this further?" },
+    { id: "sg2", text: "I appreciate you reaching out. How can I support you?" },
+    { id: "sg3", text: "That's really insightful. Let me share a related resource." },
+    { id: "sg4", text: "Would you like to schedule a time to meet and talk?" },
   ],
 };
 
@@ -1597,13 +1597,6 @@ function AISuggestionPills({
 
   if (dismissed || visibleSuggestions.length === 0) return null;
 
-  const toneClasses: Record<string, string> = {
-    primary: "bg-primary/10 text-primary border-primary/20 hover:bg-primary/20",
-    green:   "bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100",
-    amber:   "bg-amber-50 text-amber-700 border-amber-200 hover:bg-amber-100",
-    purple:  "bg-violet-50 text-violet-700 border-violet-200 hover:bg-violet-100",
-  };
-
   return (
     <div className="shrink-0 px-3 py-2 border-t border-border bg-background/80 backdrop-blur-sm">
       <div className="flex items-center gap-1.5 mb-1.5">
@@ -1621,11 +1614,7 @@ function AISuggestionPills({
               onSelect(suggestion.text);
               setUsedIds(prev => new Set([...prev, suggestion.id]));
             }}
-            className={cn(
-              "inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium rounded-full border transition-all",
-              "max-w-[280px] truncate",
-              toneClasses[suggestion.tone] || toneClasses.primary,
-            )}
+            className="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium rounded-full border border-gray-200 bg-gray-100 text-gray-700 hover:bg-gray-200 transition-all max-w-[280px] truncate"
             title={suggestion.text}
           >
             <span className="truncate">{suggestion.text}</span>
