@@ -1545,7 +1545,7 @@ type MentorInvitation = {
   formId: string;
   formName: string;
   message: string;
-  status: "sent" | "opened" | "submitted" | "accepted" | "expired";
+  status: "sent" | "opened" | "submitted" | "accepted" | "expired" | "cancelled";
   sentAt: string;
 };
 
@@ -2036,6 +2036,32 @@ export function MentorsView({
     setInvitations(prev => [...newInvs, ...prev]);
     setInvEmails([]); setInvEmailInput(""); setInvName(""); setInvFormId(""); setInvMessage(""); setIsInviteOpen(false);
     toast.success(`Invitation sent to ${invEmails.length} recipient${invEmails.length > 1 ? "s" : ""}`);
+  };
+
+  // ── Invitation filters ──
+  const [invQuery, setInvQuery] = useState("");
+  const [invStatusFilter, setInvStatusFilter] = useState<string>("all");
+  const [invFormFilter, setInvFormFilter] = useState<string>("all");
+
+  const filteredInvitations = useMemo(() => {
+    return invitations.filter(inv => {
+      const q = invQuery.toLowerCase();
+      const matchesQ = !q || inv.name.toLowerCase().includes(q) || inv.email.toLowerCase().includes(q) || inv.formName.toLowerCase().includes(q);
+      const matchesS = invStatusFilter === "all" || inv.status === invStatusFilter;
+      const matchesF = invFormFilter === "all" || inv.formId === invFormFilter;
+      return matchesQ && matchesS && matchesF;
+    });
+  }, [invitations, invQuery, invStatusFilter, invFormFilter]);
+
+  const cancelInvitation = (id: string) => {
+    setInvitations(prev => prev.map(inv => inv.id === id ? { ...inv, status: "cancelled" as const } : inv));
+    toast.success("Invitation cancelled");
+  };
+
+  const resendAllInvitations = () => {
+    const pending = filteredInvitations.filter(inv => inv.status === "sent" || inv.status === "opened");
+    if (pending.length === 0) { toast.error("No pending invitations to resend"); return; }
+    toast.success(`Resent ${pending.length} invitation${pending.length > 1 ? "s" : ""}`);
   };
 
   const openInviteWithForm = (formId: string) => {
@@ -2982,11 +3008,42 @@ export function MentorsView({
       {/* ═══════════════ TAB: INVITATIONS ═══════════════ */}
       {activeTab === "invitations" && (
         <>
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
+          <div className="grid grid-cols-1 md:grid-cols-5 gap-3">
             <StatCard label="Total Sent" value={invitations.length} icon={Mail} tone="blue" />
             <StatCard label="Pending" value={invitations.filter(i => i.status === "sent" || i.status === "opened").length} icon={Clock} tone="amber" subtitle="awaiting response" />
             <StatCard label="Submitted" value={invitations.filter(i => i.status === "submitted").length} icon={CheckCircle2} tone="green" />
             <StatCard label="Accepted" value={invitations.filter(i => i.status === "accepted").length} icon={UserCheck} tone="purple" />
+            <StatCard label="Cancelled" value={invitations.filter(i => i.status === "cancelled").length} icon={XCircle} tone="red" />
+          </div>
+
+          {/* Filters + Resend All */}
+          <div className="flex flex-wrap items-center gap-3">
+            <div className="relative flex-1 min-w-[200px] max-w-xs">
+              <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none" />
+              <Input value={invQuery} onChange={e => setInvQuery(e.target.value)} placeholder="Search by name, email, form..." className="pl-9 h-9 text-sm" />
+            </div>
+            <select value={invStatusFilter} onChange={e => setInvStatusFilter(e.target.value)}
+              className="h-9 rounded-md border border-input bg-background px-3 text-sm text-foreground focus:ring-1 focus:ring-ring outline-none">
+              <option value="all">All Statuses</option>
+              <option value="sent">Sent</option>
+              <option value="opened">Opened</option>
+              <option value="submitted">Submitted</option>
+              <option value="accepted">Accepted</option>
+              <option value="expired">Expired</option>
+              <option value="cancelled">Cancelled</option>
+            </select>
+            <select value={invFormFilter} onChange={e => setInvFormFilter(e.target.value)}
+              className="h-9 rounded-md border border-input bg-background px-3 text-sm text-foreground focus:ring-1 focus:ring-ring outline-none">
+              <option value="all">All Forms</option>
+              {[...new Map(invitations.map(inv => [inv.formId, inv.formName])).entries()].map(([fId, fName]) => (
+                <option key={fId} value={fId}>{fName}</option>
+              ))}
+            </select>
+            <div className="ml-auto">
+              <Button variant="outline" size="sm" onClick={resendAllInvitations}>
+                <Send className="w-3.5 h-3.5" /> Resend All Pending
+              </Button>
+            </div>
           </div>
 
           <div className="bg-card border border-border rounded-lg overflow-hidden">
@@ -3002,17 +3059,34 @@ export function MentorsView({
                 </tr>
               </thead>
               <tbody>
-                {invitations.length === 0 ? (
-                  <tr><td colSpan={6} className="px-4 py-12 text-center text-sm text-muted-foreground">No invitations sent yet.</td></tr>
-                ) : invitations.map(inv => (
-                  <tr key={inv.id} className="border-b border-border last:border-0 hover:bg-muted/30 transition-colors">
+                {filteredInvitations.length === 0 ? (
+                  <tr><td colSpan={6} className="px-4 py-12 text-center text-sm text-muted-foreground">
+                    {invitations.length === 0 ? "No invitations sent yet." : "No invitations match your filters."}
+                  </td></tr>
+                ) : filteredInvitations.map(inv => (
+                  <tr key={inv.id} className={cn("border-b border-border last:border-0 hover:bg-muted/30 transition-colors", inv.status === "cancelled" && "opacity-60")}>
                     <td className="px-4 py-3"><div className="flex items-center gap-2"><Avatar name={inv.name} tone="blue" size="sm" /><span className="text-sm font-semibold">{inv.name}</span></div></td>
                     <td className="px-4 py-3 text-sm text-muted-foreground">{inv.email}</td>
                     <td className="px-4 py-3"><Chip tone="blue">{inv.formName}</Chip></td>
-                    <td className="px-4 py-3"><Chip tone={inv.status === "accepted" ? "green" : inv.status === "submitted" ? "blue" : inv.status === "opened" ? "amber" : inv.status === "expired" ? "red" : "slate"}>{inv.status}</Chip></td>
+                    <td className="px-4 py-3"><Chip tone={inv.status === "accepted" ? "green" : inv.status === "submitted" ? "blue" : inv.status === "opened" ? "amber" : inv.status === "expired" || inv.status === "cancelled" ? "red" : "slate"}>{inv.status}</Chip></td>
                     <td className="px-4 py-3 text-xs text-muted-foreground">{new Date(inv.sentAt).toLocaleDateString()}</td>
                     <td className="px-4 py-3 text-right">
-                      <Button variant="outline" size="sm" className="text-xs h-7" onClick={() => toast.success(`Resent invitation to ${inv.email}`)}>Resend</Button>
+                      <div className="flex items-center justify-end gap-1.5">
+                        {(inv.status === "sent" || inv.status === "opened") && (
+                          <>
+                            <Button variant="outline" size="sm" className="text-xs h-7" onClick={() => toast.success(`Resent invitation to ${inv.email}`)}>Resend</Button>
+                            <Button variant="outline" size="sm" className="text-xs h-7 text-red-600 hover:bg-red-50 hover:text-red-700 border-red-200" onClick={() => cancelInvitation(inv.id)}>
+                              <XCircle className="w-3 h-3" /> Cancel
+                            </Button>
+                          </>
+                        )}
+                        {inv.status === "cancelled" && (
+                          <span className="text-xs text-muted-foreground italic">Cancelled</span>
+                        )}
+                        {(inv.status === "submitted" || inv.status === "accepted" || inv.status === "expired") && (
+                          <Button variant="outline" size="sm" className="text-xs h-7" onClick={() => toast.success(`Resent invitation to ${inv.email}`)}>Resend</Button>
+                        )}
+                      </div>
                     </td>
                   </tr>
                 ))}
