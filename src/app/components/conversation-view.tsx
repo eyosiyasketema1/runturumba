@@ -1507,10 +1507,139 @@ function ConversationToolbar({
   );
 }
 
+// ─── AI Reply Suggestions ────────────────────────────────────────────────────
+// Generates contextual pill-style reply suggestions based on the conversation
+// context, contact maturity, and journey stage.
+
+type AISuggestion = { id: string; text: string; tone: "primary" | "green" | "amber" | "purple" };
+
+const AI_SUGGESTION_BANK: Record<string, AISuggestion[]> = {
+  greeting: [
+    { id: "sg1", text: "Hi! Thank you for reaching out. How can I help you today?", tone: "primary" },
+    { id: "sg2", text: "Welcome! I'm glad you're here. What's on your mind?", tone: "green" },
+    { id: "sg3", text: "Peace be with you! How are you doing today?", tone: "purple" },
+  ],
+  question: [
+    { id: "sq1", text: "That's a great question! Let me share some thoughts...", tone: "primary" },
+    { id: "sq2", text: "I appreciate you asking. Here's what I've found helpful...", tone: "green" },
+    { id: "sq3", text: "Let me point you to a resource that covers this well.", tone: "amber" },
+  ],
+  struggle: [
+    { id: "ss1", text: "Thank you for sharing that. I'm here for you and we can work through this together.", tone: "primary" },
+    { id: "ss2", text: "I understand this is difficult. Would you like to talk more about it?", tone: "green" },
+    { id: "ss3", text: "You're not alone in this. Let's set up a time to discuss further.", tone: "purple" },
+  ],
+  encouragement: [
+    { id: "se1", text: "That's wonderful progress! I'm really encouraged by your growth.", tone: "green" },
+    { id: "se2", text: "Keep going — you're doing amazing! God is faithful.", tone: "primary" },
+    { id: "se3", text: "I love hearing this. Would you like to share your testimony with the group?", tone: "purple" },
+  ],
+  followup: [
+    { id: "sf1", text: "Just checking in — how are things going since we last spoke?", tone: "primary" },
+    { id: "sf2", text: "I've been thinking about our conversation. How are you feeling?", tone: "green" },
+    { id: "sf3", text: "Have you had a chance to try what we discussed?", tone: "amber" },
+  ],
+  prayer: [
+    { id: "sp1", text: "I'll be praying for you. Is there anything specific you'd like me to focus on?", tone: "purple" },
+    { id: "sp2", text: "Let's pray together. When works best for you?", tone: "primary" },
+    { id: "sp3", text: "Thank you for sharing that prayer request. God hears you.", tone: "green" },
+  ],
+  general: [
+    { id: "sg1", text: "Thank you for sharing! Would you like to discuss this further?", tone: "primary" },
+    { id: "sg2", text: "I appreciate you reaching out. How can I support you?", tone: "green" },
+    { id: "sg3", text: "That's really insightful. Let me share a related resource.", tone: "amber" },
+    { id: "sg4", text: "Would you like to schedule a time to meet and talk?", tone: "purple" },
+  ],
+};
+
+function classifyLastMessage(lastMsg: string): string {
+  const lower = lastMsg.toLowerCase();
+  if (/^(hi|hello|hey|good morning|good evening|salam|selam)/.test(lower)) return "greeting";
+  if (/\?$|how do|what is|can you|why do|where can|tell me/.test(lower)) return "question";
+  if (/struggl|difficult|hard|lost|confus|doubt|afraid|scared|anxious|depress|lonely/.test(lower)) return "struggle";
+  if (/thank|blessed|amazing|wonderful|great|happy|joy|excited|growth|progress/.test(lower)) return "encouragement";
+  if (/pray|prayer|lord|god.*help|intercede/.test(lower)) return "prayer";
+  if (/check.?in|follow.?up|how.*going|update/.test(lower)) return "followup";
+  return "general";
+}
+
+function AISuggestionPills({
+  contact, messages, onSelect,
+}: {
+  contact: Contact;
+  messages: Message[];
+  onSelect: (text: string) => void;
+}) {
+  const [dismissed, setDismissed] = useState(false);
+  const [usedIds, setUsedIds] = useState<Set<string>>(new Set());
+
+  // Reset dismissed state when the conversation or last message changes
+  const lastInbound = useMemo(() => {
+    const inbound = messages.filter(m => m.direction === "inbound");
+    return inbound[inbound.length - 1];
+  }, [messages]);
+
+  useEffect(() => {
+    setDismissed(false);
+    setUsedIds(new Set());
+  }, [lastInbound?.id]);
+
+  const suggestions = useMemo(() => {
+    if (!lastInbound) {
+      // No inbound message — show follow-up suggestions
+      return AI_SUGGESTION_BANK.followup;
+    }
+    const category = classifyLastMessage(lastInbound.body || "");
+    return AI_SUGGESTION_BANK[category] || AI_SUGGESTION_BANK.general;
+  }, [lastInbound]);
+
+  const visibleSuggestions = suggestions.filter(s => !usedIds.has(s.id));
+
+  if (dismissed || visibleSuggestions.length === 0) return null;
+
+  const toneClasses: Record<string, string> = {
+    primary: "bg-primary/10 text-primary border-primary/20 hover:bg-primary/20",
+    green:   "bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100",
+    amber:   "bg-amber-50 text-amber-700 border-amber-200 hover:bg-amber-100",
+    purple:  "bg-violet-50 text-violet-700 border-violet-200 hover:bg-violet-100",
+  };
+
+  return (
+    <div className="shrink-0 px-3 py-2 border-t border-border bg-background/80 backdrop-blur-sm">
+      <div className="flex items-center gap-1.5 mb-1.5">
+        <Sparkles className="w-3 h-3 text-amber-500" />
+        <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">AI Suggestions</span>
+        <button onClick={() => setDismissed(true)} className="ml-auto p-0.5 text-muted-foreground/50 hover:text-muted-foreground transition-colors" title="Dismiss suggestions">
+          <X className="w-3 h-3" />
+        </button>
+      </div>
+      <div className="flex flex-wrap gap-1.5">
+        {visibleSuggestions.map(suggestion => (
+          <button
+            key={suggestion.id}
+            onClick={() => {
+              onSelect(suggestion.text);
+              setUsedIds(prev => new Set([...prev, suggestion.id]));
+            }}
+            className={cn(
+              "inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium rounded-full border transition-all",
+              "max-w-[280px] truncate",
+              toneClasses[suggestion.tone] || toneClasses.primary,
+            )}
+            title={suggestion.text}
+          >
+            <span className="truncate">{suggestion.text}</span>
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 // ─── ComposeArea ──────────────────────────────────────────────────────────────
 
 function ComposeArea({
-  contact, port, setPort, onSend, openDropdown, setOpenDropdown,
+  contact, port, setPort, onSend, openDropdown, setOpenDropdown, suggestedText, onSuggestedTextConsumed,
 }: {
   contact:         Contact;
   port:            MessagePort;
@@ -1518,9 +1647,20 @@ function ComposeArea({
   onSend:          (content: string) => void;
   openDropdown:    string | null;
   setOpenDropdown: (v: string | null) => void;
+  suggestedText?:  string;
+  onSuggestedTextConsumed?: () => void;
 }) {
   const [text, setText] = useState("");
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  // When an AI suggestion is selected, insert it into the compose area
+  useEffect(() => {
+    if (suggestedText) {
+      setText(suggestedText);
+      textareaRef.current?.focus();
+      onSuggestedTextConsumed?.();
+    }
+  }, [suggestedText]);
 
   const handleSend = (e: React.FormEvent) => {
     e.preventDefault();
@@ -1861,6 +2001,7 @@ export const ConversationView = ({
   const [typingSet, setTypingSet]         = useState<Set<string>>(new Set());
   const [shownTyping, setShownTyping]     = useState<Set<string>>(new Set());
   const chatBottomRef = useRef<HTMLDivElement>(null);
+  const [aiSuggestedText, setAiSuggestedText] = useState<string>("");
 
   // ── Grab Conversation state (declared here, logic wired after helpers) ──
   const [grabDeadlines, setGrabDeadlines] = useState<Record<string, number>>({});
@@ -2260,6 +2401,13 @@ export const ConversationView = ({
                   onUpdateContact={onUpdateContact}
                 />
 
+                {/* AI Reply Suggestions */}
+                <AISuggestionPills
+                  contact={selectedContact}
+                  messages={selectedMessages}
+                  onSelect={(text) => setAiSuggestedText(text)}
+                />
+
                 {/* Compose */}
                 <div data-dropdown-host>
                   <ComposeArea
@@ -2269,6 +2417,8 @@ export const ConversationView = ({
                     onSend={handleSend}
                     openDropdown={openDropdown}
                     setOpenDropdown={setOpenDropdown}
+                    suggestedText={aiSuggestedText}
+                    onSuggestedTextConsumed={() => setAiSuggestedText("")}
                   />
                 </div>
               </div>
