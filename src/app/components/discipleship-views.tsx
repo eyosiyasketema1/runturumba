@@ -2127,7 +2127,7 @@ export function MentorsView({
               </Button>
             )}
             {activeTab === "forms" && (
-              <Button onClick={() => { setBuilderFields([]); setBuilderName(""); setBuilderSpecialty(""); setIsFormBuilderOpen(true); }}>
+              <Button onClick={openNewForm}>
                 <Plus className="w-4 h-4" /> New Form
               </Button>
             )}
