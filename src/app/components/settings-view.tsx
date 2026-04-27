@@ -3,7 +3,7 @@ import {
   User, Building2, CreditCard, Bell, Shield, Mail,
   Phone, Globe, Clock, MapPin, Camera, Save,
   Check, ChevronRight, Key, Smartphone, Lock, Eye,
-  ArrowLeft, ArrowUpRight, Download, Sparkles, Plus, Trash2, X,
+  ArrowLeft, ArrowUpRight, Download, Sparkles, Pencil, Plus, Trash2, X,
   Brain, Share2, AlertCircle, BookOpen, Loader2, CheckCircle2, XCircle, ExternalLink, Zap, ShieldCheck, RotateCcw
 } from "lucide-react";
 import { motion } from "motion/react";
@@ -1741,7 +1741,7 @@ const AISection = () => {
                     </div>
                   </div>
 
-                  <div className="flex items-center justify-between pt-3 border-t border-border">
+                  <div className="flex items-center justify-end gap-2 pt-3 border-t border-border">
                     <Button variant="outline" size="sm" onClick={cancelEditing}>Cancel</Button>
                     <Button size="sm" onClick={() => saveEdit(k.id)}>
                       <Check className="w-3.5 h-3.5" /> Save Changes
@@ -1792,7 +1792,7 @@ const AISection = () => {
                     <Eye className="w-3.5 h-3.5" />
                   </Button>
                   <Button variant="ghost" size="sm" className="h-7 w-7 p-0" title="Edit" onClick={() => startEditing(k)}>
-                    <Sparkles className="w-3.5 h-3.5" />
+                    <Pencil className="w-3.5 h-3.5" />
                   </Button>
                   <Button variant="ghost" size="sm" className="h-7 w-7 p-0" title="Re-verify" onClick={() => reverifyKey(k.id)}>
                     <RotateCcw className="w-3.5 h-3.5" />
