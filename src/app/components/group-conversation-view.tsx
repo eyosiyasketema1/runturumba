@@ -39,6 +39,12 @@ import {
   Mic,
   Square,
   BarChart3,
+  Eye,
+  EyeOff,
+  Lock,
+  Users,
+  ChevronDown,
+  ChevronUp,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { cn } from './types';
@@ -1109,126 +1115,186 @@ function getMentorDisplayName(id: string): string {
   return names[id] || id;
 }
 
-function PollComponent({ poll, onVote, isSender }: PollComponentProps) {
-  const [expandedOption, setExpandedOption] = useState<number | null>(null);
+// Poll Results Modal
+function PollResultsModal({ poll, onClose }: { poll: Poll; onClose: () => void }) {
   const totalVotes = poll.totalVotes || poll.options.reduce((s, o) => s + o.votes, 0);
+  const sortedOptions = [...poll.options].sort((a, b) => b.votes - a.votes);
 
   return (
-    <div className={cn(
-      'mt-3 space-y-2.5 p-4 rounded-lg border',
-      isSender ? 'bg-primary-foreground/10 border-primary-foreground/20' : 'bg-background border-border'
-    )}>
-      <div className="flex items-center gap-2 mb-1">
-        <BarChart3 className={cn('w-4 h-4', isSender ? 'text-primary-foreground/70' : 'text-primary')} />
-        <p className={cn('font-bold text-sm', isSender ? 'text-primary-foreground' : 'text-foreground')}>
-          {poll.question}
-        </p>
-      </div>
+    <AnimatePresence>
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-sm"
+        onClick={onClose}
+      >
+        <motion.div
+          initial={{ opacity: 0, scale: 0.95, y: 20 }}
+          animate={{ opacity: 1, scale: 1, y: 0 }}
+          exit={{ opacity: 0, scale: 0.95, y: 20 }}
+          onClick={(e) => e.stopPropagation()}
+          className="w-full max-w-md bg-background border border-border shadow-2xl overflow-hidden"
+        >
+          {/* Header */}
+          <div className="px-6 py-4 border-b border-border bg-muted/30">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <BarChart3 className="w-5 h-5 text-primary" />
+                <h3 className="font-bold text-base">Poll Results</h3>
+              </div>
+              <button onClick={onClose} className="p-1 text-muted-foreground hover:text-foreground transition-colors">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <p className="text-sm font-semibold text-foreground mt-2">{poll.question}</p>
+            <div className="flex items-center gap-3 mt-2">
+              <span className="flex items-center gap-1 text-xs text-muted-foreground">
+                <Users className="w-3 h-3" /> {totalVotes} vote{totalVotes !== 1 ? 's' : ''}
+              </span>
+              <span className="flex items-center gap-1 text-xs text-muted-foreground">
+                {poll.isAnonymous ? <><Lock className="w-3 h-3" /> Anonymous</> : <><Eye className="w-3 h-3" /> Public</>}
+              </span>
+            </div>
+          </div>
 
-      {poll.isAnonymous && (
-        <p className={cn('text-xs italic', isSender ? 'text-primary-foreground/60' : 'text-muted-foreground')}>
-          🔒 Anonymous poll
-        </p>
-      )}
+          {/* Results */}
+          <div className="px-6 py-4 space-y-4 max-h-[60vh] overflow-y-auto">
+            {sortedOptions.map((option, idx) => {
+              const pct = totalVotes > 0 ? Math.round((option.votes / totalVotes) * 100) : 0;
+              const isTop = idx === 0 && option.votes > 0;
 
-      {poll.options.map((option, idx) => {
-        const pct = totalVotes > 0 ? Math.round((option.votes / totalVotes) * 100) : 0;
-        const isExpanded = expandedOption === idx;
-        const isWinning = option.votes === Math.max(...poll.options.map(o => o.votes)) && option.votes > 0;
-
-        return (
-          <div key={idx}>
-            <button
-              onClick={() => onVote(idx)}
-              className={cn(
-                'w-full text-left rounded-md overflow-hidden transition-all',
-                isSender ? 'hover:bg-primary-foreground/10' : 'hover:bg-muted/40'
-              )}
-            >
-              <div className="relative p-3">
-                {/* Progress bar background */}
-                <div
-                  className={cn(
-                    'absolute inset-0 rounded-md transition-all',
-                    isWinning
-                      ? (isSender ? 'bg-primary-foreground/15' : 'bg-primary/10')
-                      : (isSender ? 'bg-primary-foreground/8' : 'bg-muted/30')
-                  )}
-                  style={{ width: `${pct}%` }}
-                />
-                <div className="relative flex items-center justify-between gap-3">
-                  <div className="flex items-center gap-2 flex-1 min-w-0">
-                    <div className={cn(
-                      'w-4 h-4 rounded-full border-2 flex items-center justify-center shrink-0',
-                      isWinning
-                        ? (isSender ? 'border-primary-foreground bg-primary-foreground/20' : 'border-primary bg-primary/20')
-                        : (isSender ? 'border-primary-foreground/40' : 'border-border')
-                    )}>
-                      {isWinning && <div className={cn('w-1.5 h-1.5 rounded-full', isSender ? 'bg-primary-foreground' : 'bg-primary')} />}
-                    </div>
-                    <span className={cn(
-                      'text-sm font-medium truncate',
-                      isSender ? 'text-primary-foreground' : 'text-foreground'
-                    )}>
+              return (
+                <div key={idx} className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className={cn('text-sm font-semibold', isTop && 'text-primary')}>
+                      {isTop && <span className="mr-1">🏆</span>}
                       {option.text}
                     </span>
+                    <span className="text-sm font-bold">{pct}%</span>
                   </div>
-                  <div className="flex items-center gap-2 shrink-0">
-                    <span className={cn(
-                      'text-xs font-bold',
-                      isSender ? 'text-primary-foreground/80' : 'text-foreground/70'
-                    )}>
-                      {pct}%
-                    </span>
-                    <span className={cn(
-                      'text-xs',
-                      isSender ? 'text-primary-foreground/60' : 'text-muted-foreground'
-                    )}>
-                      ({option.votes})
-                    </span>
+                  <div className="w-full h-3 bg-muted rounded-full overflow-hidden">
+                    <motion.div
+                      initial={{ width: 0 }}
+                      animate={{ width: `${pct}%` }}
+                      transition={{ duration: 0.6, ease: 'easeOut' }}
+                      className={cn('h-full rounded-full', isTop ? 'bg-primary' : 'bg-primary/40')}
+                    />
                   </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs text-muted-foreground">{option.votes} vote{option.votes !== 1 ? 's' : ''}</span>
+                  </div>
+
+                  {/* Voter list (public only) */}
+                  {!poll.isAnonymous && option.votedBy.length > 0 && (
+                    <div className="flex flex-wrap gap-1.5 pt-1">
+                      {option.votedBy.map(id => (
+                        <span key={id} className="inline-flex items-center gap-1 px-2 py-0.5 bg-muted text-xs font-medium text-foreground rounded-full">
+                          <div className="w-4 h-4 rounded-full bg-primary/20 flex items-center justify-center text-[8px] font-bold text-primary">
+                            {getMentorDisplayName(id).charAt(0)}
+                          </div>
+                          {getMentorDisplayName(id)}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+
+                  {poll.isAnonymous && option.votes > 0 && (
+                    <p className="text-xs text-muted-foreground italic flex items-center gap-1">
+                      <Lock className="w-3 h-3" /> Voters hidden
+                    </p>
+                  )}
                 </div>
-              </div>
-            </button>
-
-            {/* Voter names — show on click (public polls only) */}
-            {!poll.isAnonymous && option.votedBy.length > 0 && (
-              <button
-                onClick={(e) => { e.stopPropagation(); setExpandedOption(isExpanded ? null : idx); }}
-                className={cn(
-                  'ml-9 text-xs transition-colors',
-                  isSender ? 'text-primary-foreground/50 hover:text-primary-foreground/70' : 'text-muted-foreground hover:text-foreground'
-                )}
-              >
-                {isExpanded ? 'Hide voters' : `${option.votedBy.length} voter${option.votedBy.length > 1 ? 's' : ''} — tap to see`}
-              </button>
-            )}
-            {isExpanded && !poll.isAnonymous && (
-              <div className={cn(
-                'ml-9 mt-1 mb-1 text-xs space-y-0.5',
-                isSender ? 'text-primary-foreground/70' : 'text-muted-foreground'
-              )}>
-                {option.votedBy.map(id => (
-                  <p key={id}>• {getMentorDisplayName(id)}</p>
-                ))}
-              </div>
-            )}
+              );
+            })}
           </div>
-        );
-      })}
 
+          {/* Footer */}
+          <div className="px-6 py-3 border-t border-border bg-muted/10">
+            <button onClick={onClose} className="w-full py-2 text-sm font-semibold text-center text-muted-foreground hover:text-foreground transition-colors">
+              Close
+            </button>
+          </div>
+        </motion.div>
+      </motion.div>
+    </AnimatePresence>
+  );
+}
+
+function PollComponent({ poll, onVote, isSender }: PollComponentProps) {
+  const [showResults, setShowResults] = useState(false);
+  const totalVotes = poll.totalVotes || poll.options.reduce((s, o) => s + o.votes, 0);
+  const maxVotes = Math.max(...poll.options.map(o => o.votes), 1);
+
+  return (
+    <>
       <div className={cn(
-        'flex items-center justify-between pt-1 border-t',
-        isSender ? 'border-primary-foreground/15' : 'border-border/50'
+        'mt-3 rounded-lg overflow-hidden',
+        isSender ? 'bg-background/95 text-foreground' : 'bg-card border border-border'
       )}>
-        <p className={cn('text-xs', isSender ? 'text-primary-foreground/50' : 'text-muted-foreground')}>
-          {totalVotes} vote{totalVotes !== 1 ? 's' : ''}
-        </p>
-        <p className={cn('text-xs', isSender ? 'text-primary-foreground/50' : 'text-muted-foreground')}>
-          {poll.isAnonymous ? '🔒 Anonymous' : '👁 Public'}
-        </p>
+        {/* Poll header */}
+        <div className="px-4 pt-4 pb-2">
+          <div className="flex items-start gap-2.5">
+            <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+              <BarChart3 className="w-4 h-4 text-primary" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="font-bold text-sm text-foreground leading-snug">{poll.question}</p>
+              <div className="flex items-center gap-2 mt-1">
+                {poll.isAnonymous
+                  ? <span className="flex items-center gap-1 text-xs text-muted-foreground"><Lock className="w-3 h-3" /> Anonymous</span>
+                  : <span className="flex items-center gap-1 text-xs text-muted-foreground"><Eye className="w-3 h-3" /> Public</span>
+                }
+                <span className="text-xs text-muted-foreground">·</span>
+                <span className="text-xs text-muted-foreground">{totalVotes} vote{totalVotes !== 1 ? 's' : ''}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Options */}
+        <div className="px-4 pb-2 space-y-1.5">
+          {poll.options.map((option, idx) => {
+            const pct = totalVotes > 0 ? Math.round((option.votes / totalVotes) * 100) : 0;
+            const isWinning = option.votes === maxVotes && option.votes > 0;
+
+            return (
+              <button
+                key={idx}
+                onClick={() => onVote(idx)}
+                className="w-full text-left rounded-md overflow-hidden relative transition-all hover:ring-1 hover:ring-primary/30 group"
+              >
+                <div className={cn('absolute inset-0 rounded-md', isWinning ? 'bg-primary/12' : 'bg-muted/40')} style={{ width: `${pct}%` }} />
+                <div className="relative flex items-center justify-between px-3 py-2.5">
+                  <span className={cn('text-sm font-medium', isWinning && 'text-primary font-semibold')}>
+                    {option.text}
+                  </span>
+                  <span className={cn('text-xs font-bold shrink-0 ml-2', isWinning ? 'text-primary' : 'text-muted-foreground')}>
+                    {pct}%
+                  </span>
+                </div>
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Footer — View Results button */}
+        <div className="px-4 pb-3 pt-1">
+          <button
+            onClick={(e) => { e.stopPropagation(); setShowResults(true); }}
+            className="w-full flex items-center justify-center gap-2 py-2 text-xs font-semibold text-primary hover:bg-primary/5 rounded-md border border-primary/20 transition-colors"
+          >
+            <Eye className="w-3.5 h-3.5" />
+            View Results
+          </button>
+        </div>
       </div>
-    </div>
+
+      {/* Results Modal */}
+      {showResults && (
+        <PollResultsModal poll={poll} onClose={() => setShowResults(false)} />
+      )}
+    </>
   );
 }
 
@@ -2098,7 +2164,7 @@ export function GroupConversationView() {
                             : 'border-border text-muted-foreground hover:border-primary hover:text-primary'
                         )}
                       >
-                        👁 Public
+                        <Eye className="w-3 h-3" /> Public
                       </button>
                       <button
                         type="button"
@@ -2110,7 +2176,7 @@ export function GroupConversationView() {
                             : 'border-border text-muted-foreground hover:border-primary hover:text-primary'
                         )}
                       >
-                        🔒 Anonymous
+                        <Lock className="w-3 h-3" /> Anonymous
                       </button>
                       <p className="text-xs text-muted-foreground flex-1">
                         {pollIsAnonymous ? 'Voters are hidden' : 'Voters are visible'}
