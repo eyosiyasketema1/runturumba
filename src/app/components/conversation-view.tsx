@@ -1844,23 +1844,39 @@ function ComposeArea({
       {/* Voice recording strip */}
       {(isRecording || voiceUrl) && (
         <div className="px-4 pb-2">
-          <div className={cn("flex items-center gap-3 px-3 py-2 rounded-md border", isRecording ? "bg-red-50 border-red-200" : "bg-muted/30 border-border")}>
+          <div className={cn("flex items-center gap-3 px-3 py-2.5 rounded-md border", isRecording ? "bg-red-50 border-red-200" : "bg-muted/30 border-border")}>
             {isRecording ? (
               <>
-                <div className="w-2.5 h-2.5 rounded-full bg-red-500 animate-pulse" />
-                <span className="text-xs font-semibold text-red-600">Recording… {formatDuration(recordingDuration)}</span>
-                <div className="ml-auto">
-                  <button type="button" onClick={stopRecording} className="flex items-center gap-1 px-2.5 py-1 bg-red-500 text-white text-xs font-bold rounded-md hover:bg-red-600 transition-colors">
-                    <Square className="w-3 h-3" /> Stop
-                  </button>
+                <div className="w-2.5 h-2.5 rounded-full bg-red-500 animate-pulse shrink-0" />
+                {/* Animated waveform */}
+                <div className="flex items-center gap-[3px] flex-1 h-6">
+                  {Array.from({ length: 24 }).map((_, i) => (
+                    <motion.div
+                      key={i}
+                      className="w-[3px] rounded-full bg-red-400"
+                      animate={{
+                        height: [4, 8 + Math.random() * 14, 4, 6 + Math.random() * 16, 4],
+                      }}
+                      transition={{
+                        duration: 0.8 + Math.random() * 0.6,
+                        repeat: Infinity,
+                        delay: i * 0.04,
+                        ease: "easeInOut",
+                      }}
+                    />
+                  ))}
                 </div>
+                <span className="text-xs font-semibold text-red-600 shrink-0">{formatDuration(recordingDuration)}</span>
+                <button type="button" onClick={stopRecording} className="flex items-center gap-1 px-2.5 py-1 bg-red-500 text-white text-xs font-bold rounded-md hover:bg-red-600 transition-colors shrink-0">
+                  <Square className="w-3 h-3" /> Stop
+                </button>
               </>
             ) : voiceUrl && (
               <>
-                <Mic className="w-4 h-4 text-primary" />
+                <Mic className="w-4 h-4 text-primary shrink-0" />
                 <audio src={voiceUrl} controls className="h-8 flex-1" style={{ maxHeight: "32px" }} />
-                <span className="text-xs text-muted-foreground font-medium">{formatDuration(recordingDuration)}</span>
-                <button type="button" onClick={discardVoice} className="p-1 text-muted-foreground hover:text-red-500 transition-colors" title="Discard recording">
+                <span className="text-xs text-muted-foreground font-medium shrink-0">{formatDuration(recordingDuration)}</span>
+                <button type="button" onClick={discardVoice} className="p-1 text-muted-foreground hover:text-red-500 transition-colors shrink-0" title="Discard recording">
                   <Trash2 className="w-3.5 h-3.5" />
                 </button>
               </>
@@ -1890,19 +1906,11 @@ function ComposeArea({
           {/* Toolbar */}
           <div className="flex items-center justify-between px-3 pb-2 border-t border-inherit">
             <div className="flex items-center gap-0.5">
-              {/* Image upload */}
+              {/* Image / file attachment */}
               <input ref={fileInputRef} type="file" accept="image/*" multiple className="hidden" onChange={handleImageSelect} />
               <button type="button" onClick={() => fileInputRef.current?.click()}
                 className="p-1.5 text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
-                title="Upload image"
-              >
-                <Image className="w-4 h-4" />
-              </button>
-
-              {/* File attachment */}
-              <button type="button" onClick={() => fileInputRef.current?.click()}
-                className="p-1.5 text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
-                title="Attach file"
+                title="Attach image"
               >
                 <Paperclip className="w-4 h-4" />
               </button>
