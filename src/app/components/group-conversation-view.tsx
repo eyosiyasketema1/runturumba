@@ -1003,8 +1003,8 @@ function MessageActions({
       exit={{ opacity: 0, scale: 0.9 }}
       transition={{ duration: 0.12 }}
       className={cn(
-        'absolute top-1 z-50 flex items-center gap-0.5',
-        isSender ? 'left-0 -translate-x-full pr-2' : 'right-0 translate-x-full pl-2'
+        'absolute -top-9 z-50 flex items-center gap-0.5 bg-background border border-border rounded-lg shadow-lg px-1 py-0.5',
+        isSender ? 'left-1' : 'right-1'
       )}
     >
       {/* Reaction Button */}
@@ -1617,7 +1617,7 @@ export function GroupConversationView() {
             {/* Messages Area */}
             <div
               ref={scrollContainerRef}
-              className="flex-1 overflow-y-auto px-6 py-5 space-y-6"
+              className="flex-1 overflow-y-auto overflow-x-hidden px-6 pt-10 pb-5 space-y-6"
             >
               {messageGroups.map((group, groupIdx) => (
                 <div key={`group-${groupIdx}`}>
@@ -1677,7 +1677,7 @@ export function GroupConversationView() {
                           onMouseEnter={() => setHoveredMessageId(msg.id)}
                           onMouseLeave={() => setHoveredMessageId(null)}
                           className={cn(
-                            'flex gap-3 group relative',
+                            'flex gap-3 group relative overflow-visible',
                             isSender && 'flex-row-reverse'
                           )}
                         >
@@ -1719,45 +1719,68 @@ export function GroupConversationView() {
                               </div>
                             )}
 
-                            {/* Message Bubble */}
-                            <motion.div
-                              whileHover={{ scale: 1.01 }}
-                              className={cn(
-                                'px-4 py-3 rounded-2xl break-words shadow-sm transition-all',
-                                isAnnouncement
-                                  ? 'bg-amber-50 border border-amber-200 text-foreground w-full'
-                                  : isSender
-                                  ? 'bg-primary text-primary-foreground rounded-tr-sm'
-                                  : 'bg-card border border-border rounded-tl-sm'
-                              )}
-                            >
-                              <div className="flex items-start gap-2">
-                                {isAnnouncement && (
-                                  <Megaphone className="h-4 w-4 flex-shrink-0 mt-0.5 text-amber-600" />
+                            {/* Message Bubble with Hover Actions */}
+                            <div className="relative">
+                              <motion.div
+                                whileHover={{ scale: 1.01 }}
+                                className={cn(
+                                  'px-4 py-3 rounded-2xl break-words shadow-sm transition-all',
+                                  isAnnouncement
+                                    ? 'bg-amber-50 border border-amber-200 text-foreground w-full'
+                                    : isSender
+                                    ? 'bg-primary text-primary-foreground rounded-tr-sm'
+                                    : 'bg-card border border-border rounded-tl-sm'
                                 )}
-                                <div className="flex-1">
+                              >
+                                <div className="flex items-start gap-2">
                                   {isAnnouncement && (
-                                    <p className="text-xs font-bold mb-1 opacity-75">
-                                      📢 ANNOUNCEMENT
-                                    </p>
+                                    <Megaphone className="h-4 w-4 flex-shrink-0 mt-0.5 text-amber-600" />
                                   )}
-                                  <p className="text-sm leading-relaxed">{msg.content}</p>
-                                  {msg.isImage && (
-                                    <div className="mt-2 h-40 w-40 rounded-lg bg-muted/30 border border-border/50 flex items-center justify-center">
-                                      <MessageSquare className="h-8 w-8 text-muted-foreground" />
-                                    </div>
-                                  )}
-                                  {msg.isPoll && msg.poll && (
-                                    <PollComponent
-                                      poll={msg.poll}
-                                      onVote={(optionIdx) => {
-                                        toast.info('Vote recorded!');
-                                      }}
-                                    />
-                                  )}
+                                  <div className="flex-1">
+                                    {isAnnouncement && (
+                                      <p className="text-xs font-bold mb-1 opacity-75">
+                                        📢 ANNOUNCEMENT
+                                      </p>
+                                    )}
+                                    <p className="text-sm leading-relaxed">{msg.content}</p>
+                                    {msg.isImage && (
+                                      <div className="mt-2 h-40 w-40 rounded-lg bg-muted/30 border border-border/50 flex items-center justify-center">
+                                        <MessageSquare className="h-8 w-8 text-muted-foreground" />
+                                      </div>
+                                    )}
+                                    {msg.isPoll && msg.poll && (
+                                      <PollComponent
+                                        poll={msg.poll}
+                                        onVote={(optionIdx) => {
+                                          toast.info('Vote recorded!');
+                                        }}
+                                      />
+                                    )}
+                                  </div>
                                 </div>
-                              </div>
-                            </motion.div>
+                              </motion.div>
+
+                              {/* Hover Action Buttons — Reaction + Menu */}
+                              <AnimatePresence>
+                                {hoveredMessageId === msg.id && (
+                                  <MessageActions
+                                    message={msg}
+                                    isSender={isSender}
+                                    onReact={(emoji) => handleAddReaction(msg.id, emoji)}
+                                    onReply={() => toast.info(`Replying to ${msg.senderName}`)}
+                                    onCopy={() => {
+                                      navigator.clipboard.writeText(msg.content);
+                                      toast.success('Copied to clipboard');
+                                    }}
+                                    onPin={() => handlePinMessage(msg.id)}
+                                    onForward={() => toast.info('Forward — coming soon')}
+                                    onSelect={() => toast.info('Select mode — coming soon')}
+                                    onReport={() => toast.info('Message reported')}
+                                    onDelete={() => handleDeleteMessage(msg.id)}
+                                  />
+                                )}
+                              </AnimatePresence>
+                            </div>
 
                             {/* Forwarded Label */}
                             {msg.isForwarded && msg.forwardedFrom && (
@@ -1788,26 +1811,6 @@ export function GroupConversationView() {
                             />
                           </div>
 
-                          {/* Message Actions — Reaction + Menu */}
-                          <AnimatePresence>
-                            {hoveredMessageId === msg.id && (
-                              <MessageActions
-                                message={msg}
-                                isSender={isSender}
-                                onReact={(emoji) => handleAddReaction(msg.id, emoji)}
-                                onReply={() => toast.info(`Replying to ${msg.senderName}`)}
-                                onCopy={() => {
-                                  navigator.clipboard.writeText(msg.content);
-                                  toast.success('Copied to clipboard');
-                                }}
-                                onPin={() => handlePinMessage(msg.id)}
-                                onForward={() => toast.info('Forward — coming soon')}
-                                onSelect={() => toast.info('Select mode — coming soon')}
-                                onReport={() => toast.info('Message reported')}
-                                onDelete={() => handleDeleteMessage(msg.id)}
-                              />
-                            )}
-                          </AnimatePresence>
                         </motion.div>
                       );
                     })}
