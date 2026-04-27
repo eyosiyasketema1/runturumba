@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { motion } from 'motion/react';
 import { toast } from 'sonner';
 import {
@@ -13,8 +13,22 @@ import {
   Upload,
   X,
   Lock,
-  ChevronDown,
   Copy,
+  Wrench,
+  Paperclip,
+  FileText,
+  Code2,
+  Bold,
+  Italic,
+  List,
+  ListOrdered,
+  Heading2,
+  Quote,
+  Minus,
+  Link2,
+  ImageIcon,
+  Undo2,
+  Redo2,
 } from 'lucide-react';
 import { cn } from './types';
 import { Badge } from './ui/badge';
@@ -26,21 +40,7 @@ import { Switch } from './ui/switch';
 import { Separator } from './ui/separator';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from './ui/tabs';
 
-const SectionHeader = ({ title, description }: { title: string; description: string }) => (
-  <div className="space-y-1">
-    <h2 className="text-lg font-semibold tracking-tight text-foreground">{title}</h2>
-    <p className="text-sm text-muted-foreground">{description}</p>
-  </div>
-);
-
-const FormField = ({ label, children }: { label: string; children: React.ReactNode }) => (
-  <div className="space-y-1.5">
-    <label className="text-sm font-medium text-foreground">{label}</label>
-    {children}
-  </div>
-);
-
-// Types
+// --- Types ---
 interface Tool {
   id: string;
   name: string;
@@ -61,54 +61,64 @@ interface SkillSet {
   instructions: string;
   tools: Tool[];
   attachments: Attachment[];
-  assignedMentors: string[];
   enabled: boolean;
+  accentColor: string;
 }
 
-// Global skill sets data
+// --- Accent colors for cards ---
+const ACCENT_COLORS = [
+  'border-l-indigo-500',
+  'border-l-emerald-500',
+  'border-l-amber-500',
+  'border-l-rose-500',
+  'border-l-cyan-500',
+  'border-l-violet-500',
+  'border-l-orange-500',
+];
+
+const ACCENT_DOTS: Record<string, string> = {
+  'border-l-indigo-500': 'bg-indigo-500',
+  'border-l-emerald-500': 'bg-emerald-500',
+  'border-l-amber-500': 'bg-amber-500',
+  'border-l-rose-500': 'bg-rose-500',
+  'border-l-cyan-500': 'bg-cyan-500',
+  'border-l-violet-500': 'bg-violet-500',
+  'border-l-orange-500': 'bg-orange-500',
+};
+
+const ACCENT_BADGES: Record<string, string> = {
+  'border-l-indigo-500': 'bg-indigo-50 text-indigo-700 border-indigo-200',
+  'border-l-emerald-500': 'bg-emerald-50 text-emerald-700 border-emerald-200',
+  'border-l-amber-500': 'bg-amber-50 text-amber-700 border-amber-200',
+  'border-l-rose-500': 'bg-rose-50 text-rose-700 border-rose-200',
+  'border-l-cyan-500': 'bg-cyan-50 text-cyan-700 border-cyan-200',
+  'border-l-violet-500': 'bg-violet-50 text-violet-700 border-violet-200',
+  'border-l-orange-500': 'bg-orange-50 text-orange-700 border-orange-200',
+};
+
+// --- Global Skill Sets ---
 const GLOBAL_SKILLSETS: SkillSet[] = [
   {
     id: 'gs-1',
     name: 'Seeker Conversation Guide',
     type: 'global',
+    accentColor: ACCENT_COLORS[0],
     description: 'Guides AI in faith-based conversations with seekers, answering questions about Christianity and directing toward next steps.',
-    instructions: `## Purpose
-Engage seekers in meaningful faith-based dialogue.
-
-## Guidelines
-- Always be respectful and empathetic
-- Reference Scripture when appropriate
-- Never pressure or manipulate
-- Escalate to human mentor when seeker shows signs of crisis
-
-## Conversation Flow
-1. **Greeting** — Warm, personal welcome
-2. **Listen** — Understand their questions and concerns
-3. **Respond** — Share relevant biblical truth with grace
-4. **Next Steps** — Suggest resources, prayer, or mentor connection`,
+    instructions: `## Purpose\nEngage seekers in meaningful faith-based dialogue.\n\n## Guidelines\n- Always be respectful and empathetic\n- Reference Scripture when appropriate\n- Never pressure or manipulate\n- Escalate to human mentor when seeker shows signs of crisis\n\n## Conversation Flow\n1. **Greeting** — Warm, personal welcome\n2. **Listen** — Understand their questions and concerns\n3. **Respond** — Share relevant biblical truth with grace\n4. **Next Steps** — Suggest resources, prayer, or mentor connection`,
     tools: [
       { id: 't1', name: 'scripture_lookup', description: 'Search and retrieve Bible verses by reference or topic' },
       { id: 't2', name: 'seeker_profile', description: "Access seeker's journey stage and conversation history" },
     ],
     attachments: [{ id: 'a1', name: 'conversation-guidelines.pdf', size: '245 KB' }],
-    assignedMentors: [],
     enabled: true,
   },
   {
     id: 'gs-2',
     name: 'Content Generation',
     type: 'global',
+    accentColor: ACCENT_COLORS[1],
     description: 'Auto-generate devotionals, Bible studies, follow-up messages, and discipleship content tailored to each seeker\'s stage.',
-    instructions: `## Purpose
-Generate personalized discipleship content.
-
-## Content Types
-- **Devotionals** — Short daily reflections with Scripture
-- **Bible Studies** — Structured study guides on topics
-- **Follow-up Messages** — Personalized check-ins after sessions
-
-## Tone
-Warm, encouraging, doctrinally sound. Avoid jargon.`,
+    instructions: `## Purpose\nGenerate personalized discipleship content.\n\n## Content Types\n- **Devotionals** — Short daily reflections with Scripture\n- **Bible Studies** — Structured study guides on topics\n- **Follow-up Messages** — Personalized check-ins after sessions\n\n## Tone\nWarm, encouraging, doctrinally sound. Avoid jargon.`,
     tools: [
       { id: 't3', name: 'content_template', description: 'Load and fill content templates by type' },
       { id: 't4', name: 'scripture_lookup', description: 'Search Bible verses for content inclusion' },
@@ -118,82 +128,48 @@ Warm, encouraging, doctrinally sound. Avoid jargon.`,
       { id: 'a2', name: 'content-style-guide.pdf', size: '180 KB' },
       { id: 'a3', name: 'devotional-templates.docx', size: '92 KB' },
     ],
-    assignedMentors: [],
     enabled: true,
   },
   {
     id: 'gs-3',
     name: 'Mentor Matching',
     type: 'global',
+    accentColor: ACCENT_COLORS[2],
     description: 'Analyzes seeker profiles and mentor specialties to recommend optimal mentor-mentee pairings.',
-    instructions: `## Purpose
-Match seekers with the best-fit mentor.
-
-## Matching Criteria
-- Language compatibility
-- Area of specialty alignment
-- Availability and timezone
-- Experience level vs seeker needs
-
-## Rules
-- Never assign more than 5 active seekers per mentor
-- Prioritize language match over specialty
-- Flag unmatched seekers after 48 hours`,
+    instructions: `## Purpose\nMatch seekers with the best-fit mentor.\n\n## Matching Criteria\n- Language compatibility\n- Area of specialty alignment\n- Availability and timezone\n- Experience level vs seeker needs\n\n## Rules\n- Never assign more than 5 active seekers per mentor\n- Prioritize language match over specialty\n- Flag unmatched seekers after 48 hours`,
     tools: [
       { id: 't6', name: 'mentor_profiles', description: 'Retrieve available mentors with their specialties and capacity' },
       { id: 't7', name: 'seeker_assessment', description: "Get seeker's needs assessment and preferences" },
     ],
     attachments: [],
-    assignedMentors: [],
     enabled: true,
   },
   {
     id: 'gs-4',
     name: 'Sentiment Analysis',
     type: 'global',
+    accentColor: ACCENT_COLORS[3],
     description: 'Detect emotional tone in seeker messages to flag those who may need urgent pastoral care or encouragement.',
-    instructions: `## Purpose
-Monitor seeker emotional state.
-
-## Alert Levels
-- **Green** — Positive or neutral sentiment
-- **Yellow** — Mild distress, discouragement
-- **Red** — Crisis indicators (self-harm, despair, urgent need)
-
-## Actions
-- Green: Continue normal flow
-- Yellow: Suggest encouraging content, notify mentor
-- Red: Immediately escalate to human mentor, pause AI`,
+    instructions: `## Purpose\nMonitor seeker emotional state.\n\n## Alert Levels\n- **Green** — Positive or neutral sentiment\n- **Yellow** — Mild distress, discouragement\n- **Red** — Crisis indicators (self-harm, despair, urgent need)\n\n## Actions\n- Green: Continue normal flow\n- Yellow: Suggest encouraging content, notify mentor\n- Red: Immediately escalate to human mentor, pause AI`,
     tools: [
       { id: 't8', name: 'sentiment_classifier', description: 'Classify message sentiment and urgency level' },
       { id: 't9', name: 'escalation_trigger', description: 'Notify assigned mentor of urgent seeker need' },
     ],
     attachments: [{ id: 'a4', name: 'crisis-protocol.pdf', size: '310 KB' }],
-    assignedMentors: [],
     enabled: false,
   },
   {
     id: 'gs-5',
     name: 'Translation & Localization',
     type: 'global',
+    accentColor: ACCENT_COLORS[4],
     description: "Auto-translate messages and content into the seeker's preferred language.",
-    instructions: `## Purpose
-Break language barriers.
-
-## Supported Languages
-All languages supported by the translation API.
-
-## Rules
-- Detect seeker's language from first message
-- Translate AI responses to seeker's language
-- Keep original + translated version for mentor review
-- Flag uncertain translations for human review`,
+    instructions: `## Purpose\nBreak language barriers.\n\n## Supported Languages\nAll languages supported by the translation API.\n\n## Rules\n- Detect seeker's language from first message\n- Translate AI responses to seeker's language\n- Keep original + translated version for mentor review\n- Flag uncertain translations for human review`,
     tools: [
       { id: 't10', name: 'translate_text', description: 'Translate text between languages' },
       { id: 't11', name: 'detect_language', description: 'Detect the language of input text' },
     ],
     attachments: [],
-    assignedMentors: [],
     enabled: true,
   },
 ];
@@ -203,67 +179,69 @@ const SAMPLE_CUSTOM_SKILLSETS: SkillSet[] = [
     id: 'cs-1',
     name: 'Youth Mentorship Framework',
     type: 'custom',
+    accentColor: ACCENT_COLORS[5],
     description: 'Custom skill set for mentoring young believers ages 13-19 with contemporary language and relevant examples.',
-    instructions: `## Purpose
-Connect with young believers in their language and context.
-
-## Key Approaches
-- Use relatable examples and pop culture references where appropriate
-- Focus on identity in Christ
-- Address peer pressure and modern challenges
-
-## Topics
-- Dating and relationships
-- Social media and technology
-- Purpose and calling
-- Friend conflicts`,
+    instructions: `## Purpose\nConnect with young believers in their language and context.\n\n## Key Approaches\n- Use relatable examples and pop culture references where appropriate\n- Focus on identity in Christ\n- Address peer pressure and modern challenges\n\n## Topics\n- Dating and relationships\n- Social media and technology\n- Purpose and calling\n- Friend conflicts`,
     tools: [
       { id: 'tc1', name: 'youth_resources', description: 'Access age-appropriate discipleship resources' },
       { id: 'tc2', name: 'cultural_context', description: 'Get current cultural topics relevant to youth' },
     ],
     attachments: [{ id: 'ac1', name: 'youth-discussion-guide.pdf', size: '156 KB' }],
-    assignedMentors: ['Sarah Johnson', 'David Kim'],
     enabled: true,
   },
   {
     id: 'cs-2',
     name: 'Recovery & Restoration',
     type: 'custom',
+    accentColor: ACCENT_COLORS[6],
     description: 'Specialized skill set for mentoring individuals in recovery from addiction, trauma, or spiritual struggle.',
-    instructions: `## Purpose
-Support recovery journey with compassion and hope.
-
-## Core Values
-- Unconditional acceptance
-- Accountability with grace
-- Scripture as foundation
-- Community as strength
-
-## Approach
-- Celebrate small wins
-- Normalize setbacks
-- Connect to support groups
-- Emphasize God's redemptive power`,
+    instructions: `## Purpose\nSupport recovery journey with compassion and hope.\n\n## Core Values\n- Unconditional acceptance\n- Accountability with grace\n- Scripture as foundation\n- Community as strength\n\n## Approach\n- Celebrate small wins\n- Normalize setbacks\n- Connect to support groups\n- Emphasize God's redemptive power`,
     tools: [
       { id: 'tc3', name: 'recovery_resources', description: 'Access recovery-focused materials and support groups' },
       { id: 'tc4', name: 'relapse_prevention', description: 'Get strategies for handling triggers and temptation' },
     ],
     attachments: [],
-    assignedMentors: ['Maria Garcia'],
     enabled: true,
   },
 ];
 
-const MENTOR_NAMES = [
-  'Sarah Johnson',
-  'David Kim',
-  'Maria Garcia',
-  'James Okonkwo',
-  'Priya Patel',
-  'Emmanuel Adeyemi',
-];
+// --- Simple Markdown Renderer ---
+function renderInlineMarkdown(text: string): React.ReactNode {
+  const parts: React.ReactNode[] = [];
+  let remaining = text;
+  let key = 0;
 
-// Simple markdown renderer
+  while (remaining.length > 0) {
+    const boldMatch = remaining.match(/\*\*(.+?)\*\*/);
+    if (boldMatch) {
+      const idx = remaining.indexOf(boldMatch[0]);
+      if (idx > 0) parts.push(remaining.substring(0, idx));
+      parts.push(<strong key={key++} className="font-semibold">{boldMatch[1]}</strong>);
+      remaining = remaining.substring(idx + boldMatch[0].length);
+      continue;
+    }
+    const italicMatch = remaining.match(/\*(.+?)\*/);
+    if (italicMatch) {
+      const idx = remaining.indexOf(italicMatch[0]);
+      if (idx > 0) parts.push(remaining.substring(0, idx));
+      parts.push(<em key={key++} className="italic">{italicMatch[1]}</em>);
+      remaining = remaining.substring(idx + italicMatch[0].length);
+      continue;
+    }
+    const codeMatch = remaining.match(/`(.+?)`/);
+    if (codeMatch) {
+      const idx = remaining.indexOf(codeMatch[0]);
+      if (idx > 0) parts.push(remaining.substring(0, idx));
+      parts.push(<code key={key++} className="bg-muted px-1.5 py-0.5 rounded text-xs font-mono">{codeMatch[1]}</code>);
+      remaining = remaining.substring(idx + codeMatch[0].length);
+      continue;
+    }
+    parts.push(remaining);
+    break;
+  }
+  return parts.length === 1 && typeof parts[0] === 'string' ? text : parts;
+}
+
 function renderMarkdown(markdown: string): React.ReactNode {
   const lines = markdown.split('\n');
   const elements: React.ReactNode[] = [];
@@ -271,40 +249,14 @@ function renderMarkdown(markdown: string): React.ReactNode {
 
   while (i < lines.length) {
     const line = lines[i];
-
-    // Headings
     if (line.startsWith('## ')) {
-      elements.push(
-        <h2 key={i} className="text-lg font-semibold mt-4 mb-2">
-          {line.replace('## ', '')}
-        </h2>
-      );
-      i++;
-      continue;
+      elements.push(<h2 key={i} className="text-base font-semibold text-foreground mt-5 mb-2">{line.replace('## ', '')}</h2>);
+      i++; continue;
     }
-
     if (line.startsWith('# ')) {
-      elements.push(
-        <h1 key={i} className="text-xl font-bold mt-4 mb-3">
-          {line.replace('# ', '')}
-        </h1>
-      );
-      i++;
-      continue;
+      elements.push(<h1 key={i} className="text-lg font-bold text-foreground mt-5 mb-3">{line.replace('# ', '')}</h1>);
+      i++; continue;
     }
-
-    // Code blocks (simple backtick detection)
-    if (line.trim().startsWith('`')) {
-      elements.push(
-        <code key={i} className="bg-muted px-2 py-1 rounded text-sm font-mono text-foreground/80">
-          {line.replace(/`/g, '')}
-        </code>
-      );
-      i++;
-      continue;
-    }
-
-    // Lists
     if (line.trim().startsWith('- ') || line.trim().startsWith('* ')) {
       const listItems: string[] = [];
       while (i < lines.length && (lines[i].trim().startsWith('- ') || lines[i].trim().startsWith('* '))) {
@@ -312,260 +264,230 @@ function renderMarkdown(markdown: string): React.ReactNode {
         i++;
       }
       elements.push(
-        <ul key={`list-${i}`} className="list-disc list-inside space-y-1 my-2">
-          {listItems.map((item, idx) => (
-            <li key={idx} className="text-sm text-foreground/80">
-              {renderInlineMarkdown(item)}
-            </li>
-          ))}
+        <ul key={`list-${i}`} className="list-disc list-inside space-y-1 my-2 ml-1">
+          {listItems.map((item, idx) => <li key={idx} className="text-sm text-foreground/80 leading-relaxed">{renderInlineMarkdown(item)}</li>)}
         </ul>
       );
       continue;
     }
-
-    // Ordered lists
     if (line.trim().match(/^\d+\.\s/)) {
       const listItems: string[] = [];
-      let counter = 1;
       while (i < lines.length && lines[i].trim().match(/^\d+\.\s/)) {
         listItems.push(lines[i].trim().replace(/^\d+\.\s/, ''));
         i++;
       }
       elements.push(
-        <ol key={`olist-${i}`} className="list-decimal list-inside space-y-1 my-2">
-          {listItems.map((item, idx) => (
-            <li key={idx} className="text-sm text-foreground/80">
-              {renderInlineMarkdown(item)}
-            </li>
-          ))}
+        <ol key={`olist-${i}`} className="list-decimal list-inside space-y-1 my-2 ml-1">
+          {listItems.map((item, idx) => <li key={idx} className="text-sm text-foreground/80 leading-relaxed">{renderInlineMarkdown(item)}</li>)}
         </ol>
       );
       continue;
     }
-
-    // Empty lines
-    if (line.trim() === '') {
-      i++;
-      continue;
-    }
-
-    // Regular paragraph
-    elements.push(
-      <p key={i} className="text-sm text-foreground/80 my-2">
-        {renderInlineMarkdown(line)}
-      </p>
-    );
+    if (line.trim() === '') { i++; continue; }
+    elements.push(<p key={i} className="text-sm text-foreground/80 my-1.5 leading-relaxed">{renderInlineMarkdown(line)}</p>);
     i++;
   }
 
-  return <div className="space-y-2">{elements}</div>;
+  return <>{elements}</>;
 }
 
-function renderInlineMarkdown(text: string): React.ReactNode {
-  // Handle **bold**, *italic*, and `code`
-  const parts: React.ReactNode[] = [];
-  let remaining = text;
-  let key = 0;
+// --- Markdown Toolbar ---
+function MarkdownToolbar({ textareaRef, value, onChange }: { textareaRef: React.RefObject<HTMLTextAreaElement | null>; value: string; onChange: (v: string) => void }) {
+  const insert = (before: string, after: string = '', placeholder: string = '') => {
+    const el = textareaRef.current;
+    if (!el) return;
+    const start = el.selectionStart;
+    const end = el.selectionEnd;
+    const selected = value.substring(start, end);
+    const text = selected || placeholder;
+    const newValue = value.substring(0, start) + before + text + after + value.substring(end);
+    onChange(newValue);
+    setTimeout(() => {
+      el.focus();
+      const newPos = start + before.length + text.length + after.length;
+      el.setSelectionRange(start + before.length, start + before.length + text.length);
+    }, 0);
+  };
 
-  while (remaining.length > 0) {
-    // Bold
-    const boldMatch = remaining.match(/\*\*(.+?)\*\*/);
-    if (boldMatch) {
-      const idx = remaining.indexOf(boldMatch[0]);
-      if (idx > 0) parts.push(remaining.substring(0, idx));
-      parts.push(
-        <strong key={key++} className="font-semibold">
-          {boldMatch[1]}
-        </strong>
-      );
-      remaining = remaining.substring(idx + boldMatch[0].length);
-      continue;
-    }
+  const tools = [
+    { icon: Bold, label: 'Bold', action: () => insert('**', '**', 'bold text') },
+    { icon: Italic, label: 'Italic', action: () => insert('*', '*', 'italic text') },
+    { icon: Code2, label: 'Code', action: () => insert('`', '`', 'code') },
+    'sep',
+    { icon: Heading2, label: 'Heading', action: () => insert('## ', '', 'Heading') },
+    { icon: List, label: 'Bullet list', action: () => insert('- ', '', 'List item') },
+    { icon: ListOrdered, label: 'Numbered list', action: () => insert('1. ', '', 'List item') },
+    { icon: Quote, label: 'Quote', action: () => insert('> ', '', 'Quote') },
+    'sep',
+    { icon: Minus, label: 'Divider', action: () => insert('\n---\n', '') },
+    { icon: Link2, label: 'Link', action: () => insert('[', '](url)', 'link text') },
+  ];
 
-    // Italic
-    const italicMatch = remaining.match(/\*(.+?)\*/);
-    if (italicMatch) {
-      const idx = remaining.indexOf(italicMatch[0]);
-      if (idx > 0) parts.push(remaining.substring(0, idx));
-      parts.push(
-        <em key={key++} className="italic">
-          {italicMatch[1]}
-        </em>
-      );
-      remaining = remaining.substring(idx + italicMatch[0].length);
-      continue;
-    }
-
-    // Code
-    const codeMatch = remaining.match(/`(.+?)`/);
-    if (codeMatch) {
-      const idx = remaining.indexOf(codeMatch[0]);
-      if (idx > 0) parts.push(remaining.substring(0, idx));
-      parts.push(
-        <code key={key++} className="bg-muted px-1.5 py-0.5 rounded text-xs font-mono">
-          {codeMatch[1]}
-        </code>
-      );
-      remaining = remaining.substring(idx + codeMatch[0].length);
-      continue;
-    }
-
-    // No more matches
-    parts.push(remaining);
-    break;
-  }
-
-  return parts.length === 1 && typeof parts[0] === 'string' ? text : parts;
+  return (
+    <div className="flex items-center gap-0.5 px-3 py-2 border-b border-border bg-muted/20 rounded-t-lg overflow-x-auto">
+      {tools.map((tool, idx) => {
+        if (tool === 'sep') return <div key={idx} className="w-px h-5 bg-border mx-1" />;
+        const t = tool as { icon: any; label: string; action: () => void };
+        return (
+          <button
+            key={idx}
+            type="button"
+            title={t.label}
+            onClick={t.action}
+            className="p-1.5 rounded hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
+          >
+            <t.icon className="h-4 w-4" />
+          </button>
+        );
+      })}
+    </div>
+  );
 }
 
-// List View Component
+// ============================
+// LIST VIEW
+// ============================
 function SkillSetsList({
   skillSets,
   onEdit,
   onView,
   onToggle,
+  onCreate,
 }: {
   skillSets: SkillSet[];
   onEdit: (skillSet: SkillSet) => void;
   onView: (skillSet: SkillSet) => void;
   onToggle: (id: string, enabled: boolean) => void;
+  onCreate: () => void;
 }) {
   const [search, setSearch] = useState('');
   const [filter, setFilter] = useState<'all' | 'global' | 'custom'>('all');
 
   const filtered = skillSets.filter((ss) => {
-    const matchesSearch = ss.name.toLowerCase().includes(search.toLowerCase());
-    const matchesFilter =
-      filter === 'all' || ss.type === filter;
+    const matchesSearch = ss.name.toLowerCase().includes(search.toLowerCase()) ||
+      ss.description.toLowerCase().includes(search.toLowerCase());
+    const matchesFilter = filter === 'all' || ss.type === filter;
     return matchesSearch && matchesFilter;
   });
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 8 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.3 }}
-      className="space-y-6"
-    >
-      {/* Header */}
-      <div className="space-y-2">
-        <SectionHeader
-          title="Skill Sets"
-          description="Create and manage AI skill sets that guide behavior in your ministry context"
-        />
-      </div>
-
-      {/* Search and Create */}
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-          <Input
-            placeholder="Search skill sets..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="pl-9"
-          />
+    <div className="space-y-8">
+      {/* Page Header */}
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+        <div className="space-y-1.5">
+          <h1 className="text-2xl font-bold tracking-tight text-foreground">Skill Sets</h1>
+          <p className="text-sm text-muted-foreground max-w-lg">
+            Create and manage AI skill sets — each one is a set of instructions and tools that guide how AI behaves in your ministry context.
+          </p>
         </div>
-        <Button onClick={() => onEdit({} as SkillSet)} className="gap-2">
+        <Button onClick={onCreate} size="sm" className="gap-2 shrink-0">
           <Plus className="h-4 w-4" />
           Create Skill Set
         </Button>
       </div>
 
-      {/* Filter Tabs */}
-      <Tabs value={filter} onValueChange={(v) => setFilter(v as typeof filter)}>
-        <TabsList>
-          <TabsTrigger value="all">All</TabsTrigger>
-          <TabsTrigger value="global">Global</TabsTrigger>
-          <TabsTrigger value="custom">Custom</TabsTrigger>
-        </TabsList>
-      </Tabs>
+      {/* Search + Filter Row */}
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
+        <div className="relative flex-1 max-w-sm">
+          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <Input
+            placeholder="Search skill sets..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="pl-10"
+          />
+        </div>
+        <Tabs value={filter} onValueChange={(v) => setFilter(v as typeof filter)}>
+          <TabsList>
+            <TabsTrigger value="all">All ({skillSets.length})</TabsTrigger>
+            <TabsTrigger value="global">Global ({skillSets.filter(s => s.type === 'global').length})</TabsTrigger>
+            <TabsTrigger value="custom">Custom ({skillSets.filter(s => s.type === 'custom').length})</TabsTrigger>
+          </TabsList>
+        </Tabs>
+      </div>
 
-      {/* Grid */}
+      {/* Cards Grid — 3 columns */}
       {filtered.length === 0 ? (
-        <div className="rounded-lg border border-dashed border-border bg-muted/30 p-12 text-center">
-          <p className="text-sm text-muted-foreground">No skill sets found</p>
+        <div className="rounded-xl border-2 border-dashed border-border bg-muted/20 p-16 text-center">
+          <Search className="h-10 w-10 mx-auto text-muted-foreground/50 mb-3" />
+          <p className="text-sm font-medium text-foreground mb-1">No skill sets found</p>
+          <p className="text-xs text-muted-foreground">Try adjusting your search or filters</p>
         </div>
       ) : (
-        <div className="grid gap-4 md:grid-cols-2">
-          {filtered.map((skillSet) => (
+        <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+          {filtered.map((skillSet, idx) => (
             <motion.div
               key={skillSet.id}
-              initial={{ opacity: 0, y: 8 }}
+              initial={{ opacity: 0, y: 12 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.2 }}
+              transition={{ duration: 0.2, delay: idx * 0.04 }}
             >
-              <Card className="flex flex-col h-full hover:border-primary/50 transition-colors">
-                <CardHeader>
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="flex-1 space-y-2">
+              <Card className={cn(
+                "flex flex-col h-full border-l-4 transition-all hover:shadow-md",
+                skillSet.accentColor,
+                !skillSet.enabled && skillSet.type === 'custom' && "opacity-60"
+              )}>
+                <CardHeader className="pb-3">
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="space-y-2 flex-1 min-w-0">
                       <div className="flex items-center gap-2">
-                        {skillSet.type === 'global' && (
-                          <Lock className="h-4 w-4 text-muted-foreground" />
-                        )}
-                        <CardTitle className="text-base">{skillSet.name}</CardTitle>
+                        {skillSet.type === 'global' && <Lock className="h-3.5 w-3.5 text-muted-foreground shrink-0" />}
+                        <CardTitle className="text-sm font-semibold leading-tight truncate">{skillSet.name}</CardTitle>
                       </div>
-                      <Badge variant={skillSet.type === 'global' ? 'secondary' : 'outline'}>
+                      <span className={cn(
+                        "inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold border",
+                        ACCENT_BADGES[skillSet.accentColor] || "bg-muted text-muted-foreground border-border"
+                      )}>
                         {skillSet.type === 'global' ? 'System' : 'Custom'}
-                      </Badge>
+                      </span>
                     </div>
                   </div>
-                  <CardDescription className="line-clamp-2">
+                  <p className="text-xs text-muted-foreground leading-relaxed line-clamp-2 mt-2">
                     {skillSet.description}
-                  </CardDescription>
+                  </p>
                 </CardHeader>
 
-                <CardContent className="flex-1 space-y-4">
+                <CardContent className="flex-1 flex flex-col justify-end pt-0">
                   {/* Stats */}
-                  <div className="flex gap-4 text-xs text-muted-foreground">
-                    <div>
-                      <span className="font-medium">{skillSet.tools.length}</span> tools
+                  <div className="flex items-center gap-4 text-[11px] text-muted-foreground mb-4">
+                    <div className="flex items-center gap-1.5">
+                      <Wrench className="h-3 w-3" />
+                      <span><span className="font-semibold text-foreground">{skillSet.tools.length}</span> tools</span>
                     </div>
-                    <div>
-                      <span className="font-medium">{skillSet.attachments.length}</span> files
+                    <div className="flex items-center gap-1.5">
+                      <Paperclip className="h-3 w-3" />
+                      <span><span className="font-semibold text-foreground">{skillSet.attachments.length}</span> files</span>
                     </div>
                   </div>
 
-                  <Separator />
+                  <Separator className="mb-4" />
 
-                  {/* Toggle and Action */}
-                  <div className="flex items-center justify-between pt-2">
+                  {/* Footer */}
+                  <div className="flex items-center justify-between">
                     {skillSet.type === 'custom' ? (
                       <div className="flex items-center gap-2">
                         <Switch
                           checked={skillSet.enabled}
-                          onCheckedChange={(checked) =>
-                            onToggle(skillSet.id, checked)
-                          }
+                          onCheckedChange={(checked) => onToggle(skillSet.id, checked)}
                         />
-                        <span className="text-xs text-muted-foreground">
-                          {skillSet.enabled ? 'Enabled' : 'Disabled'}
-                        </span>
+                        <span className="text-[11px] text-muted-foreground">{skillSet.enabled ? 'Active' : 'Disabled'}</span>
                       </div>
                     ) : (
-                      <span className="text-xs text-muted-foreground text-italic">
-                        System skill set
-                      </span>
+                      <div className="flex items-center gap-1.5">
+                        <div className={cn("w-2 h-2 rounded-full", ACCENT_DOTS[skillSet.accentColor] || "bg-muted-foreground")} />
+                        <span className="text-[11px] text-muted-foreground">System</span>
+                      </div>
                     )}
-
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() =>
-                        skillSet.type === 'global' ? onView(skillSet) : onEdit(skillSet)
-                      }
-                      className="gap-1"
+                      className="h-7 text-xs gap-1"
+                      onClick={() => skillSet.type === 'global' ? onView(skillSet) : onEdit(skillSet)}
                     >
                       {skillSet.type === 'global' ? (
-                        <>
-                          <Eye className="h-4 w-4" />
-                          View
-                        </>
+                        <><Eye className="h-3 w-3" /> View</>
                       ) : (
-                        <>
-                          <Edit2 className="h-4 w-4" />
-                          Edit
-                        </>
+                        <><Edit2 className="h-3 w-3" /> Edit</>
                       )}
                     </Button>
                   </div>
@@ -575,130 +497,125 @@ function SkillSetsList({
           ))}
         </div>
       )}
-    </motion.div>
+    </div>
   );
 }
 
-// View (Read-only) Component
+// ============================
+// READ-ONLY VIEW
+// ============================
 function SkillSetView({
   skillSet,
   onBack,
+  onClone,
 }: {
   skillSet: SkillSet;
   onBack: () => void;
+  onClone: (ss: SkillSet) => void;
 }) {
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 8 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.3 }}
-      className="space-y-6"
-    >
-      {/* Header with Back */}
-      <div className="flex items-center gap-3">
-        <Button variant="ghost" size="sm" onClick={onBack} className="gap-1">
-          <ArrowLeft className="h-4 w-4" />
-          Back
+    <div className="space-y-8">
+      {/* Back + Header */}
+      <div className="flex items-center justify-between gap-4">
+        <div className="flex items-center gap-3">
+          <Button variant="ghost" size="sm" onClick={onBack} className="gap-1.5 -ml-2">
+            <ArrowLeft className="h-4 w-4" /> Back
+          </Button>
+          <Separator orientation="vertical" className="h-5" />
+          <div className="flex items-center gap-2">
+            <Lock className="h-4 w-4 text-muted-foreground" />
+            <h1 className="text-lg font-semibold">{skillSet.name}</h1>
+            <Badge variant="secondary" className="text-[10px]">System</Badge>
+          </div>
+        </div>
+        <Button variant="outline" size="sm" className="gap-1.5" onClick={() => onClone(skillSet)}>
+          <Copy className="h-3.5 w-3.5" /> Clone & Customize
         </Button>
       </div>
 
+      <p className="text-sm text-muted-foreground leading-relaxed max-w-2xl -mt-2">{skillSet.description}</p>
+
+      {/* Instructions */}
       <Card>
-        <CardHeader>
-          <div className="flex items-start justify-between gap-4">
-            <div className="space-y-2">
-              <div className="flex items-center gap-2">
-                <Lock className="h-5 w-5 text-muted-foreground" />
-                <CardTitle>{skillSet.name}</CardTitle>
-              </div>
-              <Badge variant="secondary">System</Badge>
-            </div>
-          </div>
-          <CardDescription className="text-base mt-4">
-            {skillSet.description}
-          </CardDescription>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-sm">Instructions</CardTitle>
         </CardHeader>
-
-        <CardContent className="space-y-6">
-          {/* Instructions */}
-          <div className="space-y-3">
-            <h3 className="font-semibold">Instructions</h3>
-            <div className="rounded-lg bg-muted/30 p-4 text-sm">
-              {renderMarkdown(skillSet.instructions)}
-            </div>
+        <CardContent>
+          <div className="rounded-lg bg-muted/30 border border-border p-5">
+            {renderMarkdown(skillSet.instructions)}
           </div>
-
-          <Separator />
-
-          {/* Tools */}
-          {skillSet.tools.length > 0 && (
-            <div className="space-y-3">
-              <h3 className="font-semibold">Tools ({skillSet.tools.length})</h3>
-              <div className="space-y-3">
-                {skillSet.tools.map((tool) => (
-                  <div
-                    key={tool.id}
-                    className="rounded-lg bg-muted/30 p-3 space-y-1"
-                  >
-                    <div className="font-medium text-sm">{tool.name}</div>
-                    <div className="text-xs text-muted-foreground">
-                      {tool.description}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {skillSet.attachments.length > 0 && (
-            <>
-              <Separator />
-              <div className="space-y-3">
-                <h3 className="font-semibold">Attachments ({skillSet.attachments.length})</h3>
-                <div className="space-y-2">
-                  {skillSet.attachments.map((file) => (
-                    <div
-                      key={file.id}
-                      className="flex items-center justify-between rounded-lg bg-muted/30 p-3"
-                    >
-                      <div>
-                        <div className="text-sm font-medium">{file.name}</div>
-                        <div className="text-xs text-muted-foreground">{file.size}</div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </>
-          )}
         </CardContent>
       </Card>
-    </motion.div>
+
+      {/* Tools */}
+      {skillSet.tools.length > 0 && (
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-sm">Tools ({skillSet.tools.length})</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid gap-3 sm:grid-cols-2">
+              {skillSet.tools.map((tool) => (
+                <div key={tool.id} className="flex items-start gap-3 rounded-lg bg-muted/30 border border-border p-3.5">
+                  <div className="w-8 h-8 rounded-md bg-indigo-100 flex items-center justify-center shrink-0">
+                    <Wrench className="h-4 w-4 text-indigo-600" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-mono font-medium text-foreground">{tool.name}</p>
+                    <p className="text-xs text-muted-foreground mt-0.5 leading-relaxed">{tool.description}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Attachments */}
+      {skillSet.attachments.length > 0 && (
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-sm">Attachments ({skillSet.attachments.length})</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-2">
+              {skillSet.attachments.map((file) => (
+                <div key={file.id} className="flex items-center gap-3 rounded-lg bg-muted/30 border border-border p-3">
+                  <FileText className="h-4 w-4 text-muted-foreground shrink-0" />
+                  <div>
+                    <p className="text-sm font-medium">{file.name}</p>
+                    <p className="text-xs text-muted-foreground">{file.size}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+    </div>
   );
 }
 
-// Editor Component
+// ============================
+// EDITOR
+// ============================
 function SkillSetEditor({
   skillSet,
   onBack,
   onSave,
 }: {
-  skillSet: SkillSet | {};
+  skillSet: SkillSet | null;
   onBack: () => void;
   onSave: (skillSet: SkillSet) => void;
 }) {
-  const isNew = !('id' in skillSet);
-  const [name, setName] = useState(isNew ? '' : skillSet.name);
-  const [description, setDescription] = useState(isNew ? '' : skillSet.description);
-  const [instructions, setInstructions] = useState(isNew ? '' : skillSet.instructions);
-  const [tools, setTools] = useState<Tool[]>(isNew ? [] : skillSet.tools);
-  const [attachments, setAttachments] = useState<Attachment[]>(
-    isNew ? [] : skillSet.attachments
-  );
-  const [assignedMentors, setAssignedMentors] = useState<string[]>(
-    isNew ? [] : skillSet.assignedMentors
-  );
+  const isNew = !skillSet;
+  const [name, setName] = useState(skillSet?.name || '');
+  const [description, setDescription] = useState(skillSet?.description || '');
+  const [instructions, setInstructions] = useState(skillSet?.instructions || '');
+  const [tools, setTools] = useState<Tool[]>(skillSet?.tools || []);
+  const [attachments, setAttachments] = useState<Attachment[]>(skillSet?.attachments || []);
   const [previewTab, setPreviewTab] = useState<'edit' | 'preview'>('edit');
-  const [showMentorDropdown, setShowMentorDropdown] = useState(false);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   const handleAddTool = () => {
     setTools([...tools, { id: `t-${Date.now()}`, name: '', description: '' }]);
@@ -709,24 +626,11 @@ function SkillSetEditor({
   };
 
   const handleUpdateTool = (id: string, field: keyof Tool, value: string) => {
-    setTools(
-      tools.map((t) => (t.id === id ? { ...t, [field]: value } : t))
-    );
+    setTools(tools.map((t) => (t.id === id ? { ...t, [field]: value } : t)));
   };
 
   const handleRemoveAttachment = (id: string) => {
     setAttachments(attachments.filter((a) => a.id !== id));
-  };
-
-  const handleAddMentor = (mentor: string) => {
-    if (!assignedMentors.includes(mentor)) {
-      setAssignedMentors([...assignedMentors, mentor]);
-    }
-    setShowMentorDropdown(false);
-  };
-
-  const handleRemoveMentor = (mentor: string) => {
-    setAssignedMentors(assignedMentors.filter((m) => m !== mentor));
   };
 
   const handleSimulateUpload = () => {
@@ -736,295 +640,240 @@ function SkillSetEditor({
       size: `${Math.floor(Math.random() * 400) + 50} KB`,
     };
     setAttachments([...attachments, newFile]);
-    toast.success('File uploaded successfully');
+    toast.success('File uploaded');
   };
 
   const handleSave = () => {
-    if (!name.trim()) {
-      toast.error('Skill set name is required');
-      return;
-    }
-    if (!description.trim()) {
-      toast.error('Description is required');
-      return;
-    }
-    if (!instructions.trim()) {
-      toast.error('Instructions are required');
-      return;
-    }
+    if (!name.trim()) { toast.error('Name is required'); return; }
+    if (!description.trim()) { toast.error('Description is required'); return; }
+    if (!instructions.trim()) { toast.error('Instructions are required'); return; }
 
-    const newSkillSet: SkillSet = {
-      id: isNew ? `cs-${Date.now()}` : skillSet.id,
+    const saved: SkillSet = {
+      id: skillSet?.id || `cs-${Date.now()}`,
       name,
       description,
       instructions,
       tools,
       attachments,
-      assignedMentors,
       type: 'custom',
-      enabled: true,
+      enabled: skillSet?.enabled ?? true,
+      accentColor: skillSet?.accentColor || ACCENT_COLORS[Math.floor(Math.random() * ACCENT_COLORS.length)],
     };
-
-    onSave(newSkillSet);
+    onSave(saved);
     toast.success(isNew ? 'Skill set created' : 'Skill set updated');
   };
 
-  const availableMentors = MENTOR_NAMES.filter((m) => !assignedMentors.includes(m));
-
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 8 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.3 }}
-      className="space-y-6"
-    >
-      {/* Back Button */}
-      <div className="flex items-center gap-3">
-        <Button variant="ghost" size="sm" onClick={onBack} className="gap-1">
-          <ArrowLeft className="h-4 w-4" />
-          Back
-        </Button>
+    <div className="space-y-8">
+      {/* Header */}
+      <div className="flex items-center justify-between gap-4">
+        <div className="flex items-center gap-3">
+          <Button variant="ghost" size="sm" onClick={onBack} className="gap-1.5 -ml-2">
+            <ArrowLeft className="h-4 w-4" /> Back
+          </Button>
+          <Separator orientation="vertical" className="h-5" />
+          <h1 className="text-lg font-semibold">{isNew ? 'Create Skill Set' : `Edit: ${skillSet.name}`}</h1>
+        </div>
+        <div className="flex items-center gap-2">
+          <Button variant="outline" size="sm" onClick={onBack}>Cancel</Button>
+          <Button size="sm" onClick={handleSave}>{isNew ? 'Create' : 'Save Changes'}</Button>
+        </div>
       </div>
 
-      {/* Main Content */}
-      <div className="space-y-6">
-        {/* Name */}
-        <FormField label="Skill Set Name" required>
-          <Input
-            placeholder="e.g., Youth Mentorship Framework"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-          />
-        </FormField>
-
-        {/* Description */}
-        <FormField label="Description" required>
-          <Textarea
-            placeholder="Brief description of what this skill set does..."
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}
-            rows={2}
-          />
-        </FormField>
-
-        {/* Instructions Editor */}
-        <div className="space-y-3">
-          <label className="text-sm font-medium">Instructions (Markdown)</label>
-          <Tabs value={previewTab} onValueChange={(v) => setPreviewTab(v as 'edit' | 'preview')}>
-            <TabsList>
-              <TabsTrigger value="edit">Edit</TabsTrigger>
-              <TabsTrigger value="preview">Preview</TabsTrigger>
-            </TabsList>
-
-            <TabsContent value="edit">
-              <Textarea
-                placeholder="# Heading
-
-Use markdown formatting:
-- Lists
-- **Bold**
-- *Italic*
-- `code`"
-                value={instructions}
-                onChange={(e) => setInstructions(e.target.value)}
-                className="font-mono text-xs min-h-96 p-3"
-              />
-            </TabsContent>
-
-            <TabsContent value="preview">
-              <div className="rounded-lg bg-muted/30 p-4 min-h-96 text-sm">
-                {instructions ? renderMarkdown(instructions) : <p className="text-muted-foreground">No content yet</p>}
+      {/* Two-column layout: Left = main content, Right = sidebar */}
+      <div className="grid gap-8 lg:grid-cols-[1fr_320px]">
+        {/* Left Column — Main */}
+        <div className="space-y-8">
+          {/* Name & Description */}
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-sm">Details</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-5">
+              <div className="space-y-1.5">
+                <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Name</label>
+                <Input
+                  placeholder="e.g., Youth Mentorship Framework"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  className="text-base font-medium"
+                />
               </div>
-            </TabsContent>
-          </Tabs>
-        </div>
+              <div className="space-y-1.5">
+                <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Description</label>
+                <Textarea
+                  placeholder="Brief description of what this skill set does..."
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
+                  rows={2}
+                />
+              </div>
+            </CardContent>
+          </Card>
 
-        <Separator />
+          {/* Instructions Markdown Editor */}
+          <Card>
+            <CardHeader className="pb-3">
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-sm">Instructions</CardTitle>
+                <Tabs value={previewTab} onValueChange={(v) => setPreviewTab(v as 'edit' | 'preview')}>
+                  <TabsList className="h-7">
+                    <TabsTrigger value="edit" className="text-xs h-6 px-3">Edit</TabsTrigger>
+                    <TabsTrigger value="preview" className="text-xs h-6 px-3">Preview</TabsTrigger>
+                  </TabsList>
+                </Tabs>
+              </div>
+              <CardDescription className="text-xs">Write instructions in Markdown to guide AI behavior</CardDescription>
+            </CardHeader>
+            <CardContent>
+              {previewTab === 'edit' ? (
+                <div className="rounded-lg border border-border overflow-hidden focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-1">
+                  <MarkdownToolbar textareaRef={textareaRef} value={instructions} onChange={setInstructions} />
+                  <textarea
+                    ref={textareaRef}
+                    placeholder={"# Getting Started\n\nWrite your instructions here using Markdown...\n\n## Guidelines\n- Be specific about AI behavior\n- Include examples when helpful\n- Reference Scripture where appropriate"}
+                    value={instructions}
+                    onChange={(e) => setInstructions(e.target.value)}
+                    className="w-full min-h-[400px] p-4 font-mono text-sm bg-background text-foreground resize-y outline-none placeholder:text-muted-foreground/50"
+                  />
+                </div>
+              ) : (
+                <div className="rounded-lg border border-border bg-muted/20 p-5 min-h-[400px]">
+                  {instructions ? renderMarkdown(instructions) : (
+                    <p className="text-sm text-muted-foreground italic">No content yet — switch to Edit tab to write instructions</p>
+                  )}
+                </div>
+              )}
+            </CardContent>
+          </Card>
 
-        {/* Tools Section */}
-        <div className="space-y-4">
-          <div className="flex items-center justify-between">
-            <h3 className="font-semibold">Tools</h3>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleAddTool}
-              className="gap-1"
-            >
-              <Plus className="h-4 w-4" />
-              Add Tool
-            </Button>
-          </div>
-
-          <div className="space-y-3">
-            {tools.length === 0 ? (
-              <p className="text-sm text-muted-foreground">No tools added yet</p>
-            ) : (
-              tools.map((tool) => (
-                <div key={tool.id} className="space-y-2 rounded-lg bg-muted/30 p-3">
-                  <div className="grid gap-2 sm:grid-cols-2">
-                    <FormField label="Tool Name" size="sm">
-                      <Input
-                        placeholder="e.g., scripture_lookup"
-                        value={tool.name}
-                        onChange={(e) =>
-                          handleUpdateTool(tool.id, 'name', e.target.value)
-                        }
-                        size="sm"
-                      />
-                    </FormField>
-                    <div className="flex items-end gap-2">
-                      <div className="flex-1">
-                        <FormField label="Description" size="sm">
-                          <Input
-                            placeholder="What does this tool do?"
-                            value={tool.description}
-                            onChange={(e) =>
-                              handleUpdateTool(tool.id, 'description', e.target.value)
-                            }
-                            size="sm"
-                          />
-                        </FormField>
+          {/* Tools Section */}
+          <Card>
+            <CardHeader className="pb-3">
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle className="text-sm">Tools</CardTitle>
+                  <CardDescription className="text-xs">Define tools the AI can use with this skill set</CardDescription>
+                </div>
+                <Button variant="outline" size="sm" onClick={handleAddTool} className="gap-1.5 h-7 text-xs">
+                  <Plus className="h-3.5 w-3.5" /> Add Tool
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent>
+              {tools.length === 0 ? (
+                <div className="rounded-lg border-2 border-dashed border-border bg-muted/20 p-8 text-center">
+                  <Wrench className="h-8 w-8 mx-auto text-muted-foreground/40 mb-2" />
+                  <p className="text-sm text-muted-foreground">No tools yet</p>
+                  <p className="text-xs text-muted-foreground/70 mt-1">Add tools that the AI can call when using this skill set</p>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {tools.map((tool, idx) => (
+                    <div key={tool.id} className="flex items-start gap-3 rounded-lg border border-border bg-muted/10 p-3.5">
+                      <div className="w-7 h-7 rounded bg-indigo-100 flex items-center justify-center shrink-0 mt-0.5">
+                        <Wrench className="h-3.5 w-3.5 text-indigo-600" />
                       </div>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleRemoveTool(tool.id)}
-                      >
-                        <X className="h-4 w-4" />
+                      <div className="flex-1 space-y-2">
+                        <Input
+                          placeholder="tool_name"
+                          value={tool.name}
+                          onChange={(e) => handleUpdateTool(tool.id, 'name', e.target.value)}
+                          className="font-mono text-sm h-8"
+                        />
+                        <Input
+                          placeholder="What does this tool do?"
+                          value={tool.description}
+                          onChange={(e) => handleUpdateTool(tool.id, 'description', e.target.value)}
+                          className="text-xs h-8"
+                        />
+                      </div>
+                      <Button variant="ghost" size="sm" className="h-7 w-7 p-0 text-muted-foreground hover:text-red-500 shrink-0" onClick={() => handleRemoveTool(tool.id)}>
+                        <Trash2 className="h-3.5 w-3.5" />
                       </Button>
                     </div>
-                  </div>
+                  ))}
                 </div>
-              ))
-            )}
-          </div>
+              )}
+            </CardContent>
+          </Card>
         </div>
 
-        <Separator />
-
-        {/* File Attachments */}
-        <div className="space-y-4">
-          <div className="flex items-center justify-between">
-            <h3 className="font-semibold">File Attachments</h3>
-          </div>
-
-          {/* Upload Area */}
-          <div
-            onClick={handleSimulateUpload}
-            className="rounded-lg border-2 border-dashed border-border bg-muted/30 p-8 text-center cursor-pointer hover:border-primary/50 transition-colors"
-          >
-            <Upload className="h-8 w-8 mx-auto text-muted-foreground mb-2" />
-            <div className="text-sm font-medium">Click to upload or drag and drop</div>
-            <div className="text-xs text-muted-foreground">PDF, DOCX, TXT up to 10MB</div>
-          </div>
-
-          {/* Attachments List */}
-          {attachments.length > 0 && (
-            <div className="space-y-2">
-              {attachments.map((file) => (
-                <div
-                  key={file.id}
-                  className="flex items-center justify-between rounded-lg bg-muted/30 p-3"
-                >
-                  <div>
-                    <div className="text-sm font-medium">{file.name}</div>
-                    <div className="text-xs text-muted-foreground">{file.size}</div>
-                  </div>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => handleRemoveAttachment(file.id)}
-                  >
-                    <X className="h-4 w-4" />
-                  </Button>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-
-        <Separator />
-
-        {/* Assignment Section */}
-        <div className="space-y-4">
-          <h3 className="font-semibold">Assigned Mentors</h3>
-
-          {/* Mentor Chips */}
-          {assignedMentors.length > 0 && (
-            <div className="flex flex-wrap gap-2">
-              {assignedMentors.map((mentor) => (
-                <Badge key={mentor} variant="secondary" className="gap-1 px-2">
-                  {mentor}
-                  <button
-                    onClick={() => handleRemoveMentor(mentor)}
-                    className="ml-1 hover:text-destructive"
-                  >
-                    <X className="h-3 w-3" />
-                  </button>
-                </Badge>
-              ))}
-            </div>
-          )}
-
-          {/* Assign Button with Dropdown */}
-          <div className="relative">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setShowMentorDropdown(!showMentorDropdown)}
-              className="gap-1"
-            >
-              <Plus className="h-4 w-4" />
-              Assign Mentor
-              <ChevronDown className="h-4 w-4" />
-            </Button>
-
-            {showMentorDropdown && availableMentors.length > 0 && (
-              <div className="absolute top-full left-0 mt-1 rounded-lg border border-border bg-background shadow-lg z-50">
-                {availableMentors.map((mentor) => (
-                  <button
-                    key={mentor}
-                    onClick={() => handleAddMentor(mentor)}
-                    className="w-full text-left px-3 py-2 text-sm hover:bg-muted first:rounded-t-md last:rounded-b-md"
-                  >
-                    {mentor}
-                  </button>
-                ))}
+        {/* Right Sidebar */}
+        <div className="space-y-6">
+          {/* File Attachments */}
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-sm">Attachments</CardTitle>
+              <CardDescription className="text-xs">Upload reference files for this skill set</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <div
+                onClick={handleSimulateUpload}
+                className="rounded-lg border-2 border-dashed border-border bg-muted/20 p-6 text-center cursor-pointer hover:border-primary/40 hover:bg-muted/30 transition-all"
+              >
+                <Upload className="h-6 w-6 mx-auto text-muted-foreground/60 mb-1.5" />
+                <p className="text-xs font-medium text-foreground">Upload file</p>
+                <p className="text-[10px] text-muted-foreground mt-0.5">PDF, DOCX, TXT · 10MB max</p>
               </div>
-            )}
-          </div>
 
-          {availableMentors.length === 0 && assignedMentors.length > 0 && (
-            <p className="text-xs text-muted-foreground">All mentors assigned</p>
-          )}
+              {attachments.length > 0 && (
+                <div className="space-y-2">
+                  {attachments.map((file) => (
+                    <div key={file.id} className="flex items-center justify-between gap-2 rounded-lg bg-muted/30 border border-border p-2.5">
+                      <div className="flex items-center gap-2 min-w-0">
+                        <FileText className="h-4 w-4 text-muted-foreground shrink-0" />
+                        <div className="min-w-0">
+                          <p className="text-xs font-medium truncate">{file.name}</p>
+                          <p className="text-[10px] text-muted-foreground">{file.size}</p>
+                        </div>
+                      </div>
+                      <Button variant="ghost" size="sm" className="h-6 w-6 p-0 text-muted-foreground hover:text-red-500 shrink-0" onClick={() => handleRemoveAttachment(file.id)}>
+                        <X className="h-3 w-3" />
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Quick Tips */}
+          <Card className="bg-muted/20">
+            <CardContent className="pt-5">
+              <p className="text-xs font-semibold text-foreground mb-2">Writing Tips</p>
+              <div className="space-y-2 text-[11px] text-muted-foreground leading-relaxed">
+                <p>• Start with a clear <span className="font-medium text-foreground">## Purpose</span> section</p>
+                <p>• Use headings to organize guidelines, rules, and flows</p>
+                <p>• Be specific about what the AI should and shouldn't do</p>
+                <p>• Include examples of good responses when possible</p>
+              </div>
+            </CardContent>
+          </Card>
         </div>
       </div>
-
-      {/* Action Buttons */}
-      <div className="flex gap-2 pt-6 border-t border-border">
-        <Button variant="outline" onClick={onBack}>
-          Cancel
-        </Button>
-        <Button onClick={handleSave}>
-          {isNew ? 'Create Skill Set' : 'Save Changes'}
-        </Button>
-      </div>
-    </motion.div>
+    </div>
   );
 }
 
-// Main Component
+// ============================
+// MAIN VIEW
+// ============================
 export function SkillSetsView() {
   const [skillSets, setSkillSets] = useState<SkillSet[]>([
     ...GLOBAL_SKILLSETS,
     ...SAMPLE_CUSTOM_SKILLSETS,
   ]);
   const [view, setView] = useState<'list' | 'editor' | 'viewer'>('list');
-  const [selectedSkillSet, setSelectedSkillSet] = useState<SkillSet | {}>({});
+  const [selectedSkillSet, setSelectedSkillSet] = useState<SkillSet | null>(null);
 
-  const handleEdit = (skillSet: SkillSet | {}) => {
+  const handleEdit = (skillSet: SkillSet) => {
     setSelectedSkillSet(skillSet);
+    setView('editor');
+  };
+
+  const handleCreate = () => {
+    setSelectedSkillSet(null);
     setView('editor');
   };
 
@@ -1035,7 +884,7 @@ export function SkillSetsView() {
 
   const handleBack = () => {
     setView('list');
-    setSelectedSkillSet({});
+    setSelectedSkillSet(null);
   };
 
   const handleSave = (skillSet: SkillSet) => {
@@ -1050,20 +899,38 @@ export function SkillSetsView() {
     handleBack();
   };
 
+  const handleClone = (ss: SkillSet) => {
+    const cloned: SkillSet = {
+      ...ss,
+      id: `cs-${Date.now()}`,
+      name: `${ss.name} (Copy)`,
+      type: 'custom',
+      accentColor: ACCENT_COLORS[Math.floor(Math.random() * ACCENT_COLORS.length)],
+    };
+    setSelectedSkillSet(cloned);
+    setView('editor');
+    toast.success('Cloned — you can now customize it');
+  };
+
   const handleToggle = (id: string, enabled: boolean) => {
-    setSkillSets(
-      skillSets.map((ss) => (ss.id === id ? { ...ss, enabled } : ss))
-    );
+    setSkillSets(skillSets.map((ss) => (ss.id === id ? { ...ss, enabled } : ss)));
+    toast.success(enabled ? 'Skill set enabled' : 'Skill set disabled');
   };
 
   return (
-    <div className="min-h-screen bg-background">
+    <motion.div
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.3 }}
+      className="p-6 lg:p-10"
+    >
       {view === 'list' && (
         <SkillSetsList
           skillSets={skillSets}
           onEdit={handleEdit}
           onView={handleView}
           onToggle={handleToggle}
+          onCreate={handleCreate}
         />
       )}
       {view === 'editor' && (
@@ -1073,9 +940,13 @@ export function SkillSetsView() {
           onSave={handleSave}
         />
       )}
-      {view === 'viewer' && 'id' in selectedSkillSet && (
-        <SkillSetView skillSet={selectedSkillSet as SkillSet} onBack={handleBack} />
+      {view === 'viewer' && selectedSkillSet && (
+        <SkillSetView
+          skillSet={selectedSkillSet}
+          onBack={handleBack}
+          onClone={handleClone}
+        />
       )}
-    </div>
+    </motion.div>
   );
 }
