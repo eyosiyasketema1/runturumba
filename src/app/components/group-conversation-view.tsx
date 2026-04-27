@@ -1355,35 +1355,50 @@ export function GroupConversationView() {
   const messageGroups = selectedGroup ? groupMessagesByDate(selectedGroup.messages) : [];
 
   return (
-    <div className="flex flex-col h-full bg-background overflow-hidden">
+    <div className="flex flex-col h-full bg-background overflow-hidden animate-in fade-in duration-300">
+
       {/* Main Content */}
-      <div className="flex flex-row flex-1 overflow-hidden">
-        {/* Left Sidebar - Group List */}
-        <div className="w-[340px] border-r border-border bg-card flex flex-col">
-          {/* Search and Create */}
-          <div className="p-5 space-y-4 border-b border-border">
+      <div className="flex flex-1 overflow-hidden">
+
+        {/* ── Sidebar - Group List ── */}
+        <aside className="w-[340px] xl:w-[400px] border-r border-border bg-card flex flex-col shrink-0">
+
+          {/* Search */}
+          <div className="px-4 py-3 border-b border-border bg-muted/10">
             <div className="relative">
-              <Search className="absolute left-3.5 top-3 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Search groups..."
+              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+              <input
+                type="text"
+                placeholder="Search groups…"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10 rounded-lg border-border"
+                className="w-full pl-10 pr-4 py-2.5 bg-background border border-input text-sm focus:ring-1 focus:ring-ring outline-none transition-all"
               />
             </div>
-            <Button
+          </div>
+
+          {/* Create Group Button */}
+          <div className="px-4 py-2.5 border-b border-border bg-muted/5">
+            <button
               onClick={() => setShowCreateModal(true)}
-              className="w-full gap-2 rounded-lg"
+              className="flex items-center gap-2 px-4 py-1.5 bg-primary text-primary-foreground text-sm font-semibold hover:bg-primary/90 transition-colors w-full justify-center"
             >
-              <Plus className="h-4 w-4" />
+              <Plus className="h-3.5 w-3.5" />
               Create Group
-            </Button>
+            </button>
           </div>
 
           {/* Groups List */}
-          <div className="flex-1 overflow-y-auto">
-            <div className="space-y-2 p-3">
-              {filteredGroups.map((group) => {
+          <div className="flex-1 overflow-y-auto custom-scrollbar">
+            {filteredGroups.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-20 text-center px-8 gap-3">
+                <div className="w-14 h-14 bg-muted flex items-center justify-center opacity-20">
+                  <MessageCircle className="w-7 h-7" />
+                </div>
+                <p className="text-sm text-muted-foreground">No groups found.</p>
+              </div>
+            ) : (
+              filteredGroups.map((group) => {
                 const lastMessage = [...group.messages]
                   .reverse()
                   .find((m) => 'senderId' in m) as Message | undefined;
@@ -1391,80 +1406,60 @@ export function GroupConversationView() {
                 const onlineCount = group.members.filter(m => m.online).length;
 
                 return (
-                  <motion.button
+                  <button
                     key={group.id}
                     onClick={() => setSelectedGroupId(group.id)}
-                    whileHover={{ x: 4 }}
                     className={cn(
-                      'w-full p-4 rounded-xl text-left transition-all border',
+                      'w-full flex items-start gap-3.5 px-4 py-4 text-left border-b border-border/50 transition-all border-l-[3px]',
                       isSelected
-                        ? 'bg-primary text-primary-foreground border-primary shadow-md'
-                        : 'bg-background hover:bg-muted/50 border-transparent'
+                        ? 'bg-primary/5 border-l-primary'
+                        : 'hover:bg-muted/40 border-l-transparent'
                     )}
                   >
-                    <div className="flex gap-3">
-                      {/* Group Avatar with Members */}
-                      <div className="relative flex-shrink-0">
-                        <div
-                          className={cn(
-                            'w-12 h-12 rounded-full flex items-center justify-center text-white font-bold',
-                            getGroupAvatarColor(group.id)
-                          )}
-                        >
-                          {getGroupInitials(group.name)}
-                        </div>
-                        {group.unreadCount ? (
-                          <Badge className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 text-xs rounded-full">
-                            {group.unreadCount}
-                          </Badge>
-                        ) : null}
+                    {/* Group Avatar */}
+                    <div className="relative shrink-0">
+                      <div
+                        className={cn(
+                          'w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold shadow-sm border',
+                          isSelected
+                            ? 'bg-primary text-primary-foreground border-primary'
+                            : 'bg-muted text-muted-foreground border-border'
+                        )}
+                      >
+                        {getGroupInitials(group.name)}
                       </div>
+                      {group.unreadCount > 0 && (
+                        <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 rounded-full bg-primary text-primary-foreground text-xs font-bold flex items-center justify-center">
+                          {group.unreadCount}
+                        </span>
+                      )}
+                    </div>
 
-                      {/* Group Info */}
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center justify-between gap-2">
-                          <h3
-                            className={cn(
-                              'font-semibold truncate text-sm',
-                              isSelected
-                                ? 'text-primary-foreground'
-                                : 'text-foreground'
-                            )}
-                          >
-                            {group.name}
-                          </h3>
+                    {/* Group Info */}
+                    <div className="flex-1 min-w-0">
+                      {/* Row 1: name + time */}
+                      <div className="flex items-center justify-between gap-2 mb-1.5">
+                        <span className={cn('text-sm font-bold truncate', isSelected ? 'text-primary' : 'text-foreground')}>
+                          {group.name}
+                        </span>
+                        <div className="flex items-center gap-1.5 shrink-0">
                           {group.lastMessageTime && (
-                            <span
-                              className={cn(
-                                'text-xs flex-shrink-0',
-                                isSelected
-                                  ? 'text-primary-foreground/70'
-                                  : 'text-muted-foreground'
-                              )}
-                            >
+                            <span className="text-xs font-semibold text-muted-foreground">
                               {formatTime(group.lastMessageTime)}
                             </span>
                           )}
                         </div>
-                        <p
-                          className={cn(
-                            'text-xs truncate mt-1',
-                            isSelected
-                              ? 'text-primary-foreground/80'
-                              : 'text-muted-foreground'
-                          )}
-                        >
-                          {onlineCount} of {group.members.length} online
-                        </p>
-                        {lastMessage && (
-                          <p
-                            className={cn(
-                              'text-xs truncate mt-1.5 line-clamp-1',
-                              isSelected
-                                ? 'text-primary-foreground/75'
-                                : 'text-muted-foreground'
-                            )}
-                          >
+                      </div>
+
+                      {/* Row 2: online count */}
+                      <p className="text-xs text-muted-foreground mb-1">
+                        {onlineCount} of {group.members.length} online
+                      </p>
+
+                      {/* Row 3: last message preview */}
+                      <p className="text-xs text-muted-foreground truncate leading-relaxed">
+                        {lastMessage ? (
+                          <>
                             <span className="font-medium">
                               {lastMessage.senderId === currentUserId
                                 ? 'You'
@@ -1472,22 +1467,25 @@ export function GroupConversationView() {
                               :
                             </span>{' '}
                             {lastMessage.content.replace(/\[Image:.*?\]/g, '📷')}
-                          </p>
+                          </>
+                        ) : (
+                          'No messages yet'
                         )}
-                      </div>
+                      </p>
                     </div>
-                  </motion.button>
+                  </button>
                 );
-              })}
-            </div>
+              })
+            )}
           </div>
-        </div>
+        </aside>
 
-        {/* Center - Chat Area */}
+        {/* ── Chat Pane ── */}
+        <div className="flex-1 flex overflow-hidden">
         {selectedGroup ? (
-          <div className="flex-1 flex flex-col bg-background/50 border-l border-border">
+          <div className="flex-1 flex flex-col bg-background overflow-hidden">
             {/* Chat Header */}
-            <div className="border-b border-border px-6 py-5 flex items-center justify-between bg-background">
+            <div className="border-b border-border px-6 py-4 flex items-center justify-between bg-background shrink-0">
               <div>
                 <h2 className="text-lg font-bold">{selectedGroup.name}</h2>
                 <p className="text-sm text-muted-foreground">
@@ -1551,7 +1549,7 @@ export function GroupConversationView() {
             {/* Messages Area */}
             <div
               ref={scrollContainerRef}
-              className="flex-1 overflow-y-auto px-6 py-5 space-y-6"
+              className="flex-1 overflow-y-auto py-4 px-6 space-y-6 custom-scrollbar bg-muted/5"
             >
               {messageGroups.map((group, groupIdx) => (
                 <div key={`group-${groupIdx}`}>
@@ -1873,6 +1871,7 @@ export function GroupConversationView() {
             <p className="text-muted-foreground">Select a group to start chatting</p>
           </div>
         )}
+        </div>
       </div>
 
       {/* Modals */}
