@@ -1292,6 +1292,61 @@ const AISection = () => {
     }, 1500);
   };
 
+  // ── Edit key state ──
+  const [editingKeyId, setEditingKeyId] = useState<string | null>(null);
+  const [editLabel, setEditLabel] = useState("");
+  const [editKeyValue, setEditKeyValue] = useState("");
+  const [editFeatures, setEditFeatures] = useState<string[]>([]);
+  const [editVerifyState, setEditVerifyState] = useState<"idle" | "verifying" | "success" | "error">("idle");
+  const [editVerifyError, setEditVerifyError] = useState("");
+  const [editKeyChanged, setEditKeyChanged] = useState(false);
+
+  const startEditing = (k: AIApiKey) => {
+    setEditingKeyId(k.id);
+    setEditLabel(k.label);
+    setEditKeyValue(k.key);
+    setEditFeatures(k.assignedFeatures || []);
+    setEditVerifyState("idle");
+    setEditKeyChanged(false);
+  };
+
+  const cancelEditing = () => { setEditingKeyId(null); };
+
+  const verifyEditKey = (provider: string) => {
+    if (!editKeyValue.trim()) { toast.error("Enter an API key"); return; }
+    setEditVerifyState("verifying");
+    const prov = AI_PROVIDERS.find(p => p.id === provider);
+    setTimeout(() => {
+      if (prov && prov.keyPrefix && !editKeyValue.trim().startsWith(prov.keyPrefix)) {
+        setEditVerifyState("error");
+        setEditVerifyError(`Invalid key format. ${prov.keyHint}`);
+      } else {
+        setEditVerifyState("success");
+        setEditVerifyError("");
+      }
+    }, 1500);
+  };
+
+  const toggleEditFeature = (feature: string) => {
+    setEditFeatures(prev => prev.includes(feature) ? prev.filter(f => f !== feature) : [...prev, feature]);
+  };
+
+  const saveEdit = (id: string) => {
+    if (!editLabel.trim()) { toast.error("Label is required"); return; }
+    if (editKeyChanged && editVerifyState !== "success") { toast.error("Please verify the new key first"); return; }
+    const now = new Date().toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+    setAiKeys(prev => prev.map(k => k.id === id ? {
+      ...k,
+      label: editLabel.trim(),
+      key: editKeyValue.trim(),
+      verified: editKeyChanged ? editVerifyState === "success" : k.verified,
+      verifiedAt: editKeyChanged && editVerifyState === "success" ? now : k.verifiedAt,
+      assignedFeatures: editFeatures.length > 0 ? editFeatures : undefined,
+    } : k));
+    setEditingKeyId(null);
+    toast.success("Provider updated");
+  };
+
   const addSkillset = () => {
     if (!newSkillName.trim()) { toast.error("Skillset name is required"); return; }
     setSkillsets(prev => [...prev, { id: `sk-${Date.now()}`, name: newSkillName.trim(), description: newSkillDesc.trim(), enabled: true }]);
@@ -1419,7 +1474,7 @@ const AISection = () => {
         <CardHeader>
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <Key className="w-5 h-5 text-emerald-600" />
+              <Key className="w-5 h-5 text-muted-foreground" />
               <div>
                 <CardTitle className="text-base">AI API Keys</CardTitle>
                 <CardDescription>Connect your AI providers — select a platform, enter your key, and verify.</CardDescription>
@@ -1433,19 +1488,19 @@ const AISection = () => {
         </CardHeader>
         <CardContent className="space-y-3">
           {showAddKey && (
-            <div className="border border-dashed border-emerald-300 rounded-lg bg-emerald-50/50 overflow-hidden">
+            <div className="border border-border rounded-lg bg-background overflow-hidden">
               {/* Step indicator */}
-              <div className="flex items-center gap-0 border-b border-emerald-200 bg-emerald-50">
+              <div className="flex items-center gap-0 border-b border-border bg-muted/30">
                 {[
-                  { step: "provider" as const, label: "1. Select Platform", num: 1 },
-                  { step: "key" as const,      label: "2. Enter & Verify Key", num: 2 },
-                  { step: "assign" as const,   label: "3. Assign Features", num: 3 },
+                  { step: "provider" as const, label: "Select Platform", num: 1 },
+                  { step: "key" as const,      label: "Enter & Verify", num: 2 },
+                  { step: "assign" as const,   label: "Assign Features", num: 3 },
                 ].map(({ step, label, num }) => {
                   const isCurrent = addStep === step;
                   const isDone = (addStep === "key" && num === 1) || (addStep === "assign" && num <= 2);
                   return (
-                    <div key={step} className={cn("flex items-center gap-2 px-4 py-2.5 text-xs font-semibold flex-1 border-r border-emerald-200 last:border-0", isCurrent ? "bg-emerald-100 text-emerald-800" : isDone ? "text-emerald-600" : "text-muted-foreground")}>
-                      {isDone ? <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" /> : <span className={cn("w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold", isCurrent ? "bg-emerald-600 text-white" : "bg-muted text-muted-foreground")}>{num}</span>}
+                    <div key={step} className={cn("flex items-center gap-2 px-4 py-2.5 text-xs font-semibold flex-1 border-r border-border last:border-0", isCurrent ? "bg-background text-foreground" : isDone ? "text-foreground/70" : "text-muted-foreground")}>
+                      {isDone ? <CheckCircle2 className="w-3.5 h-3.5 text-primary" /> : <span className={cn("w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold", isCurrent ? "bg-foreground text-background" : "bg-muted text-muted-foreground")}>{num}</span>}
                       {label}
                     </div>
                   );
@@ -1462,10 +1517,10 @@ const AISection = () => {
                         <button
                           key={p.id}
                           onClick={() => { setNewKeyProvider(p.id); setAddStep("key"); }}
-                          className={cn("flex flex-col items-center gap-2 p-4 rounded-lg border-2 text-center transition-all hover:shadow-sm", newKeyProvider === p.id ? `${p.bgColor} border-current ${p.color}` : "border-border bg-background hover:border-primary/30")}
+                          className="flex flex-col items-center gap-2 p-4 rounded-lg border border-border bg-background text-center transition-all hover:border-foreground/30 hover:shadow-sm"
                         >
                           <span className="text-2xl">{p.icon}</span>
-                          <span className="text-sm font-bold">{p.name}</span>
+                          <span className="text-sm font-bold text-foreground">{p.name}</span>
                           <span className="text-[10px] text-muted-foreground leading-tight">{p.features.slice(0, 2).join(", ")}</span>
                         </button>
                       ))}
@@ -1502,11 +1557,11 @@ const AISection = () => {
                         />
                         <Button
                           size="sm"
-                          variant={verifyState === "success" ? "default" : "outline"}
+                          variant="outline"
                           onClick={verifyKey}
                           disabled={verifyState === "verifying" || !newKeyValue.trim()}
                           className={cn(
-                            verifyState === "success" && "bg-emerald-600 hover:bg-emerald-700 text-white",
+                            verifyState === "success" && "border-primary text-primary",
                             verifyState === "error" && "border-red-300 text-red-600",
                             (!newKeyValue.trim() || verifyState === "verifying") && "opacity-50 cursor-not-allowed"
                           )}
@@ -1527,9 +1582,9 @@ const AISection = () => {
                     )}
 
                     {verifyState === "success" && (
-                      <div className="flex items-center gap-2 px-3 py-2 bg-emerald-50 border border-emerald-200 rounded-md">
-                        <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
-                        <p className="text-xs text-emerald-700">Key is valid and connected to {selectedProvider.name}.</p>
+                      <div className="flex items-center gap-2 px-3 py-2 bg-muted/50 border border-border rounded-md">
+                        <CheckCircle2 className="w-3.5 h-3.5 text-primary shrink-0" />
+                        <p className="text-xs text-foreground">Key is valid and connected to {selectedProvider.name}.</p>
                       </div>
                     )}
 
@@ -1540,12 +1595,12 @@ const AISection = () => {
                       </a>
                     </div>
 
-                    <div className="flex items-center gap-2 pt-1">
-                      <Lock className="w-3.5 h-3.5 text-amber-500" />
+                    <div className="flex items-center gap-2">
+                      <Lock className="w-3.5 h-3.5 text-muted-foreground" />
                       <p className="text-xs text-muted-foreground">Keys are encrypted and stored securely. Never exposed in client-side code.</p>
                     </div>
 
-                    <div className="flex items-center justify-between pt-2 border-t border-emerald-200">
+                    <div className="flex items-center justify-between pt-3 border-t border-border">
                       <Button variant="outline" size="sm" onClick={() => setAddStep("provider")}>Back</Button>
                       <Button size="sm" onClick={() => {
                         if (!newKeyLabel.trim()) { toast.error("Enter a label for this key"); return; }
@@ -1554,7 +1609,7 @@ const AISection = () => {
                         setNewKeyFeatures([]);
                         setAddStep("assign");
                       }}>
-                        Continue to Feature Assignment
+                        Continue
                       </Button>
                     </div>
                   </div>
@@ -1580,8 +1635,8 @@ const AISection = () => {
                           onClick={() => toggleFeature(feature)}
                           className={cn("flex items-center gap-2 px-3 py-2.5 rounded-md border text-left text-sm transition-all",
                             newKeyFeatures.includes(feature)
-                              ? "border-primary bg-primary/5 text-primary font-semibold"
-                              : "border-border bg-background text-foreground hover:bg-muted/30"
+                              ? "border-foreground/30 bg-muted/50 text-foreground font-semibold"
+                              : "border-border bg-background text-muted-foreground hover:bg-muted/30"
                           )}
                         >
                           {newKeyFeatures.includes(feature)
@@ -1593,9 +1648,9 @@ const AISection = () => {
                       ))}
                     </div>
 
-                    <p className="text-xs text-muted-foreground">You can change these assignments later. Leave empty to make this key available for all features.</p>
+                    <p className="text-xs text-muted-foreground">You can change these later. Leave empty for all features.</p>
 
-                    <div className="flex items-center justify-between pt-2 border-t border-emerald-200">
+                    <div className="flex items-center justify-between pt-3 border-t border-border">
                       <Button variant="outline" size="sm" onClick={() => setAddStep("key")}>Back</Button>
                       <Button size="sm" onClick={addApiKey}>
                         <Check className="w-3.5 h-3.5" /> Save Provider
@@ -1610,10 +1665,96 @@ const AISection = () => {
           {/* Saved keys list */}
           {aiKeys.map(k => {
             const provider = AI_PROVIDERS.find(p => p.id === k.provider);
+            const isEditing = editingKeyId === k.id;
+
+            if (isEditing) {
+              return (
+                <div key={k.id} className="p-4 rounded-lg border border-border bg-muted/10 space-y-4">
+                  <div className="flex items-center gap-3">
+                    <span className="text-xl">{provider?.icon || "🔑"}</span>
+                    <div>
+                      <p className="text-sm font-bold text-foreground">Editing — {provider?.name || k.provider}</p>
+                      <p className="text-xs text-muted-foreground">Update label, key, or feature assignments.</p>
+                    </div>
+                  </div>
+
+                  <FormField label="Label">
+                    <Input value={editLabel} onChange={e => setEditLabel(e.target.value)} />
+                  </FormField>
+
+                  <FormField label="API Key">
+                    <div className="flex gap-2">
+                      <Input
+                        value={editKeyValue}
+                        onChange={e => { setEditKeyValue(e.target.value); setEditKeyChanged(true); if (editVerifyState !== "idle") setEditVerifyState("idle"); }}
+                        type="password"
+                        className="flex-1 font-mono"
+                      />
+                      {editKeyChanged && (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => verifyEditKey(k.provider)}
+                          disabled={editVerifyState === "verifying" || !editKeyValue.trim()}
+                          className={cn(
+                            editVerifyState === "success" && "border-primary text-primary",
+                            editVerifyState === "error" && "border-red-300 text-red-600",
+                          )}
+                        >
+                          {editVerifyState === "verifying" && <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Verifying…</>}
+                          {editVerifyState === "success" && <><CheckCircle2 className="w-3.5 h-3.5" /> Verified</>}
+                          {editVerifyState === "error" && <><XCircle className="w-3.5 h-3.5" /> Failed</>}
+                          {editVerifyState === "idle" && <><ShieldCheck className="w-3.5 h-3.5" /> Verify</>}
+                        </Button>
+                      )}
+                    </div>
+                    {!editKeyChanged && <p className="text-[11px] text-muted-foreground mt-1">Change the key value to re-verify.</p>}
+                  </FormField>
+
+                  {editVerifyState === "error" && (
+                    <div className="flex items-center gap-2 px-3 py-2 bg-red-50 border border-red-200 rounded-md">
+                      <XCircle className="w-3.5 h-3.5 text-red-500 shrink-0" />
+                      <p className="text-xs text-red-700">{editVerifyError}</p>
+                    </div>
+                  )}
+
+                  <div>
+                    <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Feature Assignments</p>
+                    <div className="grid grid-cols-2 gap-2">
+                      {["Chat / Conversations", "Content Generation", "Seeker Classification", "Mentor Matching", "Sentiment Analysis", "Translation"].map(feature => (
+                        <button
+                          key={feature}
+                          onClick={() => toggleEditFeature(feature)}
+                          className={cn("flex items-center gap-2 px-3 py-2 rounded-md border text-left text-xs transition-all",
+                            editFeatures.includes(feature)
+                              ? "border-foreground/30 bg-muted/50 text-foreground font-semibold"
+                              : "border-border bg-background text-muted-foreground hover:bg-muted/30"
+                          )}
+                        >
+                          {editFeatures.includes(feature)
+                            ? <CheckCircle2 className="w-3.5 h-3.5 text-primary shrink-0" />
+                            : <div className="w-3.5 h-3.5 rounded-full border-2 border-muted-foreground/30 shrink-0" />
+                          }
+                          {feature}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="flex items-center justify-between pt-3 border-t border-border">
+                    <Button variant="outline" size="sm" onClick={cancelEditing}>Cancel</Button>
+                    <Button size="sm" onClick={() => saveEdit(k.id)}>
+                      <Check className="w-3.5 h-3.5" /> Save Changes
+                    </Button>
+                  </div>
+                </div>
+              );
+            }
+
             return (
-              <div key={k.id} className="flex items-center justify-between gap-4 p-3.5 rounded-lg border border-border hover:bg-muted/30 transition-colors">
+              <div key={k.id} className={cn("flex items-center justify-between gap-4 p-3.5 rounded-lg border border-border transition-colors", k.active ? "hover:bg-muted/30" : "opacity-60")}>
                 <div className="flex items-center gap-3 flex-1 min-w-0">
-                  <div className={cn("w-10 h-10 rounded-lg flex items-center justify-center shrink-0 text-lg border", provider ? provider.bgColor : "bg-muted border-border")}>
+                  <div className="w-10 h-10 rounded-lg flex items-center justify-center shrink-0 text-lg bg-muted border border-border">
                     {provider?.icon || "🔑"}
                   </div>
                   <div className="min-w-0 flex-1">
@@ -1621,27 +1762,26 @@ const AISection = () => {
                       <p className="text-sm font-bold text-foreground">{k.label}</p>
                       <Badge variant="secondary" className="text-[10px]">{provider?.name || k.provider}</Badge>
                       {k.verified ? (
-                        <Badge className="text-[10px] bg-emerald-100 text-emerald-700 border-emerald-200 hover:bg-emerald-100">
-                          <CheckCircle2 className="w-3 h-3 mr-0.5" /> Verified
-                        </Badge>
+                        <span className="inline-flex items-center gap-0.5 text-[10px] font-medium text-primary">
+                          <CheckCircle2 className="w-3 h-3" /> Verified
+                        </span>
                       ) : (
-                        <Badge variant="secondary" className="text-[10px] text-amber-600 bg-amber-50 border-amber-200">
-                          <AlertCircle className="w-3 h-3 mr-0.5" /> Unverified
-                        </Badge>
+                        <span className="inline-flex items-center gap-0.5 text-[10px] font-medium text-amber-600">
+                          <AlertCircle className="w-3 h-3" /> Unverified
+                        </span>
                       )}
-                      {!k.active && <Badge variant="secondary" className="text-[10px]">Disabled</Badge>}
                     </div>
                     <p className="text-xs text-muted-foreground mt-0.5 font-mono">
                       {showKeyValues[k.id] ? k.key : k.key.slice(0, 8) + "•••••••••••••••"}
                     </p>
                     <div className="flex items-center gap-3 mt-1">
                       <span className="text-[11px] text-muted-foreground">Added {k.addedAt}</span>
-                      {k.verifiedAt && <span className="text-[11px] text-emerald-600">Verified {k.verifiedAt}</span>}
+                      {k.verifiedAt && <span className="text-[11px] text-muted-foreground">· Verified {k.verifiedAt}</span>}
                     </div>
                     {k.assignedFeatures && k.assignedFeatures.length > 0 && (
                       <div className="flex flex-wrap gap-1 mt-1.5">
                         {k.assignedFeatures.map(f => (
-                          <span key={f} className="px-1.5 py-0.5 text-[10px] font-medium rounded bg-primary/5 text-primary border border-primary/10">{f}</span>
+                          <span key={f} className="px-1.5 py-0.5 text-[10px] font-medium rounded bg-muted text-muted-foreground border border-border">{f}</span>
                         ))}
                       </div>
                     )}
@@ -1650,6 +1790,9 @@ const AISection = () => {
                 <div className="flex items-center gap-1 shrink-0">
                   <Button variant="ghost" size="sm" className="h-7 w-7 p-0" title={showKeyValues[k.id] ? "Hide key" : "Show key"} onClick={() => setShowKeyValues(prev => ({ ...prev, [k.id]: !prev[k.id] }))}>
                     <Eye className="w-3.5 h-3.5" />
+                  </Button>
+                  <Button variant="ghost" size="sm" className="h-7 w-7 p-0" title="Edit" onClick={() => startEditing(k)}>
+                    <Sparkles className="w-3.5 h-3.5" />
                   </Button>
                   <Button variant="ghost" size="sm" className="h-7 w-7 p-0" title="Re-verify" onClick={() => reverifyKey(k.id)}>
                     <RotateCcw className="w-3.5 h-3.5" />
