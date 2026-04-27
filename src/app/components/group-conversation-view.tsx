@@ -36,6 +36,9 @@ import {
   Share2,
   CircleCheck,
   Flag,
+  Mic,
+  Square,
+  BarChart3,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { cn } from './types';
@@ -1142,6 +1145,19 @@ export function GroupConversationView() {
   const [isAnnouncing, setIsAnnouncing] = useState(false);
   const [activeReactionMsgId, setActiveReactionMsgId] = useState<string | null>(null);
   const [activeMenuMsgId, setActiveMenuMsgId] = useState<string | null>(null);
+  // Voice recording
+  const [isRecording, setIsRecording] = useState(false);
+  const [recordingDuration, setRecordingDuration] = useState(0);
+  const [voiceBlob, setVoiceBlob] = useState<Blob | null>(null);
+  const [voiceUrl, setVoiceUrl] = useState<string | null>(null);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const chunksRef = useRef<Blob[]>([]);
+  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  // Poll creator
+  const [showPollCreator, setShowPollCreator] = useState(false);
+  const [pollQuestion, setPollQuestion] = useState('');
+  const [pollOptions, setPollOptions] = useState(['', '']);
+
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
@@ -1155,6 +1171,78 @@ export function GroupConversationView() {
   useEffect(() => {
     scrollToBottom();
   }, [selectedGroupId, selectedGroup?.messages]);
+
+  // ── Voice recording helpers ──
+  const formatDuration = (s: number) => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
+
+  const startRecording = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const recorder = new MediaRecorder(stream);
+      chunksRef.current = [];
+      recorder.ondataavailable = (e) => { if (e.data.size > 0) chunksRef.current.push(e.data); };
+      recorder.onstop = () => {
+        const blob = new Blob(chunksRef.current, { type: 'audio/webm' });
+        setVoiceBlob(blob);
+        setVoiceUrl(URL.createObjectURL(blob));
+        stream.getTracks().forEach(t => t.stop());
+      };
+      recorder.start();
+      mediaRecorderRef.current = recorder;
+      setIsRecording(true);
+      setRecordingDuration(0);
+      timerRef.current = setInterval(() => setRecordingDuration(d => d + 1), 1000);
+    } catch {
+      toast.error('Microphone access denied');
+    }
+  };
+
+  const stopRecording = () => {
+    mediaRecorderRef.current?.stop();
+    setIsRecording(false);
+    if (timerRef.current) { clearInterval(timerRef.current); timerRef.current = null; }
+  };
+
+  const discardVoice = () => {
+    if (voiceUrl) URL.revokeObjectURL(voiceUrl);
+    setVoiceBlob(null);
+    setVoiceUrl(null);
+    setRecordingDuration(0);
+  };
+
+  // ── Poll helpers ──
+  const handleSendPoll = () => {
+    if (!pollQuestion.trim() || pollOptions.filter(o => o.trim()).length < 2) {
+      toast.error('Provide a question and at least 2 options');
+      return;
+    }
+    if (!selectedGroup) return;
+    const newPoll: Poll = {
+      id: `poll-${Date.now()}`,
+      question: pollQuestion.trim(),
+      options: pollOptions.filter(o => o.trim()).map(text => ({ text: text.trim(), votes: 0, votedBy: [] })),
+      totalVotes: 0,
+    };
+    const pollMsg: Message = {
+      id: `msg-${Date.now()}`,
+      senderId: currentUserId,
+      senderName: 'You',
+      senderColor: SENDER_COLORS[currentUserId],
+      content: `📊 Poll: ${pollQuestion.trim()}`,
+      timestamp: new Date(),
+      isPoll: true,
+      poll: newPoll,
+    };
+    setGroups(prev => prev.map(g =>
+      g.id === selectedGroup.id
+        ? { ...g, messages: [...g.messages, pollMsg], lastMessageTime: new Date() }
+        : g
+    ));
+    setPollQuestion('');
+    setPollOptions(['', '']);
+    setShowPollCreator(false);
+    toast.success('Poll sent!');
+  };
 
   const handleCreateGroup = (name: string, description: string, memberIds: string[]) => {
     const newGroup: Group = {
@@ -1181,16 +1269,26 @@ export function GroupConversationView() {
   };
 
   const handleSendMessage = () => {
-    if (!messageText.trim() || !selectedGroup) return;
+    if (!selectedGroup) return;
+
+    const parts: string[] = [];
+    if (voiceBlob) {
+      parts.push(`🎤 Voice message (${formatDuration(recordingDuration)})`);
+    }
+    if (messageText.trim()) {
+      parts.push(messageText.trim());
+    }
+    if (parts.length === 0) return;
 
     const newMessage: Message = {
       id: `msg-${Date.now()}`,
       senderId: currentUserId,
       senderName: 'You',
       senderColor: SENDER_COLORS[currentUserId],
-      content: messageText,
+      content: parts.join('\n\n'),
       timestamp: new Date(),
       isAnnouncement: isAnnouncing,
+      isVoiceMessage: !!voiceBlob,
       readBy: [],
       reactions: [],
     };
@@ -1208,6 +1306,7 @@ export function GroupConversationView() {
     setGroups(updatedGroups);
     setMessageText('');
     setIsAnnouncing(false);
+    discardVoice();
     toast.success(isAnnouncing ? 'Announcement sent!' : 'Message sent!');
   };
 
@@ -1805,6 +1904,111 @@ export function GroupConversationView() {
                 </div>
               )}
 
+              {/* Voice recording strip */}
+              {(isRecording || voiceUrl) && (
+                <div className="px-4 pt-3 pb-2">
+                  <div className={cn('flex items-center gap-3 px-3 py-2.5 border', isRecording ? 'bg-red-50 border-red-200' : 'bg-muted/30 border-border')}>
+                    {isRecording ? (
+                      <>
+                        <div className="w-2.5 h-2.5 rounded-full bg-red-500 animate-pulse shrink-0" />
+                        <span className="text-xs font-semibold text-red-600 shrink-0">Recording</span>
+                        <div className="flex items-center gap-[3px] flex-1 h-6">
+                          {Array.from({ length: 24 }).map((_, i) => (
+                            <motion.div
+                              key={i}
+                              className="w-[3px] rounded-full bg-red-400"
+                              animate={{ height: [4, 8 + Math.random() * 14, 4, 6 + Math.random() * 16, 4] }}
+                              transition={{ duration: 0.8 + Math.random() * 0.6, repeat: Infinity, delay: i * 0.04, ease: 'easeInOut' }}
+                            />
+                          ))}
+                        </div>
+                        <span className="text-xs font-semibold text-red-600 shrink-0">{formatDuration(recordingDuration)}</span>
+                        <button type="button" onClick={stopRecording} className="flex items-center gap-1 px-2.5 py-1 bg-red-500 text-white text-xs font-bold hover:bg-red-600 transition-colors shrink-0">
+                          <Square className="w-3 h-3" /> Stop
+                        </button>
+                      </>
+                    ) : voiceUrl && (
+                      <>
+                        <Mic className="w-4 h-4 text-primary shrink-0" />
+                        <audio src={voiceUrl} controls className="h-8 flex-1" style={{ maxHeight: '32px' }} />
+                        <span className="text-xs text-muted-foreground font-medium shrink-0">{formatDuration(recordingDuration)}</span>
+                        <button type="button" onClick={discardVoice} className="p-1 text-muted-foreground hover:text-red-500 transition-colors shrink-0" title="Discard recording">
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* Poll Creator */}
+              {showPollCreator && (
+                <div className="px-4 pt-3 pb-2">
+                  <div className="border border-border bg-muted/10 p-4 space-y-3">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <BarChart3 className="w-4 h-4 text-primary" />
+                        <span className="text-sm font-bold">Create Poll</span>
+                      </div>
+                      <button onClick={() => setShowPollCreator(false)} className="text-muted-foreground hover:text-foreground transition-colors">
+                        <X className="w-4 h-4" />
+                      </button>
+                    </div>
+                    <input
+                      type="text"
+                      placeholder="Ask a question…"
+                      value={pollQuestion}
+                      onChange={(e) => setPollQuestion(e.target.value)}
+                      className="w-full px-3 py-2 text-sm border border-input bg-background outline-none focus:ring-1 focus:ring-ring"
+                    />
+                    <div className="space-y-2">
+                      {pollOptions.map((opt, idx) => (
+                        <div key={idx} className="flex items-center gap-2">
+                          <span className="text-xs font-bold text-muted-foreground w-5 text-center">{idx + 1}</span>
+                          <input
+                            type="text"
+                            placeholder={`Option ${idx + 1}`}
+                            value={opt}
+                            onChange={(e) => {
+                              const updated = [...pollOptions];
+                              updated[idx] = e.target.value;
+                              setPollOptions(updated);
+                            }}
+                            className="flex-1 px-3 py-1.5 text-sm border border-input bg-background outline-none focus:ring-1 focus:ring-ring"
+                          />
+                          {pollOptions.length > 2 && (
+                            <button
+                              onClick={() => setPollOptions(pollOptions.filter((_, i) => i !== idx))}
+                              className="p-1 text-muted-foreground hover:text-red-500 transition-colors"
+                            >
+                              <X className="w-3.5 h-3.5" />
+                            </button>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                    <div className="flex items-center justify-between">
+                      {pollOptions.length < 6 && (
+                        <button
+                          onClick={() => setPollOptions([...pollOptions, ''])}
+                          className="text-xs font-bold text-primary hover:text-primary/70 transition-colors"
+                        >
+                          + Add option
+                        </button>
+                      )}
+                      <button
+                        onClick={handleSendPoll}
+                        disabled={!pollQuestion.trim() || pollOptions.filter(o => o.trim()).length < 2}
+                        className="flex items-center gap-1.5 px-4 py-1.5 text-xs font-bold bg-primary text-primary-foreground hover:bg-primary/90 transition-all disabled:opacity-40 disabled:cursor-not-allowed ml-auto"
+                      >
+                        <Send className="w-3 h-3" />
+                        Send Poll
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
+
               {/* Textarea */}
               <form
                 onSubmit={(e) => {
@@ -1840,6 +2044,23 @@ export function GroupConversationView() {
                         <Paperclip className="w-4 h-4" />
                       </button>
 
+                      {/* Voice recording */}
+                      <button
+                        type="button"
+                        onClick={isRecording ? stopRecording : (voiceBlob ? undefined : startRecording)}
+                        className={cn(
+                          'p-1.5 transition-colors',
+                          isRecording
+                            ? 'text-red-500 hover:text-red-600 hover:bg-red-50'
+                            : voiceBlob
+                            ? 'text-primary opacity-50 cursor-default'
+                            : 'text-muted-foreground hover:text-foreground hover:bg-muted'
+                        )}
+                        title={isRecording ? 'Stop recording' : voiceBlob ? 'Recording attached' : 'Record voice message'}
+                      >
+                        <Mic className="w-4 h-4" />
+                      </button>
+
                       {/* Emoji */}
                       <button
                         type="button"
@@ -1847,6 +2068,21 @@ export function GroupConversationView() {
                         title="Emoji"
                       >
                         <Smile className="w-4 h-4" />
+                      </button>
+
+                      {/* Poll */}
+                      <button
+                        type="button"
+                        onClick={() => setShowPollCreator(!showPollCreator)}
+                        className={cn(
+                          'p-1.5 transition-colors',
+                          showPollCreator
+                            ? 'text-primary bg-primary/10'
+                            : 'text-muted-foreground hover:text-foreground hover:bg-muted'
+                        )}
+                        title="Create poll"
+                      >
+                        <BarChart3 className="w-4 h-4" />
                       </button>
 
                       {/* Announce (admin only) */}
@@ -1865,7 +2101,7 @@ export function GroupConversationView() {
                     {/* Send */}
                     <button
                       type="submit"
-                      disabled={!messageText.trim()}
+                      disabled={!messageText.trim() && !voiceBlob}
                       className="flex items-center gap-1.5 px-4 py-1.5 text-xs font-bold transition-all disabled:opacity-40 disabled:cursor-not-allowed bg-primary text-primary-foreground hover:bg-primary/90"
                     >
                       <Send className="w-3 h-3" />
