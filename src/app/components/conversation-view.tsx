@@ -1848,6 +1848,7 @@ function ComposeArea({
             {isRecording ? (
               <>
                 <div className="w-2.5 h-2.5 rounded-full bg-red-500 animate-pulse shrink-0" />
+                <span className="text-xs font-semibold text-red-600 shrink-0">Recording</span>
                 {/* Animated waveform */}
                 <div className="flex items-center gap-[3px] flex-1 h-6">
                   {Array.from({ length: 24 }).map((_, i) => (
