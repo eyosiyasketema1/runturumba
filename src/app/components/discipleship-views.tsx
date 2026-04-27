@@ -26,7 +26,7 @@ import {
 } from "./ui/dropdown-menu";
 import { Modal } from "./shared-ui";
 import { toast } from "sonner";
-import { ArrowLeft, Eye, Trash2, MessageSquare as MessageSquareIcon, Archive, RefreshCw, Zap, HelpCircle, UserPlus, X, GripVertical, Mail, Tag, ListOrdered, UserCheck, Upload, FileSpreadsheet, AlertTriangle } from "lucide-react";
+import { ArrowLeft, Eye, Trash2, MessageSquare as MessageSquareIcon, Archive, RefreshCw, Zap, HelpCircle, UserPlus, X, GripVertical, Mail, Tag, ListOrdered, UserCheck, Upload, FileSpreadsheet, AlertTriangle, Lock } from "lucide-react";
 import {
   AreaChart, Area, PieChart, Pie, Cell, XAxis, YAxis, Tooltip, ResponsiveContainer
 } from "recharts";
@@ -1771,15 +1771,15 @@ const ALL_SPECIALTIES = ["New Believers", "Youth", "Women", "Men", "Grief", "Pra
 const ALL_STRENGTHS  = ["Empathy", "Bible knowledge", "Prayer", "Patience", "Counseling", "Apologetics", "Teaching", "Storytelling", "Pastoral care", "Study planning"];
 
 const DEFAULT_FORM_FIELDS: FormFieldDef[] = [
-  { id: "df-name",       type: "text",           label: "Full Name",           required: true },
-  { id: "df-email",      type: "email",          label: "Email Address",       required: true },
-  { id: "df-phone",      type: "phone",          label: "Phone Number",        required: true },
-  { id: "df-gender",     type: "select",         label: "Gender",              required: true, options: ["Male", "Female"] },
-  { id: "df-specialty",  type: "checkbox_group",  label: "Area of Specialty",   required: true, options: [...ALL_SPECIALTIES] },
-  { id: "df-experience", type: "select",         label: "Experience Level",    required: true, options: [...EXPERIENCE_LEVELS] },
-  { id: "df-languages",  type: "checkbox_group",  label: "Languages",           required: true, options: ALL_LANGUAGES.map(l => l.label) },
-  { id: "df-strengths",  type: "checkbox_group",  label: "Key Strengths",       required: true, options: [...ALL_STRENGTHS] },
-  { id: "df-bio",        type: "textarea",       label: "Brief Bio / Testimony", required: true },
+  { id: "df-name",       type: "text",           label: "Full Name",           required: true, isDefault: true },
+  { id: "df-email",      type: "email",          label: "Email Address",       required: true, isDefault: true },
+  { id: "df-phone",      type: "phone",          label: "Phone Number",        required: true, isDefault: true },
+  { id: "df-gender",     type: "select",         label: "Gender",              required: true, isDefault: true, options: ["Male", "Female"] },
+  { id: "df-specialty",  type: "checkbox_group",  label: "Area of Specialty",   required: true, isDefault: true, options: [...ALL_SPECIALTIES] },
+  { id: "df-experience", type: "select",         label: "Experience Level",    required: true, isDefault: true, options: [...EXPERIENCE_LEVELS] },
+  { id: "df-languages",  type: "checkbox_group",  label: "Languages",           required: true, isDefault: true, options: ALL_LANGUAGES.map(l => l.label) },
+  { id: "df-strengths",  type: "checkbox_group",  label: "Key Strengths",       required: true, isDefault: true, options: [...ALL_STRENGTHS] },
+  { id: "df-bio",        type: "textarea",       label: "Brief Bio / Testimony", required: true, isDefault: true },
 ];
 
 // ── Mentor Groups types & data ──
@@ -1797,6 +1797,7 @@ type FormFieldDef = {
   type: "text" | "textarea" | "select" | "checkbox" | "checkbox_group" | "email" | "phone" | "date" | "number" | "file";
   label: string;
   required: boolean;
+  isDefault?: boolean;
   options?: string[];
 };
 
@@ -3122,7 +3123,11 @@ export function MentorsView({
                               <div className="flex-1 space-y-2">
                                 <div className="flex items-center gap-2">
                                   <Chip tone="slate">{FORM_FIELD_TYPES.find(t => t.type === f.type)?.label ?? f.type}</Chip>
-                                  <Input value={f.label} onChange={e => updateField(f.id, { label: e.target.value })} placeholder="Field label..." className="h-8 text-sm flex-1" />
+                                  {f.isDefault ? (
+                                    <span className="h-8 flex items-center text-sm font-medium text-foreground flex-1">{f.label}</span>
+                                  ) : (
+                                    <Input value={f.label} onChange={e => updateField(f.id, { label: e.target.value })} placeholder="Field label..." className="h-8 text-sm flex-1" />
+                                  )}
                                 </div>
                                 {(f.type === "select" || f.type === "checkbox_group") && f.options && (
                                   <div className="pl-1 space-y-1">
@@ -3138,11 +3143,20 @@ export function MentorsView({
                                 )}
                               </div>
                               <div className="flex items-center gap-2 shrink-0">
-                                <label className="flex items-center gap-1 text-xs text-muted-foreground">
-                                  <input type="checkbox" checked={f.required} onChange={e => updateField(f.id, { required: e.target.checked })} className="accent-primary" />
-                                  Req
-                                </label>
-                                <button onClick={() => removeField(f.id)} className="text-muted-foreground hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity"><Trash2 className="w-3.5 h-3.5" /></button>
+                                {f.isDefault ? (
+                                  <span className="flex items-center gap-1 text-xs text-muted-foreground" title="Default field — always required">
+                                    <Lock className="w-3 h-3" />
+                                    <span className="font-medium">Required</span>
+                                  </span>
+                                ) : (
+                                  <>
+                                    <label className="flex items-center gap-1 text-xs text-muted-foreground">
+                                      <input type="checkbox" checked={f.required} onChange={e => updateField(f.id, { required: e.target.checked })} className="accent-primary" />
+                                      Req
+                                    </label>
+                                    <button onClick={() => removeField(f.id)} className="text-muted-foreground hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity"><Trash2 className="w-3.5 h-3.5" /></button>
+                                  </>
+                                )}
                               </div>
                             </div>
                           ))}
