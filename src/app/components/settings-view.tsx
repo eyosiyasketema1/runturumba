@@ -4,7 +4,7 @@ import {
   Phone, Globe, Clock, MapPin, Camera, Save,
   Check, ChevronRight, Key, Smartphone, Lock, Eye,
   ArrowLeft, ArrowUpRight, Download, Sparkles, Plus, Trash2, X,
-  Brain, Share2, AlertCircle, BookOpen
+  Brain, Share2, AlertCircle, BookOpen, Loader2, CheckCircle2, XCircle, ExternalLink, Zap, ShieldCheck, RotateCcw
 } from "lucide-react";
 import { motion } from "motion/react";
 import { toast } from "sonner";
@@ -1154,6 +1154,27 @@ type AISkillset = {
   enabled: boolean;
 };
 
+type AIProvider = {
+  id: string;
+  name: string;
+  icon: string;
+  color: string;
+  bgColor: string;
+  keyPrefix: string;
+  keyHint: string;
+  docsUrl: string;
+  features: string[];
+};
+
+const AI_PROVIDERS: AIProvider[] = [
+  { id: "openai",    name: "OpenAI",    icon: "⚡", color: "text-emerald-700", bgColor: "bg-emerald-50 border-emerald-200", keyPrefix: "sk-",     keyHint: "Starts with sk- or sk-proj-",      docsUrl: "https://platform.openai.com/api-keys", features: ["Chat", "Classification", "Content Generation"] },
+  { id: "anthropic", name: "Anthropic",  icon: "🔮", color: "text-violet-700",  bgColor: "bg-violet-50 border-violet-200",  keyPrefix: "sk-ant-", keyHint: "Starts with sk-ant-",              docsUrl: "https://console.anthropic.com/settings/keys", features: ["Chat", "Content Generation", "Sentiment Analysis"] },
+  { id: "google",    name: "Google AI",  icon: "🌐", color: "text-blue-700",    bgColor: "bg-blue-50 border-blue-200",      keyPrefix: "AI",      keyHint: "Starts with AIza...",              docsUrl: "https://aistudio.google.com/apikey", features: ["Chat", "Translation", "Classification"] },
+  { id: "cohere",    name: "Cohere",     icon: "🧬", color: "text-orange-700",  bgColor: "bg-orange-50 border-orange-200",  keyPrefix: "",        keyHint: "Alphanumeric key from dashboard",  docsUrl: "https://dashboard.cohere.com/api-keys", features: ["Classification", "Embeddings"] },
+  { id: "mistral",   name: "Mistral",    icon: "💨", color: "text-sky-700",     bgColor: "bg-sky-50 border-sky-200",        keyPrefix: "",        keyHint: "API key from Mistral console",     docsUrl: "https://console.mistral.ai/api-keys", features: ["Chat", "Content Generation"] },
+  { id: "azure",     name: "Azure OpenAI", icon: "☁️", color: "text-blue-700", bgColor: "bg-blue-50 border-blue-200",      keyPrefix: "",        keyHint: "32-character hex key",             docsUrl: "https://portal.azure.com", features: ["Chat", "Classification", "Content Generation"] },
+];
+
 type AIApiKey = {
   id: string;
   provider: string;
@@ -1161,6 +1182,9 @@ type AIApiKey = {
   key: string;
   addedAt: string;
   active: boolean;
+  verified: boolean;
+  verifiedAt?: string;
+  assignedFeatures?: string[];
 };
 
 type AIBusinessRule = {
@@ -1179,8 +1203,8 @@ const INITIAL_SKILLSETS: AISkillset[] = [
 ];
 
 const INITIAL_AI_KEYS: AIApiKey[] = [
-  { id: "aik-1", provider: "OpenAI", label: "Production GPT-4", key: "sk-proj-a1b2c3d4e5f6g7h8i9j0k1l2m3n4", addedAt: "Jan 10, 2026", active: true },
-  { id: "aik-2", provider: "Anthropic", label: "Claude Sonnet", key: "sk-ant-z9y8x7w6v5u4t3s2r1q0p9o8n7m6", addedAt: "Feb 5, 2026", active: true },
+  { id: "aik-1", provider: "openai", label: "Production GPT-4", key: "sk-proj-a1b2c3d4e5f6g7h8i9j0k1l2m3n4", addedAt: "Jan 10, 2026", active: true, verified: true, verifiedAt: "Jan 10, 2026", assignedFeatures: ["Classification", "Content Generation"] },
+  { id: "aik-2", provider: "anthropic", label: "Claude Sonnet", key: "sk-ant-z9y8x7w6v5u4t3s2r1q0p9o8n7m6", addedAt: "Feb 5, 2026", active: true, verified: true, verifiedAt: "Feb 5, 2026", assignedFeatures: ["Chat", "Sentiment Analysis"] },
 ];
 
 const INITIAL_RULES: AIBusinessRule[] = [
@@ -1202,18 +1226,70 @@ const AISection = () => {
   const [showAddRule, setShowAddRule] = useState(false);
   const [showKeyValues, setShowKeyValues] = useState<Record<string, boolean>>({});
 
-  const [newKeyProvider, setNewKeyProvider] = useState("OpenAI");
+  // Add key wizard state
+  const [addStep, setAddStep] = useState<"provider" | "key" | "assign">("provider");
+  const [newKeyProvider, setNewKeyProvider] = useState<string>("");
   const [newKeyLabel, setNewKeyLabel] = useState("");
   const [newKeyValue, setNewKeyValue] = useState("");
+  const [verifyState, setVerifyState] = useState<"idle" | "verifying" | "success" | "error">("idle");
+  const [verifyError, setVerifyError] = useState("");
+  const [newKeyFeatures, setNewKeyFeatures] = useState<string[]>([]);
+
   const [newSkillName, setNewSkillName] = useState("");
   const [newSkillDesc, setNewSkillDesc] = useState("");
   const [newRuleText, setNewRuleText] = useState("");
 
+  const selectedProvider = AI_PROVIDERS.find(p => p.id === newKeyProvider);
+
+  const resetAddKey = () => {
+    setAddStep("provider"); setNewKeyProvider(""); setNewKeyLabel(""); setNewKeyValue("");
+    setVerifyState("idle"); setVerifyError(""); setNewKeyFeatures([]); setShowAddKey(false);
+  };
+
+  const verifyKey = () => {
+    if (!newKeyValue.trim()) { toast.error("Enter an API key first"); return; }
+    setVerifyState("verifying");
+    // Simulate API verification
+    setTimeout(() => {
+      const provider = selectedProvider;
+      if (provider && provider.keyPrefix && !newKeyValue.trim().startsWith(provider.keyPrefix)) {
+        setVerifyState("error");
+        setVerifyError(`Invalid key format. ${provider.keyHint}`);
+      } else {
+        setVerifyState("success");
+        setVerifyError("");
+      }
+    }, 1500);
+  };
+
+  const toggleFeature = (feature: string) => {
+    setNewKeyFeatures(prev => prev.includes(feature) ? prev.filter(f => f !== feature) : [...prev, feature]);
+  };
+
   const addApiKey = () => {
     if (!newKeyLabel.trim() || !newKeyValue.trim()) { toast.error("Label and key are required"); return; }
-    setAiKeys(prev => [...prev, { id: `aik-${Date.now()}`, provider: newKeyProvider, label: newKeyLabel.trim(), key: newKeyValue.trim(), addedAt: new Date().toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }), active: true }]);
-    setNewKeyProvider("OpenAI"); setNewKeyLabel(""); setNewKeyValue(""); setShowAddKey(false);
+    const now = new Date().toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+    setAiKeys(prev => [...prev, {
+      id: `aik-${Date.now()}`,
+      provider: newKeyProvider,
+      label: newKeyLabel.trim(),
+      key: newKeyValue.trim(),
+      addedAt: now,
+      active: true,
+      verified: verifyState === "success",
+      verifiedAt: verifyState === "success" ? now : undefined,
+      assignedFeatures: newKeyFeatures.length > 0 ? newKeyFeatures : undefined,
+    }]);
+    resetAddKey();
     toast.success("AI API key added");
+  };
+
+  const reverifyKey = (id: string) => {
+    toast.success("Re-verifying key...");
+    setTimeout(() => {
+      setAiKeys(prev => prev.map(k => k.id === id ? { ...k, verified: true, verifiedAt: new Date().toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) } : k));
+      toast.success("Key verified successfully");
+    }, 1500);
   };
 
   const addSkillset = () => {
@@ -1346,79 +1422,249 @@ const AISection = () => {
               <Key className="w-5 h-5 text-emerald-600" />
               <div>
                 <CardTitle className="text-base">AI API Keys</CardTitle>
-                <CardDescription>Store and manage API keys for your AI providers (OpenAI, Anthropic, etc.).</CardDescription>
+                <CardDescription>Connect your AI providers — select a platform, enter your key, and verify.</CardDescription>
               </div>
             </div>
-            <Button size="sm" variant="outline" onClick={() => setShowAddKey(!showAddKey)}>
+            <Button size="sm" variant="outline" onClick={() => { if (showAddKey) resetAddKey(); else setShowAddKey(true); }}>
               {showAddKey ? <X className="w-3.5 h-3.5" /> : <Plus className="w-3.5 h-3.5" />}
-              {showAddKey ? "Cancel" : "Add Key"}
+              {showAddKey ? "Cancel" : "Add Provider"}
             </Button>
           </div>
         </CardHeader>
         <CardContent className="space-y-3">
           {showAddKey && (
-            <div className="p-4 border border-dashed border-emerald-300 rounded-lg bg-emerald-50 space-y-3">
-              <div className="grid grid-cols-2 gap-3">
-                <FormField label="Provider">
-                  <select
-                    value={newKeyProvider}
-                    onChange={e => setNewKeyProvider(e.target.value)}
-                    className="w-full h-10 border border-input rounded-md bg-background px-3 text-sm focus:outline-none focus:ring-1 focus:ring-ring"
-                  >
-                    <option>OpenAI</option>
-                    <option>Anthropic</option>
-                    <option>Google AI</option>
-                    <option>Cohere</option>
-                    <option>Mistral</option>
-                    <option>Other</option>
-                  </select>
-                </FormField>
-                <FormField label="Label">
-                  <Input value={newKeyLabel} onChange={e => setNewKeyLabel(e.target.value)} placeholder="e.g. Production GPT-4o" />
-                </FormField>
+            <div className="border border-dashed border-emerald-300 rounded-lg bg-emerald-50/50 overflow-hidden">
+              {/* Step indicator */}
+              <div className="flex items-center gap-0 border-b border-emerald-200 bg-emerald-50">
+                {[
+                  { step: "provider" as const, label: "1. Select Platform", num: 1 },
+                  { step: "key" as const,      label: "2. Enter & Verify Key", num: 2 },
+                  { step: "assign" as const,   label: "3. Assign Features", num: 3 },
+                ].map(({ step, label, num }) => {
+                  const isCurrent = addStep === step;
+                  const isDone = (addStep === "key" && num === 1) || (addStep === "assign" && num <= 2);
+                  return (
+                    <div key={step} className={cn("flex items-center gap-2 px-4 py-2.5 text-xs font-semibold flex-1 border-r border-emerald-200 last:border-0", isCurrent ? "bg-emerald-100 text-emerald-800" : isDone ? "text-emerald-600" : "text-muted-foreground")}>
+                      {isDone ? <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" /> : <span className={cn("w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold", isCurrent ? "bg-emerald-600 text-white" : "bg-muted text-muted-foreground")}>{num}</span>}
+                      {label}
+                    </div>
+                  );
+                })}
               </div>
-              <FormField label="API Key">
-                <Input value={newKeyValue} onChange={e => setNewKeyValue(e.target.value)} placeholder="sk-..." type="password" />
-              </FormField>
-              <div className="flex items-center gap-2">
-                <AlertCircle className="w-3.5 h-3.5 text-amber-500" />
-                <p className="text-xs text-muted-foreground">Keys are encrypted and stored securely. They are never exposed in client-side code.</p>
+
+              <div className="p-4">
+                {/* Step 1: Select Provider */}
+                {addStep === "provider" && (
+                  <div className="space-y-3">
+                    <p className="text-sm font-semibold text-foreground">Choose your AI provider</p>
+                    <div className="grid grid-cols-3 gap-2">
+                      {AI_PROVIDERS.map(p => (
+                        <button
+                          key={p.id}
+                          onClick={() => { setNewKeyProvider(p.id); setAddStep("key"); }}
+                          className={cn("flex flex-col items-center gap-2 p-4 rounded-lg border-2 text-center transition-all hover:shadow-sm", newKeyProvider === p.id ? `${p.bgColor} border-current ${p.color}` : "border-border bg-background hover:border-primary/30")}
+                        >
+                          <span className="text-2xl">{p.icon}</span>
+                          <span className="text-sm font-bold">{p.name}</span>
+                          <span className="text-[10px] text-muted-foreground leading-tight">{p.features.slice(0, 2).join(", ")}</span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Step 2: Enter Key & Verify */}
+                {addStep === "key" && selectedProvider && (
+                  <div className="space-y-4">
+                    <div className="flex items-center gap-3">
+                      <button onClick={() => setAddStep("provider")} className="text-muted-foreground hover:text-foreground transition-colors">
+                        <ArrowLeft className="w-4 h-4" />
+                      </button>
+                      <span className="text-2xl">{selectedProvider.icon}</span>
+                      <div>
+                        <p className="text-sm font-bold text-foreground">{selectedProvider.name}</p>
+                        <p className="text-xs text-muted-foreground">{selectedProvider.keyHint}</p>
+                      </div>
+                    </div>
+
+                    <FormField label="Label (what's this key for?)">
+                      <Input value={newKeyLabel} onChange={e => setNewKeyLabel(e.target.value)} placeholder={`e.g. Production ${selectedProvider.name}`} />
+                    </FormField>
+
+                    <FormField label="API Key">
+                      <div className="flex gap-2">
+                        <Input
+                          value={newKeyValue}
+                          onChange={e => { setNewKeyValue(e.target.value); if (verifyState !== "idle") setVerifyState("idle"); }}
+                          placeholder={selectedProvider.keyPrefix ? `${selectedProvider.keyPrefix}...` : "Paste your API key here"}
+                          type="password"
+                          className="flex-1 font-mono"
+                        />
+                        <Button
+                          size="sm"
+                          variant={verifyState === "success" ? "default" : "outline"}
+                          onClick={verifyKey}
+                          disabled={verifyState === "verifying" || !newKeyValue.trim()}
+                          className={cn(
+                            verifyState === "success" && "bg-emerald-600 hover:bg-emerald-700 text-white",
+                            verifyState === "error" && "border-red-300 text-red-600",
+                            (!newKeyValue.trim() || verifyState === "verifying") && "opacity-50 cursor-not-allowed"
+                          )}
+                        >
+                          {verifyState === "verifying" && <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Verifying…</>}
+                          {verifyState === "success" && <><CheckCircle2 className="w-3.5 h-3.5" /> Verified</>}
+                          {verifyState === "error" && <><XCircle className="w-3.5 h-3.5" /> Failed</>}
+                          {verifyState === "idle" && <><ShieldCheck className="w-3.5 h-3.5" /> Verify</>}
+                        </Button>
+                      </div>
+                    </FormField>
+
+                    {verifyState === "error" && (
+                      <div className="flex items-center gap-2 px-3 py-2 bg-red-50 border border-red-200 rounded-md">
+                        <XCircle className="w-3.5 h-3.5 text-red-500 shrink-0" />
+                        <p className="text-xs text-red-700">{verifyError}</p>
+                      </div>
+                    )}
+
+                    {verifyState === "success" && (
+                      <div className="flex items-center gap-2 px-3 py-2 bg-emerald-50 border border-emerald-200 rounded-md">
+                        <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                        <p className="text-xs text-emerald-700">Key is valid and connected to {selectedProvider.name}.</p>
+                      </div>
+                    )}
+
+                    <div className="flex items-center gap-2">
+                      <ExternalLink className="w-3.5 h-3.5 text-muted-foreground" />
+                      <a href={selectedProvider.docsUrl} target="_blank" rel="noopener noreferrer" className="text-xs text-primary hover:underline font-medium">
+                        Get your {selectedProvider.name} API key →
+                      </a>
+                    </div>
+
+                    <div className="flex items-center gap-2 pt-1">
+                      <Lock className="w-3.5 h-3.5 text-amber-500" />
+                      <p className="text-xs text-muted-foreground">Keys are encrypted and stored securely. Never exposed in client-side code.</p>
+                    </div>
+
+                    <div className="flex items-center justify-between pt-2 border-t border-emerald-200">
+                      <Button variant="outline" size="sm" onClick={() => setAddStep("provider")}>Back</Button>
+                      <Button size="sm" onClick={() => {
+                        if (!newKeyLabel.trim()) { toast.error("Enter a label for this key"); return; }
+                        if (!newKeyValue.trim()) { toast.error("Enter the API key"); return; }
+                        if (verifyState !== "success") { toast.error("Please verify the key first"); return; }
+                        setNewKeyFeatures([]);
+                        setAddStep("assign");
+                      }}>
+                        Continue to Feature Assignment
+                      </Button>
+                    </div>
+                  </div>
+                )}
+
+                {/* Step 3: Assign Features */}
+                {addStep === "assign" && selectedProvider && (
+                  <div className="space-y-4">
+                    <div className="flex items-center gap-3">
+                      <button onClick={() => setAddStep("key")} className="text-muted-foreground hover:text-foreground transition-colors">
+                        <ArrowLeft className="w-4 h-4" />
+                      </button>
+                      <div>
+                        <p className="text-sm font-bold text-foreground">Assign features to {selectedProvider.name}</p>
+                        <p className="text-xs text-muted-foreground">Choose which AI capabilities should use this key.</p>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-2">
+                      {["Chat / Conversations", "Content Generation", "Seeker Classification", "Mentor Matching", "Sentiment Analysis", "Translation"].map(feature => (
+                        <button
+                          key={feature}
+                          onClick={() => toggleFeature(feature)}
+                          className={cn("flex items-center gap-2 px-3 py-2.5 rounded-md border text-left text-sm transition-all",
+                            newKeyFeatures.includes(feature)
+                              ? "border-primary bg-primary/5 text-primary font-semibold"
+                              : "border-border bg-background text-foreground hover:bg-muted/30"
+                          )}
+                        >
+                          {newKeyFeatures.includes(feature)
+                            ? <CheckCircle2 className="w-4 h-4 text-primary shrink-0" />
+                            : <div className="w-4 h-4 rounded-full border-2 border-muted-foreground/30 shrink-0" />
+                          }
+                          {feature}
+                        </button>
+                      ))}
+                    </div>
+
+                    <p className="text-xs text-muted-foreground">You can change these assignments later. Leave empty to make this key available for all features.</p>
+
+                    <div className="flex items-center justify-between pt-2 border-t border-emerald-200">
+                      <Button variant="outline" size="sm" onClick={() => setAddStep("key")}>Back</Button>
+                      <Button size="sm" onClick={addApiKey}>
+                        <Check className="w-3.5 h-3.5" /> Save Provider
+                      </Button>
+                    </div>
+                  </div>
+                )}
               </div>
-              <Button size="sm" onClick={addApiKey}><Check className="w-3.5 h-3.5" /> Save Key</Button>
             </div>
           )}
-          {aiKeys.map(k => (
-            <div key={k.id} className="flex items-center justify-between gap-4 p-3 rounded-lg border border-border hover:bg-muted/30 transition-colors">
-              <div className="flex items-center gap-3 flex-1 min-w-0">
-                <div className="w-8 h-8 rounded-lg bg-muted flex items-center justify-center shrink-0">
-                  <Sparkles className="w-4 h-4 text-muted-foreground" />
-                </div>
-                <div className="min-w-0">
-                  <div className="flex items-center gap-2">
-                    <p className="text-sm font-semibold text-foreground">{k.label}</p>
-                    <Badge variant="secondary" className="text-[10px]">{k.provider}</Badge>
-                    <Badge variant={k.active ? "default" : "secondary"} className="text-[10px]">{k.active ? "Active" : "Inactive"}</Badge>
+
+          {/* Saved keys list */}
+          {aiKeys.map(k => {
+            const provider = AI_PROVIDERS.find(p => p.id === k.provider);
+            return (
+              <div key={k.id} className="flex items-center justify-between gap-4 p-3.5 rounded-lg border border-border hover:bg-muted/30 transition-colors">
+                <div className="flex items-center gap-3 flex-1 min-w-0">
+                  <div className={cn("w-10 h-10 rounded-lg flex items-center justify-center shrink-0 text-lg border", provider ? provider.bgColor : "bg-muted border-border")}>
+                    {provider?.icon || "🔑"}
                   </div>
-                  <p className="text-xs text-muted-foreground mt-0.5 font-mono">
-                    {showKeyValues[k.id] ? k.key : k.key.slice(0, 8) + "••••••••••••••••••••"}
-                  </p>
-                  <p className="text-[11px] text-muted-foreground mt-0.5">Added {k.addedAt}</p>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <p className="text-sm font-bold text-foreground">{k.label}</p>
+                      <Badge variant="secondary" className="text-[10px]">{provider?.name || k.provider}</Badge>
+                      {k.verified ? (
+                        <Badge className="text-[10px] bg-emerald-100 text-emerald-700 border-emerald-200 hover:bg-emerald-100">
+                          <CheckCircle2 className="w-3 h-3 mr-0.5" /> Verified
+                        </Badge>
+                      ) : (
+                        <Badge variant="secondary" className="text-[10px] text-amber-600 bg-amber-50 border-amber-200">
+                          <AlertCircle className="w-3 h-3 mr-0.5" /> Unverified
+                        </Badge>
+                      )}
+                      {!k.active && <Badge variant="secondary" className="text-[10px]">Disabled</Badge>}
+                    </div>
+                    <p className="text-xs text-muted-foreground mt-0.5 font-mono">
+                      {showKeyValues[k.id] ? k.key : k.key.slice(0, 8) + "•••••••••••••••"}
+                    </p>
+                    <div className="flex items-center gap-3 mt-1">
+                      <span className="text-[11px] text-muted-foreground">Added {k.addedAt}</span>
+                      {k.verifiedAt && <span className="text-[11px] text-emerald-600">Verified {k.verifiedAt}</span>}
+                    </div>
+                    {k.assignedFeatures && k.assignedFeatures.length > 0 && (
+                      <div className="flex flex-wrap gap-1 mt-1.5">
+                        {k.assignedFeatures.map(f => (
+                          <span key={f} className="px-1.5 py-0.5 text-[10px] font-medium rounded bg-primary/5 text-primary border border-primary/10">{f}</span>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+                <div className="flex items-center gap-1 shrink-0">
+                  <Button variant="ghost" size="sm" className="h-7 w-7 p-0" title={showKeyValues[k.id] ? "Hide key" : "Show key"} onClick={() => setShowKeyValues(prev => ({ ...prev, [k.id]: !prev[k.id] }))}>
+                    <Eye className="w-3.5 h-3.5" />
+                  </Button>
+                  <Button variant="ghost" size="sm" className="h-7 w-7 p-0" title="Re-verify" onClick={() => reverifyKey(k.id)}>
+                    <RotateCcw className="w-3.5 h-3.5" />
+                  </Button>
+                  <Switch
+                    checked={k.active}
+                    onCheckedChange={v => { setAiKeys(prev => prev.map(x => x.id === k.id ? { ...x, active: v } : x)); toast.success(`${k.label} ${v ? "activated" : "deactivated"}`); }}
+                  />
+                  <Button variant="ghost" size="sm" className="h-7 w-7 p-0 text-muted-foreground hover:text-red-500" onClick={() => { setAiKeys(prev => prev.filter(x => x.id !== k.id)); toast.success("Key removed"); }}>
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </Button>
                 </div>
               </div>
-              <div className="flex items-center gap-1.5 shrink-0">
-                <Button variant="ghost" size="sm" className="h-7 w-7 p-0" onClick={() => setShowKeyValues(prev => ({ ...prev, [k.id]: !prev[k.id] }))}>
-                  <Eye className="w-3.5 h-3.5" />
-                </Button>
-                <Switch
-                  checked={k.active}
-                  onCheckedChange={v => { setAiKeys(prev => prev.map(x => x.id === k.id ? { ...x, active: v } : x)); toast.success(`${k.label} ${v ? "activated" : "deactivated"}`); }}
-                />
-                <Button variant="ghost" size="sm" className="h-7 w-7 p-0 text-muted-foreground hover:text-red-500" onClick={() => { setAiKeys(prev => prev.filter(x => x.id !== k.id)); toast.success("Key removed"); }}>
-                  <Trash2 className="w-3.5 h-3.5" />
-                </Button>
-              </div>
-            </div>
-          ))}
+            );
+          })}
         </CardContent>
       </Card>
 
