@@ -74,6 +74,7 @@ interface Poll {
     votedBy: string[];
   }>;
   totalVotes: number;
+  isAnonymous?: boolean;
 }
 
 interface Message {
@@ -280,6 +281,7 @@ const generateSampleMessages = (): (Message | SystemMessage)[] => [
         { text: 'Biweekly', votes: 2, votedBy: ['m3', 'm5'] },
       ],
       totalVotes: 6,
+      isAnonymous: false,
     },
   },
 ];
@@ -1094,42 +1096,138 @@ function ReactionsList({ reactions, onAddReaction }: ReactionsListProps) {
 interface PollComponentProps {
   poll: Poll;
   onVote: (optionIndex: number) => void;
+  isSender?: boolean;
 }
 
-function PollComponent({ poll, onVote }: PollComponentProps) {
-  const maxVotes = Math.max(...poll.options.map(o => o.votes), 1);
+// Helper to get a display name from mentor ID
+function getMentorDisplayName(id: string): string {
+  const names: Record<string, string> = {
+    m1: 'You', m2: 'Rachel Kim', m3: 'James Okafor', m4: 'Sarah Chen',
+    m5: 'David Martinez', m6: 'Grace Afolabi', m7: 'Daniel Park',
+    m8: 'Maria Santos', m9: 'Peter Njoroge', m10: 'Anna Müller',
+  };
+  return names[id] || id;
+}
+
+function PollComponent({ poll, onVote, isSender }: PollComponentProps) {
+  const [expandedOption, setExpandedOption] = useState<number | null>(null);
+  const totalVotes = poll.totalVotes || poll.options.reduce((s, o) => s + o.votes, 0);
 
   return (
-    <div className="mt-3 space-y-2 p-4 rounded-lg bg-muted/20 border border-border/50">
-      <p className="font-semibold text-sm mb-3">{poll.question}</p>
-      {poll.options.map((option, idx) => (
-        <motion.button
-          key={idx}
-          whileHover={{ x: 2 }}
-          onClick={() => onVote(idx)}
-          className="w-full text-left"
-        >
-          <div className="flex items-center justify-between p-3 rounded-lg hover:bg-muted/30 transition-colors border border-border/30">
-            <div className="flex-1">
-              <div className="flex items-center gap-2">
+    <div className={cn(
+      'mt-3 space-y-2.5 p-4 rounded-lg border',
+      isSender ? 'bg-primary-foreground/10 border-primary-foreground/20' : 'bg-background border-border'
+    )}>
+      <div className="flex items-center gap-2 mb-1">
+        <BarChart3 className={cn('w-4 h-4', isSender ? 'text-primary-foreground/70' : 'text-primary')} />
+        <p className={cn('font-bold text-sm', isSender ? 'text-primary-foreground' : 'text-foreground')}>
+          {poll.question}
+        </p>
+      </div>
+
+      {poll.isAnonymous && (
+        <p className={cn('text-xs italic', isSender ? 'text-primary-foreground/60' : 'text-muted-foreground')}>
+          🔒 Anonymous poll
+        </p>
+      )}
+
+      {poll.options.map((option, idx) => {
+        const pct = totalVotes > 0 ? Math.round((option.votes / totalVotes) * 100) : 0;
+        const isExpanded = expandedOption === idx;
+        const isWinning = option.votes === Math.max(...poll.options.map(o => o.votes)) && option.votes > 0;
+
+        return (
+          <div key={idx}>
+            <button
+              onClick={() => onVote(idx)}
+              className={cn(
+                'w-full text-left rounded-md overflow-hidden transition-all',
+                isSender ? 'hover:bg-primary-foreground/10' : 'hover:bg-muted/40'
+              )}
+            >
+              <div className="relative p-3">
+                {/* Progress bar background */}
                 <div
-                  className="h-2 rounded-full transition-all"
-                  style={{
-                    width: `${(option.votes / maxVotes) * 80}px`,
-                    backgroundColor: 'hsl(var(--primary))',
-                  }}
+                  className={cn(
+                    'absolute inset-0 rounded-md transition-all',
+                    isWinning
+                      ? (isSender ? 'bg-primary-foreground/15' : 'bg-primary/10')
+                      : (isSender ? 'bg-primary-foreground/8' : 'bg-muted/30')
+                  )}
+                  style={{ width: `${pct}%` }}
                 />
-                <span className="text-xs text-muted-foreground ml-2">{option.votes} votes</span>
+                <div className="relative flex items-center justify-between gap-3">
+                  <div className="flex items-center gap-2 flex-1 min-w-0">
+                    <div className={cn(
+                      'w-4 h-4 rounded-full border-2 flex items-center justify-center shrink-0',
+                      isWinning
+                        ? (isSender ? 'border-primary-foreground bg-primary-foreground/20' : 'border-primary bg-primary/20')
+                        : (isSender ? 'border-primary-foreground/40' : 'border-border')
+                    )}>
+                      {isWinning && <div className={cn('w-1.5 h-1.5 rounded-full', isSender ? 'bg-primary-foreground' : 'bg-primary')} />}
+                    </div>
+                    <span className={cn(
+                      'text-sm font-medium truncate',
+                      isSender ? 'text-primary-foreground' : 'text-foreground'
+                    )}>
+                      {option.text}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2 shrink-0">
+                    <span className={cn(
+                      'text-xs font-bold',
+                      isSender ? 'text-primary-foreground/80' : 'text-foreground/70'
+                    )}>
+                      {pct}%
+                    </span>
+                    <span className={cn(
+                      'text-xs',
+                      isSender ? 'text-primary-foreground/60' : 'text-muted-foreground'
+                    )}>
+                      ({option.votes})
+                    </span>
+                  </div>
+                </div>
               </div>
-              <p className="text-sm font-medium mt-2">{option.text}</p>
-            </div>
-            <span className="text-xs text-muted-foreground">
-              {maxVotes > 0 ? Math.round((option.votes / maxVotes) * 100) : 0}%
-            </span>
+            </button>
+
+            {/* Voter names — show on click (public polls only) */}
+            {!poll.isAnonymous && option.votedBy.length > 0 && (
+              <button
+                onClick={(e) => { e.stopPropagation(); setExpandedOption(isExpanded ? null : idx); }}
+                className={cn(
+                  'ml-9 text-xs transition-colors',
+                  isSender ? 'text-primary-foreground/50 hover:text-primary-foreground/70' : 'text-muted-foreground hover:text-foreground'
+                )}
+              >
+                {isExpanded ? 'Hide voters' : `${option.votedBy.length} voter${option.votedBy.length > 1 ? 's' : ''} — tap to see`}
+              </button>
+            )}
+            {isExpanded && !poll.isAnonymous && (
+              <div className={cn(
+                'ml-9 mt-1 mb-1 text-xs space-y-0.5',
+                isSender ? 'text-primary-foreground/70' : 'text-muted-foreground'
+              )}>
+                {option.votedBy.map(id => (
+                  <p key={id}>• {getMentorDisplayName(id)}</p>
+                ))}
+              </div>
+            )}
           </div>
-        </motion.button>
-      ))}
-      <p className="text-xs text-muted-foreground mt-2">{poll.totalVotes} votes</p>
+        );
+      })}
+
+      <div className={cn(
+        'flex items-center justify-between pt-1 border-t',
+        isSender ? 'border-primary-foreground/15' : 'border-border/50'
+      )}>
+        <p className={cn('text-xs', isSender ? 'text-primary-foreground/50' : 'text-muted-foreground')}>
+          {totalVotes} vote{totalVotes !== 1 ? 's' : ''}
+        </p>
+        <p className={cn('text-xs', isSender ? 'text-primary-foreground/50' : 'text-muted-foreground')}>
+          {poll.isAnonymous ? '🔒 Anonymous' : '👁 Public'}
+        </p>
+      </div>
     </div>
   );
 }
@@ -1157,6 +1255,7 @@ export function GroupConversationView() {
   const [showPollCreator, setShowPollCreator] = useState(false);
   const [pollQuestion, setPollQuestion] = useState('');
   const [pollOptions, setPollOptions] = useState(['', '']);
+  const [pollIsAnonymous, setPollIsAnonymous] = useState(false);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
@@ -1222,6 +1321,7 @@ export function GroupConversationView() {
       question: pollQuestion.trim(),
       options: pollOptions.filter(o => o.trim()).map(text => ({ text: text.trim(), votes: 0, votedBy: [] })),
       totalVotes: 0,
+      isAnonymous: pollIsAnonymous,
     };
     const pollMsg: Message = {
       id: `msg-${Date.now()}`,
@@ -1240,6 +1340,7 @@ export function GroupConversationView() {
     ));
     setPollQuestion('');
     setPollOptions(['', '']);
+    setPollIsAnonymous(false);
     setShowPollCreator(false);
     toast.success('Poll sent!');
   };
@@ -1781,6 +1882,7 @@ export function GroupConversationView() {
                                     {msg.isPoll && msg.poll && (
                                       <PollComponent
                                         poll={msg.poll}
+                                        isSender={isSender}
                                         onVote={(optionIdx) => {
                                           toast.info('Vote recorded!');
                                         }}
@@ -1862,12 +1964,9 @@ export function GroupConversationView() {
                                 {formatFullTime(msg.timestamp)}
                               </p>
                               {isSender && (
-                                <div className="flex items-center gap-0.5">
-                                  <Check className="h-3 w-3 text-muted-foreground" />
-                                  {msg.readBy && msg.readBy.length > 0 && (
-                                    <CheckCheck className="h-3 w-3 text-primary" />
-                                  )}
-                                </div>
+                                msg.readBy && msg.readBy.length > 0
+                                  ? <CheckCheck className="h-3 w-3 text-primary" />
+                                  : <Check className="h-3 w-3 text-muted-foreground" />
                               )}
                             </div>
 
@@ -1987,6 +2086,37 @@ export function GroupConversationView() {
                         </div>
                       ))}
                     </div>
+                    {/* Anonymous / Public toggle */}
+                    <div className="flex items-center gap-3 pt-1 pb-1">
+                      <button
+                        type="button"
+                        onClick={() => setPollIsAnonymous(false)}
+                        className={cn(
+                          'flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold border transition-colors',
+                          !pollIsAnonymous
+                            ? 'border-primary text-primary bg-primary/5'
+                            : 'border-border text-muted-foreground hover:border-primary hover:text-primary'
+                        )}
+                      >
+                        👁 Public
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setPollIsAnonymous(true)}
+                        className={cn(
+                          'flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold border transition-colors',
+                          pollIsAnonymous
+                            ? 'border-primary text-primary bg-primary/5'
+                            : 'border-border text-muted-foreground hover:border-primary hover:text-primary'
+                        )}
+                      >
+                        🔒 Anonymous
+                      </button>
+                      <p className="text-xs text-muted-foreground flex-1">
+                        {pollIsAnonymous ? 'Voters are hidden' : 'Voters are visible'}
+                      </p>
+                    </div>
+
                     <div className="flex items-center justify-between">
                       {pollOptions.length < 6 && (
                         <button
