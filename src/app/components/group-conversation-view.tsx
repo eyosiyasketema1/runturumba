@@ -1788,82 +1788,100 @@ export function GroupConversationView() {
             </div>
 
             {/* Compose Area */}
-            <div className="border-t border-border px-6 py-5 bg-background space-y-3">
+            <div className="shrink-0 border-t border-border bg-background">
               {/* Announce Mode Banner */}
               {isAnnouncing && (
-                <motion.div
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  className="flex items-center gap-3 p-3 rounded-lg bg-amber-50 border border-amber-200"
-                >
-                  <Megaphone className="h-4 w-4 text-amber-600 flex-shrink-0" />
-                  <span className="text-sm font-medium text-amber-900">
-                    📢 Composing announcement
-                  </span>
+                <div className="flex items-center gap-3 px-4 pt-3 pb-2">
+                  <div className="flex items-center gap-2 px-3 py-1.5 bg-amber-50 border border-amber-200 text-xs font-bold text-amber-900">
+                    <Megaphone className="h-3 w-3 text-amber-600" />
+                    📢 Announcement mode
+                  </div>
                   <button
                     onClick={() => setIsAnnouncing(false)}
-                    className="ml-auto text-amber-600 hover:text-amber-700 transition-colors"
+                    className="text-xs font-bold text-amber-600 hover:text-amber-700 transition-colors"
                   >
-                    <X className="h-4 w-4" />
+                    Cancel
                   </button>
-                </motion.div>
+                </div>
               )}
 
-              {/* Compose Input */}
-              <div className="flex gap-3 items-end">
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  title="Attach file"
-                  className="rounded-lg flex-shrink-0"
-                >
-                  <Paperclip className="h-5 w-5" />
-                </Button>
-
-                <div className="flex-1 relative">
+              {/* Textarea */}
+              <form
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  handleSendMessage();
+                }}
+                className="px-4 pb-3 pt-3"
+              >
+                <div className="border border-input bg-background transition-colors">
                   <textarea
-                    placeholder="Type a message..."
+                    placeholder={`Message ${selectedGroup.name}…`}
                     value={messageText}
                     onChange={(e) => setMessageText(e.target.value)}
                     onKeyDown={(e) => {
-                      if (
-                        e.key === 'Enter' &&
-                        !e.shiftKey
-                      ) {
+                      if (e.key === 'Enter' && !e.shiftKey) {
                         e.preventDefault();
                         handleSendMessage();
                       }
                     }}
-                    className={cn(
-                      'w-full rounded-xl border border-border bg-background px-4 py-3 text-sm resize-none',
-                      'placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30',
-                      'max-h-24'
-                    )}
-                    rows={1}
+                    rows={3}
+                    className="w-full px-4 pt-3 pb-2 text-sm outline-none resize-none bg-transparent text-foreground"
                   />
+
+                  {/* Toolbar */}
+                  <div className="flex items-center justify-between px-3 pb-2 border-t border-inherit">
+                    <div className="flex items-center gap-0.5">
+                      {/* Attach */}
+                      <button
+                        type="button"
+                        className="p-1.5 text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+                        title="Attach file"
+                      >
+                        <Paperclip className="w-4 h-4" />
+                      </button>
+
+                      {/* Emoji */}
+                      <button
+                        type="button"
+                        className="p-1.5 text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+                        title="Emoji"
+                      >
+                        <Smile className="w-4 h-4" />
+                      </button>
+
+                      {/* Announce (admin only) */}
+                      {currentUserIsAdmin && !isAnnouncing && (
+                        <button
+                          type="button"
+                          onClick={() => setIsAnnouncing(true)}
+                          className="p-1.5 text-muted-foreground hover:text-amber-600 hover:bg-amber-50 transition-colors"
+                          title="Send as announcement"
+                        >
+                          <Megaphone className="w-4 h-4" />
+                        </button>
+                      )}
+                    </div>
+
+                    {/* Send */}
+                    <button
+                      type="submit"
+                      disabled={!messageText.trim()}
+                      className="flex items-center gap-1.5 px-4 py-1.5 text-xs font-bold transition-all disabled:opacity-40 disabled:cursor-not-allowed bg-primary text-primary-foreground hover:bg-primary/90"
+                    >
+                      <Send className="w-3 h-3" />
+                      Send
+                    </button>
+                  </div>
                 </div>
-
-                {currentUserIsAdmin && !isAnnouncing && (
-                  <Button
-                    variant="outline"
-                    size="icon"
-                    onClick={() => setIsAnnouncing(true)}
-                    title="Send as announcement"
-                    className="rounded-lg flex-shrink-0"
-                  >
-                    <Megaphone className="h-4 w-4" />
-                  </Button>
-                )}
-
-                <Button
-                  onClick={handleSendMessage}
-                  disabled={!messageText.trim()}
-                  className="rounded-lg flex-shrink-0"
-                  size="icon"
-                >
-                  <Send className="h-4 w-4" />
-                </Button>
-              </div>
+                <div className="flex items-center justify-between mt-1.5">
+                  <p className="text-xs text-muted-foreground/50">Enter to send · Shift+Enter for new line</p>
+                  {isAnnouncing && (
+                    <p className="text-xs font-medium text-amber-600/70">
+                      📢 Sending as <span className="font-bold">Announcement</span>
+                    </p>
+                  )}
+                </div>
+              </form>
             </div>
           </div>
         ) : (
