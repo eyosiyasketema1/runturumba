@@ -32,6 +32,10 @@ import {
   Edit2,
   Check,
   CheckCheck,
+  Reply,
+  Share2,
+  CircleCheck,
+  Flag,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { cn } from './types';
@@ -935,55 +939,178 @@ function GroupInfoPanel({
   );
 }
 
-// Message Actions Popover
+// Message Actions — Reaction icon + Context menu icon
 interface MessageActionsProps {
   message: Message;
   isSender: boolean;
   onReact: (emoji: string) => void;
-  onPin?: () => void;
-  onDelete?: () => void;
+  onReply: () => void;
+  onCopy: () => void;
+  onPin: () => void;
+  onForward: () => void;
+  onSelect: () => void;
+  onReport: () => void;
+  onDelete: () => void;
 }
 
-function MessageActions({ message, isSender, onReact, onPin, onDelete }: MessageActionsProps) {
-  const reactions = ['❤️', '🙏', '😂', '👍', '🔥', '🎉'];
+function MessageActions({
+  message,
+  isSender,
+  onReact,
+  onReply,
+  onCopy,
+  onPin,
+  onForward,
+  onSelect,
+  onReport,
+  onDelete,
+}: MessageActionsProps) {
+  const [showReactionPicker, setShowReactionPicker] = useState(false);
+  const [showContextMenu, setShowContextMenu] = useState(false);
+  const reactionRef = useRef<HTMLDivElement>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  const reactions = ['❤️', '🙏', '😂', '👍', '🔥', '🎉', '😢', '😮'];
+
+  // Close popups when clicking outside
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (reactionRef.current && !reactionRef.current.contains(e.target as Node)) {
+        setShowReactionPicker(false);
+      }
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setShowContextMenu(false);
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  const menuItems = [
+    { icon: Reply, label: 'Reply', action: onReply, destructive: false },
+    { icon: Copy, label: 'Copy Text', action: onCopy, destructive: false },
+    { icon: Pin, label: message.isPinned ? 'Unpin' : 'Pin', action: onPin, destructive: false },
+    { icon: Share2, label: 'Forward', action: onForward, destructive: false },
+    { icon: CircleCheck, label: 'Select', action: onSelect, destructive: false },
+    { icon: Flag, label: 'Report', action: onReport, destructive: false },
+    { icon: Trash2, label: 'Delete', action: onDelete, destructive: true },
+  ];
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 8 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: 8 }}
-      className="absolute -top-12 left-1/2 transform -translate-x-1/2 flex gap-1 bg-background border border-border rounded-xl shadow-lg p-2 z-50 whitespace-nowrap"
+      initial={{ opacity: 0, scale: 0.9 }}
+      animate={{ opacity: 1, scale: 1 }}
+      exit={{ opacity: 0, scale: 0.9 }}
+      transition={{ duration: 0.12 }}
+      className={cn(
+        'absolute top-1 z-50 flex items-center gap-0.5',
+        isSender ? 'left-0 -translate-x-full pr-2' : 'right-0 translate-x-full pl-2'
+      )}
     >
-      <div className="flex gap-1">
-        {reactions.map((emoji) => (
-          <button
-            key={emoji}
-            onClick={() => onReact(emoji)}
-            className="p-2 hover:bg-muted rounded-lg text-sm transition-colors"
-          >
-            {emoji}
-          </button>
-        ))}
+      {/* Reaction Button */}
+      <div className="relative" ref={reactionRef}>
+        <button
+          onClick={() => {
+            setShowReactionPicker(!showReactionPicker);
+            setShowContextMenu(false);
+          }}
+          className="p-1.5 rounded-full hover:bg-muted/80 text-muted-foreground hover:text-foreground transition-colors"
+          title="React"
+        >
+          <Smile className="h-4 w-4" />
+        </button>
+
+        {/* Emoji Reaction Picker */}
+        <AnimatePresence>
+          {showReactionPicker && (
+            <motion.div
+              initial={{ opacity: 0, y: 6, scale: 0.95 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: 6, scale: 0.95 }}
+              transition={{ duration: 0.15 }}
+              className={cn(
+                'absolute bottom-full mb-2 bg-background border border-border rounded-xl shadow-xl p-2 z-[60]',
+                isSender ? 'right-0' : 'left-0'
+              )}
+            >
+              <div className="flex gap-1">
+                {reactions.map((emoji) => (
+                  <motion.button
+                    key={emoji}
+                    whileHover={{ scale: 1.25 }}
+                    whileTap={{ scale: 0.9 }}
+                    onClick={() => {
+                      onReact(emoji);
+                      setShowReactionPicker(false);
+                    }}
+                    className="p-1.5 hover:bg-muted rounded-lg text-base transition-colors cursor-pointer"
+                  >
+                    {emoji}
+                  </motion.button>
+                ))}
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
-      <Separator orientation="vertical" className="mx-1" />
-      {!isSender && onPin && (
+
+      {/* Context Menu Button */}
+      <div className="relative" ref={menuRef}>
         <button
-          onClick={onPin}
-          className="p-2 hover:bg-muted rounded-lg transition-colors"
-          title="Pin message"
+          onClick={() => {
+            setShowContextMenu(!showContextMenu);
+            setShowReactionPicker(false);
+          }}
+          className="p-1.5 rounded-full hover:bg-muted/80 text-muted-foreground hover:text-foreground transition-colors"
+          title="More options"
         >
-          <Pin className="h-4 w-4" />
+          <MoreVertical className="h-4 w-4" />
         </button>
-      )}
-      {isSender && onDelete && (
-        <button
-          onClick={onDelete}
-          className="p-2 hover:bg-destructive/10 hover:text-destructive rounded-lg transition-colors"
-          title="Delete message"
-        >
-          <Trash2 className="h-4 w-4" />
-        </button>
-      )}
+
+        {/* Context Menu Dropdown */}
+        <AnimatePresence>
+          {showContextMenu && (
+            <motion.div
+              initial={{ opacity: 0, y: -4, scale: 0.95 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: -4, scale: 0.95 }}
+              transition={{ duration: 0.15 }}
+              className={cn(
+                'absolute top-full mt-1 w-48 bg-background border border-border rounded-xl shadow-xl overflow-hidden z-[60]',
+                isSender ? 'right-0' : 'left-0'
+              )}
+            >
+              <div className="py-1.5">
+                {menuItems.map((item, idx) => {
+                  const Icon = item.icon;
+                  return (
+                    <React.Fragment key={item.label}>
+                      {item.destructive && (
+                        <div className="mx-2 my-1 border-t border-border" />
+                      )}
+                      <button
+                        onClick={() => {
+                          item.action();
+                          setShowContextMenu(false);
+                        }}
+                        className={cn(
+                          'w-full flex items-center gap-3 px-4 py-2.5 text-sm transition-colors',
+                          item.destructive
+                            ? 'text-destructive hover:bg-destructive/8'
+                            : 'text-foreground hover:bg-muted/60'
+                        )}
+                      >
+                        <Icon className="h-4 w-4 flex-shrink-0" />
+                        <span>{item.label}</span>
+                      </button>
+                    </React.Fragment>
+                  );
+                })}
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
     </motion.div>
   );
 }
@@ -1661,15 +1788,23 @@ export function GroupConversationView() {
                             />
                           </div>
 
-                          {/* Message Actions */}
+                          {/* Message Actions — Reaction + Menu */}
                           <AnimatePresence>
                             {hoveredMessageId === msg.id && (
                               <MessageActions
                                 message={msg}
                                 isSender={isSender}
                                 onReact={(emoji) => handleAddReaction(msg.id, emoji)}
-                                onPin={currentUserIsAdmin && !isSender ? () => handlePinMessage(msg.id) : undefined}
-                                onDelete={isSender ? () => handleDeleteMessage(msg.id) : undefined}
+                                onReply={() => toast.info(`Replying to ${msg.senderName}`)}
+                                onCopy={() => {
+                                  navigator.clipboard.writeText(msg.content);
+                                  toast.success('Copied to clipboard');
+                                }}
+                                onPin={() => handlePinMessage(msg.id)}
+                                onForward={() => toast.info('Forward — coming soon')}
+                                onSelect={() => toast.info('Select mode — coming soon')}
+                                onReport={() => toast.info('Message reported')}
+                                onDelete={() => handleDeleteMessage(msg.id)}
                               />
                             )}
                           </AnimatePresence>
