@@ -248,6 +248,109 @@ function TypingIndicator() {
   );
 }
 
+// ─── VoiceMessagePlayer ──────────────────────────────────────────────────────
+
+function VoiceMessagePlayer({ duration, isAgent }: { duration: string; isAgent: boolean }) {
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [progress, setProgress] = useState(0);
+  const [currentTime, setCurrentTime] = useState(0);
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  // Parse duration string "M:SS" to seconds
+  const totalSeconds = useMemo(() => {
+    const parts = duration.split(":");
+    return (parseInt(parts[0] || "0") * 60) + parseInt(parts[1] || "0");
+  }, [duration]);
+
+  const formatTime = (s: number) => `${Math.floor(s / 60)}:${String(Math.floor(s) % 60).padStart(2, "0")}`;
+
+  const togglePlay = () => {
+    if (isPlaying) {
+      // Pause
+      if (intervalRef.current) clearInterval(intervalRef.current);
+      intervalRef.current = null;
+      setIsPlaying(false);
+    } else {
+      // Play (simulate playback)
+      const startFrom = progress >= 100 ? 0 : currentTime;
+      if (progress >= 100) { setProgress(0); setCurrentTime(0); }
+      setIsPlaying(true);
+      const stepMs = 100;
+      const total = totalSeconds || 5; // fallback 5s
+      let elapsed = startFrom;
+      intervalRef.current = setInterval(() => {
+        elapsed += stepMs / 1000;
+        if (elapsed >= total) {
+          setProgress(100);
+          setCurrentTime(total);
+          setIsPlaying(false);
+          if (intervalRef.current) clearInterval(intervalRef.current);
+          intervalRef.current = null;
+        } else {
+          setProgress((elapsed / total) * 100);
+          setCurrentTime(elapsed);
+        }
+      }, stepMs);
+    }
+  };
+
+  // Cleanup
+  useEffect(() => () => { if (intervalRef.current) clearInterval(intervalRef.current); }, []);
+
+  // Generate static waveform bars (deterministic from duration string)
+  const bars = useMemo(() => {
+    const seed = duration.charCodeAt(0) + duration.length;
+    return Array.from({ length: 28 }, (_, i) => {
+      const h = 4 + ((seed * (i + 1) * 7 + i * 13) % 16);
+      return h;
+    });
+  }, [duration]);
+
+  const playBtnColor = isAgent ? "text-primary-foreground" : "text-primary";
+  const barBg = isAgent ? "bg-primary-foreground/20" : "bg-gray-300";
+  const barFill = isAgent ? "bg-primary-foreground/70" : "bg-primary";
+  const timeColor = isAgent ? "text-primary-foreground/70" : "text-muted-foreground";
+
+  return (
+    <div className={cn("flex items-center gap-2.5 px-3 py-2.5 rounded-lg mb-2 min-w-[220px]", isAgent ? "bg-primary-foreground/10" : "bg-muted/50")}>
+      {/* Play/Pause button */}
+      <button onClick={togglePlay} className={cn("w-8 h-8 rounded-full flex items-center justify-center shrink-0 transition-colors", isAgent ? "bg-primary-foreground/20 hover:bg-primary-foreground/30" : "bg-primary/10 hover:bg-primary/20")}>
+        {isPlaying ? (
+          <svg viewBox="0 0 16 16" className={cn("w-3.5 h-3.5", playBtnColor)} fill="currentColor">
+            <rect x="3" y="2" width="4" height="12" rx="1" />
+            <rect x="9" y="2" width="4" height="12" rx="1" />
+          </svg>
+        ) : (
+          <svg viewBox="0 0 16 16" className={cn("w-3.5 h-3.5 ml-0.5", playBtnColor)} fill="currentColor">
+            <path d="M4 2.5v11l9-5.5z" />
+          </svg>
+        )}
+      </button>
+
+      {/* Waveform + progress */}
+      <div className="flex-1 flex items-center gap-[2px] h-6">
+        {bars.map((h, i) => {
+          const barProgress = (i / bars.length) * 100;
+          const filled = barProgress < progress;
+          return (
+            <div
+              key={i}
+              className={cn("w-[3px] rounded-full transition-colors duration-150", filled ? barFill : barBg)}
+              style={{ height: `${h}px` }}
+            />
+          );
+        })}
+      </div>
+
+      {/* Time display */}
+      <div className={cn("flex flex-col items-end shrink-0", timeColor)}>
+        <span className="text-[10px] font-bold tabular-nums">{formatTime(currentTime)}</span>
+        <span className="text-[9px] opacity-60 tabular-nums">{duration}</span>
+      </div>
+    </div>
+  );
+}
+
 // ─── ThreadMessage ────────────────────────────────────────────────────────────
 
 function ThreadMessage({ entry }: { entry: ThreadEntry }) {
@@ -306,15 +409,10 @@ function ThreadMessage({ entry }: { entry: ThreadEntry }) {
           )}
           {/* Render voice message */}
           {entry.content.includes("🎤 Voice message") && (
-            <div className={cn("flex items-center gap-2 px-3 py-2 rounded-md mb-2", isAgent ? "bg-primary-foreground/10" : "bg-muted/50")}>
-              <Mic className={cn("w-4 h-4 shrink-0", isAgent ? "text-primary-foreground/70" : "text-primary")} />
-              <div className={cn("flex-1 h-1 rounded-full", isAgent ? "bg-primary-foreground/20" : "bg-border")}>
-                <div className={cn("h-full rounded-full w-3/4", isAgent ? "bg-primary-foreground/50" : "bg-primary/40")} />
-              </div>
-              <span className={cn("text-[10px] font-medium", isAgent ? "text-primary-foreground/70" : "text-muted-foreground")}>
-                {entry.content.match(/🎤 Voice message \(([^)]+)\)/)?.[1] || "0:00"}
-              </span>
-            </div>
+            <VoiceMessagePlayer
+              duration={entry.content.match(/🎤 Voice message \(([^)]+)\)/)?.[1] || "0:05"}
+              isAgent={isAgent}
+            />
           )}
           {/* Render text (excluding image/voice placeholders) */}
           {(() => {
