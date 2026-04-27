@@ -14,7 +14,6 @@ import {
   X,
   Lock,
   Copy,
-  Wrench,
   Paperclip,
   FileText,
   Code2,
@@ -41,12 +40,6 @@ import { Separator } from './ui/separator';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from './ui/tabs';
 
 // --- Types ---
-interface Tool {
-  id: string;
-  name: string;
-  description: string;
-}
-
 interface Attachment {
   id: string;
   name: string;
@@ -59,7 +52,6 @@ interface SkillSet {
   type: 'global' | 'custom';
   description: string;
   instructions: string;
-  tools: Tool[];
   attachments: Attachment[];
   enabled: boolean;
   accentColor: string;
@@ -105,10 +97,6 @@ const GLOBAL_SKILLSETS: SkillSet[] = [
     accentColor: ACCENT_COLORS[0],
     description: 'Guides AI in faith-based conversations with seekers, answering questions about Christianity and directing toward next steps.',
     instructions: `## Purpose\nEngage seekers in meaningful faith-based dialogue.\n\n## Guidelines\n- Always be respectful and empathetic\n- Reference Scripture when appropriate\n- Never pressure or manipulate\n- Escalate to human mentor when seeker shows signs of crisis\n\n## Conversation Flow\n1. **Greeting** — Warm, personal welcome\n2. **Listen** — Understand their questions and concerns\n3. **Respond** — Share relevant biblical truth with grace\n4. **Next Steps** — Suggest resources, prayer, or mentor connection`,
-    tools: [
-      { id: 't1', name: 'scripture_lookup', description: 'Search and retrieve Bible verses by reference or topic' },
-      { id: 't2', name: 'seeker_profile', description: "Access seeker's journey stage and conversation history" },
-    ],
     attachments: [{ id: 'a1', name: 'conversation-guidelines.pdf', size: '245 KB' }],
     enabled: true,
   },
@@ -119,11 +107,6 @@ const GLOBAL_SKILLSETS: SkillSet[] = [
     accentColor: ACCENT_COLORS[1],
     description: 'Auto-generate devotionals, Bible studies, follow-up messages, and discipleship content tailored to each seeker\'s stage.',
     instructions: `## Purpose\nGenerate personalized discipleship content.\n\n## Content Types\n- **Devotionals** — Short daily reflections with Scripture\n- **Bible Studies** — Structured study guides on topics\n- **Follow-up Messages** — Personalized check-ins after sessions\n\n## Tone\nWarm, encouraging, doctrinally sound. Avoid jargon.`,
-    tools: [
-      { id: 't3', name: 'content_template', description: 'Load and fill content templates by type' },
-      { id: 't4', name: 'scripture_lookup', description: 'Search Bible verses for content inclusion' },
-      { id: 't5', name: 'seeker_stage', description: "Get seeker's current discipleship stage" },
-    ],
     attachments: [
       { id: 'a2', name: 'content-style-guide.pdf', size: '180 KB' },
       { id: 'a3', name: 'devotional-templates.docx', size: '92 KB' },
@@ -137,10 +120,6 @@ const GLOBAL_SKILLSETS: SkillSet[] = [
     accentColor: ACCENT_COLORS[2],
     description: 'Analyzes seeker profiles and mentor specialties to recommend optimal mentor-mentee pairings.',
     instructions: `## Purpose\nMatch seekers with the best-fit mentor.\n\n## Matching Criteria\n- Language compatibility\n- Area of specialty alignment\n- Availability and timezone\n- Experience level vs seeker needs\n\n## Rules\n- Never assign more than 5 active seekers per mentor\n- Prioritize language match over specialty\n- Flag unmatched seekers after 48 hours`,
-    tools: [
-      { id: 't6', name: 'mentor_profiles', description: 'Retrieve available mentors with their specialties and capacity' },
-      { id: 't7', name: 'seeker_assessment', description: "Get seeker's needs assessment and preferences" },
-    ],
     attachments: [],
     enabled: true,
   },
@@ -151,10 +130,6 @@ const GLOBAL_SKILLSETS: SkillSet[] = [
     accentColor: ACCENT_COLORS[3],
     description: 'Detect emotional tone in seeker messages to flag those who may need urgent pastoral care or encouragement.',
     instructions: `## Purpose\nMonitor seeker emotional state.\n\n## Alert Levels\n- **Green** — Positive or neutral sentiment\n- **Yellow** — Mild distress, discouragement\n- **Red** — Crisis indicators (self-harm, despair, urgent need)\n\n## Actions\n- Green: Continue normal flow\n- Yellow: Suggest encouraging content, notify mentor\n- Red: Immediately escalate to human mentor, pause AI`,
-    tools: [
-      { id: 't8', name: 'sentiment_classifier', description: 'Classify message sentiment and urgency level' },
-      { id: 't9', name: 'escalation_trigger', description: 'Notify assigned mentor of urgent seeker need' },
-    ],
     attachments: [{ id: 'a4', name: 'crisis-protocol.pdf', size: '310 KB' }],
     enabled: false,
   },
@@ -165,10 +140,6 @@ const GLOBAL_SKILLSETS: SkillSet[] = [
     accentColor: ACCENT_COLORS[4],
     description: "Auto-translate messages and content into the seeker's preferred language.",
     instructions: `## Purpose\nBreak language barriers.\n\n## Supported Languages\nAll languages supported by the translation API.\n\n## Rules\n- Detect seeker's language from first message\n- Translate AI responses to seeker's language\n- Keep original + translated version for mentor review\n- Flag uncertain translations for human review`,
-    tools: [
-      { id: 't10', name: 'translate_text', description: 'Translate text between languages' },
-      { id: 't11', name: 'detect_language', description: 'Detect the language of input text' },
-    ],
     attachments: [],
     enabled: true,
   },
@@ -182,10 +153,6 @@ const SAMPLE_CUSTOM_SKILLSETS: SkillSet[] = [
     accentColor: ACCENT_COLORS[5],
     description: 'Custom skill set for mentoring young believers ages 13-19 with contemporary language and relevant examples.',
     instructions: `## Purpose\nConnect with young believers in their language and context.\n\n## Key Approaches\n- Use relatable examples and pop culture references where appropriate\n- Focus on identity in Christ\n- Address peer pressure and modern challenges\n\n## Topics\n- Dating and relationships\n- Social media and technology\n- Purpose and calling\n- Friend conflicts`,
-    tools: [
-      { id: 'tc1', name: 'youth_resources', description: 'Access age-appropriate discipleship resources' },
-      { id: 'tc2', name: 'cultural_context', description: 'Get current cultural topics relevant to youth' },
-    ],
     attachments: [{ id: 'ac1', name: 'youth-discussion-guide.pdf', size: '156 KB' }],
     enabled: true,
   },
@@ -196,10 +163,6 @@ const SAMPLE_CUSTOM_SKILLSETS: SkillSet[] = [
     accentColor: ACCENT_COLORS[6],
     description: 'Specialized skill set for mentoring individuals in recovery from addiction, trauma, or spiritual struggle.',
     instructions: `## Purpose\nSupport recovery journey with compassion and hope.\n\n## Core Values\n- Unconditional acceptance\n- Accountability with grace\n- Scripture as foundation\n- Community as strength\n\n## Approach\n- Celebrate small wins\n- Normalize setbacks\n- Connect to support groups\n- Emphasize God's redemptive power`,
-    tools: [
-      { id: 'tc3', name: 'recovery_resources', description: 'Access recovery-focused materials and support groups' },
-      { id: 'tc4', name: 'relapse_prevention', description: 'Get strategies for handling triggers and temptation' },
-    ],
     attachments: [],
     enabled: true,
   },
@@ -377,7 +340,7 @@ function SkillSetsList({
         <div className="space-y-1.5">
           <h1 className="text-2xl font-bold tracking-tight text-foreground">Skill Sets</h1>
           <p className="text-sm text-muted-foreground max-w-lg">
-            Create and manage AI skill sets — each one is a set of instructions and tools that guide how AI behaves in your ministry context.
+            Create and manage AI skill sets — each one is a set of instructions and reference files that guide how AI behaves in your ministry context.
           </p>
         </div>
         <Button onClick={onCreate} size="sm" className="gap-2 shrink-0">
@@ -450,10 +413,6 @@ function SkillSetsList({
                 <CardContent className="flex-1 flex flex-col justify-end pt-0">
                   {/* Stats */}
                   <div className="flex items-center gap-4 text-[11px] text-muted-foreground mb-4">
-                    <div className="flex items-center gap-1.5">
-                      <Wrench className="h-3 w-3" />
-                      <span><span className="font-semibold text-foreground">{skillSet.tools.length}</span> tools</span>
-                    </div>
                     <div className="flex items-center gap-1.5">
                       <Paperclip className="h-3 w-3" />
                       <span><span className="font-semibold text-foreground">{skillSet.attachments.length}</span> files</span>
@@ -547,30 +506,6 @@ function SkillSetView({
         </CardContent>
       </Card>
 
-      {/* Tools */}
-      {skillSet.tools.length > 0 && (
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm">Tools ({skillSet.tools.length})</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid gap-3 sm:grid-cols-2">
-              {skillSet.tools.map((tool) => (
-                <div key={tool.id} className="flex items-start gap-3 rounded-lg bg-muted/30 border border-border p-3.5">
-                  <div className="w-8 h-8 rounded-md bg-indigo-100 flex items-center justify-center shrink-0">
-                    <Wrench className="h-4 w-4 text-indigo-600" />
-                  </div>
-                  <div>
-                    <p className="text-sm font-mono font-medium text-foreground">{tool.name}</p>
-                    <p className="text-xs text-muted-foreground mt-0.5 leading-relaxed">{tool.description}</p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
       {/* Attachments */}
       {skillSet.attachments.length > 0 && (
         <Card>
@@ -612,22 +547,9 @@ function SkillSetEditor({
   const [name, setName] = useState(skillSet?.name || '');
   const [description, setDescription] = useState(skillSet?.description || '');
   const [instructions, setInstructions] = useState(skillSet?.instructions || '');
-  const [tools, setTools] = useState<Tool[]>(skillSet?.tools || []);
   const [attachments, setAttachments] = useState<Attachment[]>(skillSet?.attachments || []);
   const [previewTab, setPreviewTab] = useState<'edit' | 'preview'>('edit');
   const textareaRef = useRef<HTMLTextAreaElement>(null);
-
-  const handleAddTool = () => {
-    setTools([...tools, { id: `t-${Date.now()}`, name: '', description: '' }]);
-  };
-
-  const handleRemoveTool = (id: string) => {
-    setTools(tools.filter((t) => t.id !== id));
-  };
-
-  const handleUpdateTool = (id: string, field: keyof Tool, value: string) => {
-    setTools(tools.map((t) => (t.id === id ? { ...t, [field]: value } : t)));
-  };
 
   const handleRemoveAttachment = (id: string) => {
     setAttachments(attachments.filter((a) => a.id !== id));
@@ -653,7 +575,6 @@ function SkillSetEditor({
       name,
       description,
       instructions,
-      tools,
       attachments,
       type: 'custom',
       enabled: skillSet?.enabled ?? true,
@@ -747,56 +668,6 @@ function SkillSetEditor({
             </CardContent>
           </Card>
 
-          {/* Tools Section */}
-          <Card>
-            <CardHeader className="pb-3">
-              <div className="flex items-center justify-between">
-                <div>
-                  <CardTitle className="text-sm">Tools</CardTitle>
-                  <CardDescription className="text-xs">Define tools the AI can use with this skill set</CardDescription>
-                </div>
-                <Button variant="outline" size="sm" onClick={handleAddTool} className="gap-1.5 h-7 text-xs">
-                  <Plus className="h-3.5 w-3.5" /> Add Tool
-                </Button>
-              </div>
-            </CardHeader>
-            <CardContent>
-              {tools.length === 0 ? (
-                <div className="rounded-lg border-2 border-dashed border-border bg-muted/20 p-8 text-center">
-                  <Wrench className="h-8 w-8 mx-auto text-muted-foreground/40 mb-2" />
-                  <p className="text-sm text-muted-foreground">No tools yet</p>
-                  <p className="text-xs text-muted-foreground/70 mt-1">Add tools that the AI can call when using this skill set</p>
-                </div>
-              ) : (
-                <div className="space-y-3">
-                  {tools.map((tool, idx) => (
-                    <div key={tool.id} className="flex items-start gap-3 rounded-lg border border-border bg-muted/10 p-3.5">
-                      <div className="w-7 h-7 rounded bg-indigo-100 flex items-center justify-center shrink-0 mt-0.5">
-                        <Wrench className="h-3.5 w-3.5 text-indigo-600" />
-                      </div>
-                      <div className="flex-1 space-y-2">
-                        <Input
-                          placeholder="tool_name"
-                          value={tool.name}
-                          onChange={(e) => handleUpdateTool(tool.id, 'name', e.target.value)}
-                          className="font-mono text-sm h-8"
-                        />
-                        <Input
-                          placeholder="What does this tool do?"
-                          value={tool.description}
-                          onChange={(e) => handleUpdateTool(tool.id, 'description', e.target.value)}
-                          className="text-xs h-8"
-                        />
-                      </div>
-                      <Button variant="ghost" size="sm" className="h-7 w-7 p-0 text-muted-foreground hover:text-red-500 shrink-0" onClick={() => handleRemoveTool(tool.id)}>
-                        <Trash2 className="h-3.5 w-3.5" />
-                      </Button>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </CardContent>
-          </Card>
         </div>
 
         {/* Right Sidebar */}
