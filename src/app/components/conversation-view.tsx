@@ -7,6 +7,7 @@ import {
   ChevronDown, ArrowUp, Filter, Circle, Plus, Calendar,
   FileText, BookOpen, Sparkles, RefreshCw, ChevronRight, AlertCircle,
   Zap, ListOrdered, Library, Hand, Timer,
+  Image, Mic, Square, Trash2,
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { toast } from "sonner";
@@ -289,7 +290,40 @@ function ThreadMessage({ entry }: { entry: ThreadEntry }) {
             ? "bg-primary text-primary-foreground border-primary rounded-2xl rounded-tr-none"
             : "bg-card text-foreground border-border rounded-2xl rounded-tl-none"
         )}>
-          <p className="whitespace-pre-wrap leading-relaxed">{entry.content}</p>
+          {/* Render image placeholders */}
+          {entry.content.includes("📷 [Image:") && (
+            <div className="flex flex-wrap gap-2 mb-2">
+              {entry.content.match(/📷 \[Image: ([^\]]+)\]/g)?.map((match, i) => {
+                const name = match.replace("📷 [Image: ", "").replace("]", "");
+                return (
+                  <div key={i} className={cn("w-40 h-28 rounded-md flex flex-col items-center justify-center gap-1", isAgent ? "bg-primary-foreground/10" : "bg-muted")}>
+                    <Image className={cn("w-6 h-6", isAgent ? "text-primary-foreground/60" : "text-muted-foreground")} />
+                    <span className={cn("text-[10px] px-1 truncate max-w-full", isAgent ? "text-primary-foreground/70" : "text-muted-foreground")}>{name}</span>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+          {/* Render voice message */}
+          {entry.content.includes("🎤 Voice message") && (
+            <div className={cn("flex items-center gap-2 px-3 py-2 rounded-md mb-2", isAgent ? "bg-primary-foreground/10" : "bg-muted/50")}>
+              <Mic className={cn("w-4 h-4 shrink-0", isAgent ? "text-primary-foreground/70" : "text-primary")} />
+              <div className={cn("flex-1 h-1 rounded-full", isAgent ? "bg-primary-foreground/20" : "bg-border")}>
+                <div className={cn("h-full rounded-full w-3/4", isAgent ? "bg-primary-foreground/50" : "bg-primary/40")} />
+              </div>
+              <span className={cn("text-[10px] font-medium", isAgent ? "text-primary-foreground/70" : "text-muted-foreground")}>
+                {entry.content.match(/🎤 Voice message \(([^)]+)\)/)?.[1] || "0:00"}
+              </span>
+            </div>
+          )}
+          {/* Render text (excluding image/voice placeholders) */}
+          {(() => {
+            const cleaned = entry.content
+              .replace(/📷 \[Image: [^\]]+\]\n*/g, "")
+              .replace(/🎤 Voice message \([^)]+\)\n*/g, "")
+              .trim();
+            return cleaned ? <p className="whitespace-pre-wrap leading-relaxed">{cleaned}</p> : null;
+          })()}
         </div>
         <div className={cn("flex items-center gap-1.5 mt-1 px-1", isAgent ? "justify-end" : "justify-start")}>
           {entry.port && !isAgent && (
@@ -1641,6 +1675,78 @@ function ComposeArea({
 }) {
   const [text, setText] = useState("");
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // ── Image attachments ──
+  type ImageAttachment = { id: string; file: File; preview: string };
+  const [images, setImages] = useState<ImageAttachment[]>([]);
+
+  const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []);
+    const imageFiles = files.filter(f => f.type.startsWith("image/"));
+    if (imageFiles.length === 0) { toast.error("Please select an image file"); return; }
+    const newImages: ImageAttachment[] = imageFiles.map(f => ({
+      id: `img-${Date.now()}-${Math.random().toString(36).slice(2, 5)}`,
+      file: f,
+      preview: URL.createObjectURL(f),
+    }));
+    setImages(prev => [...prev, ...newImages]);
+    e.target.value = "";
+  };
+
+  const removeImage = (id: string) => {
+    setImages(prev => {
+      const removed = prev.find(i => i.id === id);
+      if (removed) URL.revokeObjectURL(removed.preview);
+      return prev.filter(i => i.id !== id);
+    });
+  };
+
+  // ── Voice recording ──
+  const [isRecording, setIsRecording] = useState(false);
+  const [recordingDuration, setRecordingDuration] = useState(0);
+  const [voiceBlob, setVoiceBlob] = useState<Blob | null>(null);
+  const [voiceUrl, setVoiceUrl] = useState<string | null>(null);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const chunksRef = useRef<Blob[]>([]);
+  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  const startRecording = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const recorder = new MediaRecorder(stream);
+      chunksRef.current = [];
+      recorder.ondataavailable = (e) => { if (e.data.size > 0) chunksRef.current.push(e.data); };
+      recorder.onstop = () => {
+        const blob = new Blob(chunksRef.current, { type: "audio/webm" });
+        setVoiceBlob(blob);
+        setVoiceUrl(URL.createObjectURL(blob));
+        stream.getTracks().forEach(t => t.stop());
+      };
+      recorder.start();
+      mediaRecorderRef.current = recorder;
+      setIsRecording(true);
+      setRecordingDuration(0);
+      timerRef.current = setInterval(() => setRecordingDuration(d => d + 1), 1000);
+    } catch {
+      toast.error("Microphone access denied");
+    }
+  };
+
+  const stopRecording = () => {
+    mediaRecorderRef.current?.stop();
+    setIsRecording(false);
+    if (timerRef.current) { clearInterval(timerRef.current); timerRef.current = null; }
+  };
+
+  const discardVoice = () => {
+    if (voiceUrl) URL.revokeObjectURL(voiceUrl);
+    setVoiceBlob(null);
+    setVoiceUrl(null);
+    setRecordingDuration(0);
+  };
+
+  const formatDuration = (s: number) => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
 
   // When an AI suggestion is selected, insert it into the compose area
   useEffect(() => {
@@ -1651,11 +1757,26 @@ function ComposeArea({
     }
   }, [suggestedText]);
 
+  const canSend = text.trim() || images.length > 0 || voiceBlob;
+
   const handleSend = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!text.trim()) return;
-    onSend(text);
+    if (!canSend) return;
+    // Build message content
+    const parts: string[] = [];
+    if (images.length > 0) {
+      parts.push(images.map(img => `📷 [Image: ${img.file.name}]`).join("\n"));
+    }
+    if (voiceBlob) {
+      parts.push(`🎤 Voice message (${formatDuration(recordingDuration)})`);
+    }
+    if (text.trim()) {
+      parts.push(text.trim());
+    }
+    onSend(parts.join("\n\n"));
     setText("");
+    setImages([]);
+    discardVoice();
     textareaRef.current?.focus();
   };
 
@@ -1701,6 +1822,53 @@ function ComposeArea({
         </div>
       </div>
 
+      {/* Image preview strip */}
+      {images.length > 0 && (
+        <div className="px-4 pb-2 flex flex-wrap gap-2">
+          {images.map(img => (
+            <div key={img.id} className="relative group">
+              <img src={img.preview} alt={img.file.name} className="w-16 h-16 object-cover rounded-md border border-border" />
+              <button
+                type="button"
+                onClick={() => removeImage(img.id)}
+                className="absolute -top-1.5 -right-1.5 w-5 h-5 bg-red-500 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow-sm"
+              >
+                <X className="w-3 h-3" />
+              </button>
+              <span className="absolute bottom-0 left-0 right-0 bg-black/50 text-white text-[9px] px-1 py-0.5 rounded-b-md truncate">{img.file.name}</span>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Voice recording strip */}
+      {(isRecording || voiceUrl) && (
+        <div className="px-4 pb-2">
+          <div className={cn("flex items-center gap-3 px-3 py-2 rounded-md border", isRecording ? "bg-red-50 border-red-200" : "bg-muted/30 border-border")}>
+            {isRecording ? (
+              <>
+                <div className="w-2.5 h-2.5 rounded-full bg-red-500 animate-pulse" />
+                <span className="text-xs font-semibold text-red-600">Recording… {formatDuration(recordingDuration)}</span>
+                <div className="ml-auto">
+                  <button type="button" onClick={stopRecording} className="flex items-center gap-1 px-2.5 py-1 bg-red-500 text-white text-xs font-bold rounded-md hover:bg-red-600 transition-colors">
+                    <Square className="w-3 h-3" /> Stop
+                  </button>
+                </div>
+              </>
+            ) : voiceUrl && (
+              <>
+                <Mic className="w-4 h-4 text-primary" />
+                <audio src={voiceUrl} controls className="h-8 flex-1" style={{ maxHeight: "32px" }} />
+                <span className="text-xs text-muted-foreground font-medium">{formatDuration(recordingDuration)}</span>
+                <button type="button" onClick={discardVoice} className="p-1 text-muted-foreground hover:text-red-500 transition-colors" title="Discard recording">
+                  <Trash2 className="w-3.5 h-3.5" />
+                </button>
+              </>
+            )}
+          </div>
+        </div>
+      )}
+
       {/* Textarea */}
       <form onSubmit={handleSend} className="px-4 pb-3">
         <div className="border border-input bg-background transition-colors">
@@ -1722,12 +1890,37 @@ function ComposeArea({
           {/* Toolbar */}
           <div className="flex items-center justify-between px-3 pb-2 border-t border-inherit">
             <div className="flex items-center gap-0.5">
-              {/* Attachment */}
-              <button type="button" onClick={() => toast.info("File attachments coming soon")}
+              {/* Image upload */}
+              <input ref={fileInputRef} type="file" accept="image/*" multiple className="hidden" onChange={handleImageSelect} />
+              <button type="button" onClick={() => fileInputRef.current?.click()}
+                className="p-1.5 text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+                title="Upload image"
+              >
+                <Image className="w-4 h-4" />
+              </button>
+
+              {/* File attachment */}
+              <button type="button" onClick={() => fileInputRef.current?.click()}
                 className="p-1.5 text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
                 title="Attach file"
               >
                 <Paperclip className="w-4 h-4" />
+              </button>
+
+              {/* Voice recording */}
+              <button type="button"
+                onClick={isRecording ? stopRecording : (voiceBlob ? undefined : startRecording)}
+                className={cn(
+                  "p-1.5 transition-colors",
+                  isRecording
+                    ? "text-red-500 hover:text-red-600 hover:bg-red-50"
+                    : voiceBlob
+                    ? "text-primary opacity-50 cursor-default"
+                    : "text-muted-foreground hover:text-foreground hover:bg-muted"
+                )}
+                title={isRecording ? "Stop recording" : voiceBlob ? "Recording attached" : "Record voice message"}
+              >
+                <Mic className="w-4 h-4" />
               </button>
 
               {/* Emoji picker */}
@@ -1755,7 +1948,7 @@ function ComposeArea({
             </div>
 
             {/* Send */}
-            <button type="submit" disabled={!text.trim()}
+            <button type="submit" disabled={!canSend}
               className="flex items-center gap-1.5 px-4 py-1.5 text-xs font-bold transition-all disabled:opacity-40 disabled:cursor-not-allowed bg-primary text-primary-foreground hover:bg-primary/90"
             >
               <Send className="w-3 h-3" />
