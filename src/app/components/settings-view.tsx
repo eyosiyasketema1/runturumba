@@ -28,7 +28,7 @@ const settingsNav = [
   { id: "notifications", label: "Notifications", icon: Bell, description: "Alert preferences" },
   { id: "security", label: "Security", icon: Shield, description: "Password & authentication" },
   { id: "api", label: "API & Integrations", icon: Key, description: "API keys & developer tools" },
-  { id: "ai", label: "AI Configuration", icon: Sparkles, description: "AI skillsets, logic & keys" },
+  { id: "ai", label: "AI Configuration", icon: Sparkles, description: "Business rules, API keys & sharing" },
   { id: "terminology", label: "Terminology", icon: Globe, description: "Customize labels & terms" },
 ];
 
@@ -1147,13 +1147,6 @@ const ApiSection = () => {
 };
 
 // --- AI Configuration Section ---
-type AISkillset = {
-  id: string;
-  name: string;
-  description: string;
-  enabled: boolean;
-};
-
 type AIProvider = {
   id: string;
   name: string;
@@ -1193,15 +1186,6 @@ type AIBusinessRule = {
   enabled: boolean;
 };
 
-const INITIAL_SKILLSETS: AISkillset[] = [
-  { id: "sk-1", name: "Seeker Conversation", description: "AI engages seekers in faith-based conversations, answers questions about Christianity, and guides them toward next steps.", enabled: true },
-  { id: "sk-2", name: "Content Generation", description: "Auto-generate devotionals, Bible studies, follow-up messages, and discipleship content tailored to each seeker's stage.", enabled: true },
-  { id: "sk-3", name: "Mentor Matching", description: "AI analyzes seeker profiles and mentor specialties to recommend optimal mentor-mentee pairings.", enabled: true },
-  { id: "sk-4", name: "Journey Personalization", description: "Personalize automation journey paths based on seeker behavior, engagement, and spiritual progress.", enabled: false },
-  { id: "sk-5", name: "Sentiment Analysis", description: "Detect emotional tone in seeker messages to flag those who may need urgent pastoral care or encouragement.", enabled: false },
-  { id: "sk-6", name: "Translation & Localization", description: "Auto-translate messages and content into the seeker's preferred language.", enabled: true },
-];
-
 const INITIAL_AI_KEYS: AIApiKey[] = [
   { id: "aik-1", provider: "openai", label: "Production GPT-4", key: "sk-proj-a1b2c3d4e5f6g7h8i9j0k1l2m3n4", addedAt: "Jan 10, 2026", active: true, verified: true, verifiedAt: "Jan 10, 2026", assignedFeatures: ["Classification", "Content Generation"] },
   { id: "aik-2", provider: "anthropic", label: "Claude Sonnet", key: "sk-ant-z9y8x7w6v5u4t3s2r1q0p9o8n7m6", addedAt: "Feb 5, 2026", active: true, verified: true, verifiedAt: "Feb 5, 2026", assignedFeatures: ["Chat", "Sentiment Analysis"] },
@@ -1217,12 +1201,10 @@ const INITIAL_RULES: AIBusinessRule[] = [
 ];
 
 const AISection = () => {
-  const [skillsets, setSkillsets] = useState<AISkillset[]>(INITIAL_SKILLSETS);
   const [aiKeys, setAiKeys] = useState<AIApiKey[]>(INITIAL_AI_KEYS);
   const [rules, setRules] = useState<AIBusinessRule[]>(INITIAL_RULES);
   const [sharedAI, setSharedAI] = useState(false);
   const [showAddKey, setShowAddKey] = useState(false);
-  const [showAddSkill, setShowAddSkill] = useState(false);
   const [showAddRule, setShowAddRule] = useState(false);
   const [showKeyValues, setShowKeyValues] = useState<Record<string, boolean>>({});
 
@@ -1235,8 +1217,6 @@ const AISection = () => {
   const [verifyError, setVerifyError] = useState("");
   const [newKeyFeatures, setNewKeyFeatures] = useState<string[]>([]);
 
-  const [newSkillName, setNewSkillName] = useState("");
-  const [newSkillDesc, setNewSkillDesc] = useState("");
   const [newRuleText, setNewRuleText] = useState("");
 
   const selectedProvider = AI_PROVIDERS.find(p => p.id === newKeyProvider);
@@ -1347,13 +1327,6 @@ const AISection = () => {
     toast.success("Provider updated");
   };
 
-  const addSkillset = () => {
-    if (!newSkillName.trim()) { toast.error("Skillset name is required"); return; }
-    setSkillsets(prev => [...prev, { id: `sk-${Date.now()}`, name: newSkillName.trim(), description: newSkillDesc.trim(), enabled: true }]);
-    setNewSkillName(""); setNewSkillDesc(""); setShowAddSkill(false);
-    toast.success("Skillset added");
-  };
-
   const addRule = () => {
     if (!newRuleText.trim()) { toast.error("Rule description is required"); return; }
     setRules(prev => [...prev, { id: `r-${Date.now()}`, rule: newRuleText.trim(), enabled: true }]);
@@ -1368,60 +1341,8 @@ const AISection = () => {
       transition={{ duration: 0.25 }}
       className="space-y-6"
     >
-      <SectionHeader title="AI Configuration" description="Configure how AI is used across your organization — skillsets, business rules, API keys, and sharing." />
+      <SectionHeader title="AI Configuration" description="Configure how AI is used across your organization — business rules, API keys, and sharing." />
       <Separator />
-
-      {/* ── AI Skillsets ── */}
-      <Card>
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <Brain className="w-5 h-5 text-primary" />
-              <div>
-                <CardTitle className="text-base">AI Skillsets</CardTitle>
-                <CardDescription>Define what the AI is capable of doing in your ministry context.</CardDescription>
-              </div>
-            </div>
-            <Button size="sm" variant="outline" onClick={() => setShowAddSkill(!showAddSkill)}>
-              {showAddSkill ? <X className="w-3.5 h-3.5" /> : <Plus className="w-3.5 h-3.5" />}
-              {showAddSkill ? "Cancel" : "Add Skillset"}
-            </Button>
-          </div>
-        </CardHeader>
-        <CardContent className="space-y-3">
-          {showAddSkill && (
-            <div className="p-4 border border-dashed border-primary/30 rounded-lg bg-primary/5 space-y-3">
-              <FormField label="Skillset Name">
-                <Input value={newSkillName} onChange={e => setNewSkillName(e.target.value)} placeholder="e.g. Follow-up Automation" />
-              </FormField>
-              <FormField label="Description">
-                <Textarea value={newSkillDesc} onChange={e => setNewSkillDesc(e.target.value)} placeholder="Describe what this AI skillset does..." rows={2} />
-              </FormField>
-              <Button size="sm" onClick={addSkillset}><Check className="w-3.5 h-3.5" /> Add Skillset</Button>
-            </div>
-          )}
-          {skillsets.map(sk => (
-            <div key={sk.id} className="flex items-start justify-between gap-4 p-3 rounded-lg border border-border hover:bg-muted/30 transition-colors">
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2">
-                  <p className="text-sm font-semibold text-foreground">{sk.name}</p>
-                  <Badge variant={sk.enabled ? "default" : "secondary"} className="text-[10px]">{sk.enabled ? "Active" : "Disabled"}</Badge>
-                </div>
-                <p className="text-xs text-muted-foreground mt-0.5 leading-relaxed">{sk.description}</p>
-              </div>
-              <div className="flex items-center gap-2 shrink-0">
-                <Switch
-                  checked={sk.enabled}
-                  onCheckedChange={v => { setSkillsets(prev => prev.map(s => s.id === sk.id ? { ...s, enabled: v } : s)); toast.success(`${sk.name} ${v ? "enabled" : "disabled"}`); }}
-                />
-                <Button variant="ghost" size="sm" className="h-7 w-7 p-0 text-muted-foreground hover:text-red-500" onClick={() => { setSkillsets(prev => prev.filter(s => s.id !== sk.id)); toast.success("Skillset removed"); }}>
-                  <Trash2 className="w-3.5 h-3.5" />
-                </Button>
-              </div>
-            </div>
-          ))}
-        </CardContent>
-      </Card>
 
       {/* ── Business Logic Rules ── */}
       <Card>
@@ -1827,7 +1748,7 @@ const AISection = () => {
             <div className="space-y-1">
               <p className="text-sm font-semibold text-foreground">Enable Shared AI Usage</p>
               <p className="text-xs text-muted-foreground leading-relaxed max-w-md">
-                When enabled, child organizations inherit your AI skillsets, business rules, and API keys. They can use AI features without configuring their own keys.
+                When enabled, child organizations inherit your AI business rules and API keys. They can use AI features without configuring their own keys.
               </p>
             </div>
             <Switch
@@ -1839,11 +1760,9 @@ const AISection = () => {
             <div className="p-4 rounded-lg border border-violet-200 bg-violet-50 space-y-3">
               <p className="text-sm font-semibold text-violet-800">Sharing is active</p>
               <p className="text-xs text-violet-600 leading-relaxed">
-                All child organizations under your account now have access to your enabled AI skillsets and API keys. They will follow the same business rules you have defined above. Individual child orgs can still override specific settings if needed.
+                All child organizations under your account now have access to your AI configuration and API keys. They will follow the same business rules you have defined above. Individual child orgs can still override specific settings if needed.
               </p>
               <div className="flex items-center gap-4 text-xs text-violet-700">
-                <span className="font-semibold">{skillsets.filter(s => s.enabled).length} active skillsets shared</span>
-                <span>·</span>
                 <span className="font-semibold">{aiKeys.filter(k => k.active).length} API keys shared</span>
                 <span>·</span>
                 <span className="font-semibold">{rules.filter(r => r.enabled).length} rules enforced</span>

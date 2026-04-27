@@ -5,7 +5,7 @@ import {
   Trash2, Edit2, Check, Building2,
   ShieldCheck, UserCheck, ArrowRight, Download, Tag,
   FileText, FileSpreadsheet, AlertTriangle, Crown,
-  Zap, Settings2, ListFilter,
+  Zap, Settings2, ListFilter, Brain,
   Phone, Mail, StickyNote, BarChart3, Send,
   Globe, CreditCard, UserPlus, Info, Radio,
   UserSearch, Shield, GitBranch, Route, Library, Flag,
@@ -57,6 +57,7 @@ import { NewMessageFlow } from "./components/new-message-flow";
 import { TeamManagement } from "./components/organization-user-crud";
 import { ChannelsView } from "./components/channels-view";
 import { AutomationView } from "./components/automation-view";
+import { SkillSetsView } from "./components/skillsets-view";
 import { OnboardingFlow } from "./components/onboarding-flow";
 
 import { ConversationView } from "./components/conversation-view";
@@ -88,9 +89,9 @@ const ROLE_OPTIONS: { id: ViewRole; label: string; description: string; icon: an
 // Which views each role can access. Views omitted from a role's list are
 // hidden from the sidebar and blocked from being navigated to.
 const ROLE_VIEW_ACCESS: Record<ViewRole, string[]> = {
-  super_admin:     ["dashboard", "contacts", "messages", "conversations", "seekers", "mentors", "matches", "faith_journeys", "milestones", "channels", "automations", "content_library", "growth_metrics", "vital_analytics", "reporting", "validations", "team", "settings"],
-  admin:           ["dashboard", "contacts", "messages", "conversations", "seekers", "mentors", "matches", "faith_journeys", "milestones", "channels", "automations", "content_library", "growth_metrics", "vital_analytics", "reporting", "validations", "team", "settings"],
-  mentor_coach:    ["dashboard", "messages", "conversations", "seekers", "mentors", "matches", "faith_journeys", "milestones", "content_library", "growth_metrics", "vital_analytics", "reporting", "validations"],
+  super_admin:     ["dashboard", "contacts", "messages", "conversations", "seekers", "mentors", "matches", "faith_journeys", "milestones", "channels", "automations", "skill_sets", "content_library", "growth_metrics", "vital_analytics", "reporting", "validations", "team", "settings"],
+  admin:           ["dashboard", "contacts", "messages", "conversations", "seekers", "mentors", "matches", "faith_journeys", "milestones", "channels", "automations", "skill_sets", "content_library", "growth_metrics", "vital_analytics", "reporting", "validations", "team", "settings"],
+  mentor_coach:    ["dashboard", "messages", "conversations", "seekers", "mentors", "matches", "faith_journeys", "milestones", "skill_sets", "content_library", "growth_metrics", "vital_analytics", "reporting", "validations"],
   content_creator: ["dashboard", "content_library"],
   mentor:          ["dashboard", "contacts", "messages", "conversations", "seekers", "matches", "faith_journeys", "milestones", "content_library"],
 };
@@ -199,6 +200,7 @@ export default function App() {
       items: [
         { id: "channels",        name: "Channels",        icon: Radio },
         { id: "automations",     name: "Automations",     icon: Zap },
+        { id: "skill_sets",      name: "Skill Sets",      icon: Brain },
         { id: "content_library", name: "Content Library", icon: Library },
       ]
     },
@@ -1108,6 +1110,11 @@ export default function App() {
                     setWebhooks(prev => prev.map(w => w.id === id ? { ...w, ...data } : w));
                   }}
                 />
+              </motion.div>
+            )}
+            {currentView === "skill_sets" && (
+              <motion.div key="skill_sets" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.2 }}>
+                <SkillSetsView />
               </motion.div>
             )}
 
