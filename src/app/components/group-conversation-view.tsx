@@ -30,6 +30,8 @@ import {
   Download,
   Trash2,
   Edit2,
+  Check,
+  CheckCheck,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { cn } from './types';
