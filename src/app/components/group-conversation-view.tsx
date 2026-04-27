@@ -939,24 +939,54 @@ function GroupInfoPanel({
   );
 }
 
-// Message Actions — Reaction icon + Context menu icon
-interface MessageActionsProps {
-  message: Message;
-  isSender: boolean;
-  onReact: (emoji: string) => void;
-  onReply: () => void;
-  onCopy: () => void;
-  onPin: () => void;
-  onForward: () => void;
-  onSelect: () => void;
-  onReport: () => void;
-  onDelete: () => void;
-}
-
-function MessageActions({
-  message,
+// Inline Emoji Reaction Picker (shown when smiley icon clicked)
+function EmojiReactionPicker({
   isSender,
   onReact,
+  onClose,
+}: {
+  isSender: boolean;
+  onReact: (emoji: string) => void;
+  onClose: () => void;
+}) {
+  const reactions = ['❤️', '🙏', '😂', '👍', '🔥', '🎉', '😢', '😮'];
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    function handler(e: MouseEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) onClose();
+    }
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, [onClose]);
+
+  return (
+    <div
+      ref={ref}
+      className={cn(
+        'absolute bottom-full mb-2 bg-background border border-border rounded-xl shadow-xl p-2 z-[70] whitespace-nowrap',
+        isSender ? 'right-0' : 'left-0'
+      )}
+    >
+      <div className="flex gap-1">
+        {reactions.map((emoji) => (
+          <button
+            key={emoji}
+            onClick={() => { onReact(emoji); onClose(); }}
+            className="p-1.5 hover:bg-muted rounded-lg text-base transition-all hover:scale-125 cursor-pointer"
+          >
+            {emoji}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// Context Menu Dropdown (shown when ⋮ icon clicked)
+function MessageContextMenu({
+  message,
+  isSender,
   onReply,
   onCopy,
   onPin,
@@ -964,27 +994,28 @@ function MessageActions({
   onSelect,
   onReport,
   onDelete,
-}: MessageActionsProps) {
-  const [showReactionPicker, setShowReactionPicker] = useState(false);
-  const [showContextMenu, setShowContextMenu] = useState(false);
-  const reactionRef = useRef<HTMLDivElement>(null);
-  const menuRef = useRef<HTMLDivElement>(null);
+  onClose,
+}: {
+  message: Message;
+  isSender: boolean;
+  onReply: () => void;
+  onCopy: () => void;
+  onPin: () => void;
+  onForward: () => void;
+  onSelect: () => void;
+  onReport: () => void;
+  onDelete: () => void;
+  onClose: () => void;
+}) {
+  const ref = useRef<HTMLDivElement>(null);
 
-  const reactions = ['❤️', '🙏', '😂', '👍', '🔥', '🎉', '😢', '😮'];
-
-  // Close popups when clicking outside
   useEffect(() => {
-    function handleClickOutside(e: MouseEvent) {
-      if (reactionRef.current && !reactionRef.current.contains(e.target as Node)) {
-        setShowReactionPicker(false);
-      }
-      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
-        setShowContextMenu(false);
-      }
+    function handler(e: MouseEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) onClose();
     }
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, [onClose]);
 
   const menuItems = [
     { icon: Reply, label: 'Reply', action: onReply, destructive: false },
@@ -997,121 +1028,38 @@ function MessageActions({
   ];
 
   return (
-    <motion.div
-      initial={{ opacity: 0, scale: 0.9 }}
-      animate={{ opacity: 1, scale: 1 }}
-      exit={{ opacity: 0, scale: 0.9 }}
-      transition={{ duration: 0.12 }}
+    <div
+      ref={ref}
       className={cn(
-        'absolute -top-9 z-50 flex items-center gap-0.5 bg-background border border-border rounded-lg shadow-lg px-1 py-0.5',
-        isSender ? 'left-1' : 'right-1'
+        'absolute top-full mt-1 w-48 bg-background border border-border rounded-xl shadow-xl z-[70]',
+        isSender ? 'right-0' : 'left-0'
       )}
     >
-      {/* Reaction Button */}
-      <div className="relative" ref={reactionRef}>
-        <button
-          onClick={() => {
-            setShowReactionPicker(!showReactionPicker);
-            setShowContextMenu(false);
-          }}
-          className="p-1.5 rounded-full hover:bg-muted/80 text-muted-foreground hover:text-foreground transition-colors"
-          title="React"
-        >
-          <Smile className="h-4 w-4" />
-        </button>
-
-        {/* Emoji Reaction Picker */}
-        <AnimatePresence>
-          {showReactionPicker && (
-            <motion.div
-              initial={{ opacity: 0, y: 6, scale: 0.95 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              exit={{ opacity: 0, y: 6, scale: 0.95 }}
-              transition={{ duration: 0.15 }}
-              className={cn(
-                'absolute bottom-full mb-2 bg-background border border-border rounded-xl shadow-xl p-2 z-[60]',
-                isSender ? 'right-0' : 'left-0'
+      <div className="py-1.5">
+        {menuItems.map((item) => {
+          const Icon = item.icon;
+          return (
+            <React.Fragment key={item.label}>
+              {item.destructive && (
+                <div className="mx-2 my-1 border-t border-border" />
               )}
-            >
-              <div className="flex gap-1">
-                {reactions.map((emoji) => (
-                  <motion.button
-                    key={emoji}
-                    whileHover={{ scale: 1.25 }}
-                    whileTap={{ scale: 0.9 }}
-                    onClick={() => {
-                      onReact(emoji);
-                      setShowReactionPicker(false);
-                    }}
-                    className="p-1.5 hover:bg-muted rounded-lg text-base transition-colors cursor-pointer"
-                  >
-                    {emoji}
-                  </motion.button>
-                ))}
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
+              <button
+                onClick={() => { item.action(); onClose(); }}
+                className={cn(
+                  'w-full flex items-center gap-3 px-4 py-2.5 text-sm transition-colors',
+                  item.destructive
+                    ? 'text-destructive hover:bg-destructive/10'
+                    : 'text-foreground hover:bg-muted/60'
+                )}
+              >
+                <Icon className="h-4 w-4 flex-shrink-0" />
+                <span>{item.label}</span>
+              </button>
+            </React.Fragment>
+          );
+        })}
       </div>
-
-      {/* Context Menu Button */}
-      <div className="relative" ref={menuRef}>
-        <button
-          onClick={() => {
-            setShowContextMenu(!showContextMenu);
-            setShowReactionPicker(false);
-          }}
-          className="p-1.5 rounded-full hover:bg-muted/80 text-muted-foreground hover:text-foreground transition-colors"
-          title="More options"
-        >
-          <MoreVertical className="h-4 w-4" />
-        </button>
-
-        {/* Context Menu Dropdown */}
-        <AnimatePresence>
-          {showContextMenu && (
-            <motion.div
-              initial={{ opacity: 0, y: -4, scale: 0.95 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              exit={{ opacity: 0, y: -4, scale: 0.95 }}
-              transition={{ duration: 0.15 }}
-              className={cn(
-                'absolute top-full mt-1 w-48 bg-background border border-border rounded-xl shadow-xl overflow-hidden z-[60]',
-                isSender ? 'right-0' : 'left-0'
-              )}
-            >
-              <div className="py-1.5">
-                {menuItems.map((item, idx) => {
-                  const Icon = item.icon;
-                  return (
-                    <React.Fragment key={item.label}>
-                      {item.destructive && (
-                        <div className="mx-2 my-1 border-t border-border" />
-                      )}
-                      <button
-                        onClick={() => {
-                          item.action();
-                          setShowContextMenu(false);
-                        }}
-                        className={cn(
-                          'w-full flex items-center gap-3 px-4 py-2.5 text-sm transition-colors',
-                          item.destructive
-                            ? 'text-destructive hover:bg-destructive/8'
-                            : 'text-foreground hover:bg-muted/60'
-                        )}
-                      >
-                        <Icon className="h-4 w-4 flex-shrink-0" />
-                        <span>{item.label}</span>
-                      </button>
-                    </React.Fragment>
-                  );
-                })}
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </div>
-    </motion.div>
+    </div>
   );
 }
 
@@ -1125,31 +1073,17 @@ function ReactionsList({ reactions, onAddReaction }: ReactionsListProps) {
   if (!reactions || reactions.length === 0) return null;
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: -5 }}
-      animate={{ opacity: 1, y: 0 }}
-      className="flex flex-wrap gap-1 mt-2"
-    >
+    <div className="flex flex-wrap gap-1 mt-2">
       {reactions.map((reaction) => (
-        <motion.button
+        <button
           key={reaction.emoji}
-          whileHover={{ scale: 1.1 }}
-          whileTap={{ scale: 0.95 }}
           onClick={() => onAddReaction(reaction.emoji)}
-          className="px-2 py-1 rounded-full bg-muted/60 hover:bg-muted text-xs font-medium border border-border/50 transition-colors"
+          className="px-2 py-1 rounded-full bg-muted/60 hover:bg-muted text-xs font-medium border border-border/50 transition-colors hover:scale-105"
         >
           {reaction.emoji} {reaction.count}
-        </motion.button>
+        </button>
       ))}
-      <motion.button
-        whileHover={{ scale: 1.05 }}
-        whileTap={{ scale: 0.95 }}
-        onClick={() => onAddReaction('👍')}
-        className="px-2 py-1 rounded-full bg-muted/40 hover:bg-muted text-xs border border-border/30 transition-colors"
-      >
-        <Smile className="h-3 w-3 inline" />
-      </motion.button>
-    </motion.div>
+    </div>
   );
 }
 
@@ -1206,8 +1140,8 @@ export function GroupConversationView() {
   const [showGroupInfo, setShowGroupInfo] = useState(false);
   const [messageText, setMessageText] = useState('');
   const [isAnnouncing, setIsAnnouncing] = useState(false);
-  const [hoveredMessageId, setHoveredMessageId] = useState<string | null>(null);
-  const [showEmojiPicker, setShowEmojiPicker] = useState<string | null>(null);
+  const [activeReactionMsgId, setActiveReactionMsgId] = useState<string | null>(null);
+  const [activeMenuMsgId, setActiveMenuMsgId] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
@@ -1617,7 +1551,7 @@ export function GroupConversationView() {
             {/* Messages Area */}
             <div
               ref={scrollContainerRef}
-              className="flex-1 overflow-y-auto overflow-x-hidden px-6 pt-10 pb-5 space-y-6"
+              className="flex-1 overflow-y-auto px-6 py-5 space-y-6"
             >
               {messageGroups.map((group, groupIdx) => (
                 <div key={`group-${groupIdx}`}>
@@ -1670,14 +1604,10 @@ export function GroupConversationView() {
                       const isAnnouncement = msg.isAnnouncement;
 
                       return (
-                        <motion.div
+                        <div
                           key={msg.id}
-                          initial={{ opacity: 0, y: 10 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          onMouseEnter={() => setHoveredMessageId(msg.id)}
-                          onMouseLeave={() => setHoveredMessageId(null)}
                           className={cn(
-                            'flex gap-3 group relative overflow-visible',
+                            'group/msg flex gap-3 relative',
                             isSender && 'flex-row-reverse'
                           )}
                         >
@@ -1719,14 +1649,17 @@ export function GroupConversationView() {
                               </div>
                             )}
 
-                            {/* Message Bubble with Hover Actions */}
-                            <div className="relative">
-                              <motion.div
-                                whileHover={{ scale: 1.01 }}
+                            {/* Bubble row: action icons + bubble */}
+                            <div className={cn(
+                              'flex items-start gap-1',
+                              isSender && 'flex-row-reverse'
+                            )}>
+                              {/* Message Bubble */}
+                              <div
                                 className={cn(
-                                  'px-4 py-3 rounded-2xl break-words shadow-sm transition-all',
+                                  'px-4 py-3 rounded-2xl break-words shadow-sm',
                                   isAnnouncement
-                                    ? 'bg-amber-50 border border-amber-200 text-foreground w-full'
+                                    ? 'bg-amber-50 border border-amber-200 text-foreground'
                                     : isSender
                                     ? 'bg-primary text-primary-foreground rounded-tr-sm'
                                     : 'bg-card border border-border rounded-tl-sm'
@@ -1758,28 +1691,65 @@ export function GroupConversationView() {
                                     )}
                                   </div>
                                 </div>
-                              </motion.div>
+                              </div>
 
-                              {/* Hover Action Buttons — Reaction + Menu */}
-                              <AnimatePresence>
-                                {hoveredMessageId === msg.id && (
-                                  <MessageActions
-                                    message={msg}
-                                    isSender={isSender}
-                                    onReact={(emoji) => handleAddReaction(msg.id, emoji)}
-                                    onReply={() => toast.info(`Replying to ${msg.senderName}`)}
-                                    onCopy={() => {
-                                      navigator.clipboard.writeText(msg.content);
-                                      toast.success('Copied to clipboard');
+                              {/* Action Icons — visible on hover */}
+                              <div className={cn(
+                                'flex items-center gap-0.5 pt-2 opacity-0 group-hover/msg:opacity-100 transition-opacity',
+                                (activeReactionMsgId === msg.id || activeMenuMsgId === msg.id) && 'opacity-100'
+                              )}>
+                                {/* Reaction smiley */}
+                                <div className="relative">
+                                  <button
+                                    onClick={() => {
+                                      setActiveReactionMsgId(activeReactionMsgId === msg.id ? null : msg.id);
+                                      setActiveMenuMsgId(null);
                                     }}
-                                    onPin={() => handlePinMessage(msg.id)}
-                                    onForward={() => toast.info('Forward — coming soon')}
-                                    onSelect={() => toast.info('Select mode — coming soon')}
-                                    onReport={() => toast.info('Message reported')}
-                                    onDelete={() => handleDeleteMessage(msg.id)}
-                                  />
-                                )}
-                              </AnimatePresence>
+                                    className="p-1.5 rounded-full hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
+                                    title="React"
+                                  >
+                                    <Smile className="h-4 w-4" />
+                                  </button>
+                                  {activeReactionMsgId === msg.id && (
+                                    <EmojiReactionPicker
+                                      isSender={isSender}
+                                      onReact={(emoji) => handleAddReaction(msg.id, emoji)}
+                                      onClose={() => setActiveReactionMsgId(null)}
+                                    />
+                                  )}
+                                </div>
+
+                                {/* Context menu ⋮ */}
+                                <div className="relative">
+                                  <button
+                                    onClick={() => {
+                                      setActiveMenuMsgId(activeMenuMsgId === msg.id ? null : msg.id);
+                                      setActiveReactionMsgId(null);
+                                    }}
+                                    className="p-1.5 rounded-full hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
+                                    title="More options"
+                                  >
+                                    <MoreVertical className="h-4 w-4" />
+                                  </button>
+                                  {activeMenuMsgId === msg.id && (
+                                    <MessageContextMenu
+                                      message={msg}
+                                      isSender={isSender}
+                                      onReply={() => toast.info(`Replying to ${msg.senderName}`)}
+                                      onCopy={() => {
+                                        navigator.clipboard.writeText(msg.content);
+                                        toast.success('Copied to clipboard');
+                                      }}
+                                      onPin={() => handlePinMessage(msg.id)}
+                                      onForward={() => toast.info('Forward — coming soon')}
+                                      onSelect={() => toast.info('Select mode — coming soon')}
+                                      onReport={() => toast.info('Message reported')}
+                                      onDelete={() => handleDeleteMessage(msg.id)}
+                                      onClose={() => setActiveMenuMsgId(null)}
+                                    />
+                                  )}
+                                </div>
+                              </div>
                             </div>
 
                             {/* Forwarded Label */}
@@ -1810,8 +1780,7 @@ export function GroupConversationView() {
                               onAddReaction={(emoji) => handleAddReaction(msg.id, emoji)}
                             />
                           </div>
-
-                        </motion.div>
+                        </div>
                       );
                     })}
                   </div>
