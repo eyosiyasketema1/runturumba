@@ -58,6 +58,7 @@ import { TeamManagement } from "./components/organization-user-crud";
 import { ChannelsView } from "./components/channels-view";
 import { AutomationView } from "./components/automation-view";
 import { SkillSetsView } from "./components/skillsets-view";
+import { GroupConversationView } from "./components/group-conversation-view";
 import { OnboardingFlow } from "./components/onboarding-flow";
 
 import { ConversationView } from "./components/conversation-view";
@@ -105,6 +106,7 @@ export default function App() {
   const [dashboardTab, setDashboardTab] = useState<"main" | "discipleship" | "collective">("main");
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
+  const [conversationTab, setConversationTab] = useState<"direct" | "groups">("direct");
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
   const [isNewMessageFlowOpen, setIsNewMessageFlowOpen] = useState(false);
   const [viewMode, setViewMode] = useState<ViewRole>("super_admin");
@@ -825,55 +827,81 @@ export default function App() {
               </motion.div>
             )}
             {currentView === "conversations" && (
-              <motion.div key="conversations" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.2 }} className="h-full">
-                <ConversationView
-                  contacts={contacts}
-                  messages={messages}
-                  notes={notes}
-                  users={users}
-                  currentUser={currentUser}
-                  onSendMessage={handleSendMessage}
-                  conversationRules={conversationRules}
-                  chatEndpoints={chatEndpoints}
-                  groups={groups}
-                  teamGroups={teamGroups}
-                  viewMode={viewMode}
-                  faithJourneys={faithJourneys}
-                  contactMilestones={contactMilestones}
-                  matches={matches}
-                  contentLibrary={contentLibrary}
-                  onUpdateContact={handleUpdateContact}
-                  onUpdateJourney={handleUpdateJourney}
-                  onLogMilestone={handleLogMilestone}
-                  onUpdateMatch={handleUpdateMatch}
-                  onAddNote={(content: string, contactId: string) => {
-                    const newNote: ContactNote = { id: `note-${Date.now()}`, contactId, authorId: currentUser.id, content, createdAt: new Date().toISOString() };
-                    setNotes(prev => [newNote, ...prev]);
-                  }}
-                  onDeleteNote={(id: string) => setNotes(prev => prev.filter(n => n.id !== id))}
-                  reassignRequests={reassignRequests}
-                  onRequestReassign={handleRequestReassign}
-                  onApproveReassign={handleApproveReassign}
-                  onRejectReassign={handleRejectReassign}
-                  onAddRule={(data) => {
-                    const newRule: ConversationRule = {
-                      ...data as any,
-                      id: `rule-${Date.now()}`,
-                      tenantId: activeTenant.id,
-                      createdAt: new Date().toISOString(),
-                    };
-                    setConversationRules(prev => [...prev, newRule]);
-                  }}
-                  onUpdateRule={(id, data) => {
-                    setConversationRules(prev => prev.map(r => r.id === id ? { ...r, ...data } : r));
-                  }}
-                  onDeleteRule={(id) => {
-                    setConversationRules(prev => prev.filter(r => r.id !== id));
-                  }}
-                  onReorderRules={(rules) => {
-                    setConversationRules(rules);
-                  }}
-                />
+              <motion.div key="conversations" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.2 }} className="h-full flex flex-col">
+                {/* Direct / Groups tab switcher */}
+                <div className="shrink-0 flex items-center gap-1 px-6 pt-3 pb-0 bg-background">
+                  {(["direct", "groups"] as const).map(tab => (
+                    <button
+                      key={tab}
+                      onClick={() => setConversationTab(tab)}
+                      className={cn(
+                        "px-4 py-2 text-sm font-semibold rounded-t-lg transition-colors border-b-2",
+                        conversationTab === tab
+                          ? "border-primary text-primary bg-primary/5"
+                          : "border-transparent text-muted-foreground hover:text-foreground hover:bg-muted/30"
+                      )}
+                    >
+                      {tab === "direct" ? "Direct" : "Groups"}
+                    </button>
+                  ))}
+                </div>
+
+                {conversationTab === "direct" ? (
+                  <div className="flex-1 overflow-hidden">
+                    <ConversationView
+                      contacts={contacts}
+                      messages={messages}
+                      notes={notes}
+                      users={users}
+                      currentUser={currentUser}
+                      onSendMessage={handleSendMessage}
+                      conversationRules={conversationRules}
+                      chatEndpoints={chatEndpoints}
+                      groups={groups}
+                      teamGroups={teamGroups}
+                      viewMode={viewMode}
+                      faithJourneys={faithJourneys}
+                      contactMilestones={contactMilestones}
+                      matches={matches}
+                      contentLibrary={contentLibrary}
+                      onUpdateContact={handleUpdateContact}
+                      onUpdateJourney={handleUpdateJourney}
+                      onLogMilestone={handleLogMilestone}
+                      onUpdateMatch={handleUpdateMatch}
+                      onAddNote={(content: string, contactId: string) => {
+                        const newNote: ContactNote = { id: `note-${Date.now()}`, contactId, authorId: currentUser.id, content, createdAt: new Date().toISOString() };
+                        setNotes(prev => [newNote, ...prev]);
+                      }}
+                      onDeleteNote={(id: string) => setNotes(prev => prev.filter(n => n.id !== id))}
+                      reassignRequests={reassignRequests}
+                      onRequestReassign={handleRequestReassign}
+                      onApproveReassign={handleApproveReassign}
+                      onRejectReassign={handleRejectReassign}
+                      onAddRule={(data) => {
+                        const newRule: ConversationRule = {
+                          ...data as any,
+                          id: `rule-${Date.now()}`,
+                          tenantId: activeTenant.id,
+                          createdAt: new Date().toISOString(),
+                        };
+                        setConversationRules(prev => [...prev, newRule]);
+                      }}
+                      onUpdateRule={(id, data) => {
+                        setConversationRules(prev => prev.map(r => r.id === id ? { ...r, ...data } : r));
+                      }}
+                      onDeleteRule={(id) => {
+                        setConversationRules(prev => prev.filter(r => r.id !== id));
+                      }}
+                      onReorderRules={(rules) => {
+                        setConversationRules(rules);
+                      }}
+                    />
+                  </div>
+                ) : (
+                  <div className="flex-1 overflow-hidden">
+                    <GroupConversationView />
+                  </div>
+                )}
               </motion.div>
             )}
             {currentView === "contacts" && (
