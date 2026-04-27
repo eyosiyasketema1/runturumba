@@ -1773,13 +1773,13 @@ const ALL_STRENGTHS  = ["Empathy", "Bible knowledge", "Prayer", "Patience", "Cou
 const DEFAULT_FORM_FIELDS: FormFieldDef[] = [
   { id: "df-name",       type: "text",           label: "Full Name",           required: true },
   { id: "df-email",      type: "email",          label: "Email Address",       required: true },
-  { id: "df-phone",      type: "phone",          label: "Phone Number",        required: false },
+  { id: "df-phone",      type: "phone",          label: "Phone Number",        required: true },
   { id: "df-gender",     type: "select",         label: "Gender",              required: true, options: ["Male", "Female"] },
   { id: "df-specialty",  type: "checkbox_group",  label: "Area of Specialty",   required: true, options: [...ALL_SPECIALTIES] },
   { id: "df-experience", type: "select",         label: "Experience Level",    required: true, options: [...EXPERIENCE_LEVELS] },
   { id: "df-languages",  type: "checkbox_group",  label: "Languages",           required: true, options: ALL_LANGUAGES.map(l => l.label) },
-  { id: "df-strengths",  type: "checkbox_group",  label: "Key Strengths",       required: false, options: [...ALL_STRENGTHS] },
-  { id: "df-bio",        type: "textarea",       label: "Brief Bio / Testimony", required: false },
+  { id: "df-strengths",  type: "checkbox_group",  label: "Key Strengths",       required: true, options: [...ALL_STRENGTHS] },
+  { id: "df-bio",        type: "textarea",       label: "Brief Bio / Testimony", required: true },
 ];
 
 // ── Mentor Groups types & data ──
