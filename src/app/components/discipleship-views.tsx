@@ -652,32 +652,78 @@ function QuickAction({
 }
 
 // ============================================================================
-// IMPORT MODAL (shared by Seekers & Mentors)
+// IMPORT MODAL — Template-based (shared by Seekers & Mentors)
 // ============================================================================
 
-type ImportField = { key: string; label: string; required?: boolean };
+type ImportField = { key: string; label: string; required?: boolean; example?: string; example2?: string; example3?: string };
 
 const SEEKER_IMPORT_FIELDS: ImportField[] = [
-  { key: "name", label: "Full Name", required: true },
-  { key: "email", label: "Email Address", required: true },
-  { key: "maturity", label: "Maturity Level" },
-  { key: "campaign", label: "Campaign / Program" },
-  { key: "status", label: "Status" },
+  { key: "name",     label: "Full Name",          required: true,  example: "Sarah Abebe",      example2: "David Kebede",    example3: "Miriam Tadesse" },
+  { key: "email",    label: "Email Address",       required: true,  example: "sarah@email.com",  example2: "david.k@email.com", example3: "miriam.t@email.com" },
+  { key: "maturity", label: "Maturity Level",      example: "New Believer",   example2: "Seeker",          example3: "Interested" },
+  { key: "campaign", label: "Campaign / Program",  example: "Foundations of Faith", example2: "Salvation Basics", example3: "" },
+  { key: "status",   label: "Status",              example: "Active",         example2: "Active",          example3: "Pending" },
 ];
 
 const MENTOR_IMPORT_FIELDS: ImportField[] = [
-  { key: "name", label: "Full Name", required: true },
-  { key: "email", label: "Email Address", required: true },
-  { key: "specialty", label: "Area of Specialty" },
-  { key: "experience", label: "Experience Level" },
-  { key: "gender", label: "Gender" },
-  { key: "languages", label: "Languages" },
-  { key: "strengths", label: "Key Strengths" },
-  { key: "bio", label: "Brief Bio" },
-  { key: "capacity", label: "Capacity (e.g. 0/5)" },
+  { key: "name",       label: "Full Name",          required: true,  example: "Pastor Yohannes",    example2: "Sister Ruth",     example3: "Brother Elias" },
+  { key: "email",      label: "Email Address",       required: true,  example: "yohannes@church.org", example2: "ruth@church.org", example3: "elias@church.org" },
+  { key: "specialty",  label: "Area of Specialty",   example: "Discipleship",     example2: "Youth Ministry",  example3: "Worship" },
+  { key: "experience", label: "Experience Level",    example: "Senior",           example2: "Mid-level",       example3: "Junior" },
+  { key: "gender",     label: "Gender",              example: "Male",             example2: "Female",          example3: "Male" },
+  { key: "languages",  label: "Languages",           example: "Amharic, English", example2: "English",         example3: "Amharic, Tigrinya" },
+  { key: "strengths",  label: "Key Strengths",       example: "Teaching, Prayer", example2: "Counseling",      example3: "Leadership" },
+  { key: "bio",        label: "Brief Bio",           example: "10 years in ministry", example2: "Youth leader since 2019", example3: "Worship team coordinator" },
+  { key: "capacity",   label: "Capacity (e.g. 0/5)", example: "0/5",              example2: "2/5",             example3: "1/3" },
 ];
 
 type ImportRow = Record<string, string>;
+
+/** Generate CSV content from fields with example rows */
+function generateTemplateCSV(fields: ImportField[]): string {
+  const header = fields.map(f => f.label + (f.required ? " *" : "")).join(",");
+  const row1 = fields.map(f => f.example || "").join(",");
+  const row2 = fields.map(f => f.example2 || "").join(",");
+  const row3 = fields.map(f => f.example3 || "").join(",");
+  return [header, row1, row2, row3].join("\n");
+}
+
+/** Trigger browser download of a text file */
+function downloadFile(content: string, filename: string, mimeType: string) {
+  const blob = new Blob([content], { type: mimeType });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+/** Generate Excel XML (SpreadsheetML) content with headers + example rows */
+function generateTemplateExcel(fields: ImportField[]): string {
+  const escXml = (s: string) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  const headerCells = fields.map(f => `<Cell ss:StyleID="Header"><Data ss:Type="String">${escXml(f.label + (f.required ? " *" : ""))}</Data></Cell>`).join("");
+  const makeRow = (exKey: "example" | "example2" | "example3") =>
+    fields.map(f => `<Cell><Data ss:Type="String">${escXml(f[exKey] || "")}</Data></Cell>`).join("");
+  return `<?xml version="1.0" encoding="UTF-8"?>
+<?mso-application progid="Excel.Sheet"?>
+<Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet"
+ xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet">
+<Styles>
+  <Style ss:ID="Header"><Font ss:Bold="1"/><Interior ss:Color="#E2E8F0" ss:Pattern="Solid"/></Style>
+</Styles>
+<Worksheet ss:Name="Import Template">
+<Table>
+  <Row>${headerCells}</Row>
+  <Row>${makeRow("example")}</Row>
+  <Row>${makeRow("example2")}</Row>
+  <Row>${makeRow("example3")}</Row>
+</Table>
+</Worksheet>
+</Workbook>`;
+}
 
 function ImportModal({
   isOpen, onClose, entityType, fields, onImport,
@@ -687,62 +733,86 @@ function ImportModal({
   fields: ImportField[];
   onImport: (rows: ImportRow[]) => void;
 }) {
-  const [step, setStep] = useState<"upload" | "mapping" | "preview">("upload");
+  const [step, setStep] = useState<"template" | "upload" | "preview">("template");
   const [fileName, setFileName] = useState("");
-  const [rawRows, setRawRows] = useState<ImportRow[]>([]);
-  const [headers, setHeaders] = useState<string[]>([]);
-  const [mapping, setMapping] = useState<Record<string, string>>({});
+  const [parsedRows, setParsedRows] = useState<ImportRow[]>([]);
   const [errors, setErrors] = useState<string[]>([]);
+  const [templateDownloaded, setTemplateDownloaded] = useState(false);
 
-  const reset = () => { setStep("upload"); setFileName(""); setRawRows([]); setHeaders([]); setMapping({}); setErrors([]); };
+  const reset = () => { setStep("template"); setFileName(""); setParsedRows([]); setErrors([]); setTemplateDownloaded(false); };
   const handleClose = () => { reset(); onClose(); };
+
+  const entityLabel = entityType === "seekers" ? "Seekers" : "Mentors";
+
+  // Strip " *" suffix and normalize for matching
+  const normalizeHeader = (h: string) => h.replace(/\s*\*$/, "").trim().toLowerCase().replace(/[_\s/()]/g, "");
 
   const parseCSV = (text: string) => {
     const lines = text.split(/\r?\n/).filter(l => l.trim());
     if (lines.length < 2) { setErrors(["File must have a header row and at least one data row."]); return; }
-    const hdrs = lines[0].split(",").map(h => h.trim().replace(/^"|"$/g, ""));
-    setHeaders(hdrs);
-    const rows = lines.slice(1).map(line => {
+    const rawHeaders = lines[0].split(",").map(h => h.trim().replace(/^"|"$/g, ""));
+
+    // Match headers to field keys
+    const headerToKey: Record<number, string> = {};
+    rawHeaders.forEach((h, idx) => {
+      const norm = normalizeHeader(h);
+      const field = fields.find(f => normalizeHeader(f.label) === norm || f.key.toLowerCase() === norm);
+      if (field) headerToKey[idx] = field.key;
+    });
+
+    // Check required fields are present
+    const missingRequired = fields.filter(f => f.required).filter(f => !Object.values(headerToKey).includes(f.key));
+    if (missingRequired.length > 0) {
+      setErrors([
+        `Missing required column${missingRequired.length > 1 ? "s" : ""}: ${missingRequired.map(f => `"${f.label}"`).join(", ")}`,
+        "Please use the provided template to ensure all required columns are present.",
+      ]);
+      return;
+    }
+
+    // Parse data rows (skip rows that look like examples from template)
+    const dataRows = lines.slice(1).map(line => {
       const vals = line.split(",").map(v => v.trim().replace(/^"|"$/g, ""));
       const row: ImportRow = {};
-      hdrs.forEach((h, i) => { row[h] = vals[i] || ""; });
+      Object.entries(headerToKey).forEach(([idxStr, key]) => {
+        row[key] = vals[parseInt(idxStr)] || "";
+      });
       return row;
     });
-    setRawRows(rows);
-    // auto-map by fuzzy match
-    const autoMap: Record<string, string> = {};
-    fields.forEach(f => {
-      const match = hdrs.find(h => h.toLowerCase().replace(/[_\s]/g, "") === f.key.toLowerCase().replace(/[_\s]/g, ""))
-        || hdrs.find(h => h.toLowerCase().includes(f.key.toLowerCase()))
-        || hdrs.find(h => f.label.toLowerCase().includes(h.toLowerCase()));
-      if (match) autoMap[f.key] = match;
-    });
-    setMapping(autoMap);
-    setStep("mapping");
+
+    // Filter out the template example rows by checking if they match example data exactly
+    const exampleNames = fields.find(f => f.key === "name");
+    const exampleValues = [exampleNames?.example, exampleNames?.example2, exampleNames?.example3].filter(Boolean);
+    const realRows = dataRows.filter(r => !exampleValues.includes(r.name?.trim()));
+
+    if (realRows.length === 0) {
+      setErrors(["No data rows found. Please remove the example rows and add your own data."]);
+      return;
+    }
+
+    setParsedRows(realRows);
     setErrors([]);
+    setStep("preview");
   };
 
   const handleFile = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
     setFileName(file.name);
+    setErrors([]);
     const ext = file.name.split(".").pop()?.toLowerCase();
     if (ext === "csv" || ext === "txt") {
       const reader = new FileReader();
       reader.onload = (ev) => parseCSV(ev.target?.result as string);
       reader.readAsText(file);
-    } else if (ext === "xlsx" || ext === "xls") {
-      // For demo: we simulate parsing Excel by reading as CSV-like
-      // In production you'd use SheetJS here
-      setErrors([]);
+    } else if (ext === "xlsx" || ext === "xls" || ext === "xml") {
       const reader = new FileReader();
       reader.onload = (ev) => {
         try {
-          // Simulate reading first sheet as CSV text
           const text = ev.target?.result as string;
           parseCSV(text);
         } catch {
-          setErrors(["Could not parse Excel file. Please try exporting as CSV."]);
+          setErrors(["Could not parse file. Please try exporting as CSV."]);
         }
       };
       reader.readAsText(file);
@@ -751,27 +821,8 @@ function ImportModal({
     }
   };
 
-  const goToPreview = () => {
-    const errs: string[] = [];
-    fields.filter(f => f.required).forEach(f => {
-      if (!mapping[f.key]) errs.push(`"${f.label}" is required and must be mapped.`);
-    });
-    if (errs.length) { setErrors(errs); return; }
-    setErrors([]);
-    setStep("preview");
-  };
-
-  const mappedRows = rawRows.map(row => {
-    const mapped: ImportRow = {};
-    fields.forEach(f => {
-      const hdr = mapping[f.key];
-      mapped[f.key] = hdr ? (row[hdr] || "") : "";
-    });
-    return mapped;
-  });
-
-  const validRows = mappedRows.filter(r => fields.filter(f => f.required).every(f => r[f.key]?.trim()));
-  const invalidCount = mappedRows.length - validRows.length;
+  const validRows = parsedRows.filter(r => fields.filter(f => f.required).every(f => r[f.key]?.trim()));
+  const invalidCount = parsedRows.length - validRows.length;
 
   const handleImport = () => {
     if (validRows.length === 0) { setErrors(["No valid rows to import."]); return; }
@@ -780,21 +831,38 @@ function ImportModal({
     handleClose();
   };
 
+  const downloadCSVTemplate = () => {
+    const csv = generateTemplateCSV(fields);
+    downloadFile(csv, `${entityType}_import_template.csv`, "text/csv");
+    setTemplateDownloaded(true);
+  };
+
+  const downloadExcelTemplate = () => {
+    const xml = generateTemplateExcel(fields);
+    downloadFile(xml, `${entityType}_import_template.xls`, "application/vnd.ms-excel");
+    setTemplateDownloaded(true);
+  };
+
   if (!isOpen) return null;
 
   return (
-    <Modal isOpen={isOpen} onClose={handleClose} title={`Import ${entityType === "seekers" ? "Seekers" : "Mentors"}`} size="lg">
-      <div className="space-y-4">
+    <Modal isOpen={isOpen} onClose={handleClose} title={`Import ${entityLabel}`} size="lg">
+      <div className="space-y-5">
         {/* Step indicator */}
         <div className="flex items-center gap-2 text-xs font-medium">
-          {["Upload File", "Map Columns", "Preview & Import"].map((label, i) => {
-            const stepIdx = i === 0 ? "upload" : i === 1 ? "mapping" : "preview";
-            const active = step === stepIdx;
-            const done = (step === "mapping" && i === 0) || (step === "preview" && i < 2);
+          {["Download Template", "Upload File", "Preview & Import"].map((label, i) => {
+            const stepKey = i === 0 ? "template" : i === 1 ? "upload" : "preview";
+            const active = step === stepKey;
+            const done = (step === "upload" && i === 0) || (step === "preview" && i < 2);
             return (
               <React.Fragment key={label}>
                 {i > 0 && <div className="h-px flex-1 bg-border" />}
-                <span className={cn("px-2 py-1 rounded-full", active ? "bg-primary text-primary-foreground" : done ? "bg-green-100 text-green-700" : "bg-muted text-muted-foreground")}>{i + 1}. {label}</span>
+                <span className={cn(
+                  "px-2.5 py-1 rounded-full whitespace-nowrap transition-colors",
+                  active ? "bg-primary text-primary-foreground" : done ? "bg-green-100 text-green-700" : "bg-muted text-muted-foreground"
+                )}>
+                  {i + 1}. {label}
+                </span>
               </React.Fragment>
             );
           })}
@@ -808,67 +876,114 @@ function ImportModal({
           </div>
         )}
 
-        {/* Step 1: Upload */}
-        {step === "upload" && (
-          <div className="border-2 border-dashed border-border rounded-lg p-8 text-center space-y-3">
-            <Upload className="w-10 h-10 mx-auto text-muted-foreground" />
-            <div>
-              <p className="text-sm font-semibold">Drag & drop or click to upload</p>
-              <p className="text-xs text-muted-foreground mt-1">Supported formats: CSV, Excel (.xlsx)</p>
-            </div>
-            <label className="inline-block cursor-pointer">
-              <input type="file" accept=".csv,.xlsx,.xls" className="hidden" onChange={handleFile} />
-              <span className="inline-flex items-center gap-1.5 px-4 py-2 bg-primary text-primary-foreground text-sm font-medium rounded-md hover:bg-primary/90 transition-colors">
-                <FileSpreadsheet className="w-4 h-4" /> Choose File
-              </span>
-            </label>
-            {fileName && <p className="text-xs text-muted-foreground">Selected: <span className="font-medium text-foreground">{fileName}</span></p>}
+        {/* Step 1: Download Template */}
+        {step === "template" && (
+          <div className="space-y-5">
+            <div className="bg-muted/30 border border-border rounded-lg p-5 space-y-4">
+              <div className="flex items-start gap-3">
+                <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+                  <FileSpreadsheet className="w-5 h-5 text-primary" />
+                </div>
+                <div>
+                  <p className="text-sm font-semibold text-foreground">Download the import template</p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Download the template, fill it with your {entityType} data, then upload the completed file. The template includes example rows to guide you.
+                  </p>
+                </div>
+              </div>
 
-            <div className="pt-3 border-t border-border mt-4">
-              <p className="text-xs font-semibold text-muted-foreground mb-2">Expected columns for {entityType}:</p>
-              <div className="flex flex-wrap gap-1.5 justify-center">
-                {fields.map(f => (
-                  <span key={f.key} className={cn("px-2 py-0.5 rounded-full text-xs", f.required ? "bg-primary/10 text-primary font-medium" : "bg-muted text-muted-foreground")}>
-                    {f.label}{f.required ? " *" : ""}
-                  </span>
-                ))}
+              <div className="flex items-center gap-3">
+                <Button variant="outline" size="sm" onClick={downloadExcelTemplate} className="gap-1.5">
+                  <Download className="w-3.5 h-3.5" />
+                  Excel Template (.xls)
+                </Button>
+                <Button variant="outline" size="sm" onClick={downloadCSVTemplate} className="gap-1.5">
+                  <Download className="w-3.5 h-3.5" />
+                  CSV Template (.csv)
+                </Button>
+              </div>
+
+              {templateDownloaded && (
+                <div className="flex items-center gap-2 text-xs text-green-700 bg-green-50 border border-green-200 rounded-md px-3 py-2">
+                  <CheckCircle2 className="w-3.5 h-3.5 shrink-0" />
+                  Template downloaded! Fill it with your data and come back to upload.
+                </div>
+              )}
+            </div>
+
+            {/* Template preview */}
+            <div>
+              <p className="text-xs font-semibold text-muted-foreground mb-2">Template columns:</p>
+              <div className="max-h-[180px] overflow-auto border border-border rounded-lg">
+                <table className="w-full text-xs">
+                  <thead className="bg-muted/40 sticky top-0">
+                    <tr>
+                      {fields.map(f => (
+                        <th key={f.key} className="px-3 py-2 text-left font-semibold text-muted-foreground whitespace-nowrap">
+                          {f.label}{f.required ? <span className="text-red-500 ml-0.5">*</span> : ""}
+                        </th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody className="text-muted-foreground">
+                    <tr className="border-t border-border">
+                      {fields.map(f => <td key={f.key} className="px-3 py-1.5 italic">{f.example || "—"}</td>)}
+                    </tr>
+                    <tr className="border-t border-border">
+                      {fields.map(f => <td key={f.key} className="px-3 py-1.5 italic">{f.example2 || "—"}</td>)}
+                    </tr>
+                    <tr className="border-t border-border">
+                      {fields.map(f => <td key={f.key} className="px-3 py-1.5 italic">{f.example3 || "—"}</td>)}
+                    </tr>
+                  </tbody>
+                </table>
               </div>
             </div>
-          </div>
-        )}
 
-        {/* Step 2: Mapping */}
-        {step === "mapping" && (
-          <div className="space-y-3">
-            <p className="text-sm text-muted-foreground">Map your file columns to {entityType} fields. We auto-mapped what we could.</p>
-            <div className="bg-muted/30 rounded-lg border border-border divide-y divide-border">
-              {fields.map(f => (
-                <div key={f.key} className="flex items-center justify-between px-4 py-2.5">
-                  <span className="text-sm font-medium">{f.label}{f.required ? <span className="text-red-500 ml-0.5">*</span> : ""}</span>
-                  <select value={mapping[f.key] || ""} onChange={e => setMapping(prev => ({ ...prev, [f.key]: e.target.value }))}
-                    className="h-8 w-48 rounded-md border border-input bg-background px-2 text-sm text-foreground focus:ring-1 focus:ring-ring outline-none">
-                    <option value="">— Skip —</option>
-                    {headers.map(h => <option key={h} value={h}>{h}</option>)}
-                  </select>
-                </div>
-              ))}
-            </div>
-            <p className="text-xs text-muted-foreground">Found <span className="font-semibold text-foreground">{rawRows.length}</span> rows and <span className="font-semibold text-foreground">{headers.length}</span> columns in your file.</p>
-            <div className="flex items-center justify-between pt-2">
-              <Button variant="outline" size="sm" onClick={() => { setStep("upload"); setErrors([]); }}>Back</Button>
-              <Button size="sm" onClick={goToPreview}>Continue to Preview</Button>
+            <div className="flex justify-end pt-1">
+              <Button size="sm" onClick={() => { setErrors([]); setStep("upload"); }}>
+                Continue to Upload
+              </Button>
             </div>
           </div>
         )}
 
-        {/* Step 3: Preview */}
+        {/* Step 2: Upload filled template */}
+        {step === "upload" && (
+          <div className="space-y-4">
+            <div className="border-2 border-dashed border-border rounded-lg p-8 text-center space-y-3">
+              <Upload className="w-10 h-10 mx-auto text-muted-foreground" />
+              <div>
+                <p className="text-sm font-semibold">Upload your completed template</p>
+                <p className="text-xs text-muted-foreground mt-1">Supported formats: CSV, Excel (.xlsx, .xls)</p>
+              </div>
+              <label className="inline-block cursor-pointer">
+                <input type="file" accept=".csv,.xlsx,.xls,.xml" className="hidden" onChange={handleFile} />
+                <span className="inline-flex items-center gap-1.5 px-4 py-2 bg-primary text-primary-foreground text-sm font-medium rounded-md hover:bg-primary/90 transition-colors">
+                  <FileSpreadsheet className="w-4 h-4" /> Choose File
+                </span>
+              </label>
+              {fileName && <p className="text-xs text-muted-foreground">Selected: <span className="font-medium text-foreground">{fileName}</span></p>}
+            </div>
+
+            <div className="flex items-center justify-between pt-1">
+              <Button variant="outline" size="sm" onClick={() => { setStep("template"); setErrors([]); }}>Back</Button>
+              <button onClick={downloadCSVTemplate} className="text-xs font-semibold text-primary hover:underline">
+                Need the template again?
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Step 3: Preview & Import */}
         {step === "preview" && (
           <div className="space-y-3">
             <div className="flex items-center gap-3 text-sm">
-              <span className="px-2 py-1 rounded-full bg-green-100 text-green-700 text-xs font-medium">{validRows.length} valid</span>
-              {invalidCount > 0 && <span className="px-2 py-1 rounded-full bg-red-100 text-red-700 text-xs font-medium">{invalidCount} skipped (missing required fields)</span>}
+              <span className="px-2.5 py-1 rounded-full bg-green-100 text-green-700 text-xs font-medium">{validRows.length} valid</span>
+              {invalidCount > 0 && <span className="px-2.5 py-1 rounded-full bg-red-100 text-red-700 text-xs font-medium">{invalidCount} skipped (missing required fields)</span>}
+              <span className="text-xs text-muted-foreground ml-auto">from <span className="font-medium text-foreground">{fileName}</span></span>
             </div>
-            <div className="max-h-[250px] overflow-auto border border-border rounded-lg">
+            <div className="max-h-[280px] overflow-auto border border-border rounded-lg">
               <table className="w-full text-xs">
                 <thead className="bg-muted/40 sticky top-0">
                   <tr>
@@ -877,7 +992,7 @@ function ImportModal({
                   </tr>
                 </thead>
                 <tbody>
-                  {mappedRows.slice(0, 50).map((row, i) => {
+                  {parsedRows.slice(0, 50).map((row, i) => {
                     const isValid = fields.filter(f => f.required).every(f => row[f.key]?.trim());
                     return (
                       <tr key={i} className={cn("border-t border-border", !isValid && "bg-red-50/50 opacity-60")}>
@@ -889,11 +1004,11 @@ function ImportModal({
                 </tbody>
               </table>
             </div>
-            {mappedRows.length > 50 && <p className="text-xs text-muted-foreground">Showing first 50 of {mappedRows.length} rows.</p>}
+            {parsedRows.length > 50 && <p className="text-xs text-muted-foreground">Showing first 50 of {parsedRows.length} rows.</p>}
             <div className="flex items-center justify-between pt-2">
-              <Button variant="outline" size="sm" onClick={() => { setStep("mapping"); setErrors([]); }}>Back</Button>
+              <Button variant="outline" size="sm" onClick={() => { setStep("upload"); setErrors([]); setParsedRows([]); setFileName(""); }}>Back</Button>
               <Button size="sm" onClick={handleImport} disabled={validRows.length === 0} className={validRows.length === 0 ? "opacity-50 cursor-not-allowed" : ""}>
-                <Upload className="w-3.5 h-3.5" /> Import {validRows.length} {entityType}
+                <Upload className="w-3.5 h-3.5" /> Import {validRows.length} {entityLabel}
               </Button>
             </div>
           </div>
