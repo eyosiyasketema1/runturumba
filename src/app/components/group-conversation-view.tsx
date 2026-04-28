@@ -1390,18 +1390,18 @@ function PollResultsModal({ poll, onClose }: { poll: Poll; onClose: () => void }
               return (
                 <div key={idx} className="space-y-2">
                   <div className="flex items-center justify-between">
-                    <span className={cn('text-sm font-semibold', isTop && 'text-foreground')}>
+                    <span className={cn('text-sm font-semibold', isTop && 'text-emerald-700 dark:text-emerald-400')}>
                       {isTop && <span className="mr-1">🏆</span>}
                       {option.text}
                     </span>
-                    <span className="text-sm font-bold">{pct}%</span>
+                    <span className={cn('text-sm font-bold', isTop ? 'text-emerald-700 dark:text-emerald-400' : 'text-muted-foreground')}>{pct}%</span>
                   </div>
-                  <div className="w-full h-3 bg-muted/40 rounded-full overflow-hidden">
+                  <div className="w-full h-3 bg-muted/30 rounded-full overflow-hidden">
                     <motion.div
                       initial={{ width: 0 }}
                       animate={{ width: `${pct}%` }}
                       transition={{ duration: 0.6, ease: 'easeOut' }}
-                      className={cn('h-full rounded-full', isTop ? 'bg-muted-foreground/50' : 'bg-muted-foreground/25')}
+                      className={cn('h-full rounded-full', isTop ? 'bg-emerald-500' : 'bg-slate-300 dark:bg-slate-600')}
                     />
                   </div>
                   <div className="flex items-center justify-between">
@@ -1487,12 +1487,12 @@ function PollComponent({ poll, onVote, isSender }: PollComponentProps) {
                 onClick={() => onVote(idx)}
                 className="w-full text-left rounded-md overflow-hidden relative transition-all hover:ring-1 hover:ring-border group"
               >
-                <div className={cn('absolute inset-0 rounded-md', isWinning ? 'bg-muted/80' : 'bg-muted/30')} style={{ width: `${pct}%` }} />
+                <div className={cn('absolute inset-0 rounded-md', isWinning ? 'bg-emerald-100 dark:bg-emerald-900/30' : 'bg-muted/40')} style={{ width: `${pct}%` }} />
                 <div className="relative flex items-center justify-between px-3 py-2.5">
-                  <span className={cn('text-sm font-medium', isWinning && 'text-foreground font-semibold')}>
+                  <span className={cn('text-sm font-medium', isWinning && 'text-emerald-700 dark:text-emerald-400 font-semibold')}>
                     {option.text}
                   </span>
-                  <span className={cn('text-xs font-bold shrink-0 ml-2', isWinning ? 'text-foreground' : 'text-muted-foreground')}>
+                  <span className={cn('text-xs font-bold shrink-0 ml-2', isWinning ? 'text-emerald-700 dark:text-emerald-400' : 'text-muted-foreground')}>
                     {pct}%
                   </span>
                 </div>
