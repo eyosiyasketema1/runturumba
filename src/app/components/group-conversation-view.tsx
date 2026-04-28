@@ -102,6 +102,7 @@ interface Message {
   isForwarded?: boolean;
   forwardedFrom?: string;
   isEdited?: boolean;
+  isDeleted?: boolean;
 }
 
 interface SystemMessage {
@@ -1720,7 +1721,11 @@ export function GroupConversationView() {
       g.id === selectedGroupId
         ? {
             ...g,
-            messages: g.messages.filter((m) => !('id' in m) || m.id !== messageId),
+            messages: g.messages.map((m) =>
+              'id' in m && m.id === messageId
+                ? { ...m, isDeleted: true, content: '', reactions: [], isPinned: false }
+                : m
+            ),
           }
         : g
     );
@@ -1817,7 +1822,14 @@ export function GroupConversationView() {
     if (selectedMessages.size === 0) return;
     setGroups(prev => prev.map(g =>
       g.id === selectedGroupId
-        ? { ...g, messages: g.messages.filter(m => !('id' in m) || !selectedMessages.has(m.id)) }
+        ? {
+            ...g,
+            messages: g.messages.map(m =>
+              'id' in m && selectedMessages.has(m.id)
+                ? { ...m, isDeleted: true, content: '', reactions: [], isPinned: false }
+                : m
+            ),
+          }
         : g
     ));
     toast.success(`Deleted ${selectedMessages.size} message${selectedMessages.size > 1 ? 's' : ''}`);
@@ -2089,6 +2101,36 @@ export function GroupConversationView() {
                       const isSender = msg.senderId === currentUserId;
                       const isAnnouncement = msg.isAnnouncement;
 
+                      // Deleted message tombstone
+                      if (msg.isDeleted) {
+                        return (
+                          <div key={msg.id} className={cn('flex gap-3', isSender && 'flex-row-reverse')}>
+                            {!isSender && (
+                              <Avatar className="h-9 w-9 flex-shrink-0 mt-1 opacity-40">
+                                <AvatarImage src={getAvatarUrl(msg.senderName)} alt={msg.senderName} />
+                                <AvatarFallback>{msg.senderName.slice(0, 2).toUpperCase()}</AvatarFallback>
+                              </Avatar>
+                            )}
+                            <div className={cn('flex flex-col max-w-[65%]', isSender && 'items-end')}>
+                              {!isSender && (
+                                <p className={cn('text-xs font-semibold mb-1 opacity-50', msg.senderColor || 'text-foreground')}>
+                                  {msg.senderName}
+                                </p>
+                              )}
+                              <div className="px-4 py-3 rounded-2xl bg-muted/30 border border-border/50 border-dashed">
+                                <p className="text-sm text-muted-foreground/60 italic flex items-center gap-2">
+                                  <Trash2 className="h-3.5 w-3.5" />
+                                  {msg.senderName} deleted this message
+                                </p>
+                              </div>
+                              <p className="text-xs text-muted-foreground/40 mt-1">
+                                {formatFullTime(msg.timestamp)}
+                              </p>
+                            </div>
+                          </div>
+                        );
+                      }
+
                       return (
                         <div
                           key={msg.id}
@@ -2203,10 +2245,12 @@ export function GroupConversationView() {
                                 </div>
                               </div>
 
-                              {/* Action Icons — visible on hover */}
+                              {/* Action Icons — visible on hover or when menu/reaction open */}
                               <div className={cn(
-                                'flex items-center gap-0.5 pt-2 opacity-0 group-hover/msg:opacity-100 transition-opacity',
-                                (activeReactionMsgId === msg.id || activeMenuMsgId === msg.id) && 'opacity-100'
+                                'flex items-center gap-0.5 pt-2 transition-opacity',
+                                (activeReactionMsgId === msg.id || activeMenuMsgId === msg.id)
+                                  ? 'opacity-100'
+                                  : 'opacity-0 group-hover/msg:opacity-100'
                               )}>
                                 {/* Reaction smiley */}
                                 <div className="relative">
@@ -2253,7 +2297,7 @@ export function GroupConversationView() {
                                       onPin={() => handlePinMessage(msg.id)}
                                       onForward={() => handleForward(msg)}
                                       onSelect={() => { setSelectMode(true); toggleSelectMessage(msg.id); }}
-                                      onEdit={isSender && !msg.isPoll && !msg.isVoiceMessage ? () => handleStartEdit(msg) : undefined}
+                                      onEdit={isSender && !msg.isVoiceMessage ? () => handleStartEdit(msg) : undefined}
                                       onDelete={() => handleDeleteMessage(msg.id)}
                                       onClose={() => setActiveMenuMsgId(null)}
                                     />
