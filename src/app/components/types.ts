@@ -773,6 +773,9 @@ export type WidgetPosition = "bottom-right" | "bottom-left";
 export type AudienceMode = "all" | "known" | "groups" | "allowlist";
 export type CreationMode = "auto" | "manual";
 export type ReopenPolicy = "always_reopen" | "always_new" | "threshold";
+export type AssignmentMode = "auto_assign" | "grab_pool" | "manual";
+export type GrabFallback = "auto_assign_available" | "escalate_admin" | "stay_in_pool";
+export type ReassignmentMode = "auto" | "manual";
 
 export interface ChatEndpoint {
   id: string;
@@ -818,6 +821,10 @@ export interface ConversationRule {
   reopenWindowHours?: number;
   defaultTeam?: string;
   defaultAssignee?: string;
+  assignmentMode: AssignmentMode;
+  grabWindowMinutes?: number;
+  grabFallback?: GrabFallback;
+  reassignmentMode: ReassignmentMode;
   active: boolean;
   createdAt: string;
 }
@@ -895,6 +902,8 @@ export const INITIAL_CONVERSATION_RULES: ConversationRule[] = [
     reopenPolicy: "always_reopen",
     defaultTeam: "tg-1",
     defaultAssignee: "user-1",
+    assignmentMode: "auto_assign",
+    reassignmentMode: "auto",
     active: true,
     createdAt: "2025-02-05T10:00:00Z",
   },
@@ -909,6 +918,10 @@ export const INITIAL_CONVERSATION_RULES: ConversationRule[] = [
     reopenPolicy: "threshold",
     reopenWindowHours: 24,
     defaultTeam: "tg-1",
+    assignmentMode: "grab_pool",
+    grabWindowMinutes: 30,
+    grabFallback: "auto_assign_available",
+    reassignmentMode: "manual",
     active: true,
     createdAt: "2025-02-08T12:00:00Z",
   },
@@ -921,6 +934,8 @@ export const INITIAL_CONVERSATION_RULES: ConversationRule[] = [
     audienceMode: "known",
     creationMode: "auto",
     reopenPolicy: "always_new",
+    assignmentMode: "manual",
+    reassignmentMode: "auto",
     active: false,
     createdAt: "2025-02-12T08:00:00Z",
   },

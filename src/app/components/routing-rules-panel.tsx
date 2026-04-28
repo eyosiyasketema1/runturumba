@@ -6,6 +6,7 @@ import {
   MessageSquare, Smartphone, Mail, Send, Facebook, Server,
   Info, GitBranch, Filter, SlidersHorizontal, ArrowLeft,
   CheckCircle2, Circle, Zap, Users, ListFilter,
+  Timer, Hand, UserCog, RefreshCw, ShieldAlert,
 } from "lucide-react";
 import { useDrag, useDrop, DndProvider } from "react-dnd";
 import { HTML5Backend } from "react-dnd-html5-backend";
@@ -15,6 +16,7 @@ import {
   cn,
   type ConversationRule, type ChatEndpoint,
   type AudienceMode, type CreationMode, type ReopenPolicy,
+  type AssignmentMode, type GrabFallback, type ReassignmentMode,
   type User, type TeamGroup, type Group,
 } from "./types";
 import { Button } from "./ui/button";
@@ -230,6 +232,10 @@ const BLANK_RULE_FORM = {
   reopenWindowHours: 24,
   defaultTeam:       "",
   defaultAssignee:   "",
+  assignmentMode:    "auto_assign"   as AssignmentMode,
+  grabWindowMinutes: 30,
+  grabFallback:      "auto_assign_available" as GrabFallback,
+  reassignmentMode:  "auto"          as ReassignmentMode,
   active:            true,
 };
 type RuleForm = typeof BLANK_RULE_FORM;
@@ -268,6 +274,10 @@ function RuleFormModal({
         reopenWindowHours: rule.reopenWindowHours ?? 24,
         defaultTeam:       rule.defaultTeam     ?? "",
         defaultAssignee:   rule.defaultAssignee ?? "",
+        assignmentMode:    rule.assignmentMode  ?? "auto_assign",
+        grabWindowMinutes: rule.grabWindowMinutes ?? 30,
+        grabFallback:      rule.grabFallback    ?? "auto_assign_available",
+        reassignmentMode:  rule.reassignmentMode ?? "auto",
         active:            rule.active,
       });
     } else {
@@ -489,6 +499,81 @@ function RuleFormModal({
                 <option key={u.id} value={u.id}>{u.name} ({u.role})</option>
               ))}
             </select>
+          </div>
+        </div>
+
+        {/* Assignment Mode */}
+        <div className="space-y-2">
+          <Label>Assignment Mode</Label>
+          <p className="text-xs text-muted-foreground -mt-1">How the conversation reaches a mentor after creation.</p>
+          <div className="grid grid-cols-1 gap-2">
+            {([
+              { id: "auto_assign" as AssignmentMode, label: "Auto-Assign", icon: Zap, desc: "System automatically assigns to the best-fit available mentor based on matching factors.", color: "text-emerald-600" },
+              { id: "grab_pool" as AssignmentMode,   label: "Grab Pool",   icon: Hand, desc: "Conversation lands in a shared pool. Mentors claim it within a time window — if unclaimed, fallback fires.", color: "text-amber-600" },
+              { id: "manual" as AssignmentMode,      label: "Manual",      icon: UserCog, desc: "Conversation goes to a pending queue. Admin or Mentor Coach assigns it manually.", color: "text-blue-600" },
+            ]).map(opt => (
+              <label key={opt.id} className={cn("flex items-start gap-3 border p-3 cursor-pointer transition-colors",
+                form.assignmentMode === opt.id ? "border-primary bg-primary/5" : "border-border hover:bg-muted/30")}>
+                <input type="radio" name="assignmentMode" value={opt.id} checked={form.assignmentMode === opt.id} onChange={() => set("assignmentMode", opt.id)} className="mt-0.5 accent-primary" />
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2">
+                    <opt.icon className={cn("w-3.5 h-3.5", opt.color)} />
+                    <p className="text-sm font-semibold">{opt.label}</p>
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-0.5">{opt.desc}</p>
+                </div>
+              </label>
+            ))}
+          </div>
+
+          {/* Grab Pool settings — shown only when grab_pool is selected */}
+          {form.assignmentMode === "grab_pool" && (
+            <div className="border border-amber-200 bg-amber-50/30 p-4 space-y-4 mt-2">
+              <div className="flex items-center gap-2 text-xs font-bold text-amber-700 uppercase tracking-widest">
+                <Timer className="w-3.5 h-3.5" />
+                Grab Pool Settings
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="space-y-1.5">
+                  <Label>Grab Window (minutes)</Label>
+                  <Input type="number" min={1} max={1440} value={form.grabWindowMinutes} onChange={e => set("grabWindowMinutes", Number(e.target.value))} className="w-full" />
+                  <p className="text-xs text-muted-foreground">Time mentors have to claim the conversation before fallback triggers.</p>
+                </div>
+                <div className="space-y-1.5">
+                  <Label>If Unclaimed (Fallback)</Label>
+                  <select value={form.grabFallback} onChange={e => set("grabFallback", e.target.value as GrabFallback)}
+                    className="w-full h-10 border border-border bg-background px-3 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-ring">
+                    <option value="auto_assign_available">Auto-assign to available mentor</option>
+                    <option value="escalate_admin">Escalate to admin</option>
+                    <option value="stay_in_pool">Stay in pool (no timeout)</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Reassignment Mode */}
+        <div className="space-y-2">
+          <Label>Mentor Reassignment</Label>
+          <p className="text-xs text-muted-foreground -mt-1">When a mentor requests to be reassigned, how is it resolved?</p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+            {([
+              { id: "auto" as ReassignmentMode, label: "Automatic", icon: RefreshCw, desc: "System analyzes the seeker, the reason, and mentor availability — then reassigns to a new mentor automatically.", color: "text-emerald-600" },
+              { id: "manual" as ReassignmentMode, label: "Mentor Coach Assigns", icon: ShieldAlert, desc: "Reassignment request goes to the admin queue. Mentor Coach reviews and assigns to a chosen mentor.", color: "text-blue-600" },
+            ]).map(opt => (
+              <label key={opt.id} className={cn("flex items-start gap-3 border p-3 cursor-pointer transition-colors",
+                form.reassignmentMode === opt.id ? "border-primary bg-primary/5" : "border-border hover:bg-muted/30")}>
+                <input type="radio" name="reassignmentMode" value={opt.id} checked={form.reassignmentMode === opt.id} onChange={() => set("reassignmentMode", opt.id)} className="mt-0.5 accent-primary" />
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2">
+                    <opt.icon className={cn("w-3.5 h-3.5", opt.color)} />
+                    <p className="text-sm font-semibold">{opt.label}</p>
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-0.5">{opt.desc}</p>
+                </div>
+              </label>
+            ))}
           </div>
         </div>
 
