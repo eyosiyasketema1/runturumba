@@ -2679,7 +2679,7 @@ export function GroupConversationView() {
                   <div className="border border-border bg-muted/10 p-4 space-y-3">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
-                        <BarChart3 className="w-4 h-4 text-primary" />
+                        <BarChart3 className="w-4 h-4 text-muted-foreground" />
                         <span className="text-sm font-bold">{editingMessage?.isPoll ? 'Edit Poll' : 'Create Poll'}</span>
                       </div>
                       <button onClick={() => { setShowPollCreator(false); if (editingMessage?.isPoll) { setEditingMessage(null); setPollQuestion(''); setPollOptions(['', '']); setPollIsAnonymous(false); } }} className="text-muted-foreground hover:text-foreground transition-colors">
@@ -2733,8 +2733,8 @@ export function GroupConversationView() {
                         className={cn(
                           'flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold border transition-colors',
                           !pollIsAnonymous
-                            ? 'border-primary text-primary bg-primary/5'
-                            : 'border-border text-muted-foreground hover:border-primary hover:text-primary'
+                            ? 'border-foreground/40 text-foreground bg-muted/40'
+                            : 'border-border text-muted-foreground hover:border-foreground/30 hover:text-foreground'
                         )}
                       >
                         <Eye className="w-3 h-3" /> Public
@@ -2745,8 +2745,8 @@ export function GroupConversationView() {
                         className={cn(
                           'flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold border transition-colors',
                           pollIsAnonymous
-                            ? 'border-primary text-primary bg-primary/5'
-                            : 'border-border text-muted-foreground hover:border-primary hover:text-primary'
+                            ? 'border-foreground/40 text-foreground bg-muted/40'
+                            : 'border-border text-muted-foreground hover:border-foreground/30 hover:text-foreground'
                         )}
                       >
                         <Lock className="w-3 h-3" /> Anonymous
@@ -2760,7 +2760,7 @@ export function GroupConversationView() {
                       {pollOptions.length < 6 && (
                         <button
                           onClick={() => setPollOptions([...pollOptions, ''])}
-                          className="text-xs font-bold text-primary hover:text-primary/70 transition-colors"
+                          className="text-xs font-bold text-muted-foreground hover:text-foreground transition-colors"
                         >
                           + Add option
                         </button>
@@ -2768,7 +2768,7 @@ export function GroupConversationView() {
                       <button
                         onClick={handleSendPoll}
                         disabled={!pollQuestion.trim() || pollOptions.filter(o => o.trim()).length < 2}
-                        className="flex items-center gap-1.5 px-4 py-1.5 text-xs font-bold bg-primary text-primary-foreground hover:bg-primary/90 transition-all disabled:opacity-40 disabled:cursor-not-allowed ml-auto"
+                        className="flex items-center gap-1.5 px-4 py-1.5 text-xs font-bold bg-foreground text-background hover:bg-foreground/80 transition-all disabled:opacity-40 disabled:cursor-not-allowed ml-auto"
                       >
                         <Send className="w-3 h-3" />
                         {editingMessage?.isPoll ? 'Update Poll' : 'Send Poll'}
@@ -2886,7 +2886,7 @@ export function GroupConversationView() {
                         className={cn(
                           'p-1.5 transition-colors',
                           showPollCreator
-                            ? 'text-primary bg-primary/10'
+                            ? 'text-foreground bg-muted'
                             : 'text-muted-foreground hover:text-foreground hover:bg-muted'
                         )}
                         title="Create poll"
