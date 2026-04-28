@@ -870,8 +870,16 @@ function ImportModal({
     const exampleValues = [exampleNames?.example, exampleNames?.example2, exampleNames?.example3].filter(Boolean);
     const realRows = mapped.filter(r => !exampleValues.includes(r.name?.trim()));
 
+    // If only example rows exist, keep them but warn the user
+    if (realRows.length === 0 && mapped.length > 0) {
+      setParsedRows(mapped);
+      setErrors(["These appear to be example rows from the template. Replace them with your actual data before importing."]);
+      setStep("preview");
+      return;
+    }
+
     if (realRows.length === 0) {
-      setErrors(["No data rows found. Please remove the example rows and add your own data."]);
+      setErrors(["No data rows found. Please add your data to the template and re-upload."]);
       return;
     }
 
@@ -906,8 +914,9 @@ function ImportModal({
     reader.onload = (ev) => {
       const text = ev.target?.result as string;
       try {
-        // Try Excel XML first (our template generates .xls as SpreadsheetML XML)
-        if ((ext === "xls" || ext === "xml") && text.trimStart().startsWith("<?xml")) {
+        // Try Excel XML first — check content regardless of extension
+        const trimmed = text.replace(/^\uFEFF/, "").trimStart();
+        if (trimmed.startsWith("<?xml") || trimmed.startsWith("<Workbook")) {
           const result = parseExcelXML(text);
           if (result && result.headers.length > 0 && result.rows.length > 0) {
             processRows(result.headers, result.rows);
