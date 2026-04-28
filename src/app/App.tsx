@@ -837,7 +837,7 @@ export default function App() {
                   >
                     {([
                       { key: "direct" as const, label: "Direct", icon: MessageSquare, count: messages.length },
-                      { key: "groups" as const, label: "Groups", icon: Users, count: 12 },
+                      { key: "groups" as const, label: "Mentor Chat Groups", icon: Users, count: 12 },
                     ]).map(({ key, label, icon: Icon, count }) => {
                       const isActive = conversationTab === key;
                       return (

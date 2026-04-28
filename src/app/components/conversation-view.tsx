@@ -2471,12 +2471,7 @@ export const ConversationView = ({
               Conversation Rules
             </button>
           )}
-          <button onClick={() => setIsComposeOpen(true)}
-            className="flex items-center gap-2 px-4 py-1.5 bg-primary text-primary-foreground text-sm font-semibold hover:bg-primary/90 transition-colors"
-          >
-            <SquarePen className="w-3.5 h-3.5" />
-            New Conversation
-          </button>
+{/* New Conversation removed — conversations are initiated from contacts */}
         </div>
       </div>
 
