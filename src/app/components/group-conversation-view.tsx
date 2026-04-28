@@ -53,6 +53,7 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { cn } from './types';
+import { Modal } from './shared-ui';
 import { Badge } from './ui/badge';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
@@ -166,6 +167,28 @@ const SAMPLE_MENTORS: Mentor[] = [
   { id: 'm8', name: 'Rachel Thompson', avatar: null, role: 'member', online: true },
   { id: 'm9', name: 'Daniel Mekonnen', avatar: null, role: 'member', online: false },
   { id: 'm10', name: 'Grace Okafor', avatar: null, role: 'member', online: true },
+];
+
+// Mentor groups from discipleship page (for importing into chat groups)
+interface MentorGroupRef {
+  id: string;
+  name: string;
+  icon: string;
+  memberIds: string[];
+}
+
+const MENTOR_GROUPS: MentorGroupRef[] = [
+  { id: 'mg-1', name: 'Marriage', icon: '💍', memberIds: ['m1', 'm5'] },
+  { id: 'mg-2', name: 'Addiction Recovery', icon: '🛡️', memberIds: ['m8'] },
+  { id: 'mg-3', name: 'Youth', icon: '⭐', memberIds: ['m2', 'm6'] },
+  { id: 'mg-4', name: "Women's Ministry", icon: '🤲', memberIds: ['m3', 'm6'] },
+  { id: 'mg-5', name: "Men's Ministry", icon: '🛡️', memberIds: ['m1', 'm8'] },
+  { id: 'mg-6', name: 'Prayer', icon: '🔥', memberIds: ['m3', 'm9'] },
+  { id: 'mg-7', name: 'Counseling', icon: '🎧', memberIds: ['m1', 'm3'] },
+  { id: 'mg-8', name: 'New Believers', icon: '💧', memberIds: ['m1', 'm4'] },
+  { id: 'mg-9', name: 'Leadership', icon: '👑', memberIds: ['m7', 'm10'] },
+  { id: 'mg-10', name: 'Worship', icon: '⛪', memberIds: ['m9'] },
+  { id: 'mg-11', name: 'Outreach', icon: '🌍', memberIds: ['m2', 'm7'] },
 ];
 
 const generateSampleMessages = (): (Message | SystemMessage)[] => [
@@ -559,6 +582,28 @@ function CreateGroupModal({ isOpen, onClose, onCreateGroup, availableMentors }: 
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [selectedMentors, setSelectedMentors] = useState<string[]>([]);
+  const [activeTab, setActiveTab] = useState<'individual' | 'groups'>('individual');
+  const [memberSearch, setMemberSearch] = useState('');
+
+  const filteredMentors = availableMentors
+    .filter((m) => m.id !== 'm1')
+    .filter((m) => m.name.toLowerCase().includes(memberSearch.toLowerCase()));
+
+  const handleToggleMentor = (mentorId: string) => {
+    setSelectedMentors((prev) =>
+      prev.includes(mentorId) ? prev.filter((id) => id !== mentorId) : [...prev, mentorId]
+    );
+  };
+
+  const handleAddGroup = (groupMemberIds: string[]) => {
+    const newIds = groupMemberIds.filter((id) => id !== 'm1' && !selectedMentors.includes(id));
+    if (newIds.length > 0) {
+      setSelectedMentors((prev) => [...prev, ...newIds]);
+      toast.success(`Added ${newIds.length} member${newIds.length > 1 ? 's' : ''}`);
+    } else {
+      toast.info('All members from this group are already added');
+    }
+  };
 
   const handleCreate = () => {
     if (!name.trim()) {
@@ -569,106 +614,233 @@ function CreateGroupModal({ isOpen, onClose, onCreateGroup, availableMentors }: 
     setName('');
     setDescription('');
     setSelectedMentors([]);
+    setMemberSearch('');
+    setActiveTab('individual');
+    onClose();
+  };
+
+  const handleClose = () => {
+    setName('');
+    setDescription('');
+    setSelectedMentors([]);
+    setMemberSearch('');
+    setActiveTab('individual');
     onClose();
   };
 
   return (
-    <AnimatePresence>
-      {isOpen && (
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50"
-          onClick={onClose}
-        >
-          <motion.div
-            initial={{ scale: 0.9, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            exit={{ scale: 0.9, opacity: 0 }}
-            onClick={(e) => e.stopPropagation()}
-            className="w-full max-w-md rounded-2xl bg-background p-6 shadow-2xl border border-border"
-          >
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-xl font-bold">Create New Group</h2>
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={onClose}
-                className="h-8 w-8"
-              >
-                <X className="h-4 w-4" />
-              </Button>
-            </div>
+    <Modal isOpen={isOpen} onClose={handleClose} title="Create New Group" size="2xl">
+      <div className="space-y-5">
+        {/* Group details */}
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-1.5 block">
+              Group Name
+            </label>
+            <Input
+              placeholder="e.g., Prayer Circle"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+            />
+          </div>
+          <div>
+            <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-1.5 block">
+              Description
+            </label>
+            <Input
+              placeholder="What is this group for?"
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+            />
+          </div>
+        </div>
 
-            <div className="space-y-5">
-              <div>
-                <label className="text-sm font-semibold block mb-2">Group Name</label>
+        {/* Selected members chips */}
+        {selectedMentors.length > 0 && (
+          <div>
+            <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-1.5 block">
+              Selected Members ({selectedMentors.length})
+            </label>
+            <div className="flex flex-wrap gap-1.5">
+              {selectedMentors.map((id) => {
+                const mentor = availableMentors.find((m) => m.id === id);
+                if (!mentor) return null;
+                return (
+                  <span
+                    key={id}
+                    className="inline-flex items-center gap-1 bg-primary/10 text-primary text-xs font-medium px-2 py-1 rounded-md"
+                  >
+                    {mentor.name}
+                    <button
+                      onClick={() => handleToggleMentor(id)}
+                      className="hover:text-primary/70 transition-colors"
+                    >
+                      <X className="w-3 h-3" />
+                    </button>
+                  </span>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {/* Add Members section */}
+        <div className="border-t border-border pt-4">
+          <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-3 block">
+            Add Members
+          </label>
+
+          {/* Tabs */}
+          <div className="flex gap-1 bg-muted/50 rounded-lg p-1 mb-3">
+            <button
+              onClick={() => setActiveTab('individual')}
+              className={cn(
+                'flex-1 text-xs font-semibold py-2 px-3 rounded-md transition-colors',
+                activeTab === 'individual'
+                  ? 'bg-background text-foreground shadow-sm'
+                  : 'text-muted-foreground hover:text-foreground'
+              )}
+            >
+              <Users className="w-3.5 h-3.5 inline mr-1.5 -mt-0.5" />
+              Individual
+            </button>
+            <button
+              onClick={() => setActiveTab('groups')}
+              className={cn(
+                'flex-1 text-xs font-semibold py-2 px-3 rounded-md transition-colors',
+                activeTab === 'groups'
+                  ? 'bg-background text-foreground shadow-sm'
+                  : 'text-muted-foreground hover:text-foreground'
+              )}
+            >
+              <Shield className="w-3.5 h-3.5 inline mr-1.5 -mt-0.5" />
+              From Mentor Groups
+            </button>
+          </div>
+
+          {/* Individual tab */}
+          {activeTab === 'individual' && (
+            <div>
+              <div className="relative mb-2">
+                <Search className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none" />
                 <Input
-                  placeholder="e.g., Prayer Circle"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  className="rounded-lg border-border"
+                  value={memberSearch}
+                  onChange={(e) => setMemberSearch(e.target.value)}
+                  placeholder="Search mentors by name..."
+                  className="pl-8 h-8 text-xs"
                 />
               </div>
-
-              <div>
-                <label className="text-sm font-semibold block mb-2">Description</label>
-                <textarea
-                  placeholder="What is this group for?"
-                  value={description}
-                  onChange={(e) => setDescription(e.target.value)}
-                  className={cn(
-                    'w-full rounded-lg border border-border bg-background px-3.5 py-2.5 text-sm',
-                    'placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30'
-                  )}
-                  rows={3}
-                />
-              </div>
-
-              <div>
-                <label className="text-sm font-semibold mb-3 block">Add Mentors</label>
-                <div className="space-y-2 max-h-48 overflow-y-auto bg-muted/30 rounded-lg p-3">
-                  {availableMentors
-                    .filter((m) => m.id !== 'm1')
-                    .map((mentor) => (
-                      <label
-                        key={mentor.id}
-                        className="flex items-center space-x-3 cursor-pointer hover:bg-muted/50 p-2.5 rounded-md transition-colors"
-                      >
-                        <input
-                          type="checkbox"
-                          checked={selectedMentors.includes(mentor.id)}
-                          onChange={(e) => {
-                            if (e.target.checked) {
-                              setSelectedMentors([...selectedMentors, mentor.id]);
-                            } else {
-                              setSelectedMentors(
-                                selectedMentors.filter((id) => id !== mentor.id)
-                              );
-                            }
-                          }}
-                          className="rounded"
+              <div className="max-h-[280px] overflow-y-auto space-y-0.5 border border-border rounded-lg p-1">
+                {filteredMentors.map((mentor) => {
+                  const isSelected = selectedMentors.includes(mentor.id);
+                  return (
+                    <label
+                      key={mentor.id}
+                      className={cn(
+                        'flex items-center gap-3 px-3 py-2.5 rounded-md cursor-pointer transition-colors',
+                        isSelected ? 'bg-primary/8' : 'hover:bg-muted/40'
+                      )}
+                    >
+                      <input
+                        type="checkbox"
+                        checked={isSelected}
+                        onChange={() => handleToggleMentor(mentor.id)}
+                        className="w-4 h-4 rounded border-border accent-primary shrink-0"
+                      />
+                      <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center shrink-0">
+                        <span className="text-xs font-bold text-muted-foreground">
+                          {mentor.name.split(' ').map((n) => n[0]).join('').slice(0, 2)}
+                        </span>
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-semibold text-foreground truncate">{mentor.name}</p>
+                        <p className="text-xs text-muted-foreground">{mentor.role}</p>
+                      </div>
+                      <div className="flex items-center gap-1.5 shrink-0">
+                        <span
+                          className={cn(
+                            'w-2 h-2 rounded-full',
+                            mentor.online ? 'bg-emerald-500' : 'bg-slate-300'
+                          )}
                         />
-                        <span className="text-sm font-medium">{mentor.name}</span>
-                      </label>
-                    ))}
-                </div>
-              </div>
-
-              <div className="flex gap-3 pt-3">
-                <Button variant="outline" onClick={onClose} className="flex-1 rounded-lg">
-                  Cancel
-                </Button>
-                <Button onClick={handleCreate} className="flex-1 rounded-lg">
-                  Create Group
-                </Button>
+                        <span className="text-[11px] text-muted-foreground">
+                          {mentor.online ? 'Online' : 'Offline'}
+                        </span>
+                      </div>
+                    </label>
+                  );
+                })}
+                {filteredMentors.length === 0 && (
+                  <p className="text-sm text-muted-foreground text-center py-6">No mentors match your search</p>
+                )}
               </div>
             </div>
-          </motion.div>
-        </motion.div>
-      )}
-    </AnimatePresence>
+          )}
+
+          {/* From Groups tab */}
+          {activeTab === 'groups' && (
+            <div className="max-h-[320px] overflow-y-auto space-y-1 border border-border rounded-lg p-1">
+              {MENTOR_GROUPS.map((group) => {
+                const groupMentorNames = group.memberIds
+                  .filter((id) => id !== 'm1')
+                  .map((id) => availableMentors.find((m) => m.id === id)?.name)
+                  .filter(Boolean);
+                const allAlreadyAdded = group.memberIds
+                  .filter((id) => id !== 'm1')
+                  .every((id) => selectedMentors.includes(id));
+                return (
+                  <div
+                    key={group.id}
+                    className={cn(
+                      'flex items-center gap-3 px-3 py-3 rounded-md transition-colors',
+                      allAlreadyAdded ? 'bg-primary/5' : 'hover:bg-muted/40'
+                    )}
+                  >
+                    <div className="w-9 h-9 rounded-lg bg-muted flex items-center justify-center shrink-0 text-base">
+                      {group.icon}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-semibold text-foreground">{group.name}</p>
+                      <p className="text-xs text-muted-foreground truncate">
+                        {group.memberIds.filter((id) => id !== 'm1').length} member{group.memberIds.filter((id) => id !== 'm1').length !== 1 ? 's' : ''}
+                        {groupMentorNames.length > 0 && ` · ${groupMentorNames.slice(0, 3).join(', ')}${groupMentorNames.length > 3 ? '...' : ''}`}
+                      </p>
+                    </div>
+                    <Button
+                      variant={allAlreadyAdded ? 'ghost' : 'outline'}
+                      size="sm"
+                      onClick={() => handleAddGroup(group.memberIds)}
+                      disabled={allAlreadyAdded}
+                      className="text-xs shrink-0"
+                    >
+                      {allAlreadyAdded ? (
+                        <>
+                          <Check className="w-3.5 h-3.5" /> Added
+                        </>
+                      ) : (
+                        <>
+                          <Plus className="w-3.5 h-3.5" /> Add All
+                        </>
+                      )}
+                    </Button>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+
+        {/* Footer */}
+        <div className="flex justify-end gap-2 pt-2 border-t border-border">
+          <Button variant="outline" size="sm" onClick={handleClose}>
+            Cancel
+          </Button>
+          <Button size="sm" disabled={!name.trim()} onClick={handleCreate}>
+            <Plus className="w-3.5 h-3.5" /> Create Group
+          </Button>
+        </div>
+      </div>
+    </Modal>
   );
 }
 
