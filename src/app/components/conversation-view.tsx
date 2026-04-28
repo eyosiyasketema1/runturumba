@@ -2454,7 +2454,7 @@ export const ConversationView = ({
 
   // ── Render ─────────────────────────────────────────────────────────────
   return (
-    <div className="relative flex flex-col h-full bg-background overflow-hidden animate-in fade-in duration-300">
+    <div className="flex flex-col h-full bg-background overflow-hidden animate-in fade-in duration-300">
 
       {/* ── Page Header ── */}
       <div className="shrink-0 border-b border-border bg-background px-6 py-4 flex items-center justify-between">

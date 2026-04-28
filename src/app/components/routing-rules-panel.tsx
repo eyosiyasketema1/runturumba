@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from "react";
+import { createPortal } from "react-dom";
 import {
   Plus, Trash2, Edit2, GripVertical,
   Globe, ChevronDown, X, Bot, Search,
@@ -622,8 +623,11 @@ export function RoutingRulesPanel({
     { label: "Auto-Create",   value: autoCount,                                         sub: "instant routing",   icon: Zap,           color: "text-amber-600" },
   ];
 
+  const portalTarget = document.getElementById("main-content");
+
   return (
     <>
+      {portalTarget && createPortal(
       <AnimatePresence>
         {isOpen && (
           <motion.div
@@ -632,7 +636,7 @@ export function RoutingRulesPanel({
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 16 }}
             transition={{ duration: 0.18, ease: "easeOut" }}
-            className="absolute inset-0 z-50 bg-background flex flex-col overflow-hidden"
+            className="absolute inset-0 z-40 bg-background flex flex-col overflow-hidden"
           >
             {/* ── Scrollable body ─────────────────────────────────────── */}
             <div className="flex-1 overflow-y-auto custom-scrollbar">
@@ -895,7 +899,8 @@ export function RoutingRulesPanel({
             </div>
           </motion.div>
         )}
-      </AnimatePresence>
+      </AnimatePresence>,
+      portalTarget)}
 
       <RuleFormModal
         isOpen={isRuleModalOpen}

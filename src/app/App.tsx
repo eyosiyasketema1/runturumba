@@ -581,7 +581,7 @@ export default function App() {
       </aside>
 
       {/* Main Content */}
-      <main className="flex-1 flex flex-col min-w-0 h-full relative z-10">
+      <main id="main-content" className="flex-1 flex flex-col min-w-0 h-full relative z-10">
         <header className="h-[60px] border-b border-border bg-background px-4 lg:px-6 flex items-center justify-between z-20 sticky top-0">
           <div className="flex items-center gap-2">
             <button 
