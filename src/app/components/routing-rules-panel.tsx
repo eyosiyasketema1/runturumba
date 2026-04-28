@@ -131,7 +131,7 @@ function DraggableRuleRow({
       )}
     >
       {/* Match header: grip(w-4) · #(w-6) · name/sources(flex-1) · audience(w-32) · mode(w-24) · status(w-20) · actions(w-16) */}
-      <div className="flex items-center gap-3 px-6 py-3">
+      <div className="flex items-center gap-4 px-6 py-4">
 
         {/* Grip — w-4 */}
         <div
@@ -635,7 +635,7 @@ export function RoutingRulesPanel({
             className="fixed inset-0 z-50 bg-background flex flex-col overflow-hidden"
           >
             {/* ── Top nav bar ─────────────────────────────────────────── */}
-            <div className="shrink-0 h-14 border-b border-border bg-background flex items-center justify-between px-6 gap-4">
+            <div className="shrink-0 h-14 border-b border-border bg-background flex items-center justify-between px-8 gap-4">
               <div className="flex items-center gap-3">
                 <button
                   onClick={onClose}
@@ -661,33 +661,35 @@ export function RoutingRulesPanel({
 
             {/* ── Scrollable body ─────────────────────────────────────── */}
             <div className="flex-1 overflow-y-auto custom-scrollbar">
-              <div className="max-w-5xl mx-auto px-6 py-6 space-y-5">
+              <div className="max-w-6xl mx-auto px-8 py-8 space-y-6">
 
                 {/* Page heading */}
                 <div>
                   <h2 className="text-xl font-bold text-foreground">Conversation Rules</h2>
-                  <p className="text-sm text-muted-foreground mt-0.5">
+                  <p className="text-sm text-muted-foreground mt-1">
                     Control how inbound conversations are created and assigned. Rules run in priority order — first match wins.
                   </p>
                 </div>
 
                 {/* Stats row */}
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                   {stats.map(s => (
-                    <div key={s.label} className="border border-border bg-card px-4 py-3 flex items-center gap-3">
-                      <s.icon className={cn("w-4 h-4 shrink-0", s.color)} />
+                    <div key={s.label} className="border border-border bg-card px-5 py-4 flex items-center gap-4">
+                      <div className="w-9 h-9 bg-muted/40 flex items-center justify-center shrink-0">
+                        <s.icon className={cn("w-4 h-4", s.color)} />
+                      </div>
                       <div>
                         <p className="text-lg font-bold text-foreground leading-none">{s.value}</p>
-                        <p className="text-xs font-semibold text-muted-foreground mt-0.5 uppercase tracking-wide">{s.label}</p>
+                        <p className="text-xs font-semibold text-muted-foreground mt-1 uppercase tracking-wide">{s.label}</p>
                       </div>
                     </div>
                   ))}
                 </div>
 
                 {/* ── Toolbar (search + filters grouped) ───────────────── */}
-                <div className="border border-border bg-muted/10 p-4 space-y-3">
+                <div className="border border-border bg-muted/10 p-5 space-y-3">
                   {/* Search row */}
-                  <div className="flex gap-2">
+                  <div className="flex gap-3">
                     <div className="relative flex-1">
                       <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
                       <input
@@ -848,7 +850,7 @@ export function RoutingRulesPanel({
                 ) : (
                   <div>
                     {/* Table meta row */}
-                    <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center justify-between mb-3">
                       <p className="text-xs text-muted-foreground">
                         <span className="font-semibold text-foreground">{filteredRules.length}</span>
                         {filteredRules.length !== conversationRules.length && (
@@ -864,7 +866,7 @@ export function RoutingRulesPanel({
                     </div>
 
                     {/* Column header */}
-                    <div className="hidden md:flex items-center gap-3 px-6 py-2 bg-muted border border-border border-b-0 text-xs font-bold text-muted-foreground uppercase tracking-widest">
+                    <div className="hidden md:flex items-center gap-4 px-6 py-2.5 bg-muted border border-border border-b-0 text-xs font-bold text-muted-foreground uppercase tracking-widest">
                       <span className="w-4 shrink-0" />
                       <span className="w-6 shrink-0 text-center">#</span>
                       <span className="flex-1">Name / Sources</span>
