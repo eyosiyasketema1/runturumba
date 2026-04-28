@@ -45,6 +45,7 @@ import {
   Users,
   ChevronDown,
   ChevronUp,
+  RefreshCw,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { cn } from './types';
@@ -695,26 +696,9 @@ function GroupInfoPanel({
   const onlineCount = group.members.filter(m => m.online).length;
 
   return (
-    <AnimatePresence>
-      {isOpen && (
-        <>
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            onClick={onClose}
-            className="fixed inset-0 z-40 bg-black/20"
-          />
-          <motion.div
-            initial={{ x: 400, opacity: 0 }}
-            animate={{ x: 0, opacity: 1 }}
-            exit={{ x: 400, opacity: 0 }}
-            transition={{ type: 'spring', damping: 20 }}
-            className="fixed right-0 top-0 h-full w-[340px] bg-background border-l border-border shadow-lg overflow-y-auto z-50"
-          >
-            <div className="p-6 space-y-6">
-              {/* Header */}
-              <div className="flex items-center justify-between">
+    <div className="w-[576px] border-l border-border bg-card flex flex-col shrink-0 h-full overflow-hidden">
+            {/* Header */}
+            <div className="flex items-center justify-between px-6 py-4 border-b border-border shrink-0">
                 <h2 className="text-lg font-bold">Group Info</h2>
                 <Button
                   variant="ghost"
@@ -725,6 +709,9 @@ function GroupInfoPanel({
                   <X className="h-4 w-4" />
                 </Button>
               </div>
+
+          <div className="flex-1 overflow-y-auto">
+            <div className="p-6 space-y-6">
 
               {/* Group Details */}
               <div>
@@ -945,10 +932,8 @@ function GroupInfoPanel({
                 Leave Group
               </Button>
             </div>
-          </motion.div>
-        </>
-      )}
-    </AnimatePresence>
+          </div>
+    </div>
   );
 }
 
@@ -1501,6 +1486,7 @@ export function GroupConversationView() {
       return;
     }
     if (!selectedGroup) return;
+
     const newPoll: Poll = {
       id: `poll-${Date.now()}`,
       question: pollQuestion.trim(),
@@ -1508,26 +1494,47 @@ export function GroupConversationView() {
       totalVotes: 0,
       isAnonymous: pollIsAnonymous,
     };
-    const pollMsg: Message = {
-      id: `msg-${Date.now()}`,
-      senderId: currentUserId,
-      senderName: 'You',
-      senderColor: SENDER_COLORS[currentUserId],
-      content: `📊 Poll: ${pollQuestion.trim()}`,
-      timestamp: new Date(),
-      isPoll: true,
-      poll: newPoll,
-    };
-    setGroups(prev => prev.map(g =>
-      g.id === selectedGroup.id
-        ? { ...g, messages: [...g.messages, pollMsg], lastMessageTime: new Date() }
-        : g
-    ));
+
+    // If editing an existing poll message, update it and reset votes
+    if (editingMessage && editingMessage.isPoll) {
+      setGroups(prev => prev.map(g =>
+        g.id === selectedGroup.id
+          ? {
+              ...g,
+              messages: g.messages.map(m =>
+                'id' in m && m.id === editingMessage.id
+                  ? { ...m, content: `📊 Poll: ${pollQuestion.trim()}`, poll: newPoll, isEdited: true }
+                  : m
+              ),
+            }
+          : g
+      ));
+      setEditingMessage(null);
+      toast.success('Poll updated! Votes have been reset.');
+    } else {
+      // Create new poll message
+      const pollMsg: Message = {
+        id: `msg-${Date.now()}`,
+        senderId: currentUserId,
+        senderName: 'You',
+        senderColor: SENDER_COLORS[currentUserId],
+        content: `📊 Poll: ${pollQuestion.trim()}`,
+        timestamp: new Date(),
+        isPoll: true,
+        poll: newPoll,
+      };
+      setGroups(prev => prev.map(g =>
+        g.id === selectedGroup.id
+          ? { ...g, messages: [...g.messages, pollMsg], lastMessageTime: new Date() }
+          : g
+      ));
+      toast.success('Poll sent!');
+    }
+
     setPollQuestion('');
     setPollOptions(['', '']);
     setPollIsAnonymous(false);
     setShowPollCreator(false);
-    toast.success('Poll sent!');
   };
 
   const handleCreateGroup = (name: string, description: string, memberIds: string[]) => {
@@ -1741,6 +1748,16 @@ export function GroupConversationView() {
 
   // Edit — only sender can edit
   const handleStartEdit = (msg: Message) => {
+    // If it's a poll, open poll creator pre-filled for editing
+    if (msg.isPoll && msg.poll) {
+      setEditingMessage(msg);
+      setPollQuestion(msg.poll.question);
+      setPollOptions(msg.poll.options.map(o => o.text));
+      setPollIsAnonymous(msg.poll.isAnonymous || false);
+      setShowPollCreator(true);
+      setReplyToMessage(null);
+      return;
+    }
     setEditingMessage(msg);
     setMessageText(msg.content);
     setReplyToMessage(null);
@@ -1983,6 +2000,7 @@ export function GroupConversationView() {
         {/* ── Chat Pane ── */}
         <div className="flex-1 flex overflow-hidden">
         {selectedGroup ? (
+          <>
           <div className="flex-1 flex flex-col bg-background overflow-hidden">
             {/* Chat Header */}
             <div className="border-b border-border px-6 py-4 flex items-center justify-between bg-background shrink-0">
@@ -2447,12 +2465,18 @@ export function GroupConversationView() {
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
                         <BarChart3 className="w-4 h-4 text-primary" />
-                        <span className="text-sm font-bold">Create Poll</span>
+                        <span className="text-sm font-bold">{editingMessage?.isPoll ? 'Edit Poll' : 'Create Poll'}</span>
                       </div>
-                      <button onClick={() => setShowPollCreator(false)} className="text-muted-foreground hover:text-foreground transition-colors">
+                      <button onClick={() => { setShowPollCreator(false); if (editingMessage?.isPoll) { setEditingMessage(null); setPollQuestion(''); setPollOptions(['', '']); setPollIsAnonymous(false); } }} className="text-muted-foreground hover:text-foreground transition-colors">
                         <X className="w-4 h-4" />
                       </button>
                     </div>
+                    {editingMessage?.isPoll && (
+                      <p className="text-xs text-amber-600 bg-amber-50 border border-amber-200 px-3 py-1.5 rounded-md flex items-center gap-1.5">
+                        <RefreshCw className="w-3 h-3" />
+                        Editing will reset all votes and restart the poll
+                      </p>
+                    )}
                     <input
                       type="text"
                       placeholder="Ask a question…"
@@ -2532,7 +2556,7 @@ export function GroupConversationView() {
                         className="flex items-center gap-1.5 px-4 py-1.5 text-xs font-bold bg-primary text-primary-foreground hover:bg-primary/90 transition-all disabled:opacity-40 disabled:cursor-not-allowed ml-auto"
                       >
                         <Send className="w-3 h-3" />
-                        Send Poll
+                        {editingMessage?.isPoll ? 'Update Poll' : 'Send Poll'}
                       </button>
                     </div>
                   </div>
@@ -2698,6 +2722,31 @@ export function GroupConversationView() {
               </form>
             </div>
           </div>
+
+              {/* Context panel — inline like Direct page */}
+              <AnimatePresence>
+                {showGroupInfo && (
+                  <motion.div
+                    initial={{ width: 0, opacity: 0 }}
+                    animate={{ width: 576, opacity: 1 }}
+                    exit={{ width: 0, opacity: 0 }}
+                    transition={{ duration: 0.2 }}
+                    className="overflow-hidden shrink-0"
+                  >
+                    <GroupInfoPanel
+                      group={selectedGroup}
+                      isOpen={showGroupInfo}
+                      onClose={() => setShowGroupInfo(false)}
+                      currentUserId={currentUserId}
+                      onRemoveMember={handleRemoveMember}
+                      onPromoteToAdmin={handlePromoteToAdmin}
+                      onToggleMute={handleToggleMute}
+                      onLeaveGroup={handleLeaveGroup}
+                    />
+                  </motion.div>
+                )}
+              </AnimatePresence>
+          </>
         ) : (
           <div className="flex-1 flex items-center justify-center">
             <p className="text-muted-foreground">Select a group to start chatting</p>
@@ -2724,18 +2773,7 @@ export function GroupConversationView() {
         availableMentors={SAMPLE_MENTORS}
       />
 
-      {selectedGroup && (
-        <GroupInfoPanel
-          group={selectedGroup}
-          isOpen={showGroupInfo}
-          onClose={() => setShowGroupInfo(false)}
-          currentUserId={currentUserId}
-          onRemoveMember={handleRemoveMember}
-          onPromoteToAdmin={handlePromoteToAdmin}
-          onToggleMute={handleToggleMute}
-          onLeaveGroup={handleLeaveGroup}
-        />
-      )}
+      {/* GroupInfoPanel is now inline next to chat pane */}
     </div>
   );
 }
