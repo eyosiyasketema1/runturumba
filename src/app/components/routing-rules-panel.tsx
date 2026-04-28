@@ -632,7 +632,7 @@ export function RoutingRulesPanel({
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 16 }}
             transition={{ duration: 0.18, ease: "easeOut" }}
-            className="fixed inset-y-0 left-[var(--sidebar-width-icon,3rem)] right-0 z-50 bg-background flex flex-col overflow-hidden"
+            className="absolute inset-0 z-50 bg-background flex flex-col overflow-hidden"
           >
             {/* ── Scrollable body ─────────────────────────────────────── */}
             <div className="flex-1 overflow-y-auto custom-scrollbar">
