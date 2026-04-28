@@ -730,14 +730,37 @@ function CreateGroupModal({ isOpen, onClose, onCreateGroup, availableMentors }: 
           {/* Individual tab */}
           {activeTab === 'individual' && (
             <div>
-              <div className="relative mb-2">
-                <Search className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none" />
-                <Input
-                  value={memberSearch}
-                  onChange={(e) => setMemberSearch(e.target.value)}
-                  placeholder="Search mentors by name..."
-                  className="pl-8 h-8 text-xs"
-                />
+              <div className="flex items-center gap-2 mb-2">
+                <div className="relative flex-1">
+                  <Search className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none" />
+                  <Input
+                    value={memberSearch}
+                    onChange={(e) => setMemberSearch(e.target.value)}
+                    placeholder="Search mentors by name..."
+                    className="pl-8 h-8 text-xs"
+                  />
+                </div>
+                {(() => {
+                  const allIndividualIds = filteredMentors.map((m) => m.id);
+                  const allSelected = allIndividualIds.length > 0 && allIndividualIds.every((id) => selectedMentors.includes(id));
+                  return (
+                    <Button
+                      variant={allSelected ? 'ghost' : 'outline'}
+                      size="sm"
+                      className="h-8 text-xs shrink-0"
+                      disabled={allSelected || filteredMentors.length === 0}
+                      onClick={() => {
+                        const newIds = filteredMentors.map((m) => m.id).filter((id) => !selectedMentors.includes(id));
+                        if (newIds.length > 0) {
+                          setSelectedMentors((prev) => [...prev, ...newIds]);
+                          toast.success(`Added ${newIds.length} member${newIds.length > 1 ? 's' : ''}`);
+                        }
+                      }}
+                    >
+                      {allSelected ? <><Check className="w-3.5 h-3.5" /> All Added</> : <><Plus className="w-3.5 h-3.5" /> Add All</>}
+                    </Button>
+                  );
+                })()}
               </div>
               <div className="max-h-[280px] overflow-y-auto space-y-0.5 border border-border rounded-lg p-1">
                 {filteredMentors.map((mentor) => {
@@ -788,7 +811,31 @@ function CreateGroupModal({ isOpen, onClose, onCreateGroup, availableMentors }: 
 
           {/* From Groups tab */}
           {activeTab === 'groups' && (
-            <div className="max-h-[320px] overflow-y-auto space-y-1 border border-border rounded-lg p-1">
+            <div>
+              {(() => {
+                const allGroupMemberIds = [...new Set(MENTOR_GROUPS.flatMap((g) => g.memberIds).filter((id) => id !== 'm1'))];
+                const allGroupsAdded = allGroupMemberIds.length > 0 && allGroupMemberIds.every((id) => selectedMentors.includes(id));
+                return (
+                  <div className="flex justify-end mb-2">
+                    <Button
+                      variant={allGroupsAdded ? 'ghost' : 'outline'}
+                      size="sm"
+                      className="h-8 text-xs"
+                      disabled={allGroupsAdded}
+                      onClick={() => {
+                        const newIds = allGroupMemberIds.filter((id) => !selectedMentors.includes(id));
+                        if (newIds.length > 0) {
+                          setSelectedMentors((prev) => [...prev, ...newIds]);
+                          toast.success(`Added ${newIds.length} member${newIds.length > 1 ? 's' : ''} from all groups`);
+                        }
+                      }}
+                    >
+                      {allGroupsAdded ? <><Check className="w-3.5 h-3.5" /> All Added</> : <><Plus className="w-3.5 h-3.5" /> Add All Groups</>}
+                    </Button>
+                  </div>
+                );
+              })()}
+            <div className="max-h-[300px] overflow-y-auto space-y-1 border border-border rounded-lg p-1">
               {MENTOR_GROUPS.map((group) => {
                 const groupMentorNames = group.memberIds
                   .filter((id) => id !== 'm1')
@@ -838,6 +885,7 @@ function CreateGroupModal({ isOpen, onClose, onCreateGroup, availableMentors }: 
                   </div>
                 );
               })}
+            </div>
             </div>
           )}
         </div>
