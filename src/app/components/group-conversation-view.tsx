@@ -46,6 +46,10 @@ import {
   ChevronDown,
   ChevronUp,
   RefreshCw,
+  ShieldOff,
+  UserMinus,
+  Pencil,
+  Settings,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { cn } from './types';
@@ -676,8 +680,76 @@ interface GroupInfoPanelProps {
   currentUserId: string;
   onRemoveMember: (memberId: string) => void;
   onPromoteToAdmin: (memberId: string) => void;
+  onDemoteAdmin: (memberId: string) => void;
   onToggleMute: (memberId: string) => void;
   onLeaveGroup: () => void;
+  onUpdateGroup: (name: string, description: string) => void;
+  onDeleteGroup: () => void;
+  onAddMember: (mentorId: string) => void;
+  availableMentors: Mentor[];
+}
+
+// Member dot-menu dropdown
+function MemberActionMenu({
+  member,
+  isAdmin,
+  onPromote,
+  onDemote,
+  onMute,
+  onRemove,
+  onClose,
+}: {
+  member: GroupMember;
+  isAdmin: boolean;
+  onPromote: () => void;
+  onDemote: () => void;
+  onMute: () => void;
+  onRemove: () => void;
+  onClose: () => void;
+}) {
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    function handler(e: MouseEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) onClose();
+    }
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, [onClose]);
+
+  const items = [
+    ...(isAdmin
+      ? [{ icon: ShieldOff, label: 'Remove Admin', action: onDemote, destructive: false }]
+      : [{ icon: Shield, label: 'Make Admin', action: onPromote, destructive: false }]
+    ),
+    { icon: member.muted ? Bell : BellOff, label: member.muted ? 'Unmute' : 'Mute', action: onMute, destructive: false },
+    { icon: UserMinus, label: 'Remove from Group', action: onRemove, destructive: true },
+  ];
+
+  return (
+    <div ref={ref} className="absolute right-0 top-full mt-1 w-52 bg-background border border-border rounded-xl shadow-xl z-[70]">
+      <div className="py-1.5">
+        {items.map((item) => {
+          const Icon = item.icon;
+          return (
+            <React.Fragment key={item.label}>
+              {item.destructive && <div className="mx-2 my-1 border-t border-border" />}
+              <button
+                onClick={() => { item.action(); onClose(); }}
+                className={cn(
+                  'w-full flex items-center gap-3 px-4 py-2.5 text-sm transition-colors',
+                  item.destructive ? 'text-destructive hover:bg-destructive/10' : 'text-foreground hover:bg-muted/60'
+                )}
+              >
+                <Icon className="h-4 w-4 flex-shrink-0" />
+                <span>{item.label}</span>
+              </button>
+            </React.Fragment>
+          );
+        })}
+      </div>
+    </div>
+  );
 }
 
 function GroupInfoPanel({
@@ -687,252 +759,306 @@ function GroupInfoPanel({
   currentUserId,
   onRemoveMember,
   onPromoteToAdmin,
+  onDemoteAdmin,
   onToggleMute,
   onLeaveGroup,
+  onUpdateGroup,
+  onDeleteGroup,
+  onAddMember,
+  availableMentors,
 }: GroupInfoPanelProps) {
   const currentUserIsAdmin = group.members.some(
     (m) => m.id === currentUserId && m.role === 'admin'
   );
   const onlineCount = group.members.filter(m => m.online).length;
+  const [activeMemberMenu, setActiveMemberMenu] = useState<string | null>(null);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editName, setEditName] = useState(group.name);
+  const [editDescription, setEditDescription] = useState(group.description || '');
+  const [showAddMember, setShowAddMember] = useState(false);
+  const [addMemberSearch, setAddMemberSearch] = useState('');
+  const [confirmDelete, setConfirmDelete] = useState(false);
+
+  const memberIds = new Set(group.members.map(m => m.id));
+  const addableMentors = availableMentors
+    .filter(m => !memberIds.has(m.id))
+    .filter(m => !addMemberSearch || m.name.toLowerCase().includes(addMemberSearch.toLowerCase()));
 
   return (
     <div className="w-[576px] border-l border-border bg-card flex flex-col shrink-0 h-full overflow-hidden">
-            {/* Header */}
-            <div className="flex items-center justify-between px-6 py-4 border-b border-border shrink-0">
-                <h2 className="text-lg font-bold">Group Info</h2>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={onClose}
-                  className="h-8 w-8"
-                >
-                  <X className="h-4 w-4" />
+      {/* Header */}
+      <div className="flex items-center justify-between px-6 py-4 border-b border-border shrink-0">
+        <h2 className="text-lg font-bold">Group Info</h2>
+        <div className="flex items-center gap-1">
+          {currentUserIsAdmin && !isEditing && (
+            <Button variant="ghost" size="icon" onClick={() => { setIsEditing(true); setEditName(group.name); setEditDescription(group.description || ''); }} className="h-8 w-8" title="Edit Group">
+              <Pencil className="h-4 w-4" />
+            </Button>
+          )}
+          <Button variant="ghost" size="icon" onClick={onClose} className="h-8 w-8">
+            <X className="h-4 w-4" />
+          </Button>
+        </div>
+      </div>
+
+      <div className="flex-1 overflow-y-auto">
+        <div className="p-6 space-y-6">
+
+          {/* Group Details — View or Edit */}
+          {isEditing ? (
+            <div className="space-y-4">
+              <div>
+                <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1.5 block">Group Name</label>
+                <Input value={editName} onChange={e => setEditName(e.target.value)} className="rounded-lg" />
+              </div>
+              <div>
+                <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1.5 block">Description</label>
+                <textarea
+                  value={editDescription}
+                  onChange={e => setEditDescription(e.target.value)}
+                  rows={3}
+                  className="w-full rounded-lg border border-input bg-background px-3.5 py-2.5 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
+                />
+              </div>
+              <div className="flex gap-2">
+                <Button size="sm" variant="outline" onClick={() => setIsEditing(false)} className="flex-1 gap-1.5">
+                  Cancel
+                </Button>
+                <Button size="sm" onClick={() => { onUpdateGroup(editName.trim() || group.name, editDescription.trim()); setIsEditing(false); }} className="flex-1 gap-1.5">
+                  <Check className="h-3.5 w-3.5" />
+                  Save
                 </Button>
               </div>
+            </div>
+          ) : (
+            <div>
+              <div className="flex items-center gap-4 mb-4">
+                <div className={cn('w-16 h-16 rounded-full flex items-center justify-center text-white font-bold text-lg', getGroupAvatarColor(group.id))}>
+                  {getGroupInitials(group.name)}
+                </div>
+                <div>
+                  <h3 className="font-bold text-base">{group.name}</h3>
+                  <p className="text-sm text-muted-foreground">{onlineCount} of {group.members.length} online</p>
+                </div>
+              </div>
+              {group.description && <p className="text-sm text-muted-foreground leading-relaxed">{group.description}</p>}
+              {group.createdAt && <p className="text-xs text-muted-foreground mt-3">Created {formatFullDate(group.createdAt)}</p>}
+            </div>
+          )}
 
-          <div className="flex-1 overflow-y-auto">
-            <div className="p-6 space-y-6">
+          <Separator />
 
-              {/* Group Details */}
-              <div>
-                <div className="flex items-center gap-4 mb-4">
-                  <div
-                    className={cn(
-                      'w-16 h-16 rounded-full flex items-center justify-center text-white font-bold text-lg',
-                      getGroupAvatarColor(group.id)
-                    )}
-                  >
-                    {getGroupInitials(group.name)}
+          {/* Stats */}
+          <div className="grid grid-cols-3 gap-3">
+            <div className="text-center p-3 bg-muted/30 rounded-lg">
+              <p className="text-sm font-bold">{group.members.length}</p>
+              <p className="text-xs text-muted-foreground">Members</p>
+            </div>
+            <div className="text-center p-3 bg-muted/30 rounded-lg">
+              <p className="text-sm font-bold">{group.sharedFiles?.length || 0}</p>
+              <p className="text-xs text-muted-foreground">Files</p>
+            </div>
+            <div className="text-center p-3 bg-muted/30 rounded-lg">
+              <p className="text-sm font-bold">{group.messages.filter(m => 'senderId' in m).length}</p>
+              <p className="text-xs text-muted-foreground">Messages</p>
+            </div>
+          </div>
+
+          <Separator />
+
+          {/* Members */}
+          <div>
+            <div className="flex items-center justify-between mb-4">
+              <h4 className="font-semibold text-sm">Members ({group.members.length})</h4>
+              {currentUserIsAdmin && (
+                <button onClick={() => setShowAddMember(!showAddMember)} className="flex items-center gap-1.5 text-xs font-bold text-primary hover:text-primary/70 transition-colors">
+                  <UserPlus className="h-3.5 w-3.5" />
+                  Add
+                </button>
+              )}
+            </div>
+
+            {/* Add Member Panel */}
+            <AnimatePresence>
+              {showAddMember && (
+                <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="overflow-hidden mb-3">
+                  <div className="border border-border rounded-lg p-3 bg-muted/10 space-y-2">
+                    <div className="relative">
+                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
+                      <input
+                        type="text"
+                        placeholder="Search mentors…"
+                        value={addMemberSearch}
+                        onChange={e => setAddMemberSearch(e.target.value)}
+                        className="w-full pl-9 pr-3 py-2 bg-background border border-input text-xs rounded-md focus:ring-1 focus:ring-ring outline-none"
+                        autoFocus
+                      />
+                    </div>
+                    <div className="max-h-36 overflow-y-auto space-y-1">
+                      {addableMentors.length === 0 ? (
+                        <p className="text-xs text-muted-foreground text-center py-3">No mentors available to add</p>
+                      ) : (
+                        addableMentors.map(m => (
+                          <button
+                            key={m.id}
+                            onClick={() => { onAddMember(m.id); setAddMemberSearch(''); }}
+                            className="w-full flex items-center gap-2.5 px-2.5 py-2 hover:bg-muted/40 rounded-md transition-colors text-left"
+                          >
+                            <Avatar className="h-7 w-7">
+                              <AvatarImage src={getAvatarUrl(m.name)} alt={m.name} />
+                              <AvatarFallback>{m.name.slice(0, 2).toUpperCase()}</AvatarFallback>
+                            </Avatar>
+                            <span className="text-xs font-semibold">{m.name}</span>
+                            <Plus className="h-3.5 w-3.5 text-primary ml-auto" />
+                          </button>
+                        ))
+                      )}
+                    </div>
+                    <button onClick={() => { setShowAddMember(false); setAddMemberSearch(''); }} className="w-full text-center text-xs text-muted-foreground hover:text-foreground py-1 transition-colors">
+                      Close
+                    </button>
                   </div>
-                  <div>
-                    <h3 className="font-bold text-base">{group.name}</h3>
-                    <p className="text-sm text-muted-foreground">
-                      {onlineCount} of {group.members.length} online
+                </motion.div>
+              )}
+            </AnimatePresence>
+
+            {/* Member List */}
+            <div className="space-y-1">
+              {group.members.map((member) => (
+                <div key={member.id} className="flex items-center gap-3 p-2.5 rounded-lg hover:bg-muted/30 transition-colors">
+                  <Avatar className="h-9 w-9">
+                    <AvatarImage src={getAvatarUrl(member.name)} alt={member.name} />
+                    <AvatarFallback>{member.name.slice(0, 2).toUpperCase()}</AvatarFallback>
+                  </Avatar>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm font-semibold truncate">{member.name}</span>
+                      {member.id === currentUserId && <span className="text-xs text-muted-foreground">(You)</span>}
+                      {member.role === 'admin' && (
+                        <Badge variant="secondary" className="h-5 text-xs flex-shrink-0">
+                          <Shield className="h-3 w-3 mr-1" />
+                          Admin
+                        </Badge>
+                      )}
+                      {member.muted && (
+                        <BellOff className="h-3 w-3 text-muted-foreground flex-shrink-0" />
+                      )}
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <div className={cn('w-2 h-2 rounded-full', member.online ? 'bg-green-500' : 'bg-gray-400')} />
+                      <span className="text-xs text-muted-foreground">{member.online ? 'Online' : 'Offline'}</span>
+                    </div>
+                  </div>
+
+                  {/* Dot menu — admin only, not for self */}
+                  {currentUserIsAdmin && member.id !== currentUserId && (
+                    <div className="relative">
+                      <button
+                        onClick={() => setActiveMemberMenu(activeMemberMenu === member.id ? null : member.id)}
+                        className="p-1.5 rounded-full hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
+                      >
+                        <MoreVertical className="h-4 w-4" />
+                      </button>
+                      {activeMemberMenu === member.id && (
+                        <MemberActionMenu
+                          member={member}
+                          isAdmin={member.role === 'admin'}
+                          onPromote={() => onPromoteToAdmin(member.id)}
+                          onDemote={() => onDemoteAdmin(member.id)}
+                          onMute={() => onToggleMute(member.id)}
+                          onRemove={() => onRemoveMember(member.id)}
+                          onClose={() => setActiveMemberMenu(null)}
+                        />
+                      )}
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <Separator />
+
+          {/* Pinned Messages */}
+          {group.pinnedMessageId && (
+            <div>
+              <h4 className="font-semibold text-sm mb-3">Pinned Message</h4>
+              <motion.div initial={{ opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }} className="p-4 rounded-lg bg-primary/5 border border-primary/20">
+                <div className="flex gap-2">
+                  <Pin className="h-4 w-4 text-primary flex-shrink-0 mt-0.5" />
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm text-foreground break-words">
+                      {(() => {
+                        const msg = group.messages.find(m => 'id' in m && m.id === group.pinnedMessageId) as Message | undefined;
+                        return msg ? msg.content.replace(/\[Image:.*?\]/g, '📷') : '';
+                      })()}
+                    </p>
+                    <p className="text-xs text-muted-foreground mt-2">
+                      {(() => {
+                        const msg = group.messages.find(m => 'id' in m && m.id === group.pinnedMessageId) as Message | undefined;
+                        return msg ? `${msg.senderName} • ${formatTime(msg.timestamp)}` : '';
+                      })()}
                     </p>
                   </div>
                 </div>
-                {group.description && (
-                  <p className="text-sm text-muted-foreground leading-relaxed">{group.description}</p>
-                )}
-                {group.createdAt && (
-                  <p className="text-xs text-muted-foreground mt-3">
-                    Created {formatFullDate(group.createdAt)}
-                  </p>
-                )}
-              </div>
+              </motion.div>
+            </div>
+          )}
 
+          {/* Shared Files */}
+          {group.sharedFiles && group.sharedFiles.length > 0 && (
+            <>
               <Separator />
-
-              {/* Stats */}
-              <div className="grid grid-cols-3 gap-3">
-                <div className="text-center p-3 bg-muted/30 rounded-lg">
-                  <p className="text-sm font-bold">{group.members.length}</p>
-                  <p className="text-xs text-muted-foreground">Members</p>
-                </div>
-                <div className="text-center p-3 bg-muted/30 rounded-lg">
-                  <p className="text-sm font-bold">{group.sharedFiles?.length || 0}</p>
-                  <p className="text-xs text-muted-foreground">Files</p>
-                </div>
-                <div className="text-center p-3 bg-muted/30 rounded-lg">
-                  <p className="text-sm font-bold">{group.messages.filter(m => 'senderId' in m).length}</p>
-                  <p className="text-xs text-muted-foreground">Messages</p>
-                </div>
-              </div>
-
-              <Separator />
-
-              {/* Members */}
               <div>
-                <h4 className="font-semibold text-sm mb-4">Members ({group.members.length})</h4>
-                <div className="space-y-2 max-h-64 overflow-y-auto">
-                  {group.members.map((member) => (
-                    <motion.div
-                      key={member.id}
-                      whileHover={{ x: 2 }}
-                      className="flex items-center gap-3 p-3 rounded-lg hover:bg-muted/30 group transition-colors"
-                    >
-                      <Avatar className="h-10 w-10">
-                        <AvatarImage
-                          src={getAvatarUrl(member.name)}
-                          alt={member.name}
-                        />
-                        <AvatarFallback>
-                          {member.name.slice(0, 2).toUpperCase()}
-                        </AvatarFallback>
-                      </Avatar>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2">
-                          <span className="text-sm font-semibold truncate">
-                            {member.name}
-                          </span>
-                          {member.role === 'admin' && (
-                            <Badge variant="secondary" className="h-5 text-xs flex-shrink-0">
-                              <Shield className="h-3 w-3 mr-1" />
-                              Admin
-                            </Badge>
-                          )}
-                        </div>
-                        <div className="flex items-center gap-1">
-                          <div
-                            className={cn(
-                              'w-2 h-2 rounded-full',
-                              member.online ? 'bg-green-500' : 'bg-gray-400'
-                            )}
-                          />
-                          <span className="text-xs text-muted-foreground">
-                            {member.online ? 'Online' : 'Offline'}
-                          </span>
-                        </div>
+                <h4 className="font-semibold text-sm mb-3">Shared Files</h4>
+                <div className="space-y-2 max-h-48 overflow-y-auto">
+                  {group.sharedFiles.map((file) => (
+                    <motion.div key={file.id} whileHover={{ x: 2 }} className="p-3 rounded-lg hover:bg-muted/30 transition-colors">
+                      <p className="text-sm font-semibold truncate">{file.name}</p>
+                      <div className="text-xs text-muted-foreground flex justify-between mt-1">
+                        <span>{file.size}</span>
+                        <span>{formatTime(file.uploadedAt)}</span>
                       </div>
-
-                      {/* Admin Actions */}
-                      {currentUserIsAdmin && member.id !== currentUserId && (
-                        <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                          {member.role !== 'admin' && (
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => onPromoteToAdmin(member.id)}
-                              title="Promote to admin"
-                              className="h-7 w-7 p-0"
-                            >
-                              <Shield className="h-3.5 w-3.5" />
-                            </Button>
-                          )}
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => onToggleMute(member.id)}
-                            title={member.muted ? 'Unmute' : 'Mute'}
-                            className="h-7 w-7 p-0"
-                          >
-                            {member.muted ? (
-                              <BellOff className="h-3.5 w-3.5" />
-                            ) : (
-                              <Bell className="h-3.5 w-3.5" />
-                            )}
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => onRemoveMember(member.id)}
-                            title="Remove member"
-                            className="h-7 w-7 p-0 text-destructive"
-                          >
-                            <X className="h-3.5 w-3.5" />
-                          </Button>
-                        </div>
-                      )}
                     </motion.div>
                   ))}
                 </div>
-
-                {currentUserIsAdmin && (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="w-full mt-4 gap-2 rounded-lg"
-                  >
-                    <UserPlus className="h-4 w-4" />
-                    Add Member
-                  </Button>
-                )}
               </div>
+            </>
+          )}
 
-              <Separator />
+          <Separator />
 
-              {/* Pinned Messages */}
-              {group.pinnedMessageId && (
-                <div>
-                  <h4 className="font-semibold text-sm mb-3">Pinned Message</h4>
-                  <motion.div
-                    initial={{ opacity: 0, y: 5 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    className="p-4 rounded-lg bg-primary/5 border border-primary/20"
-                  >
-                    <div className="flex gap-2">
-                      <Pin className="h-4 w-4 text-primary flex-shrink-0 mt-0.5" />
-                      <div className="min-w-0 flex-1">
-                        <p className="text-sm text-foreground break-words">
-                          {(() => {
-                            const msg = group.messages.find(
-                              m => 'id' in m && m.id === group.pinnedMessageId
-                            ) as Message | undefined;
-                            return msg ? msg.content.replace(/\[Image:.*?\]/g, '📷') : '';
-                          })()}
-                        </p>
-                        <p className="text-xs text-muted-foreground mt-2">
-                          {(() => {
-                            const msg = group.messages.find(
-                              m => 'id' in m && m.id === group.pinnedMessageId
-                            ) as Message | undefined;
-                            return msg ? `${msg.senderName} • ${formatTime(msg.timestamp)}` : '';
-                          })()}
-                        </p>
-                      </div>
-                    </div>
-                  </motion.div>
-                </div>
-              )}
-
-              {/* Shared Files */}
-              {group.sharedFiles && group.sharedFiles.length > 0 && (
-                <>
-                  <Separator />
-                  <div>
-                    <h4 className="font-semibold text-sm mb-3">Shared Files</h4>
-                    <div className="space-y-2 max-h-48 overflow-y-auto">
-                      {group.sharedFiles.map((file) => (
-                        <motion.div
-                          key={file.id}
-                          whileHover={{ x: 2 }}
-                          className="p-3 rounded-lg hover:bg-muted/30 transition-colors"
-                        >
-                          <p className="text-sm font-semibold truncate">{file.name}</p>
-                          <div className="text-xs text-muted-foreground flex justify-between mt-1">
-                            <span>{file.size}</span>
-                            <span>{formatTime(file.uploadedAt)}</span>
-                          </div>
-                        </motion.div>
-                      ))}
-                    </div>
+          {/* Danger Zone — admin only */}
+          {currentUserIsAdmin && (
+            <div className="space-y-3">
+              <h4 className="font-semibold text-sm text-destructive">Danger Zone</h4>
+              {confirmDelete ? (
+                <div className="p-4 border border-destructive/30 rounded-lg bg-destructive/5 space-y-3">
+                  <p className="text-sm text-foreground">Are you sure you want to delete <strong>{group.name}</strong>? This action cannot be undone.</p>
+                  <div className="flex gap-2">
+                    <Button size="sm" variant="outline" onClick={() => setConfirmDelete(false)} className="flex-1">Cancel</Button>
+                    <Button size="sm" variant="destructive" onClick={onDeleteGroup} className="flex-1 gap-1.5">
+                      <Trash2 className="h-3.5 w-3.5" />
+                      Delete Group
+                    </Button>
                   </div>
-                </>
+                </div>
+              ) : (
+                <Button variant="outline" onClick={() => setConfirmDelete(true)} className="w-full gap-2 rounded-lg text-destructive border-destructive/30 hover:bg-destructive/10 hover:text-destructive">
+                  <Trash2 className="h-4 w-4" />
+                  Delete Group
+                </Button>
               )}
-
-              <Separator />
-
-              {/* Leave Group */}
-              <Button
-                variant="destructive"
-                onClick={onLeaveGroup}
-                className="w-full gap-2 rounded-lg"
-              >
-                <LogOut className="h-4 w-4" />
-                Leave Group
-              </Button>
             </div>
-          </div>
+          )}
+
+          {/* Leave Group — always visible */}
+          <Button variant="ghost" onClick={onLeaveGroup} className="w-full gap-2 rounded-lg text-muted-foreground hover:text-destructive">
+            <LogOut className="h-4 w-4" />
+            Leave Group
+          </Button>
+        </div>
+      </div>
     </div>
   );
 }
@@ -1711,6 +1837,55 @@ export function GroupConversationView() {
     setSelectedGroupId(groups.find((g) => g.id !== selectedGroupId)?.id || '');
     setShowGroupInfo(false);
     toast.success('You left the group');
+  };
+
+  const handleDemoteAdmin = (memberId: string) => {
+    if (!selectedGroup) return;
+    setGroups(prev => prev.map(g =>
+      g.id === selectedGroupId
+        ? { ...g, members: g.members.map(m => m.id === memberId ? { ...m, role: 'member' as const } : m) }
+        : g
+    ));
+    toast.success('Admin role removed');
+  };
+
+  const handleUpdateGroup = (name: string, description: string) => {
+    if (!selectedGroup) return;
+    setGroups(prev => prev.map(g =>
+      g.id === selectedGroupId
+        ? { ...g, name, description }
+        : g
+    ));
+    toast.success('Group updated');
+  };
+
+  const handleDeleteGroup = () => {
+    setGroups(prev => prev.filter(g => g.id !== selectedGroupId));
+    setSelectedGroupId(groups.find(g => g.id !== selectedGroupId)?.id || '');
+    setShowGroupInfo(false);
+    toast.success('Group deleted');
+  };
+
+  const handleAddMember = (mentorId: string) => {
+    if (!selectedGroup) return;
+    const mentor = SAMPLE_MENTORS.find(m => m.id === mentorId);
+    if (!mentor) return;
+    const newMember: GroupMember = { ...mentor, role: 'member', joinedAt: new Date() };
+    setGroups(prev => prev.map(g =>
+      g.id === selectedGroupId
+        ? {
+            ...g,
+            members: [...g.members, newMember],
+            messages: [...g.messages, {
+              id: `sys-${Date.now()}`,
+              type: 'join' as const,
+              content: `${mentor.name} was added to the group`,
+              timestamp: new Date(),
+            }],
+          }
+        : g
+    ));
+    toast.success(`${mentor.name} added to group`);
   };
 
   const handlePinMessage = (messageId: string) => {
@@ -2740,8 +2915,13 @@ export function GroupConversationView() {
                       currentUserId={currentUserId}
                       onRemoveMember={handleRemoveMember}
                       onPromoteToAdmin={handlePromoteToAdmin}
+                      onDemoteAdmin={handleDemoteAdmin}
                       onToggleMute={handleToggleMute}
                       onLeaveGroup={handleLeaveGroup}
+                      onUpdateGroup={handleUpdateGroup}
+                      onDeleteGroup={handleDeleteGroup}
+                      onAddMember={handleAddMember}
+                      availableMentors={SAMPLE_MENTORS}
                     />
                   </motion.div>
                 )}
