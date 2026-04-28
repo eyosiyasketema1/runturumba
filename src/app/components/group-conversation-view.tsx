@@ -1363,7 +1363,7 @@ function PollResultsModal({ poll, onClose }: { poll: Poll; onClose: () => void }
           <div className="px-6 py-4 border-b border-border bg-muted/30">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <BarChart3 className="w-5 h-5 text-primary" />
+                <BarChart3 className="w-5 h-5 text-muted-foreground" />
                 <h3 className="font-bold text-base">Poll Results</h3>
               </div>
               <button onClick={onClose} className="p-1 text-muted-foreground hover:text-foreground transition-colors">
@@ -1390,18 +1390,18 @@ function PollResultsModal({ poll, onClose }: { poll: Poll; onClose: () => void }
               return (
                 <div key={idx} className="space-y-2">
                   <div className="flex items-center justify-between">
-                    <span className={cn('text-sm font-semibold', isTop && 'text-primary')}>
+                    <span className={cn('text-sm font-semibold', isTop && 'text-foreground')}>
                       {isTop && <span className="mr-1">🏆</span>}
                       {option.text}
                     </span>
                     <span className="text-sm font-bold">{pct}%</span>
                   </div>
-                  <div className="w-full h-3 bg-muted rounded-full overflow-hidden">
+                  <div className="w-full h-3 bg-muted/40 rounded-full overflow-hidden">
                     <motion.div
                       initial={{ width: 0 }}
                       animate={{ width: `${pct}%` }}
                       transition={{ duration: 0.6, ease: 'easeOut' }}
-                      className={cn('h-full rounded-full', isTop ? 'bg-primary' : 'bg-primary/40')}
+                      className={cn('h-full rounded-full', isTop ? 'bg-muted-foreground/50' : 'bg-muted-foreground/25')}
                     />
                   </div>
                   <div className="flex items-center justify-between">
@@ -1413,7 +1413,7 @@ function PollResultsModal({ poll, onClose }: { poll: Poll; onClose: () => void }
                     <div className="flex flex-wrap gap-1.5 pt-1">
                       {option.votedBy.map(id => (
                         <span key={id} className="inline-flex items-center gap-1 px-2 py-0.5 bg-muted text-xs font-medium text-foreground rounded-full">
-                          <div className="w-4 h-4 rounded-full bg-primary/20 flex items-center justify-center text-[8px] font-bold text-primary">
+                          <div className="w-4 h-4 rounded-full bg-muted-foreground/20 flex items-center justify-center text-[8px] font-bold text-muted-foreground">
                             {getMentorDisplayName(id).charAt(0)}
                           </div>
                           {getMentorDisplayName(id)}
@@ -1453,13 +1453,13 @@ function PollComponent({ poll, onVote, isSender }: PollComponentProps) {
     <>
       <div className={cn(
         'mt-3 rounded-lg overflow-hidden',
-        isSender ? 'bg-background/95 text-foreground' : 'bg-card border border-border'
+        isSender ? 'bg-background/95 text-foreground border border-border/60' : 'bg-muted/20 border border-border/50'
       )}>
         {/* Poll header */}
         <div className="px-4 pt-4 pb-2">
           <div className="flex items-start gap-2.5">
-            <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
-              <BarChart3 className="w-4 h-4 text-primary" />
+            <div className="w-8 h-8 rounded-lg bg-muted/60 flex items-center justify-center shrink-0">
+              <BarChart3 className="w-4 h-4 text-muted-foreground" />
             </div>
             <div className="flex-1 min-w-0">
               <p className="font-bold text-sm text-foreground leading-snug">{poll.question}</p>
@@ -1485,14 +1485,14 @@ function PollComponent({ poll, onVote, isSender }: PollComponentProps) {
               <button
                 key={idx}
                 onClick={() => onVote(idx)}
-                className="w-full text-left rounded-md overflow-hidden relative transition-all hover:ring-1 hover:ring-primary/30 group"
+                className="w-full text-left rounded-md overflow-hidden relative transition-all hover:ring-1 hover:ring-border group"
               >
-                <div className={cn('absolute inset-0 rounded-md', isWinning ? 'bg-primary/12' : 'bg-muted/40')} style={{ width: `${pct}%` }} />
+                <div className={cn('absolute inset-0 rounded-md', isWinning ? 'bg-muted/80' : 'bg-muted/30')} style={{ width: `${pct}%` }} />
                 <div className="relative flex items-center justify-between px-3 py-2.5">
-                  <span className={cn('text-sm font-medium', isWinning && 'text-primary font-semibold')}>
+                  <span className={cn('text-sm font-medium', isWinning && 'text-foreground font-semibold')}>
                     {option.text}
                   </span>
-                  <span className={cn('text-xs font-bold shrink-0 ml-2', isWinning ? 'text-primary' : 'text-muted-foreground')}>
+                  <span className={cn('text-xs font-bold shrink-0 ml-2', isWinning ? 'text-foreground' : 'text-muted-foreground')}>
                     {pct}%
                   </span>
                 </div>
@@ -1505,7 +1505,7 @@ function PollComponent({ poll, onVote, isSender }: PollComponentProps) {
         <div className="px-4 pb-3 pt-1">
           <button
             onClick={(e) => { e.stopPropagation(); setShowResults(true); }}
-            className="w-full flex items-center justify-center gap-2 py-2 text-xs font-semibold text-primary hover:bg-primary/5 rounded-md border border-primary/20 transition-colors"
+            className="w-full flex items-center justify-center gap-2 py-2 text-xs font-semibold text-muted-foreground hover:bg-muted/30 rounded-md border border-border/50 transition-colors"
           >
             <Eye className="w-3.5 h-3.5" />
             View Results
@@ -1552,6 +1552,8 @@ export function GroupConversationView() {
   const [selectedMessages, setSelectedMessages] = useState<Set<string>>(new Set());
   const [showForwardModal, setShowForwardModal] = useState(false);
   const [forwardingMessages, setForwardingMessages] = useState<Message[]>([]);
+  const [chatSearchOpen, setChatSearchOpen] = useState(false);
+  const [chatSearchQuery, setChatSearchQuery] = useState('');
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
@@ -2044,7 +2046,17 @@ export function GroupConversationView() {
     (m) => m.id === currentUserId && m.role === 'admin'
   );
 
-  const messageGroups = selectedGroup ? groupMessagesByDate(selectedGroup.messages) : [];
+  const filteredMessages = selectedGroup
+    ? chatSearchQuery.trim()
+      ? selectedGroup.messages.filter(m =>
+          'content' in m
+            ? m.content.toLowerCase().includes(chatSearchQuery.toLowerCase()) ||
+              ('senderName' in m && m.senderName.toLowerCase().includes(chatSearchQuery.toLowerCase()))
+            : ('content' in m && (m as SystemMessage).content.toLowerCase().includes(chatSearchQuery.toLowerCase()))
+        )
+      : selectedGroup.messages
+    : [];
+  const messageGroups = groupMessagesByDate(filteredMessages);
 
   return (
     <div className="flex flex-col h-full bg-background overflow-hidden animate-in fade-in duration-300">
@@ -2189,18 +2201,11 @@ export function GroupConversationView() {
                 <Button
                   variant="ghost"
                   size="icon"
-                  title="Search"
+                  title="Search messages"
                   className="rounded-lg"
+                  onClick={() => { setChatSearchOpen(!chatSearchOpen); if (chatSearchOpen) setChatSearchQuery(''); }}
                 >
                   <Search className="h-4 w-4" />
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  title="Voice call"
-                  className="rounded-lg"
-                >
-                  <Phone className="h-4 w-4" />
                 </Button>
                 <Button
                   variant="ghost"
@@ -2212,6 +2217,41 @@ export function GroupConversationView() {
                 </Button>
               </div>
             </div>
+
+            {/* Search Bar */}
+            <AnimatePresence>
+              {chatSearchOpen && (
+                <motion.div
+                  initial={{ height: 0, opacity: 0 }}
+                  animate={{ height: 'auto', opacity: 1 }}
+                  exit={{ height: 0, opacity: 0 }}
+                  className="overflow-hidden border-b border-border"
+                >
+                  <div className="px-6 py-2.5 flex items-center gap-3 bg-muted/10">
+                    <Search className="h-4 w-4 text-muted-foreground shrink-0" />
+                    <input
+                      type="text"
+                      placeholder="Search messages…"
+                      value={chatSearchQuery}
+                      onChange={e => setChatSearchQuery(e.target.value)}
+                      className="flex-1 text-sm bg-transparent outline-none placeholder:text-muted-foreground"
+                      autoFocus
+                    />
+                    {chatSearchQuery && (
+                      <span className="text-xs text-muted-foreground shrink-0">
+                        {filteredMessages.filter(m => 'senderId' in m).length} result{filteredMessages.filter(m => 'senderId' in m).length !== 1 ? 's' : ''}
+                      </span>
+                    )}
+                    <button
+                      onClick={() => { setChatSearchOpen(false); setChatSearchQuery(''); }}
+                      className="p-1 text-muted-foreground hover:text-foreground transition-colors shrink-0"
+                    >
+                      <X className="h-4 w-4" />
+                    </button>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
 
             {/* Pinned Message Banner */}
             {selectedGroup.pinnedMessageId && (
