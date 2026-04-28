@@ -679,18 +679,28 @@ const MENTOR_IMPORT_FIELDS: ImportField[] = [
 
 type ImportRow = Record<string, string>;
 
-/** Generate CSV content from fields with example rows */
-function generateTemplateCSV(fields: ImportField[]): string {
-  const header = fields.map(f => f.label + (f.required ? " *" : "")).join(",");
-  const row1 = fields.map(f => f.example || "").join(",");
-  const row2 = fields.map(f => f.example2 || "").join(",");
-  const row3 = fields.map(f => f.example3 || "").join(",");
-  return [header, row1, row2, row3].join("\n");
+/** Quote a CSV cell if it contains commas or quotes */
+function csvCell(val: string): string {
+  if (val.includes(",") || val.includes('"') || val.includes("\n")) {
+    return `"${val.replace(/"/g, '""')}"`;
+  }
+  return val;
 }
 
-/** Trigger browser download of a text file */
-function downloadFile(content: string, filename: string, mimeType: string) {
-  const blob = new Blob([content], { type: mimeType });
+/** Generate CSV content from fields with example rows */
+function generateTemplateCSV(fields: ImportField[]): string {
+  const header = fields.map(f => csvCell(f.label + (f.required ? " *" : ""))).join(",");
+  const row1 = fields.map(f => csvCell(f.example || "")).join(",");
+  const row2 = fields.map(f => csvCell(f.example2 || "")).join(",");
+  const row3 = fields.map(f => csvCell(f.example3 || "")).join(",");
+  return "\uFEFF" + [header, row1, row2, row3].join("\r\n");
+}
+
+/** Trigger browser download of a file */
+function downloadFile(content: string | Uint8Array, filename: string, mimeType: string) {
+  const blob = content instanceof Uint8Array
+    ? new Blob([content], { type: mimeType })
+    : new Blob([content], { type: mimeType });
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
   a.href = url;
@@ -701,28 +711,86 @@ function downloadFile(content: string, filename: string, mimeType: string) {
   URL.revokeObjectURL(url);
 }
 
-/** Generate Excel XML (SpreadsheetML) content with headers + example rows */
+/** Generate Excel XML (SpreadsheetML) content with headers + example rows + column widths */
 function generateTemplateExcel(fields: ImportField[]): string {
   const escXml = (s: string) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
-  const headerCells = fields.map(f => `<Cell ss:StyleID="Header"><Data ss:Type="String">${escXml(f.label + (f.required ? " *" : ""))}</Data></Cell>`).join("");
+  const columns = fields.map(f => {
+    const w = Math.max(f.label.length, (f.example || "").length, (f.example2 || "").length) * 8 + 30;
+    return `<Column ss:AutoFitWidth="1" ss:Width="${Math.min(Math.max(w, 100), 250)}"/>`;
+  }).join("\n    ");
+  const headerCells = fields.map(f =>
+    `<Cell ss:StyleID="Header"><Data ss:Type="String">${escXml(f.label + (f.required ? " *" : ""))}</Data></Cell>`
+  ).join("");
+  const exampleStyle = "Example";
   const makeRow = (exKey: "example" | "example2" | "example3") =>
-    fields.map(f => `<Cell><Data ss:Type="String">${escXml(f[exKey] || "")}</Data></Cell>`).join("");
+    fields.map(f => `<Cell ss:StyleID="${exampleStyle}"><Data ss:Type="String">${escXml(f[exKey] || "")}</Data></Cell>`).join("");
   return `<?xml version="1.0" encoding="UTF-8"?>
 <?mso-application progid="Excel.Sheet"?>
 <Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet"
+ xmlns:o="urn:schemas-microsoft-com:office:office"
+ xmlns:x="urn:schemas-microsoft-com:office:excel"
  xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet">
 <Styles>
-  <Style ss:ID="Header"><Font ss:Bold="1"/><Interior ss:Color="#E2E8F0" ss:Pattern="Solid"/></Style>
+  <Style ss:ID="Default" ss:Name="Normal">
+    <Font ss:FontName="Calibri" ss:Size="11"/>
+  </Style>
+  <Style ss:ID="Header">
+    <Font ss:FontName="Calibri" ss:Size="11" ss:Bold="1" ss:Color="#1E293B"/>
+    <Interior ss:Color="#E2E8F0" ss:Pattern="Solid"/>
+    <Borders>
+      <Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#94A3B8"/>
+    </Borders>
+  </Style>
+  <Style ss:ID="${exampleStyle}">
+    <Font ss:FontName="Calibri" ss:Size="11" ss:Color="#94A3B8" ss:Italic="1"/>
+  </Style>
 </Styles>
 <Worksheet ss:Name="Import Template">
-<Table>
-  <Row>${headerCells}</Row>
+<Table ss:DefaultRowHeight="20">
+    ${columns}
+  <Row ss:Height="24">${headerCells}</Row>
   <Row>${makeRow("example")}</Row>
   <Row>${makeRow("example2")}</Row>
   <Row>${makeRow("example3")}</Row>
 </Table>
 </Worksheet>
 </Workbook>`;
+}
+
+/** Parse rows from Excel XML (SpreadsheetML) content */
+function parseExcelXML(xmlText: string): { headers: string[]; rows: Record<string, string>[] } | null {
+  try {
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(xmlText, "text/xml");
+    const ns = "urn:schemas-microsoft-com:office:spreadsheet";
+    const tableRows = doc.getElementsByTagNameNS(ns, "Row");
+    if (tableRows.length < 2) return null;
+
+    // First row = headers
+    const headerRow = tableRows[0];
+    const headerCells = headerRow.getElementsByTagNameNS(ns, "Cell");
+    const headers: string[] = [];
+    for (let i = 0; i < headerCells.length; i++) {
+      const data = headerCells[i].getElementsByTagNameNS(ns, "Data")[0];
+      headers.push(data?.textContent?.trim() || `Column${i + 1}`);
+    }
+
+    // Data rows
+    const rows: Record<string, string>[] = [];
+    for (let r = 1; r < tableRows.length; r++) {
+      const cells = tableRows[r].getElementsByTagNameNS(ns, "Cell");
+      const row: Record<string, string> = {};
+      for (let c = 0; c < headers.length; c++) {
+        const cell = cells[c];
+        const data = cell?.getElementsByTagNameNS(ns, "Data")[0];
+        row[headers[c]] = data?.textContent?.trim() || "";
+      }
+      rows.push(row);
+    }
+    return { headers, rows };
+  } catch {
+    return null;
+  }
 }
 
 function ImportModal({
@@ -747,17 +815,35 @@ function ImportModal({
   // Strip " *" suffix and normalize for matching
   const normalizeHeader = (h: string) => h.replace(/\s*\*$/, "").trim().toLowerCase().replace(/[_\s/()]/g, "");
 
-  const parseCSV = (text: string) => {
-    const lines = text.split(/\r?\n/).filter(l => l.trim());
-    if (lines.length < 2) { setErrors(["File must have a header row and at least one data row."]); return; }
-    const rawHeaders = lines[0].split(",").map(h => h.trim().replace(/^"|"$/g, ""));
+  /** Parse a CSV line respecting quoted fields */
+  const splitCSVLine = (line: string): string[] => {
+    const result: string[] = [];
+    let current = "";
+    let inQuotes = false;
+    for (let i = 0; i < line.length; i++) {
+      const ch = line[i];
+      if (inQuotes) {
+        if (ch === '"' && line[i + 1] === '"') { current += '"'; i++; }
+        else if (ch === '"') { inQuotes = false; }
+        else { current += ch; }
+      } else {
+        if (ch === '"') { inQuotes = true; }
+        else if (ch === ",") { result.push(current.trim()); current = ""; }
+        else { current += ch; }
+      }
+    }
+    result.push(current.trim());
+    return result;
+  };
 
+  /** Process parsed headers + rows into mapped ImportRow[] */
+  const processRows = (rawHeaders: string[], dataRows: Record<string, string>[]) => {
     // Match headers to field keys
-    const headerToKey: Record<number, string> = {};
-    rawHeaders.forEach((h, idx) => {
+    const headerToKey: Record<string, string> = {};
+    rawHeaders.forEach(h => {
       const norm = normalizeHeader(h);
       const field = fields.find(f => normalizeHeader(f.label) === norm || f.key.toLowerCase() === norm);
-      if (field) headerToKey[idx] = field.key;
+      if (field) headerToKey[h] = field.key;
     });
 
     // Check required fields are present
@@ -770,20 +856,19 @@ function ImportModal({
       return;
     }
 
-    // Parse data rows (skip rows that look like examples from template)
-    const dataRows = lines.slice(1).map(line => {
-      const vals = line.split(",").map(v => v.trim().replace(/^"|"$/g, ""));
-      const row: ImportRow = {};
-      Object.entries(headerToKey).forEach(([idxStr, key]) => {
-        row[key] = vals[parseInt(idxStr)] || "";
+    // Map rows to field keys
+    const mapped = dataRows.map(row => {
+      const r: ImportRow = {};
+      Object.entries(headerToKey).forEach(([header, key]) => {
+        r[key] = row[header] || "";
       });
-      return row;
+      return r;
     });
 
-    // Filter out the template example rows by checking if they match example data exactly
+    // Filter out the template example rows
     const exampleNames = fields.find(f => f.key === "name");
     const exampleValues = [exampleNames?.example, exampleNames?.example2, exampleNames?.example3].filter(Boolean);
-    const realRows = dataRows.filter(r => !exampleValues.includes(r.name?.trim()));
+    const realRows = mapped.filter(r => !exampleValues.includes(r.name?.trim()));
 
     if (realRows.length === 0) {
       setErrors(["No data rows found. Please remove the example rows and add your own data."]);
@@ -795,29 +880,51 @@ function ImportModal({
     setStep("preview");
   };
 
+  const parseCSV = (text: string) => {
+    // Strip UTF-8 BOM
+    const clean = text.replace(/^\uFEFF/, "");
+    const lines = clean.split(/\r?\n/).filter(l => l.trim());
+    if (lines.length < 2) { setErrors(["File must have a header row and at least one data row."]); return; }
+    const rawHeaders = splitCSVLine(lines[0]);
+    const dataRows = lines.slice(1).map(line => {
+      const vals = splitCSVLine(line);
+      const row: Record<string, string> = {};
+      rawHeaders.forEach((h, i) => { row[h] = vals[i] || ""; });
+      return row;
+    });
+    processRows(rawHeaders, dataRows);
+  };
+
   const handleFile = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
     setFileName(file.name);
     setErrors([]);
     const ext = file.name.split(".").pop()?.toLowerCase();
-    if (ext === "csv" || ext === "txt") {
-      const reader = new FileReader();
-      reader.onload = (ev) => parseCSV(ev.target?.result as string);
-      reader.readAsText(file);
-    } else if (ext === "xlsx" || ext === "xls" || ext === "xml") {
-      const reader = new FileReader();
-      reader.onload = (ev) => {
-        try {
-          const text = ev.target?.result as string;
-          parseCSV(text);
-        } catch {
-          setErrors(["Could not parse file. Please try exporting as CSV."]);
+
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      const text = ev.target?.result as string;
+      try {
+        // Try Excel XML first (our template generates .xls as SpreadsheetML XML)
+        if ((ext === "xls" || ext === "xml") && text.trimStart().startsWith("<?xml")) {
+          const result = parseExcelXML(text);
+          if (result && result.headers.length > 0 && result.rows.length > 0) {
+            processRows(result.headers, result.rows);
+            return;
+          }
         }
-      };
-      reader.readAsText(file);
-    } else {
-      setErrors(["Unsupported file format. Please use .csv or .xlsx"]);
+        // Fall back to CSV parsing
+        parseCSV(text);
+      } catch {
+        setErrors(["Could not parse file. Please try using the CSV template instead."]);
+      }
+    };
+    reader.readAsText(file);
+
+    if (ext !== "csv" && ext !== "txt" && ext !== "xls" && ext !== "xml" && ext !== "xlsx") {
+      setErrors(["Unsupported file format. Please use .csv or .xls"]);
+      return;
     }
   };
 
