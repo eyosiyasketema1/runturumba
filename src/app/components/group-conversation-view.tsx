@@ -2444,6 +2444,8 @@ export function GroupConversationView() {
                                   'px-4 py-3 rounded-2xl break-words shadow-sm',
                                   isAnnouncement
                                     ? 'bg-amber-50 border border-amber-200 text-foreground'
+                                    : msg.isPoll
+                                    ? 'bg-muted/40 border border-border text-foreground rounded-tr-sm'
                                     : isSender
                                     ? 'bg-primary text-primary-foreground rounded-tr-sm'
                                     : 'bg-card border border-border rounded-tl-sm'
