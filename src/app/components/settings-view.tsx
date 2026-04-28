@@ -1395,52 +1395,6 @@ const AISection = () => {
       <SectionHeader title="AI Configuration" description="Configure how AI is used across your organization — business rules, API keys, and sharing." />
       <Separator />
 
-      {/* ── Business Logic Rules ── */}
-      <Card>
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <BookOpen className="w-5 h-5 text-amber-600" />
-              <div>
-                <CardTitle className="text-base">Business Logic &amp; Guardrails</CardTitle>
-                <CardDescription>Set rules that govern how AI behaves in your ministry. These are enforced system-wide.</CardDescription>
-              </div>
-            </div>
-            <Button size="sm" variant="outline" onClick={() => setShowAddRule(!showAddRule)}>
-              {showAddRule ? <X className="w-3.5 h-3.5" /> : <Plus className="w-3.5 h-3.5" />}
-              {showAddRule ? "Cancel" : "Add Rule"}
-            </Button>
-          </div>
-        </CardHeader>
-        <CardContent className="space-y-2">
-          {showAddRule && (
-            <div className="p-4 border border-dashed border-amber-300 rounded-lg bg-amber-50 space-y-3">
-              <FormField label="Rule Description">
-                <Textarea value={newRuleText} onChange={e => setNewRuleText(e.target.value)} placeholder="Describe the rule AI must follow..." rows={2} />
-              </FormField>
-              <Button size="sm" onClick={addRule}><Check className="w-3.5 h-3.5" /> Add Rule</Button>
-            </div>
-          )}
-          {rules.map((r, idx) => (
-            <div key={r.id} className="flex items-start justify-between gap-3 p-3 rounded-lg border border-border hover:bg-muted/30 transition-colors">
-              <div className="flex items-start gap-2.5 flex-1 min-w-0">
-                <span className="text-xs font-bold text-muted-foreground mt-0.5 shrink-0 w-5">{idx + 1}.</span>
-                <p className="text-sm text-foreground leading-relaxed">{r.rule}</p>
-              </div>
-              <div className="flex items-center gap-2 shrink-0">
-                <Switch
-                  checked={r.enabled}
-                  onCheckedChange={v => { setRules(prev => prev.map(x => x.id === r.id ? { ...x, enabled: v } : x)); toast.success(`Rule ${v ? "enabled" : "disabled"}`); }}
-                />
-                <Button variant="ghost" size="sm" className="h-7 w-7 p-0 text-muted-foreground hover:text-red-500" onClick={() => { setRules(prev => prev.filter(x => x.id !== r.id)); toast.success("Rule removed"); }}>
-                  <Trash2 className="w-3.5 h-3.5" />
-                </Button>
-              </div>
-            </div>
-          ))}
-        </CardContent>
-      </Card>
-
       {/* ── AI API Keys ── */}
       <Card>
         <CardHeader>
@@ -1820,6 +1774,52 @@ const AISection = () => {
               </div>
             </div>
           )}
+        </CardContent>
+      </Card>
+
+      {/* ── Business Logic Rules ── */}
+      <Card>
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <BookOpen className="w-5 h-5 text-amber-600" />
+              <div>
+                <CardTitle className="text-base">Business Logic &amp; Guardrails</CardTitle>
+                <CardDescription>Set rules that govern how AI behaves in your ministry. These are enforced system-wide.</CardDescription>
+              </div>
+            </div>
+            <Button size="sm" variant="outline" onClick={() => setShowAddRule(!showAddRule)}>
+              {showAddRule ? <X className="w-3.5 h-3.5" /> : <Plus className="w-3.5 h-3.5" />}
+              {showAddRule ? "Cancel" : "Add Rule"}
+            </Button>
+          </div>
+        </CardHeader>
+        <CardContent className="space-y-2">
+          {showAddRule && (
+            <div className="p-4 border border-dashed border-amber-300 rounded-lg bg-amber-50 space-y-3">
+              <FormField label="Rule Description">
+                <Textarea value={newRuleText} onChange={e => setNewRuleText(e.target.value)} placeholder="Describe the rule AI must follow..." rows={2} />
+              </FormField>
+              <Button size="sm" onClick={addRule}><Check className="w-3.5 h-3.5" /> Add Rule</Button>
+            </div>
+          )}
+          {rules.map((r, idx) => (
+            <div key={r.id} className="flex items-start justify-between gap-3 p-3 rounded-lg border border-border hover:bg-muted/30 transition-colors">
+              <div className="flex items-start gap-2.5 flex-1 min-w-0">
+                <span className="text-xs font-bold text-muted-foreground mt-0.5 shrink-0 w-5">{idx + 1}.</span>
+                <p className="text-sm text-foreground leading-relaxed">{r.rule}</p>
+              </div>
+              <div className="flex items-center gap-2 shrink-0">
+                <Switch
+                  checked={r.enabled}
+                  onCheckedChange={v => { setRules(prev => prev.map(x => x.id === r.id ? { ...x, enabled: v } : x)); toast.success(`Rule ${v ? "enabled" : "disabled"}`); }}
+                />
+                <Button variant="ghost" size="sm" className="h-7 w-7 p-0 text-muted-foreground hover:text-red-500" onClick={() => { setRules(prev => prev.filter(x => x.id !== r.id)); toast.success("Rule removed"); }}>
+                  <Trash2 className="w-3.5 h-3.5" />
+                </Button>
+              </div>
+            </div>
+          ))}
         </CardContent>
       </Card>
     </motion.div>
