@@ -101,6 +101,7 @@ interface Message {
   poll?: Poll;
   isForwarded?: boolean;
   forwardedFrom?: string;
+  isEdited?: boolean;
 }
 
 interface SystemMessage {
@@ -1003,7 +1004,7 @@ function MessageContextMenu({
   onPin,
   onForward,
   onSelect,
-  onReport,
+  onEdit,
   onDelete,
   onClose,
 }: {
@@ -1014,7 +1015,7 @@ function MessageContextMenu({
   onPin: () => void;
   onForward: () => void;
   onSelect: () => void;
-  onReport: () => void;
+  onEdit?: () => void;
   onDelete: () => void;
   onClose: () => void;
 }) {
@@ -1034,7 +1035,7 @@ function MessageContextMenu({
     { icon: Pin, label: message.isPinned ? 'Unpin' : 'Pin', action: onPin, destructive: false },
     { icon: Share2, label: 'Forward', action: onForward, destructive: false },
     { icon: CircleCheck, label: 'Select', action: onSelect, destructive: false },
-    { icon: Flag, label: 'Report', action: onReport, destructive: false },
+    ...(isSender && onEdit ? [{ icon: Edit2, label: 'Edit', action: onEdit, destructive: false }] : []),
     { icon: Trash2, label: 'Delete', action: onDelete, destructive: true },
   ];
 
@@ -1069,6 +1070,116 @@ function MessageContextMenu({
             </React.Fragment>
           );
         })}
+      </div>
+    </div>
+  );
+}
+
+// Forward Modal Component
+function ForwardModal({
+  isOpen,
+  messages,
+  groups,
+  currentGroupId,
+  onForward,
+  onClose,
+}: {
+  isOpen: boolean;
+  messages: Message[];
+  groups: Group[];
+  currentGroupId: string;
+  onForward: (targetGroupId: string) => void;
+  onClose: () => void;
+}) {
+  const [search, setSearch] = useState('');
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    function handler(e: MouseEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) onClose();
+    }
+    if (isOpen) {
+      document.addEventListener('mousedown', handler);
+      return () => document.removeEventListener('mousedown', handler);
+    }
+  }, [isOpen, onClose]);
+
+  if (!isOpen) return null;
+
+  const otherGroups = groups
+    .filter(g => g.id !== currentGroupId)
+    .filter(g => !search || g.name.toLowerCase().includes(search.toLowerCase()));
+
+  return (
+    <div className="fixed inset-0 z-[80] flex items-center justify-center bg-black/40">
+      <div ref={ref} className="w-full max-w-md bg-background border border-border rounded-xl shadow-2xl overflow-hidden">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-border">
+          <div>
+            <h3 className="text-base font-bold">Forward Message{messages.length > 1 ? 's' : ''}</h3>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              {messages.length} message{messages.length > 1 ? 's' : ''} selected
+            </p>
+          </div>
+          <button onClick={onClose} className="p-1 text-muted-foreground hover:text-foreground transition-colors">
+            <X className="h-5 w-5" />
+          </button>
+        </div>
+
+        <div className="px-5 py-3 border-b border-border">
+          <div className="flex items-center gap-2 px-3 py-2 bg-muted/30 border border-input rounded-lg">
+            <Search className="h-4 w-4 text-muted-foreground shrink-0" />
+            <input
+              type="text"
+              placeholder="Search groups…"
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+              className="flex-1 text-sm bg-transparent outline-none"
+              autoFocus
+            />
+          </div>
+        </div>
+
+        <div className="max-h-72 overflow-y-auto">
+          {otherGroups.length === 0 ? (
+            <div className="px-5 py-8 text-center text-sm text-muted-foreground">
+              No other groups found
+            </div>
+          ) : (
+            otherGroups.map(group => (
+              <button
+                key={group.id}
+                onClick={() => onForward(group.id)}
+                className="w-full flex items-center gap-3 px-5 py-3 hover:bg-muted/40 transition-colors text-left"
+              >
+                <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+                  <Users className="h-5 w-5 text-primary" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-semibold truncate">{group.name}</p>
+                  <p className="text-xs text-muted-foreground">{group.members.length} members</p>
+                </div>
+                <Share2 className="h-4 w-4 text-muted-foreground shrink-0" />
+              </button>
+            ))
+          )}
+        </div>
+
+        {/* Preview of messages being forwarded */}
+        {messages.length > 0 && (
+          <div className="border-t border-border px-5 py-3 bg-muted/10">
+            <p className="text-xs text-muted-foreground mb-2 font-medium">Preview:</p>
+            <div className="space-y-1 max-h-24 overflow-y-auto">
+              {messages.slice(0, 3).map(msg => (
+                <div key={msg.id} className="text-xs text-foreground/70 truncate">
+                  <span className="font-semibold">{msg.senderName}:</span> {msg.content}
+                </div>
+              ))}
+              {messages.length > 3 && (
+                <p className="text-xs text-muted-foreground italic">+{messages.length - 3} more…</p>
+              )}
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
@@ -1322,6 +1433,13 @@ export function GroupConversationView() {
   const [pollQuestion, setPollQuestion] = useState('');
   const [pollOptions, setPollOptions] = useState(['', '']);
   const [pollIsAnonymous, setPollIsAnonymous] = useState(false);
+  // Reply, Edit, Forward, Select
+  const [replyToMessage, setReplyToMessage] = useState<Message | null>(null);
+  const [editingMessage, setEditingMessage] = useState<Message | null>(null);
+  const [selectMode, setSelectMode] = useState(false);
+  const [selectedMessages, setSelectedMessages] = useState<Set<string>>(new Set());
+  const [showForwardModal, setShowForwardModal] = useState(false);
+  const [forwardingMessages, setForwardingMessages] = useState<Message[]>([]);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
@@ -1438,6 +1556,12 @@ export function GroupConversationView() {
   const handleSendMessage = () => {
     if (!selectedGroup) return;
 
+    // If editing, save the edit instead
+    if (editingMessage) {
+      handleSaveEdit();
+      return;
+    }
+
     const parts: string[] = [];
     if (voiceBlob) {
       parts.push(`🎤 Voice message (${formatDuration(recordingDuration)})`);
@@ -1458,6 +1582,7 @@ export function GroupConversationView() {
       isVoiceMessage: !!voiceBlob,
       readBy: [],
       reactions: [],
+      replyTo: replyToMessage?.id,
     };
 
     const updatedGroups = groups.map((g) =>
@@ -1473,6 +1598,7 @@ export function GroupConversationView() {
     setGroups(updatedGroups);
     setMessageText('');
     setIsAnnouncing(false);
+    setReplyToMessage(null);
     discardVoice();
     toast.success(isAnnouncing ? 'Announcement sent!' : 'Message sent!');
   };
@@ -1600,6 +1726,102 @@ export function GroupConversationView() {
     );
     setGroups(updatedGroups);
     toast.success('Message deleted');
+  };
+
+  // Reply
+  const handleReply = (msg: Message) => {
+    setReplyToMessage(msg);
+    setEditingMessage(null);
+  };
+
+  // Edit — only sender can edit
+  const handleStartEdit = (msg: Message) => {
+    setEditingMessage(msg);
+    setMessageText(msg.content);
+    setReplyToMessage(null);
+  };
+
+  const handleSaveEdit = () => {
+    if (!editingMessage || !messageText.trim()) return;
+    setGroups(prev => prev.map(g =>
+      g.id === selectedGroupId
+        ? {
+            ...g,
+            messages: g.messages.map(m =>
+              'id' in m && m.id === editingMessage.id
+                ? { ...m, content: messageText.trim(), isEdited: true }
+                : m
+            ),
+          }
+        : g
+    ));
+    setEditingMessage(null);
+    setMessageText('');
+    toast.success('Message edited');
+  };
+
+  // Forward
+  const handleForward = (msg: Message) => {
+    setForwardingMessages([msg]);
+    setShowForwardModal(true);
+  };
+
+  const handleForwardSelected = () => {
+    if (selectedMessages.size === 0) return;
+    const msgs = (selectedGroup?.messages || []).filter(
+      m => 'id' in m && selectedMessages.has(m.id)
+    ) as Message[];
+    setForwardingMessages(msgs);
+    setShowForwardModal(true);
+  };
+
+  const handleForwardToGroup = (targetGroupId: string) => {
+    const targetGroup = groups.find(g => g.id === targetGroupId);
+    if (!targetGroup || !selectedGroup) return;
+    const forwarded: Message[] = forwardingMessages.map(msg => ({
+      ...msg,
+      id: `msg-fwd-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+      timestamp: new Date(),
+      isForwarded: true,
+      forwardedFrom: selectedGroup.name,
+      reactions: [],
+      readBy: [],
+    }));
+    setGroups(prev => prev.map(g =>
+      g.id === targetGroupId
+        ? { ...g, messages: [...g.messages, ...forwarded], lastMessageTime: new Date() }
+        : g
+    ));
+    setShowForwardModal(false);
+    setForwardingMessages([]);
+    exitSelectMode();
+    toast.success(`Forwarded ${forwarded.length} message${forwarded.length > 1 ? 's' : ''} to ${targetGroup.name}`);
+  };
+
+  // Select mode
+  const toggleSelectMessage = (msgId: string) => {
+    setSelectedMessages(prev => {
+      const next = new Set(prev);
+      if (next.has(msgId)) next.delete(msgId);
+      else next.add(msgId);
+      return next;
+    });
+  };
+
+  const exitSelectMode = () => {
+    setSelectMode(false);
+    setSelectedMessages(new Set());
+  };
+
+  const handleDeleteSelected = () => {
+    if (selectedMessages.size === 0) return;
+    setGroups(prev => prev.map(g =>
+      g.id === selectedGroupId
+        ? { ...g, messages: g.messages.filter(m => !('id' in m) || !selectedMessages.has(m.id)) }
+        : g
+    ));
+    toast.success(`Deleted ${selectedMessages.size} message${selectedMessages.size > 1 ? 's' : ''}`);
+    exitSelectMode();
   };
 
   const filteredGroups = groups
@@ -1872,9 +2094,27 @@ export function GroupConversationView() {
                           key={msg.id}
                           className={cn(
                             'group/msg flex gap-3 relative',
-                            isSender && 'flex-row-reverse'
+                            isSender && 'flex-row-reverse',
+                            selectMode && 'cursor-pointer'
                           )}
+                          onClick={selectMode ? () => toggleSelectMessage(msg.id) : undefined}
                         >
+                          {/* Select mode checkbox */}
+                          {selectMode && (
+                            <div className="flex items-center shrink-0 self-center">
+                              <div className={cn(
+                                'w-5 h-5 rounded-md border-2 flex items-center justify-center transition-colors',
+                                selectedMessages.has(msg.id)
+                                  ? 'bg-primary border-primary'
+                                  : 'border-muted-foreground/40 hover:border-primary'
+                              )}>
+                                {selectedMessages.has(msg.id) && (
+                                  <Check className="h-3 w-3 text-primary-foreground" />
+                                )}
+                              </div>
+                            </div>
+                          )}
+
                           {/* Avatar */}
                           {!isSender && (
                             <Avatar className="h-9 w-9 flex-shrink-0 mt-1">
@@ -1903,15 +2143,20 @@ export function GroupConversationView() {
                             )}
 
                             {/* Reply Preview */}
-                            {msg.replyTo && (
-                              <div className={cn(
-                                'mb-2 p-2 rounded-lg border-l-3 border-primary/50 text-xs max-w-xs',
-                                isSender ? 'bg-primary/20' : 'bg-muted/50'
-                              )}>
-                                <p className="font-semibold text-muted-foreground">Replying to...</p>
-                                <p className="text-foreground/80 truncate mt-0.5">Sample message</p>
-                              </div>
-                            )}
+                            {msg.replyTo && (() => {
+                              const repliedMsg = (selectedGroup?.messages || []).find(
+                                m => 'id' in m && m.id === msg.replyTo
+                              ) as Message | undefined;
+                              return repliedMsg ? (
+                                <div className={cn(
+                                  'mb-2 p-2 rounded-lg border-l-3 border-primary/50 text-xs max-w-xs cursor-pointer hover:opacity-80',
+                                  isSender ? 'bg-primary/20' : 'bg-muted/50'
+                                )}>
+                                  <p className="font-semibold text-primary/80">{repliedMsg.senderName}</p>
+                                  <p className="text-foreground/70 truncate mt-0.5">{repliedMsg.content}</p>
+                                </div>
+                              ) : null;
+                            })()}
 
                             {/* Bubble row: action icons + bubble */}
                             <div className={cn(
@@ -2000,15 +2245,15 @@ export function GroupConversationView() {
                                     <MessageContextMenu
                                       message={msg}
                                       isSender={isSender}
-                                      onReply={() => toast.info(`Replying to ${msg.senderName}`)}
+                                      onReply={() => handleReply(msg)}
                                       onCopy={() => {
                                         navigator.clipboard.writeText(msg.content);
                                         toast.success('Copied to clipboard');
                                       }}
                                       onPin={() => handlePinMessage(msg.id)}
-                                      onForward={() => toast.info('Forward — coming soon')}
-                                      onSelect={() => toast.info('Select mode — coming soon')}
-                                      onReport={() => toast.info('Message reported')}
+                                      onForward={() => handleForward(msg)}
+                                      onSelect={() => { setSelectMode(true); toggleSelectMessage(msg.id); }}
+                                      onEdit={isSender && !msg.isPoll && !msg.isVoiceMessage ? () => handleStartEdit(msg) : undefined}
                                       onDelete={() => handleDeleteMessage(msg.id)}
                                       onClose={() => setActiveMenuMsgId(null)}
                                     />
@@ -2024,11 +2269,14 @@ export function GroupConversationView() {
                               </p>
                             )}
 
-                            {/* Timestamp & Read Status */}
+                            {/* Timestamp, Edited & Read Status */}
                             <div className="flex items-center gap-2 mt-1">
                               <p className="text-xs text-muted-foreground">
                                 {formatFullTime(msg.timestamp)}
                               </p>
+                              {msg.isEdited && (
+                                <span className="text-xs text-muted-foreground/70 italic">edited</span>
+                              )}
                               {isSender && (
                                 msg.readBy && msg.readBy.length > 0
                                   ? <CheckCheck className="h-3 w-3 text-primary" />
@@ -2050,6 +2298,48 @@ export function GroupConversationView() {
               ))}
               <div ref={messagesEndRef} />
             </div>
+
+            {/* Select Mode Toolbar */}
+            {selectMode && (
+              <div className="shrink-0 border-t border-border bg-muted/30 px-4 py-2.5 flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <span className="text-sm font-semibold text-foreground">
+                    {selectedMessages.size} selected
+                  </span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={handleForwardSelected}
+                    disabled={selectedMessages.size === 0}
+                    className="gap-1.5 text-xs"
+                  >
+                    <Share2 className="h-3.5 w-3.5" />
+                    Forward {selectedMessages.size > 0 ? `(${selectedMessages.size})` : ''}
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="destructive"
+                    onClick={handleDeleteSelected}
+                    disabled={selectedMessages.size === 0}
+                    className="gap-1.5 text-xs"
+                  >
+                    <Trash2 className="h-3.5 w-3.5" />
+                    Delete {selectedMessages.size > 0 ? `(${selectedMessages.size})` : ''}
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={exitSelectMode}
+                    className="gap-1.5 text-xs"
+                  >
+                    <X className="h-3.5 w-3.5" />
+                    Cancel
+                  </Button>
+                </div>
+              </div>
+            )}
 
             {/* Compose Area */}
             <div className="shrink-0 border-t border-border bg-background">
@@ -2205,6 +2495,46 @@ export function GroupConversationView() {
                 </div>
               )}
 
+              {/* Reply / Edit Banner */}
+              {(replyToMessage || editingMessage) && (
+                <div className="flex items-center gap-3 px-4 pt-3 pb-2">
+                  <div className={cn(
+                    'flex-1 flex items-center gap-3 px-3 py-2 border-l-3 rounded-r-lg',
+                    editingMessage
+                      ? 'bg-blue-50 border-blue-400 dark:bg-blue-900/20'
+                      : 'bg-muted/40 border-primary/50'
+                  )}>
+                    {editingMessage ? (
+                      <Edit2 className="h-4 w-4 text-blue-500 shrink-0" />
+                    ) : (
+                      <Reply className="h-4 w-4 text-primary shrink-0" />
+                    )}
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs font-semibold text-primary/80">
+                        {editingMessage ? 'Editing message' : `Replying to ${replyToMessage?.senderName}`}
+                      </p>
+                      <p className="text-xs text-muted-foreground truncate mt-0.5">
+                        {editingMessage?.content || replyToMessage?.content}
+                      </p>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (editingMessage) {
+                        setEditingMessage(null);
+                        setMessageText('');
+                      } else {
+                        setReplyToMessage(null);
+                      }
+                    }}
+                    className="p-1 text-muted-foreground hover:text-foreground transition-colors"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                </div>
+              )}
+
               {/* Textarea */}
               <form
                 onSubmit={(e) => {
@@ -2215,7 +2545,7 @@ export function GroupConversationView() {
               >
                 <div className="border border-input bg-background transition-colors">
                   <textarea
-                    placeholder={`Message ${selectedGroup.name}…`}
+                    placeholder={editingMessage ? 'Edit your message…' : `Message ${selectedGroup.name}…`}
                     value={messageText}
                     onChange={(e) => setMessageText(e.target.value)}
                     onKeyDown={(e) => {
@@ -2294,14 +2624,22 @@ export function GroupConversationView() {
                       )}
                     </div>
 
-                    {/* Send */}
+                    {/* Send / Save */}
                     <button
                       type="submit"
                       disabled={!messageText.trim() && !voiceBlob}
-                      className="flex items-center gap-1.5 px-4 py-1.5 text-xs font-bold transition-all disabled:opacity-40 disabled:cursor-not-allowed bg-primary text-primary-foreground hover:bg-primary/90"
+                      className={cn(
+                        'flex items-center gap-1.5 px-4 py-1.5 text-xs font-bold transition-all disabled:opacity-40 disabled:cursor-not-allowed',
+                        editingMessage
+                          ? 'bg-blue-500 text-white hover:bg-blue-600'
+                          : 'bg-primary text-primary-foreground hover:bg-primary/90'
+                      )}
                     >
-                      <Send className="w-3 h-3" />
-                      Send
+                      {editingMessage ? (
+                        <><Check className="w-3 h-3" /> Save</>
+                      ) : (
+                        <><Send className="w-3 h-3" /> Send</>
+                      )}
                     </button>
                   </div>
                 </div>
@@ -2323,6 +2661,16 @@ export function GroupConversationView() {
         )}
         </div>
       </div>
+
+      {/* Forward Modal */}
+      <ForwardModal
+        isOpen={showForwardModal}
+        messages={forwardingMessages}
+        groups={groups}
+        currentGroupId={selectedGroupId || ''}
+        onForward={handleForwardToGroup}
+        onClose={() => { setShowForwardModal(false); setForwardingMessages([]); }}
+      />
 
       {/* Modals */}
       <CreateGroupModal
