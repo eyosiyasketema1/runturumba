@@ -828,22 +828,47 @@ export default function App() {
             )}
             {currentView === "conversations" && (
               <motion.div key="conversations" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.2 }} className="h-full flex flex-col">
-                {/* Direct / Groups tab switcher */}
-                <div className="shrink-0 flex items-center gap-1 px-6 pt-3 pb-0 bg-background">
-                  {(["direct", "groups"] as const).map(tab => (
-                    <button
-                      key={tab}
-                      onClick={() => setConversationTab(tab)}
-                      className={cn(
-                        "px-4 py-2 text-sm font-semibold rounded-t-lg transition-colors border-b-2",
-                        conversationTab === tab
-                          ? "border-primary text-primary bg-primary/5"
-                          : "border-transparent text-muted-foreground hover:text-foreground hover:bg-muted/30"
-                      )}
-                    >
-                      {tab === "direct" ? "Direct" : "Groups"}
-                    </button>
-                  ))}
+                {/* Direct / Groups tab switcher — pill style matching dashboard */}
+                <div className="shrink-0 px-6 pt-4 pb-2 bg-background">
+                  <div
+                    role="tablist"
+                    aria-label="Conversation views"
+                    className="inline-flex items-center gap-1 bg-muted/60 border border-border rounded-full p-1"
+                  >
+                    {([
+                      { key: "direct" as const, label: "Direct", icon: MessageSquare, count: messages.length },
+                      { key: "groups" as const, label: "Groups", icon: Users, count: 12 },
+                    ]).map(({ key, label, icon: Icon, count }) => {
+                      const isActive = conversationTab === key;
+                      return (
+                        <button
+                          key={key}
+                          role="tab"
+                          aria-selected={isActive}
+                          onClick={() => setConversationTab(key)}
+                          className={cn(
+                            "flex items-center gap-2 px-4 py-1.5 text-sm font-semibold rounded-full transition-all",
+                            isActive
+                              ? "bg-primary text-primary-foreground shadow-sm"
+                              : "text-muted-foreground hover:text-foreground"
+                          )}
+                        >
+                          <Icon className="w-3.5 h-3.5" />
+                          <span>{label}</span>
+                          {count > 0 && (
+                            <span className={cn(
+                              "min-w-[20px] h-5 px-1.5 rounded-full text-xs font-bold flex items-center justify-center",
+                              isActive
+                                ? "bg-primary-foreground/20 text-primary-foreground"
+                                : "bg-primary/10 text-primary"
+                            )}>
+                              {count > 99 ? "99+" : count}
+                            </span>
+                          )}
+                        </button>
+                      );
+                    })}
+                  </div>
                 </div>
 
                 {conversationTab === "direct" ? (
