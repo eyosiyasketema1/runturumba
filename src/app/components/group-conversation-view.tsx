@@ -177,18 +177,22 @@ interface MentorGroupRef {
   memberIds: string[];
 }
 
+const MENTOR_GROUP_ICONS: Record<string, React.ComponentType<{ className?: string }>> = {
+  Heart, Shield, Zap, Users, Flame, MessageSquare, Flag,
+};
+
 const MENTOR_GROUPS: MentorGroupRef[] = [
-  { id: 'mg-1', name: 'Marriage', icon: '💍', memberIds: ['m1', 'm5'] },
-  { id: 'mg-2', name: 'Addiction Recovery', icon: '🛡️', memberIds: ['m8'] },
-  { id: 'mg-3', name: 'Youth', icon: '⭐', memberIds: ['m2', 'm6'] },
-  { id: 'mg-4', name: "Women's Ministry", icon: '🤲', memberIds: ['m3', 'm6'] },
-  { id: 'mg-5', name: "Men's Ministry", icon: '🛡️', memberIds: ['m1', 'm8'] },
-  { id: 'mg-6', name: 'Prayer', icon: '🔥', memberIds: ['m3', 'm9'] },
-  { id: 'mg-7', name: 'Counseling', icon: '🎧', memberIds: ['m1', 'm3'] },
-  { id: 'mg-8', name: 'New Believers', icon: '💧', memberIds: ['m1', 'm4'] },
-  { id: 'mg-9', name: 'Leadership', icon: '👑', memberIds: ['m7', 'm10'] },
-  { id: 'mg-10', name: 'Worship', icon: '⛪', memberIds: ['m9'] },
-  { id: 'mg-11', name: 'Outreach', icon: '🌍', memberIds: ['m2', 'm7'] },
+  { id: 'mg-1', name: 'Marriage', icon: 'Heart', memberIds: ['m1', 'm5'] },
+  { id: 'mg-2', name: 'Addiction Recovery', icon: 'Shield', memberIds: ['m8'] },
+  { id: 'mg-3', name: 'Youth', icon: 'Zap', memberIds: ['m2', 'm6'] },
+  { id: 'mg-4', name: "Women's Ministry", icon: 'Heart', memberIds: ['m3', 'm6'] },
+  { id: 'mg-5', name: "Men's Ministry", icon: 'Shield', memberIds: ['m1', 'm8'] },
+  { id: 'mg-6', name: 'Prayer', icon: 'Flame', memberIds: ['m3', 'm9'] },
+  { id: 'mg-7', name: 'Counseling', icon: 'MessageSquare', memberIds: ['m1', 'm3'] },
+  { id: 'mg-8', name: 'New Believers', icon: 'Flag', memberIds: ['m1', 'm4'] },
+  { id: 'mg-9', name: 'Leadership', icon: 'Users', memberIds: ['m7', 'm10'] },
+  { id: 'mg-10', name: 'Worship', icon: 'Flame', memberIds: ['m9'] },
+  { id: 'mg-11', name: 'Outreach', icon: 'Zap', memberIds: ['m2', 'm7'] },
 ];
 
 const generateSampleMessages = (): (Message | SystemMessage)[] => [
@@ -632,7 +636,7 @@ function CreateGroupModal({ isOpen, onClose, onCreateGroup, availableMentors }: 
     <Modal isOpen={isOpen} onClose={handleClose} title="Create New Group" size="2xl">
       <div className="space-y-5">
         {/* Group details */}
-        <div className="grid grid-cols-2 gap-4">
+        <div className="space-y-4">
           <div>
             <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-1.5 block">
               Group Name
@@ -647,10 +651,15 @@ function CreateGroupModal({ isOpen, onClose, onCreateGroup, availableMentors }: 
             <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-1.5 block">
               Description
             </label>
-            <Input
+            <textarea
               placeholder="What is this group for?"
               value={description}
               onChange={(e) => setDescription(e.target.value)}
+              className={cn(
+                'w-full rounded-md border border-border bg-background px-3 py-2 text-sm',
+                'placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2'
+              )}
+              rows={2}
             />
           </div>
         </div>
@@ -796,8 +805,11 @@ function CreateGroupModal({ isOpen, onClose, onCreateGroup, availableMentors }: 
                       allAlreadyAdded ? 'bg-primary/5' : 'hover:bg-muted/40'
                     )}
                   >
-                    <div className="w-9 h-9 rounded-lg bg-muted flex items-center justify-center shrink-0 text-base">
-                      {group.icon}
+                    <div className="w-9 h-9 rounded-lg bg-muted flex items-center justify-center shrink-0">
+                      {(() => {
+                        const IconComp = MENTOR_GROUP_ICONS[group.icon];
+                        return IconComp ? <IconComp className="w-4 h-4 text-muted-foreground" /> : <Users className="w-4 h-4 text-muted-foreground" />;
+                      })()}
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-semibold text-foreground">{group.name}</p>
