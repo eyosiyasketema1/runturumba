@@ -87,6 +87,7 @@ export default function HomeScreen() {
       >
         {/* Metrics Grid */}
         <View style={[styles.metricsContainer, { backgroundColor: colors.secondary }]}>
+          <Text style={[styles.overviewTitle, { color: colors.foreground }]}>Overview</Text>
           <View style={styles.metricsGrid}>
             {METRICS.map((metric, idx) => {
               const Icon = metric.icon;
@@ -242,6 +243,11 @@ const styles = StyleSheet.create({
     borderRadius: 24,
     padding: 12,
     marginTop: 8,
+  },
+  overviewTitle: {
+    fontFamily: 'DMSans_700Bold',
+    fontSize: 20,
+    marginBottom: 12,
   },
   metricsGrid: {
     flexDirection: 'row',
