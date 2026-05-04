@@ -79,6 +79,12 @@ export default function TabLayout() {
           tabBarIcon: ({ color }) => <Route size={22} color={color} />,
         }}
       />
+      <Tabs.Screen
+        name="profile"
+        options={{
+          href: null,
+        }}
+      />
     </Tabs>
   );
 }
