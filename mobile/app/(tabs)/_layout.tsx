@@ -2,12 +2,14 @@ import { Tabs } from 'expo-router';
 import React from 'react';
 import { Platform } from 'react-native';
 import { Home, MessageCircle, Users, Route, User } from 'lucide-react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { HapticTab } from '@/components/haptic-tab';
 import { Colors } from '@/constants/theme';
 
 export default function TabLayout() {
   const colors = Colors.light;
+  const insets = useSafeAreaInsets();
 
   return (
     <Tabs
@@ -19,17 +21,12 @@ export default function TabLayout() {
           borderTopColor: colors.tabBarBorder,
           borderTopWidth: 1,
           paddingTop: 8,
-        },
-        tabBarItemStyle: {
-          paddingVertical: 4,
-          gap: 4,
-        },
-        tabBarIconStyle: {
-          marginBottom: 2,
+          paddingBottom: Math.max(insets.bottom, 12) + 8,
+          height: 60 + Math.max(insets.bottom, 12) + 8,
         },
         tabBarLabelStyle: {
           fontFamily: 'DMSans_700Bold',
-          fontSize: 13,
+          fontSize: 12,
         },
         headerStyle: {
           backgroundColor: colors.background,
@@ -48,14 +45,14 @@ export default function TabLayout() {
         options={{
           title: 'Home',
           headerShown: false,
-          tabBarIcon: ({ color }) => <Home size={26} color={color} />,
+          tabBarIcon: ({ color }) => <Home size={22} color={color} />,
         }}
       />
       <Tabs.Screen
         name="chats"
         options={{
           title: 'Chats',
-          tabBarIcon: ({ color }) => <MessageCircle size={26} color={color} />,
+          tabBarIcon: ({ color }) => <MessageCircle size={22} color={color} />,
           tabBarBadge: 3,
           tabBarBadgeStyle: {
             backgroundColor: colors.primary,
@@ -72,21 +69,21 @@ export default function TabLayout() {
         name="seekers"
         options={{
           title: 'Seekers',
-          tabBarIcon: ({ color }) => <Users size={26} color={color} />,
+          tabBarIcon: ({ color }) => <Users size={22} color={color} />,
         }}
       />
       <Tabs.Screen
         name="journeys"
         options={{
           title: 'Journeys',
-          tabBarIcon: ({ color }) => <Route size={26} color={color} />,
+          tabBarIcon: ({ color }) => <Route size={22} color={color} />,
         }}
       />
       <Tabs.Screen
         name="profile"
         options={{
           title: 'Profile',
-          tabBarIcon: ({ color }) => <User size={26} color={color} />,
+          tabBarIcon: ({ color }) => <User size={22} color={color} />,
         }}
       />
     </Tabs>
