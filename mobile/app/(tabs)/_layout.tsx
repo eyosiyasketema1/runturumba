@@ -18,9 +18,9 @@ export default function TabLayout() {
           backgroundColor: colors.tabBar,
           borderTopColor: colors.tabBarBorder,
           borderTopWidth: 1,
-          height: Platform.OS === 'ios' ? 96 : 68,
-          paddingBottom: Platform.OS === 'ios' ? 34 : 10,
-          paddingTop: 10,
+        },
+        tabBarItemStyle: {
+          paddingVertical: 6,
         },
         tabBarLabelStyle: {
           fontFamily: 'DMSans_700Bold',
