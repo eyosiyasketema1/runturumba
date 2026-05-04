@@ -6,13 +6,13 @@ interface TurumbaLogoProps {
 }
 
 export function TurumbaLogo({ height = 48 }: TurumbaLogoProps) {
-  // Asset 11.png is 3115x1025, aspect ratio ~3.04
-  const aspectRatio = 3115 / 1025;
+  // Asset 11 1.png is 6230x2050, aspect ratio ~3.04
+  const aspectRatio = 6230 / 2050;
   const width = height * aspectRatio;
 
   return (
     <Image
-      source={require('@/assets/images/Asset 11.png')}
+      source={require('@/assets/images/Asset 11 1.png')}
       style={{ width, height }}
       resizeMode="contain"
     />
