@@ -245,9 +245,10 @@ const styles = StyleSheet.create({
     marginTop: 8,
   },
   overviewTitle: {
-    fontFamily: 'DMSans_700Bold',
-    fontSize: 20,
+    fontFamily: 'DMSans_500Medium',
+    fontSize: 16,
     marginBottom: 12,
+    paddingLeft: 6,
   },
   metricsGrid: {
     flexDirection: 'row',
