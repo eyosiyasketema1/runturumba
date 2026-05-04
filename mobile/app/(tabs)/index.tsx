@@ -91,19 +91,20 @@ export default function HomeScreen() {
           <View style={styles.metricsGrid}>
             {METRICS.map((metric, idx) => {
               const Icon = metric.icon;
+              const isFirst = idx === 0;
               return (
                 <TouchableOpacity
                   key={idx}
-                  style={[styles.metricCard, { backgroundColor: colors.card }]}
+                  style={[styles.metricCard, { backgroundColor: isFirst ? colors.primary : colors.card }]}
                   activeOpacity={0.7}
                 >
-                  <View style={[styles.metricIconWrap, { backgroundColor: colors.secondary }]}>
-                    <Icon size={18} color={colors.primary} />
+                  <View style={[styles.metricIconWrap, { backgroundColor: isFirst ? 'rgba(255,255,255,0.2)' : colors.secondary }]}>
+                    <Icon size={18} color={isFirst ? '#fff' : colors.primary} />
                   </View>
-                  <Text style={[styles.metricValue, { color: colors.foreground }]}>
+                  <Text style={[styles.metricValue, { color: isFirst ? '#fff' : colors.foreground }]}>
                     {metric.value}
                   </Text>
-                  <Text style={[styles.metricLabel, { color: colors.mutedForeground }]}>
+                  <Text style={[styles.metricLabel, { color: isFirst ? 'rgba(255,255,255,0.75)' : colors.mutedForeground }]}>
                     {metric.label}
                   </Text>
                 </TouchableOpacity>
