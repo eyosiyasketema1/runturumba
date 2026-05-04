@@ -27,10 +27,10 @@ import { TurumbaLogo } from '@/components/turumba-logo';
 
 // Sample data
 const METRICS = [
-  { label: 'Active Seekers', value: '12', icon: Users, color: '#2563eb' },
-  { label: 'Completion Rate', value: '67%', icon: CheckCircle, color: '#10b981' },
-  { label: 'Engagement', value: '78', icon: TrendingUp, color: '#8b5cf6' },
-  { label: 'Pending Actions', value: '4', icon: UserCheck, color: '#f59e0b' },
+  { label: 'Active Seekers', value: '12', icon: Users, color: '#2563eb', trend: '+2', trendUp: true },
+  { label: 'Completion Rate', value: '67%', icon: CheckCircle, color: '#10b981', trend: '+5%', trendUp: true },
+  { label: 'Engagement', value: '78', icon: TrendingUp, color: '#8b5cf6', trend: '+3', trendUp: true },
+  { label: 'Pending Actions', value: '4', icon: UserCheck, color: '#f59e0b', trend: '-1', trendUp: false },
 ];
 
 const ACTIVITY = [
@@ -106,9 +106,14 @@ export default function HomeScreen() {
                   <Text style={[styles.metricValue, { color: isActive ? '#fff' : colors.foreground }]}>
                     {metric.value}
                   </Text>
-                  <Text style={[styles.metricLabel, { color: isActive ? 'rgba(255,255,255,0.75)' : colors.mutedForeground }]}>
-                    {metric.label}
-                  </Text>
+                  <View style={styles.metricLabelRow}>
+                    <Text style={[styles.metricLabel, { color: isActive ? 'rgba(255,255,255,0.75)' : colors.mutedForeground }]}>
+                      {metric.label}
+                    </Text>
+                    <Text style={[styles.metricTrend, { color: isActive ? '#fff' : colors.foreground }]}>
+                      {metric.trend}
+                    </Text>
+                  </View>
                 </TouchableOpacity>
               );
             })}
@@ -277,10 +282,19 @@ const styles = StyleSheet.create({
     fontSize: 32,
     letterSpacing: -0.5,
   },
+  metricLabelRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginTop: 4,
+  },
   metricLabel: {
     fontFamily: 'DMSans_700Bold',
     fontSize: 13,
-    marginTop: 4,
+  },
+  metricTrend: {
+    fontFamily: 'DMSans_700Bold',
+    fontSize: 13,
   },
 
   // Section
