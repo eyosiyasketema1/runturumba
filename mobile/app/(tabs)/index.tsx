@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
@@ -45,6 +45,7 @@ const ACTIVITY = [
 export default function HomeScreen() {
   const colors = useTheme();
   const insets = useSafeAreaInsets();
+  const [activeMetric, setActiveMetric] = useState(0);
 
   const greeting = () => {
     const hour = new Date().getHours();
@@ -91,20 +92,21 @@ export default function HomeScreen() {
           <View style={styles.metricsGrid}>
             {METRICS.map((metric, idx) => {
               const Icon = metric.icon;
-              const isFirst = idx === 0;
+              const isActive = idx === activeMetric;
               return (
                 <TouchableOpacity
                   key={idx}
-                  style={[styles.metricCard, { backgroundColor: isFirst ? colors.primary : colors.card }]}
+                  style={[styles.metricCard, { backgroundColor: isActive ? colors.primary : colors.card }]}
                   activeOpacity={0.7}
+                  onPress={() => setActiveMetric(idx)}
                 >
-                  <View style={[styles.metricIconWrap, { backgroundColor: isFirst ? 'rgba(255,255,255,0.2)' : colors.secondary }]}>
-                    <Icon size={18} color={isFirst ? '#fff' : colors.primary} />
+                  <View style={[styles.metricIconWrap, { backgroundColor: isActive ? 'rgba(255,255,255,0.2)' : colors.secondary }]}>
+                    <Icon size={18} color={isActive ? '#fff' : colors.primary} />
                   </View>
-                  <Text style={[styles.metricValue, { color: isFirst ? '#fff' : colors.foreground }]}>
+                  <Text style={[styles.metricValue, { color: isActive ? '#fff' : colors.foreground }]}>
                     {metric.value}
                   </Text>
-                  <Text style={[styles.metricLabel, { color: isFirst ? 'rgba(255,255,255,0.75)' : colors.mutedForeground }]}>
+                  <Text style={[styles.metricLabel, { color: isActive ? 'rgba(255,255,255,0.75)' : colors.mutedForeground }]}>
                     {metric.label}
                   </Text>
                 </TouchableOpacity>
