@@ -27,10 +27,10 @@ import { TurumbaLogo } from '@/components/turumba-logo';
 
 // Sample data
 const METRICS = [
-  { label: 'Active Seekers', value: '12' },
-  { label: 'Completion Rate', value: '67%' },
-  { label: 'Engagement', value: '78' },
-  { label: 'Pending Actions', value: '4' },
+  { label: 'Active Seekers', value: '12', icon: Users, color: '#2563eb' },
+  { label: 'Completion Rate', value: '67%', icon: CheckCircle, color: '#10b981' },
+  { label: 'Engagement', value: '78', icon: TrendingUp, color: '#8b5cf6' },
+  { label: 'Pending Actions', value: '4', icon: UserCheck, color: '#f59e0b' },
 ];
 
 const ACTIVITY = [
@@ -88,20 +88,26 @@ export default function HomeScreen() {
         {/* Metrics Grid */}
         <View style={[styles.metricsContainer, { backgroundColor: colors.secondary }]}>
           <View style={styles.metricsGrid}>
-            {METRICS.map((metric, idx) => (
-              <TouchableOpacity
-                key={idx}
-                style={[styles.metricCard, { backgroundColor: colors.card }]}
-                activeOpacity={0.7}
-              >
-                <Text style={[styles.metricValue, { color: colors.foreground }]}>
-                  {metric.value}
-                </Text>
-                <Text style={[styles.metricLabel, { color: colors.mutedForeground }]}>
-                  {metric.label}
-                </Text>
-              </TouchableOpacity>
-            ))}
+            {METRICS.map((metric, idx) => {
+              const Icon = metric.icon;
+              return (
+                <TouchableOpacity
+                  key={idx}
+                  style={[styles.metricCard, { backgroundColor: colors.card }]}
+                  activeOpacity={0.7}
+                >
+                  <View style={[styles.metricIconWrap, { backgroundColor: metric.color + '14' }]}>
+                    <Icon size={18} color={metric.color} />
+                  </View>
+                  <Text style={[styles.metricValue, { color: colors.foreground }]}>
+                    {metric.value}
+                  </Text>
+                  <Text style={[styles.metricLabel, { color: colors.mutedForeground }]}>
+                    {metric.label}
+                  </Text>
+                </TouchableOpacity>
+              );
+            })}
           </View>
         </View>
 
@@ -247,6 +253,14 @@ const styles = StyleSheet.create({
     width: '48%' as any,
     padding: 18,
     borderRadius: 18,
+  },
+  metricIconWrap: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 10,
   },
   metricValue: {
     fontFamily: 'DMSans_700Bold',
