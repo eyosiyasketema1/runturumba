@@ -18,11 +18,15 @@ export default function TabLayout() {
         tabBarInactiveTintColor: colors.tabIconDefault,
         tabBarStyle: {
           backgroundColor: colors.tabBar,
-          borderTopColor: colors.tabBarBorder,
-          borderTopWidth: 0.5,
+          borderTopWidth: 0,
           paddingTop: 8,
           paddingBottom: Math.max(insets.bottom, 12) + 8,
           height: 60 + Math.max(insets.bottom, 12) + 8,
+          shadowColor: '#000',
+          shadowOffset: { width: 0, height: -2 },
+          shadowOpacity: 0.04,
+          shadowRadius: 8,
+          elevation: 2,
         },
         tabBarLabelStyle: {
           fontFamily: 'DMSans_700Bold',
