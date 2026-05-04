@@ -107,11 +107,11 @@ export default function HomeScreen() {
                     {metric.value}
                   </Text>
                   <View style={styles.metricLabelRow}>
+                    <Text style={[styles.metricTrend, { color: metric.trendUp ? (isActive ? '#4ade80' : '#10b981') : (isActive ? '#fca5a5' : '#ef4444') }]}>
+                      {metric.trendUp ? '↑' : '↓'}
+                    </Text>
                     <Text style={[styles.metricLabel, { color: isActive ? 'rgba(255,255,255,0.75)' : colors.mutedForeground }]}>
                       {metric.label}
-                    </Text>
-                    <Text style={[styles.metricTrend, { color: isActive ? '#fff' : colors.foreground }]}>
-                      {metric.trend}
                     </Text>
                   </View>
                 </TouchableOpacity>
@@ -284,8 +284,8 @@ const styles = StyleSheet.create({
   },
   metricLabelRow: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
+    gap: 4,
     marginTop: 4,
   },
   metricLabel: {
