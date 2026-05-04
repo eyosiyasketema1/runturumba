@@ -236,7 +236,7 @@ const styles = StyleSheet.create({
   headerIconBtn: {
     width: 44,
     height: 44,
-    borderRadius: 16,
+    borderRadius: 22,
     justifyContent: 'center',
     alignItems: 'center',
     position: 'relative',
@@ -287,7 +287,7 @@ const styles = StyleSheet.create({
   metricIconWrap: {
     width: 36,
     height: 36,
-    borderRadius: 12,
+    borderRadius: 18,
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -297,7 +297,7 @@ const styles = StyleSheet.create({
     gap: 2,
     paddingHorizontal: 8,
     paddingVertical: 3,
-    borderRadius: 10,
+    borderRadius: 9999,
   },
   trendText: {
     fontFamily: 'DMSans_700Bold',
@@ -372,7 +372,7 @@ const styles = StyleSheet.create({
   activityIcon: {
     width: 36,
     height: 36,
-    borderRadius: 12,
+    borderRadius: 18,
     justifyContent: 'center',
     alignItems: 'center',
   },
