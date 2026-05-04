@@ -96,7 +96,7 @@ export default function HomeScreen() {
               return (
                 <TouchableOpacity
                   key={idx}
-                  style={[styles.metricCard, { backgroundColor: isActive ? colors.primary : colors.card }]}
+                  style={[styles.metricCard, { backgroundColor: isActive ? '#000022' : colors.card }]}
                   activeOpacity={0.7}
                   onPress={() => setActiveMetric(idx)}
                 >
