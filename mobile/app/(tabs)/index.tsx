@@ -16,8 +16,6 @@ import {
   MessageCircle,
   Bell,
   ChevronRight,
-  ArrowUpRight,
-  ArrowDownRight,
   Flame,
   Star,
   Heart,
@@ -29,10 +27,10 @@ import { TurumbaLogo } from '@/components/turumba-logo';
 
 // Sample data
 const METRICS = [
-  { label: 'Active Seekers', value: '12', trend: '+2', trendUp: true, icon: Users, color: '#2563eb' },
-  { label: 'Completion Rate', value: '67%', trend: '+5%', trendUp: true, icon: CheckCircle, color: '#10b981' },
-  { label: 'Engagement', value: '78', trend: '+3', trendUp: true, icon: TrendingUp, color: '#8b5cf6' },
-  { label: 'Pending Actions', value: '4', trend: '', trendUp: false, icon: UserCheck, color: '#f59e0b' },
+  { label: 'Active Seekers', value: '12' },
+  { label: 'Completion Rate', value: '67%' },
+  { label: 'Engagement', value: '78' },
+  { label: 'Pending Actions', value: '4' },
 ];
 
 const ACTIVITY = [
@@ -88,44 +86,14 @@ export default function HomeScreen() {
         showsVerticalScrollIndicator={false}
       >
         {/* Metrics Grid */}
-        <View style={styles.metricsGrid}>
-          {METRICS.map((metric, idx) => {
-            const Icon = metric.icon;
-            return (
+        <View style={[styles.metricsContainer, { backgroundColor: colors.secondary }]}>
+          <View style={styles.metricsGrid}>
+            {METRICS.map((metric, idx) => (
               <TouchableOpacity
                 key={idx}
-                style={[
-                  styles.metricCard,
-                  {
-                    backgroundColor: colors.card,
-                    borderColor: colors.border,
-                  },
-                ]}
+                style={[styles.metricCard, { backgroundColor: colors.card }]}
                 activeOpacity={0.7}
               >
-                <View style={styles.metricTop}>
-                  <View style={[styles.metricIconWrap, { backgroundColor: metric.color + '14' }]}>
-                    <Icon size={16} color={metric.color} />
-                  </View>
-                  {metric.trend ? (
-                    <View style={[
-                      styles.trendBadge,
-                      { backgroundColor: metric.trendUp ? '#ecfdf5' : '#fef2f2' },
-                    ]}>
-                      {metric.trendUp ? (
-                        <ArrowUpRight size={10} color="#10b981" />
-                      ) : (
-                        <ArrowDownRight size={10} color="#ef4444" />
-                      )}
-                      <Text style={[
-                        styles.trendText,
-                        { color: metric.trendUp ? '#10b981' : '#ef4444' },
-                      ]}>
-                        {metric.trend}
-                      </Text>
-                    </View>
-                  ) : null}
-                </View>
                 <Text style={[styles.metricValue, { color: colors.foreground }]}>
                   {metric.value}
                 </Text>
@@ -133,8 +101,8 @@ export default function HomeScreen() {
                   {metric.label}
                 </Text>
               </TouchableOpacity>
-            );
-          })}
+            ))}
+          </View>
         </View>
 
         {/* Quick Actions */}
@@ -264,54 +232,31 @@ const styles = StyleSheet.create({
   },
 
   // Metrics
+  metricsContainer: {
+    borderRadius: 24,
+    padding: 12,
+    marginTop: 8,
+  },
   metricsGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 12,
-    marginTop: 8,
+    gap: 10,
   },
   metricCard: {
-    width: '48%' as any,
     flexGrow: 1,
     flexBasis: '46%',
-    padding: 16,
-    borderRadius: Radius.lg,
-    borderWidth: 1,
-  },
-  metricTop: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 12,
-  },
-  metricIconWrap: {
-    width: 36,
-    height: 36,
+    padding: 18,
     borderRadius: 18,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  trendBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 2,
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 9999,
-  },
-  trendText: {
-    fontFamily: 'DMSans_700Bold',
-    fontSize: 11,
   },
   metricValue: {
     fontFamily: 'DMSans_700Bold',
-    fontSize: 30,
+    fontSize: 28,
     letterSpacing: -0.5,
   },
   metricLabel: {
-    fontFamily: 'DMSans_600SemiBold',
+    fontFamily: 'DMSans_500Medium',
     fontSize: 13,
-    marginTop: 2,
+    marginTop: 4,
   },
 
   // Section
