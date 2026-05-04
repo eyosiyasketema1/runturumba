@@ -131,7 +131,7 @@ export default function HomeScreen() {
               activeOpacity={0.8}
             >
               <MessageCircle size={18} color="#fff" />
-              <Text style={styles.quickActionText}>New Message</Text>
+              <Text style={styles.quickActionText}>Message</Text>
             </TouchableOpacity>
             <TouchableOpacity
               style={[styles.quickAction, { backgroundColor: colors.card, borderColor: colors.border, borderWidth: 1 }]}

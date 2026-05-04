@@ -46,14 +46,14 @@ export default function TabLayout() {
         options={{
           title: 'Home',
           headerShown: false,
-          tabBarIcon: ({ color }) => <Home size={22} color={color} />,
+          tabBarIcon: ({ color, focused }) => <Home size={22} color={color} fill={focused ? color : 'none'} />,
         }}
       />
       <Tabs.Screen
         name="chats"
         options={{
           title: 'Chats',
-          tabBarIcon: ({ color }) => <MessageCircle size={22} color={color} />,
+          tabBarIcon: ({ color, focused }) => <MessageCircle size={22} color={color} fill={focused ? color : 'none'} />,
           tabBarBadge: 3,
           tabBarBadgeStyle: {
             backgroundColor: colors.primary,
@@ -70,14 +70,14 @@ export default function TabLayout() {
         name="seekers"
         options={{
           title: 'Seekers',
-          tabBarIcon: ({ color }) => <Users size={22} color={color} />,
+          tabBarIcon: ({ color, focused }) => <Users size={22} color={color} fill={focused ? color : 'none'} />,
         }}
       />
       <Tabs.Screen
         name="journeys"
         options={{
           title: 'Journeys',
-          tabBarIcon: ({ color }) => <Route size={22} color={color} />,
+          tabBarIcon: ({ color, focused }) => <Route size={22} color={color} fill={focused ? color : 'none'} />,
         }}
       />
       <Tabs.Screen
