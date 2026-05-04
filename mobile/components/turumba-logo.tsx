@@ -1,15 +1,19 @@
 import React from 'react';
-import { Image, StyleSheet } from 'react-native';
+import { Image } from 'react-native';
 
 interface TurumbaLogoProps {
-  size?: number;
+  height?: number;
 }
 
-export function TurumbaLogo({ size = 40 }: TurumbaLogoProps) {
+export function TurumbaLogo({ height = 48 }: TurumbaLogoProps) {
+  // Asset 11.png is 3115x1025, aspect ratio ~3.04
+  const aspectRatio = 3115 / 1025;
+  const width = height * aspectRatio;
+
   return (
     <Image
-      source={require('@/assets/images/turumba-icon.png')}
-      style={{ width: size, height: size, borderRadius: size / 2 }}
+      source={require('@/assets/images/Asset 11.png')}
+      style={{ width, height }}
       resizeMode="contain"
     />
   );
