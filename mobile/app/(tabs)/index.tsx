@@ -207,8 +207,8 @@ export default function HomeScreen() {
           </View>
         </View>
 
-        {/* Bottom padding */}
-        <View style={{ height: 24 }} />
+        {/* Bottom padding to clear the blur tab bar */}
+        <View style={{ height: 100 + insets.bottom }} />
       </ScrollView>
     </View>
   );
