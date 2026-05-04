@@ -107,7 +107,7 @@ export default function HomeScreen() {
                     {metric.value}
                   </Text>
                   <View style={styles.metricLabelRow}>
-                    <Text style={[styles.metricTrend, { color: metric.trendUp ? (isActive ? '#4ade80' : '#10b981') : (isActive ? '#fca5a5' : '#ef4444') }]}>
+                    <Text style={[styles.metricTrend, { color: isActive ? '#fff' : colors.foreground }]}>
                       {metric.trendUp ? '↑' : '↓'}
                     </Text>
                     <Text style={[styles.metricLabel, { color: isActive ? 'rgba(255,255,255,0.75)' : colors.mutedForeground }]}>
