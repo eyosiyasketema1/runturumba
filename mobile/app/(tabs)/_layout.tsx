@@ -1,9 +1,8 @@
 import { Tabs } from 'expo-router';
 import React from 'react';
-import { Platform, StyleSheet } from 'react-native';
+import { Platform } from 'react-native';
 import { Home, MessageCircle, Users, Route } from 'lucide-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { BlurView } from 'expo-blur';
 
 import { HapticTab } from '@/components/haptic-tab';
 import { Colors } from '@/constants/theme';
@@ -24,15 +23,8 @@ export default function TabLayout() {
           paddingBottom: Math.max(insets.bottom, 12) + 8,
           height: 60 + Math.max(insets.bottom, 12) + 8,
           elevation: 0,
-          backgroundColor: 'transparent',
+          backgroundColor: '#ffffff',
         },
-        tabBarBackground: () => (
-          <BlurView
-            intensity={100}
-            tint="light"
-            style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(255,255,255,0.95)' }]}
-          />
-        ),
         tabBarLabelStyle: {
           fontFamily: 'DMSans_700Bold',
           fontSize: 12,
