@@ -180,10 +180,10 @@ export const Spacing = {
 
 // Border radius (mobile-adapted — slightly larger than web's 2px for touch)
 export const Radius = {
-  sm: 4,
-  md: 6,
-  lg: 8,
-  xl: 12,
+  sm: 8,
+  md: 12,
+  lg: 20,
+  xl: 28,
   full: 9999,
 };
 
