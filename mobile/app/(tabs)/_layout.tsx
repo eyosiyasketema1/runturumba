@@ -28,9 +28,9 @@ export default function TabLayout() {
         },
         tabBarBackground: () => (
           <BlurView
-            intensity={90}
+            intensity={100}
             tint="light"
-            style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(255,255,255,0.85)' }]}
+            style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(255,255,255,0.95)' }]}
           />
         ),
         tabBarLabelStyle: {
