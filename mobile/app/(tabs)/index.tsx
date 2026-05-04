@@ -25,7 +25,6 @@ import {
 } from 'lucide-react-native';
 import { useTheme } from '@/hooks/use-theme';
 import { Shadows, Radius, Spacing } from '@/constants/theme';
-import { TurumbaLogo } from '@/components/turumba-logo';
 
 // Sample data
 const METRICS = [
@@ -60,7 +59,6 @@ export default function HomeScreen() {
       {/* Header */}
       <View style={[styles.header, { paddingTop: insets.top + 12, backgroundColor: colors.background }]}>
         <View style={styles.headerLeft}>
-          <TurumbaLogo size={44} />
           <Text style={[styles.greeting, { color: colors.mutedForeground }]}>
             {greeting()}, Samson
           </Text>
