@@ -241,10 +241,10 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 10,
+    justifyContent: 'space-between',
   },
   metricCard: {
-    flexGrow: 1,
-    flexBasis: '46%',
+    width: '48%' as any,
     padding: 18,
     borderRadius: 18,
   },
