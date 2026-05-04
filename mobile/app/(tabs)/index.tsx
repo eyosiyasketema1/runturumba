@@ -60,7 +60,7 @@ export default function HomeScreen() {
       {/* Header */}
       <View style={[styles.header, { paddingTop: insets.top + 12, backgroundColor: colors.background }]}>
         <View style={styles.headerLeft}>
-          <TurumbaLogo size={52} />
+          <TurumbaLogo size={80} />
           <Text style={[styles.greeting, { color: colors.mutedForeground }]}>
             {greeting()}, Samson
           </Text>
