@@ -96,8 +96,8 @@ export default function HomeScreen() {
                   style={[styles.metricCard, { backgroundColor: colors.card }]}
                   activeOpacity={0.7}
                 >
-                  <View style={[styles.metricIconWrap, { backgroundColor: colors.primary }]}>
-                    <Icon size={18} color="#fff" />
+                  <View style={[styles.metricIconWrap, { backgroundColor: colors.secondary }]}>
+                    <Icon size={18} color={colors.primary} />
                   </View>
                   <Text style={[styles.metricValue, { color: colors.foreground }]}>
                     {metric.value}
