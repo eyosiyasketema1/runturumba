@@ -24,7 +24,7 @@ export default function TabLayout() {
           height: 60 + Math.max(insets.bottom, 12) + 8,
           shadowColor: '#000',
           shadowOffset: { width: 0, height: -2 },
-          shadowOpacity: 0.04,
+          shadowOpacity: 0.07,
           shadowRadius: 8,
           elevation: 2,
         },
