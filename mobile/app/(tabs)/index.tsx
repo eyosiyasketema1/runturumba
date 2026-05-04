@@ -21,9 +21,11 @@ import {
   Flame,
   Star,
   Heart,
+  User,
 } from 'lucide-react-native';
 import { useTheme } from '@/hooks/use-theme';
 import { Shadows, Radius, Spacing } from '@/constants/theme';
+import { TurumbaLogo } from '@/components/turumba-logo';
 
 // Sample data
 const METRICS = [
@@ -53,31 +55,31 @@ export default function HomeScreen() {
     return 'Good evening';
   };
 
-  const today = new Date().toLocaleDateString('en-US', {
-    weekday: 'long',
-    month: 'long',
-    day: 'numeric',
-  });
-
   return (
     <View style={[styles.screen, { backgroundColor: colors.background }]}>
       {/* Header */}
-      <View style={[styles.header, { paddingTop: insets.top + 8, backgroundColor: colors.background }]}>
+      <View style={[styles.header, { paddingTop: insets.top + 12, backgroundColor: colors.background }]}>
         <View style={styles.headerLeft}>
-          <Text style={[styles.greeting, { color: colors.foreground }]}>
+          <TurumbaLogo size={36} />
+          <Text style={[styles.greeting, { color: colors.mutedForeground }]}>
             {greeting()}, Samson
           </Text>
-          <Text style={[styles.date, { color: colors.mutedForeground }]}>
-            {today}
-          </Text>
         </View>
-        <TouchableOpacity
-          style={[styles.notificationBtn, { backgroundColor: colors.secondary }]}
-          activeOpacity={0.7}
-        >
-          <Bell size={20} color={colors.foreground} />
-          <View style={[styles.notifDot, { backgroundColor: colors.destructive }]} />
-        </TouchableOpacity>
+        <View style={styles.headerRight}>
+          <TouchableOpacity
+            style={[styles.headerIconBtn, { backgroundColor: colors.secondary }]}
+            activeOpacity={0.7}
+          >
+            <Bell size={20} color={colors.foreground} />
+            <View style={[styles.notifDot, { backgroundColor: colors.destructive }]} />
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.headerIconBtn, { backgroundColor: colors.secondary }]}
+            activeOpacity={0.7}
+          >
+            <User size={20} color={colors.foreground} />
+          </TouchableOpacity>
+        </View>
       </View>
 
       <ScrollView
@@ -227,23 +229,23 @@ const styles = StyleSheet.create({
   headerLeft: {
     flex: 1,
   },
-  greeting: {
-    fontFamily: 'DMSans_700Bold',
-    fontSize: 26,
-    letterSpacing: -0.5,
+  headerRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
   },
-  date: {
-    fontFamily: 'DMSans_500Medium',
-    fontSize: 14,
-    marginTop: 4,
-  },
-  notificationBtn: {
+  headerIconBtn: {
     width: 40,
     height: 40,
     borderRadius: 20,
     justifyContent: 'center',
     alignItems: 'center',
     position: 'relative',
+  },
+  greeting: {
+    fontFamily: 'DMSans_500Medium',
+    fontSize: 14,
+    marginTop: 4,
   },
   notifDot: {
     position: 'absolute',

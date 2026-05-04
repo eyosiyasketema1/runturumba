@@ -1,7 +1,7 @@
 import { Tabs } from 'expo-router';
 import React from 'react';
 import { Platform } from 'react-native';
-import { Home, MessageCircle, Users, Route, User } from 'lucide-react-native';
+import { Home, MessageCircle, Users, Route } from 'lucide-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { HapticTab } from '@/components/haptic-tab';
@@ -77,13 +77,6 @@ export default function TabLayout() {
         options={{
           title: 'Journeys',
           tabBarIcon: ({ color }) => <Route size={22} color={color} />,
-        }}
-      />
-      <Tabs.Screen
-        name="profile"
-        options={{
-          title: 'Profile',
-          tabBarIcon: ({ color }) => <User size={22} color={color} />,
         }}
       />
     </Tabs>
