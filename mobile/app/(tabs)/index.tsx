@@ -349,7 +349,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: 8,
     paddingVertical: 14,
-    borderRadius: Radius.lg,
+    borderRadius: 9999,
   },
   quickActionText: {
     fontFamily: 'DMSans_700Bold',
