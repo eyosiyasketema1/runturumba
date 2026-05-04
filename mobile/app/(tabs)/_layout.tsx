@@ -53,6 +53,7 @@ export default function TabLayout() {
         name="chats"
         options={{
           title: 'Chats',
+          headerShown: false,
           tabBarIcon: ({ color, focused }) => <MessageCircle size={22} color={color} fill={focused ? color : 'none'} />,
           tabBarBadge: 3,
           tabBarBadgeStyle: {
