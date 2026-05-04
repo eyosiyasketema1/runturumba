@@ -1,20 +1,20 @@
-import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
+import { DefaultTheme, ThemeProvider } from '@react-navigation/native';
 import { useFonts, DMSans_400Regular, DMSans_500Medium, DMSans_600SemiBold, DMSans_700Bold } from '@expo-google-fonts/dm-sans';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { ActivityIndicator, View } from 'react-native';
 import 'react-native-reanimated';
 
-import { useColorScheme } from '@/hooks/use-color-scheme';
 import { Colors } from '@/constants/theme';
 
 export const unstable_settings = {
   anchor: '(tabs)',
 };
 
-// Custom themes matching Turumba's design system
-const TurumbaLight = {
+// Light-only theme matching Turumba's design system
+const TurumbaTheme = {
   ...DefaultTheme,
+  dark: false,
   colors: {
     ...DefaultTheme.colors,
     primary: Colors.light.primary,
@@ -26,21 +26,7 @@ const TurumbaLight = {
   },
 };
 
-const TurumbaDark = {
-  ...DarkTheme,
-  colors: {
-    ...DarkTheme.colors,
-    primary: Colors.dark.primary,
-    background: Colors.dark.background,
-    card: Colors.dark.card,
-    text: Colors.dark.foreground,
-    border: Colors.dark.border,
-    notification: Colors.dark.destructive,
-  },
-};
-
 export default function RootLayout() {
-  const colorScheme = useColorScheme();
   const [fontsLoaded] = useFonts({
     DMSans_400Regular,
     DMSans_500Medium,
@@ -57,12 +43,12 @@ export default function RootLayout() {
   }
 
   return (
-    <ThemeProvider value={colorScheme === 'dark' ? TurumbaDark : TurumbaLight}>
+    <ThemeProvider value={TurumbaTheme}>
       <Stack>
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
         <Stack.Screen name="modal" options={{ presentation: 'modal', title: 'Modal' }} />
       </Stack>
-      <StatusBar style="auto" />
+      <StatusBar style="dark" />
     </ThemeProvider>
   );
 }

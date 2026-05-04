@@ -5,11 +5,9 @@ import { Home, MessageCircle, Users, Route, User } from 'lucide-react-native';
 
 import { HapticTab } from '@/components/haptic-tab';
 import { Colors } from '@/constants/theme';
-import { useColorScheme } from '@/hooks/use-color-scheme';
 
 export default function TabLayout() {
-  const colorScheme = useColorScheme() ?? 'light';
-  const colors = Colors[colorScheme];
+  const colors = Colors.light;
 
   return (
     <Tabs
@@ -20,13 +18,13 @@ export default function TabLayout() {
           backgroundColor: colors.tabBar,
           borderTopColor: colors.tabBarBorder,
           borderTopWidth: 1,
-          height: Platform.OS === 'ios' ? 88 : 64,
-          paddingBottom: Platform.OS === 'ios' ? 28 : 8,
-          paddingTop: 8,
+          height: Platform.OS === 'ios' ? 96 : 68,
+          paddingBottom: Platform.OS === 'ios' ? 34 : 10,
+          paddingTop: 10,
         },
         tabBarLabelStyle: {
-          fontFamily: 'DMSans_500Medium',
-          fontSize: 11,
+          fontFamily: 'DMSans_700Bold',
+          fontSize: 12,
         },
         headerStyle: {
           backgroundColor: colors.background,

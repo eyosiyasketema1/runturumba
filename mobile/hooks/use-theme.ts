@@ -1,7 +1,6 @@
 import { Colors } from '@/constants/theme';
-import { useColorScheme } from '@/hooks/use-color-scheme';
 
+// Light mode only — no dark mode
 export function useTheme() {
-  const scheme = useColorScheme() ?? 'light';
-  return Colors[scheme];
+  return Colors.light;
 }

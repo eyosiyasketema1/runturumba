@@ -229,13 +229,13 @@ const styles = StyleSheet.create({
   },
   greeting: {
     fontFamily: 'DMSans_700Bold',
-    fontSize: 22,
+    fontSize: 26,
     letterSpacing: -0.5,
   },
   date: {
-    fontFamily: 'DMSans_400Regular',
-    fontSize: 13,
-    marginTop: 2,
+    fontFamily: 'DMSans_500Medium',
+    fontSize: 14,
+    marginTop: 4,
   },
   notificationBtn: {
     width: 40,
@@ -299,17 +299,17 @@ const styles = StyleSheet.create({
     borderRadius: Radius.sm,
   },
   trendText: {
-    fontFamily: 'DMSans_600SemiBold',
-    fontSize: 10,
+    fontFamily: 'DMSans_700Bold',
+    fontSize: 11,
   },
   metricValue: {
     fontFamily: 'DMSans_700Bold',
-    fontSize: 26,
+    fontSize: 30,
     letterSpacing: -0.5,
   },
   metricLabel: {
-    fontFamily: 'DMSans_500Medium',
-    fontSize: 12,
+    fontFamily: 'DMSans_600SemiBold',
+    fontSize: 13,
     marginTop: 2,
   },
 
@@ -325,14 +325,14 @@ const styles = StyleSheet.create({
   },
   sectionLabel: {
     fontFamily: 'DMSans_700Bold',
-    fontSize: 11,
+    fontSize: 12,
     letterSpacing: 1,
     textTransform: 'uppercase',
     marginBottom: 10,
   },
   viewAll: {
-    fontFamily: 'DMSans_600SemiBold',
-    fontSize: 12,
+    fontFamily: 'DMSans_700Bold',
+    fontSize: 13,
     marginBottom: 10,
   },
 
@@ -351,8 +351,8 @@ const styles = StyleSheet.create({
     borderRadius: Radius.lg,
   },
   quickActionText: {
-    fontFamily: 'DMSans_600SemiBold',
-    fontSize: 13,
+    fontFamily: 'DMSans_700Bold',
+    fontSize: 14,
     color: '#fff',
   },
 
@@ -379,13 +379,13 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   activityTitle: {
-    fontFamily: 'DMSans_500Medium',
-    fontSize: 13,
-    lineHeight: 18,
+    fontFamily: 'DMSans_600SemiBold',
+    fontSize: 14,
+    lineHeight: 20,
   },
   activityTime: {
-    fontFamily: 'DMSans_400Regular',
-    fontSize: 11,
+    fontFamily: 'DMSans_500Medium',
+    fontSize: 12,
     marginTop: 2,
   },
 });

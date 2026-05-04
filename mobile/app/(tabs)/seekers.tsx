@@ -26,10 +26,10 @@ const styles = StyleSheet.create({
   },
   title: {
     fontFamily: 'DMSans_700Bold',
-    fontSize: 20,
+    fontSize: 24,
   },
   subtitle: {
-    fontFamily: 'DMSans_400Regular',
-    fontSize: 14,
+    fontFamily: 'DMSans_500Medium',
+    fontSize: 15,
   },
 });
