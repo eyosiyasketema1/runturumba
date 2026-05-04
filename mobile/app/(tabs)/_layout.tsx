@@ -1,8 +1,9 @@
 import { Tabs } from 'expo-router';
 import React from 'react';
-import { Platform } from 'react-native';
+import { Platform, StyleSheet } from 'react-native';
 import { Home, MessageCircle, Users, Route } from 'lucide-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { BlurView } from 'expo-blur';
 
 import { HapticTab } from '@/components/haptic-tab';
 import { Colors } from '@/constants/theme';
@@ -17,17 +18,21 @@ export default function TabLayout() {
         tabBarActiveTintColor: colors.tint,
         tabBarInactiveTintColor: colors.tabIconDefault,
         tabBarStyle: {
-          backgroundColor: colors.tabBar,
+          position: 'absolute',
           borderTopWidth: 0,
           paddingTop: 8,
           paddingBottom: Math.max(insets.bottom, 12) + 8,
           height: 60 + Math.max(insets.bottom, 12) + 8,
-          shadowColor: '#000',
-          shadowOffset: { width: 0, height: -2 },
-          shadowOpacity: 0.1,
-          shadowRadius: 20,
-          elevation: 8,
+          elevation: 0,
+          backgroundColor: 'transparent',
         },
+        tabBarBackground: () => (
+          <BlurView
+            intensity={80}
+            tint="light"
+            style={StyleSheet.absoluteFill}
+          />
+        ),
         tabBarLabelStyle: {
           fontFamily: 'DMSans_700Bold',
           fontSize: 12,
