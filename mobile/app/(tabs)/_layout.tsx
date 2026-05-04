@@ -18,13 +18,18 @@ export default function TabLayout() {
           backgroundColor: colors.tabBar,
           borderTopColor: colors.tabBarBorder,
           borderTopWidth: 1,
+          paddingTop: 8,
         },
         tabBarItemStyle: {
-          paddingVertical: 6,
+          paddingVertical: 4,
+          gap: 4,
+        },
+        tabBarIconStyle: {
+          marginBottom: 2,
         },
         tabBarLabelStyle: {
           fontFamily: 'DMSans_700Bold',
-          fontSize: 12,
+          fontSize: 13,
         },
         headerStyle: {
           backgroundColor: colors.background,
@@ -43,14 +48,14 @@ export default function TabLayout() {
         options={{
           title: 'Home',
           headerShown: false,
-          tabBarIcon: ({ color, size }) => <Home size={size ?? 22} color={color} />,
+          tabBarIcon: ({ color }) => <Home size={26} color={color} />,
         }}
       />
       <Tabs.Screen
         name="chats"
         options={{
           title: 'Chats',
-          tabBarIcon: ({ color, size }) => <MessageCircle size={size ?? 22} color={color} />,
+          tabBarIcon: ({ color }) => <MessageCircle size={26} color={color} />,
           tabBarBadge: 3,
           tabBarBadgeStyle: {
             backgroundColor: colors.primary,
@@ -67,21 +72,21 @@ export default function TabLayout() {
         name="seekers"
         options={{
           title: 'Seekers',
-          tabBarIcon: ({ color, size }) => <Users size={size ?? 22} color={color} />,
+          tabBarIcon: ({ color }) => <Users size={26} color={color} />,
         }}
       />
       <Tabs.Screen
         name="journeys"
         options={{
           title: 'Journeys',
-          tabBarIcon: ({ color, size }) => <Route size={size ?? 22} color={color} />,
+          tabBarIcon: ({ color }) => <Route size={26} color={color} />,
         }}
       />
       <Tabs.Screen
         name="profile"
         options={{
           title: 'Profile',
-          tabBarIcon: ({ color, size }) => <User size={size ?? 22} color={color} />,
+          tabBarIcon: ({ color }) => <User size={26} color={color} />,
         }}
       />
     </Tabs>
