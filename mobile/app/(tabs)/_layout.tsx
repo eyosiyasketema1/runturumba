@@ -26,7 +26,7 @@ export default function TabLayout() {
           shadowOffset: { width: 0, height: -2 },
           shadowOpacity: 0.1,
           shadowRadius: 20,
-          elevation: 2,
+          elevation: 8,
         },
         tabBarLabelStyle: {
           fontFamily: 'DMSans_700Bold',
