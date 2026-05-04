@@ -24,7 +24,7 @@ import {
   User,
 } from 'lucide-react-native';
 import { useTheme } from '@/hooks/use-theme';
-import { Shadows, Radius, Spacing } from '@/constants/theme';
+import { Radius, Spacing } from '@/constants/theme';
 import { TurumbaLogo } from '@/components/turumba-logo';
 
 // Sample data
@@ -100,7 +100,6 @@ export default function HomeScreen() {
                     backgroundColor: colors.card,
                     borderColor: colors.border,
                   },
-                  Shadows.sm,
                 ]}
                 activeOpacity={0.7}
               >
@@ -172,7 +171,7 @@ export default function HomeScreen() {
             </TouchableOpacity>
           </View>
 
-          <View style={[styles.activityCard, { backgroundColor: colors.card, borderColor: colors.border }, Shadows.sm]}>
+          <View style={[styles.activityCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
             {ACTIVITY.map((item, idx) => {
               const Icon = item.icon;
               return (
