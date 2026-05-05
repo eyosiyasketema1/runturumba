@@ -51,14 +51,14 @@ export default function LoginScreen() {
           <View style={[styles.heroContainer, { paddingTop: insets.top }]}>
             {/* Background gradient image */}
             <Image
-              source={require('@/assets/images/Abstract Blue Gradient (1).jpeg')}
+              source={require('@/assets/images/bg-gradient-1.jpeg')}
               style={styles.heroBgImage}
               resizeMode="stretch"
             />
             {/* Logo centered */}
             <View style={styles.logoWrap}>
               <Image
-                source={require('@/assets/images/Asset 10 2.png')}
+                source={require('@/assets/images/logo-light.png')}
                 style={styles.logoImage}
                 resizeMode="contain"
               />

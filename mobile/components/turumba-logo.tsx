@@ -12,7 +12,7 @@ export function TurumbaLogo({ height = 48 }: TurumbaLogoProps) {
 
   return (
     <Image
-      source={require('@/assets/images/Asset 11 1.png')}
+      source={require('@/assets/images/logo-dark.png')}
       style={{ width, height }}
       resizeMode="contain"
     />

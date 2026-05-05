@@ -79,7 +79,7 @@ export default function SplashScreen() {
     <View style={styles.screen}>
       {/* Background image */}
       <Image
-        source={require('@/assets/images/Abstract Blue Gradient (2).jpeg')}
+        source={require('@/assets/images/bg-gradient-2.jpeg')}
         style={styles.bgImage}
         resizeMode="cover"
       />
@@ -95,7 +95,7 @@ export default function SplashScreen() {
         ]}
       >
         <Image
-          source={require('@/assets/images/Asset 10 2.png')}
+          source={require('@/assets/images/logo-light.png')}
           style={styles.logo}
           resizeMode="contain"
         />
