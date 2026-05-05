@@ -71,6 +71,7 @@ export default function TabLayout() {
         name="seekers"
         options={{
           title: 'Seekers',
+          headerShown: false,
           tabBarIcon: ({ color, focused }) => <Users size={22} color={color} fill={focused ? color : 'none'} />,
         }}
       />
@@ -78,6 +79,7 @@ export default function TabLayout() {
         name="journeys"
         options={{
           title: 'Journeys',
+          headerShown: false,
           tabBarIcon: ({ color, focused }) => <Route size={22} color={color} fill={focused ? color : 'none'} />,
         }}
       />
@@ -85,6 +87,7 @@ export default function TabLayout() {
         name="profile"
         options={{
           href: null,
+          headerShown: false,
         }}
       />
     </Tabs>

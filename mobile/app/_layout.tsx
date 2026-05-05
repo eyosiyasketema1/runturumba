@@ -8,7 +8,7 @@ import 'react-native-reanimated';
 import { Colors } from '@/constants/theme';
 
 export const unstable_settings = {
-  anchor: '(tabs)',
+  initialRouteName: 'index',
 };
 
 // Light-only theme matching Turumba's design system
@@ -45,8 +45,13 @@ export default function RootLayout() {
   return (
     <ThemeProvider value={TurumbaTheme}>
       <Stack>
+        <Stack.Screen name="index" options={{ headerShown: false, animation: 'none' }} />
+        <Stack.Screen name="login" options={{ headerShown: false, animation: 'fade' }} />
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
         <Stack.Screen name="chat/[id]" options={{ headerShown: false }} />
+        <Stack.Screen name="seeker/[id]" options={{ headerShown: false }} />
+        <Stack.Screen name="privacy" options={{ headerShown: false }} />
+        <Stack.Screen name="help" options={{ headerShown: false }} />
         <Stack.Screen name="modal" options={{ presentation: 'modal', title: 'Modal' }} />
       </Stack>
       <StatusBar style="dark" />
