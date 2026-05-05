@@ -4,7 +4,6 @@
     "slug": "turumba",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/images/turumba-icon.png",
     "scheme": "turumba",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
@@ -13,33 +12,16 @@
       "bundleIdentifier": "org.gcmethiopia.turumba"
     },
     "android": {
-      "adaptiveIcon": {
-        "backgroundColor": "#E6F4FE",
-        "foregroundImage": "./assets/images/turumba-icon.png"
-      },
       "package": "org.gcmethiopia.turumba",
       "softwareKeyboardLayoutMode": "adjustResize",
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false
     },
     "web": {
-      "output": "static",
-      "favicon": "./assets/images/turumba-icon.png"
+      "output": "static"
     },
     "plugins": [
       "expo-router",
-      [
-        "expo-splash-screen",
-        {
-          "image": "./assets/images/turumba-icon.png",
-          "imageWidth": 200,
-          "resizeMode": "contain",
-          "backgroundColor": "#ffffff",
-          "dark": {
-            "backgroundColor": "#000000"
-          }
-        }
-      ],
       [
         "expo-image-picker",
         {
