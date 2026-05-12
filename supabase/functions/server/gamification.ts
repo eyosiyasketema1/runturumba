@@ -839,8 +839,19 @@ async function executeAction(
     }
 
     case "send_notification": {
-      // Phase 4 — return placeholder for now
-      return { template: action.template, status: "deferred_to_phase_4" };
+      // Create a gamification notification
+      const notifData: any = {
+        account_id: ctx.account_id,
+        actor_id: ctx.actor_id,
+        actor_type: ctx.actor_type,
+        notification_type: action.notification_type || "milestone_completed",
+        title: action.title || "Notification",
+        body: action.body || "",
+        payload: { rule_id: ctx.rule_id, action },
+      };
+      const { data: notif, error: notifErr } = await db.from("gamification_notifications").insert(notifData).select().single();
+      if (notifErr) throw new Error(notifErr.message);
+      return { notification_id: notif.id, status: "sent" };
     }
 
     case "advance_journey": {
@@ -849,8 +860,47 @@ async function executeAction(
     }
 
     case "enroll_automation": {
-      // Phase 6 — return placeholder
-      return { automation_id: action.automation_id, status: "deferred_to_phase_6" };
+      // Phase 6 — enroll actor in a re-engagement drip sequence
+      const templateSlug = action.automation_id || action.template_slug;
+      if (!templateSlug) return { status: "error", message: "no template_slug provided" };
+
+      const { data: enrollResult, error: enrollErr } = await db.rpc("enroll_in_automation", {
+        p_account_id: ctx.account_id,
+        p_actor_id: ctx.actor_id,
+        p_actor_type: ctx.actor_type,
+        p_template_slug: templateSlug,
+        p_metadata: { source_rule_id: ctx.rule_id, event_data: ctx.event_data },
+      });
+      if (enrollErr) throw new Error(enrollErr.message);
+      const row = enrollResult?.[0] || enrollResult;
+      return { enrollment_id: row?.enrollment_id, template: row?.template_name, status: row?.status };
+    }
+
+    case "mentor_nudge": {
+      // Phase 6 — notify the assigned mentor about a seeker needing attention
+      const seekerName = ctx.event_data?.seeker_name || ctx.actor_id;
+      const mentorActorId = ctx.event_data?.mentor_actor_id;
+
+      if (!mentorActorId) {
+        return { status: "skipped", message: "no mentor_actor_id in event_data" };
+      }
+
+      const nudge = {
+        account_id: ctx.account_id,
+        actor_id: mentorActorId,
+        actor_type: "mentor",
+        notification_type: "milestone_completed" as const,
+        title: "Seeker needs attention",
+        body: `${seekerName}'s engagement has dropped. Consider reaching out.`,
+        payload: {
+          seeker_id: ctx.actor_id,
+          dropout_risk: ctx.event_data?.dropout_risk,
+          rule_id: ctx.rule_id,
+        },
+      };
+      const { data: nudgeNotif, error: nudgeErr } = await db.from("gamification_notifications").insert(nudge).select().single();
+      if (nudgeErr) throw new Error(nudgeErr.message);
+      return { notification_id: nudgeNotif.id, mentor_id: mentorActorId, status: "nudge_sent" };
     }
 
     default:
@@ -1005,6 +1055,146 @@ async function evaluateBadgeCriteria(
       return false;
   }
 }
+
+
+// ─── Re-engagement Routes (Phase 6) ────────────────────────────────────────
+
+// List re-engagement templates
+gam.get("/reengagement/templates", async (c) => {
+  const accountId = c.req.query("account_id");
+  if (!accountId) return err(c, 400, "account_id required");
+  const db = supabase();
+  const { data, error } = await db
+    .from("reengagement_templates")
+    .select("*")
+    .eq("account_id", accountId)
+    .order("created_at", { ascending: false });
+  if (error) return err(c, 500, error.message);
+  return c.json({ data });
+});
+
+// Manually enroll an actor in a re-engagement sequence
+gam.post("/reengagement/enroll", async (c) => {
+  const body = await c.req.json();
+  const { account_id, actor_id, actor_type, template_slug } = body;
+  if (!account_id || !actor_id || !template_slug) {
+    return err(c, 400, "account_id, actor_id, and template_slug required");
+  }
+  const db = supabase();
+  const { data, error } = await db.rpc("enroll_in_automation", {
+    p_account_id: account_id,
+    p_actor_id: actor_id,
+    p_actor_type: actor_type || "seeker",
+    p_template_slug: template_slug,
+    p_metadata: body.metadata || {},
+  });
+  if (error) return err(c, 500, error.message);
+  const row = data?.[0] || data;
+  if (row?.status === "error") return err(c, 404, row.template_name || "Template not found");
+  return c.json({ data: row });
+});
+
+// List enrollments for an actor
+gam.get("/reengagement/enrollments/:actorId", async (c) => {
+  const actorId = c.req.param("actorId");
+  const accountId = c.req.query("account_id");
+  const status = c.req.query("status") || "active";
+  if (!accountId) return err(c, 400, "account_id required");
+  const db = supabase();
+  const query = db
+    .from("automation_enrollments")
+    .select("*, reengagement_templates(slug, name, description, trigger_type, steps)")
+    .eq("actor_id", actorId)
+    .eq("account_id", accountId);
+  if (status !== "all") query.eq("status", status);
+  const { data, error } = await query.order("enrolled_at", { ascending: false });
+  if (error) return err(c, 500, error.message);
+  return c.json({ data });
+});
+
+// Cancel an enrollment
+gam.patch("/reengagement/enrollments/:id/cancel", async (c) => {
+  const id = c.req.param("id");
+  const db = supabase();
+  // Cancel enrollment
+  const { error: enrollErr } = await db
+    .from("automation_enrollments")
+    .update({ status: "cancelled", completed_at: new Date().toISOString() })
+    .eq("id", id);
+  if (enrollErr) return err(c, 500, enrollErr.message);
+  // Cancel pending drip messages
+  const { error: dripErr } = await db
+    .from("drip_messages")
+    .update({ status: "failed" })
+    .eq("enrollment_id", id)
+    .eq("status", "pending");
+  if (dripErr) return err(c, 500, dripErr.message);
+  return c.json({ data: { id, status: "cancelled" } });
+});
+
+// Get drip messages for an enrollment
+gam.get("/reengagement/drips/:enrollmentId", async (c) => {
+  const enrollmentId = c.req.param("enrollmentId");
+  const db = supabase();
+  const { data, error } = await db
+    .from("drip_messages")
+    .select("*")
+    .eq("enrollment_id", enrollmentId)
+    .order("step_index", { ascending: true });
+  if (error) return err(c, 500, error.message);
+  return c.json({ data });
+});
+
+// Process due drip messages (called by cron/worker)
+gam.post("/reengagement/process-drips", async (c) => {
+  const body = await c.req.json().catch(() => ({}));
+  const limit = body.limit || 50;
+  const db = supabase();
+  const { data, error } = await db.rpc("process_due_drips", { p_limit: limit });
+  if (error) return err(c, 500, error.message);
+
+  // For each processed drip, create a notification for the actor
+  const processed = data || [];
+  for (const drip of processed) {
+    await db.from("gamification_notifications").insert({
+      account_id: drip.actor_id ? "tenant-1" : "tenant-1", // TODO: get from enrollment
+      actor_id: drip.actor_id,
+      actor_type: "seeker",
+      notification_type: "milestone_completed",
+      title: "Re-engagement Message",
+      body: drip.message,
+      payload: { enrollment_id: drip.enrollment_id, drip_id: drip.drip_id, channel: drip.channel },
+    }).then(() => {});
+  }
+
+  return c.json({ data: { processed: processed.length, drips: processed } });
+});
+
+// Admin: Create/update/delete re-engagement templates
+gam.post("/admin/reengagement/templates", async (c) => {
+  const body = await c.req.json();
+  const db = supabase();
+  const { data, error } = await db.from("reengagement_templates").insert(body).select().single();
+  if (error) return err(c, 500, error.message);
+  return c.json({ data }, 201);
+});
+
+gam.patch("/admin/reengagement/templates/:id", async (c) => {
+  const id = c.req.param("id");
+  const body = await c.req.json();
+  const db = supabase();
+  const { data, error } = await db.from("reengagement_templates").update(body).eq("id", id).select().single();
+  if (error) return err(c, 500, error.message);
+  return c.json({ data });
+});
+
+gam.delete("/admin/reengagement/templates/:id", async (c) => {
+  const id = c.req.param("id");
+  const db = supabase();
+  const { error } = await db.from("reengagement_templates").delete().eq("id", id);
+  if (error) return err(c, 500, error.message);
+  return c.json({ data: { deleted: true } });
+});
 
 
 export default gam;

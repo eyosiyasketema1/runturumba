@@ -370,3 +370,107 @@ export const GamificationStatsService = {
     });
   },
 };
+
+// ─── Re-engagement Types & API (Phase 6) ───────────────────────────────────
+
+export interface ReengagementTemplate {
+  id: string;
+  account_id: string;
+  slug: string;
+  name: string;
+  description: string;
+  trigger_type: "manual" | "streak_broken" | "silence" | "dropout_risk";
+  steps: Array<{ delay_hours: number; channel: string; message: string }>;
+  is_active: boolean;
+  created_at: string;
+}
+
+export interface AutomationEnrollment {
+  id: string;
+  account_id: string;
+  actor_id: string;
+  actor_type: string;
+  template_id: string;
+  status: "active" | "completed" | "cancelled";
+  current_step: number;
+  enrolled_at: string;
+  last_step_at: string | null;
+  completed_at: string | null;
+  metadata_: Record<string, any>;
+  reengagement_templates?: ReengagementTemplate;
+}
+
+export interface DripMessage {
+  id: string;
+  account_id: string;
+  enrollment_id: string;
+  step_index: number;
+  message_content: string;
+  channel: string;
+  status: "pending" | "sent" | "delivered" | "failed";
+  scheduled_at: string;
+  sent_at: string | null;
+  created_at: string;
+}
+
+export const ReengagementService = {
+  async listTemplates(accountId: string) {
+    return api<ReengagementTemplate[]>("/gamification/reengagement/templates", {
+      params: { account_id: accountId },
+    });
+  },
+
+  async enroll(data: {
+    account_id: string;
+    actor_id: string;
+    actor_type?: string;
+    template_slug: string;
+    metadata?: Record<string, any>;
+  }) {
+    return api<{ enrollment_id: string; template_name: string; steps_count: number; status: string }>(
+      "/gamification/reengagement/enroll",
+      { method: "POST", body: data }
+    );
+  },
+
+  async listEnrollments(actorId: string, accountId: string, status = "active") {
+    return api<AutomationEnrollment[]>(`/gamification/reengagement/enrollments/${actorId}`, {
+      params: { account_id: accountId, status },
+    });
+  },
+
+  async cancelEnrollment(id: string) {
+    return api<{ id: string; status: string }>(`/gamification/reengagement/enrollments/${id}/cancel`, {
+      method: "PATCH",
+    });
+  },
+
+  async getDrips(enrollmentId: string) {
+    return api<DripMessage[]>(`/gamification/reengagement/drips/${enrollmentId}`);
+  },
+
+  async processDueDrips(limit = 50) {
+    return api<{ processed: number; drips: any[] }>("/gamification/reengagement/process-drips", {
+      method: "POST",
+      body: { limit },
+    });
+  },
+};
+
+export const AdminReengagementService = {
+  async createTemplate(data: Record<string, any>) {
+    return api<ReengagementTemplate>("/gamification/admin/reengagement/templates", {
+      method: "POST", body: data,
+    });
+  },
+  async updateTemplate(id: string, data: Record<string, any>) {
+    return api<ReengagementTemplate>(`/gamification/admin/reengagement/templates/${id}`, {
+      method: "PATCH", body: data,
+    });
+  },
+  async deleteTemplate(id: string) {
+    return api<{ deleted: boolean }>(`/gamification/admin/reengagement/templates/${id}`, {
+      method: "DELETE",
+    });
+  },
+};
