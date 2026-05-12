@@ -42,6 +42,13 @@ import {
   INITIAL_FAITH_JOURNEYS, INITIAL_CONTACT_MILESTONES, INITIAL_MATCHES, INITIAL_CONTENT,
 } from "./components/types";
 
+// Supabase services (Phase 1)
+import { isSupabaseConfigured } from "./lib/supabase";
+import {
+  JourneysService, MilestonesService,
+  dbToFrontendJourney, dbToFrontendMilestones,
+} from "./lib/journeys-service";
+
 // Shared UI components
 import {
   Modal, RoleBadge, NotificationDropdown
@@ -135,6 +142,28 @@ export default function App() {
   const [contactMilestones, setContactMilestones] = useState<ContactMilestones[]>(INITIAL_CONTACT_MILESTONES);
   const [matches, setMatches] = useState<Match[]>(INITIAL_MATCHES);
   const [contentLibrary, setContentLibrary] = useState<ContentRow[]>(INITIAL_CONTENT);
+
+  // ─── Phase 1: Fetch real data from Supabase ────────────────────────────────
+  useEffect(() => {
+    if (!isSupabaseConfigured()) return; // Fall back to mock data
+
+    const tenantId = activeTenant.id;
+
+    // Fetch faith journeys
+    JourneysService.list(tenantId).then(({ data, error }) => {
+      if (!error && data && data.length > 0) {
+        setFaithJourneys(data.map(dbToFrontendJourney) as FaithJourney[]);
+      }
+    });
+
+    // Fetch contact milestones
+    MilestonesService.list(tenantId).then(({ data, error }) => {
+      if (!error && data && data.length > 0) {
+        setContactMilestones(data.map(dbToFrontendMilestones) as ContactMilestones[]);
+      }
+    });
+  }, [activeTenant.id]);
+  // ──────────────────────────────────────────────────────────────────────────
 
   // Reassignment requests
   const [reassignRequests, setReassignRequests] = useState<{
@@ -329,6 +358,20 @@ export default function App() {
 
   const handleUpdateJourney = (id: string, data: Partial<FaithJourney>) => {
     setFaithJourneys(prev => prev.map(j => j.id === id ? { ...j, ...data } : j));
+    // Sync to Supabase if configured
+    if (isSupabaseConfigured()) {
+      const dbData: Record<string, any> = {};
+      if (data.stage !== undefined) dbData.stage = data.stage;
+      if (data.indicators !== undefined) dbData.indicators = data.indicators;
+      if (data.milestone !== undefined) dbData.milestone = data.milestone;
+      if (data.validation !== undefined) dbData.validation = data.validation;
+      if (data.language !== undefined) dbData.language = data.language;
+      if (data.source !== undefined) dbData.source = data.source;
+      if (data.type !== undefined) dbData.type = data.type;
+      if (Object.keys(dbData).length > 0) {
+        JourneysService.update(id, dbData).catch(console.error);
+      }
+    }
   };
 
   const handleLogMilestone = (contactId: string, key: MilestoneKey, date: string, sub: string[]) => {
@@ -349,6 +392,14 @@ export default function App() {
             c.id === contactId ? { ...c, maturity: "Mature", discipleshipStatus: "Graduated" } : c
           ));
         }
+        // Sync to Supabase: update the specific milestone entry
+        if (isSupabaseConfigured()) {
+          const entry = existing.milestones.find(ms => ms.key === key);
+          const entryId = (entry as any)?._entryId;
+          if (entryId) {
+            MilestonesService.updateEntry(entryId, { state: "done", date, sub }).catch(console.error);
+          }
+        }
         return updated;
       }
       // Create new milestone record for this contact
@@ -363,6 +414,18 @@ export default function App() {
           { key: "growth",    label: "Growth Evidence",   date: key === "growth"    ? date : "Not Started", state: key === "growth"    ? "done" : "pending", sub: key === "growth"    ? sub : [] },
         ],
       };
+      // Sync to Supabase: create new milestone record
+      if (isSupabaseConfigured()) {
+        MilestonesService.create(contactId, activeTenant.id).then(({ data }) => {
+          if (data) {
+            // Find the entry for this key and update it
+            const entry = (data.milestone_entries || []).find((e: any) => e.key === key);
+            if (entry) {
+              MilestonesService.updateEntry(entry.id, { state: "done", date, sub }).catch(console.error);
+            }
+          }
+        }).catch(console.error);
+      }
       return [...prev, newMs];
     });
   };
