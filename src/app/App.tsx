@@ -49,6 +49,12 @@ import {
   dbToFrontendJourney, dbToFrontendMilestones,
 } from "./lib/journeys-service";
 
+// Gamification services (Phase 2 + 3)
+import {
+  ProfilesService, GamificationStatsService, BadgesService,
+  type GamificationProfile, type GamificationStats, type BadgeDefinition, type BadgeAward,
+} from "./lib/gamification-service";
+
 // Shared UI components
 import {
   Modal, RoleBadge, NotificationDropdown
@@ -80,6 +86,7 @@ import {
   DropdownMenuItem, DropdownMenuSeparator
 } from "./components/ui/dropdown-menu";
 import { AllActivityView } from "./components/all-activity-view";
+import { GamificationAdminView } from "./components/gamification-admin-view";
 
 // --- Role System ---
 // Super Admin is a dev/testing god-mode. The four product roles map to the
@@ -97,8 +104,8 @@ const ROLE_OPTIONS: { id: ViewRole; label: string; description: string; icon: an
 // Which views each role can access. Views omitted from a role's list are
 // hidden from the sidebar and blocked from being navigated to.
 const ROLE_VIEW_ACCESS: Record<ViewRole, string[]> = {
-  super_admin:     ["dashboard", "contacts", "messages", "conversations", "seekers", "mentors", "matches", "faith_journeys", "milestones", "channels", "automations", "skill_sets", "content_library", "growth_metrics", "vital_analytics", "reporting", "validations", "team", "settings"],
-  admin:           ["dashboard", "contacts", "messages", "conversations", "seekers", "mentors", "matches", "faith_journeys", "milestones", "channels", "automations", "skill_sets", "content_library", "growth_metrics", "vital_analytics", "reporting", "validations", "team", "settings"],
+  super_admin:     ["dashboard", "contacts", "messages", "conversations", "seekers", "mentors", "matches", "faith_journeys", "milestones", "channels", "automations", "skill_sets", "content_library", "gamification", "growth_metrics", "vital_analytics", "reporting", "validations", "team", "settings"],
+  admin:           ["dashboard", "contacts", "messages", "conversations", "seekers", "mentors", "matches", "faith_journeys", "milestones", "channels", "automations", "skill_sets", "content_library", "gamification", "growth_metrics", "vital_analytics", "reporting", "validations", "team", "settings"],
   mentor_coach:    ["dashboard", "messages", "conversations", "seekers", "mentors", "matches", "faith_journeys", "milestones", "skill_sets", "content_library", "growth_metrics", "vital_analytics", "reporting", "validations"],
   content_creator: ["dashboard", "content_library"],
   mentor:          ["dashboard", "contacts", "messages", "conversations", "seekers", "matches", "faith_journeys", "milestones", "content_library"],
@@ -143,6 +150,12 @@ export default function App() {
   const [matches, setMatches] = useState<Match[]>(INITIAL_MATCHES);
   const [contentLibrary, setContentLibrary] = useState<ContentRow[]>(INITIAL_CONTENT);
 
+  // Gamification state (Phase 2 + 3)
+  const [gamificationProfiles, setGamificationProfiles] = useState<GamificationProfile[]>([]);
+  const [gamificationStats, setGamificationStats] = useState<GamificationStats | null>(null);
+  const [badgeDefinitions, setBadgeDefinitions] = useState<BadgeDefinition[]>([]);
+  const [badgeAwards, setBadgeAwards] = useState<BadgeAward[]>([]);
+
   // ─── Phase 1: Fetch real data from Supabase ────────────────────────────────
   useEffect(() => {
     if (!isSupabaseConfigured()) return; // Fall back to mock data
@@ -161,6 +174,17 @@ export default function App() {
       if (!error && data && data.length > 0) {
         setContactMilestones(data.map(dbToFrontendMilestones) as ContactMilestones[]);
       }
+    });
+
+    // Phase 2+3: Fetch gamification profiles, stats, and badges
+    ProfilesService.list(tenantId).then(({ data, error }) => {
+      if (!error && data) setGamificationProfiles(data);
+    });
+    GamificationStatsService.get(tenantId).then(({ data, error }) => {
+      if (!error && data) setGamificationStats(data);
+    });
+    BadgesService.listDefinitions(tenantId).then(({ data, error }) => {
+      if (!error && data) setBadgeDefinitions(data);
     });
   }, [activeTenant.id]);
   // ──────────────────────────────────────────────────────────────────────────
@@ -233,6 +257,7 @@ export default function App() {
         { id: "automations",     name: "Automations",     icon: Zap },
         { id: "skill_sets",      name: "Skill Sets",      icon: Brain },
         { id: "content_library", name: "Content Library", icon: Library },
+        { id: "gamification",    name: "Gamification",    icon: Sparkles },
       ]
     },
     {
@@ -857,6 +882,7 @@ export default function App() {
                       activeMatches: matches.filter(m => m.status === "Active" || m.status === "Accepted").length,
                       decisions: faithJourneys.filter(j => j.stage === "Decision").length,
                     }}
+                    gamificationStats={gamificationStats}
                   />
                 )}
                 {dashboardTab === "collective" && (
@@ -1231,6 +1257,11 @@ export default function App() {
             {currentView === "skill_sets" && (
               <motion.div key="skill_sets" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.2 }}>
                 <SkillSetsView />
+              </motion.div>
+            )}
+            {currentView === "gamification" && (
+              <motion.div key="gamification" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.2 }}>
+                <GamificationAdminView accountId={activeTenant.id} />
               </motion.div>
             )}
 

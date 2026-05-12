@@ -3,6 +3,7 @@ import { cors } from "npm:hono/cors";
 import { logger } from "npm:hono/logger";
 import * as kv from "./kv_store.ts";
 import journeys from "./journeys.ts";
+import gamification from "./gamification.ts";
 const app = new Hono().basePath("/server");
 
 // Enable logger
@@ -27,5 +28,8 @@ app.get("/make-server-161cb90c/health", (c) => {
 
 // Phase 1: Faith Journeys & Milestones API
 app.route("/make-server-161cb90c/journeys", journeys);
+
+// Phase 2: Gamification — Profiles, Points, Rules Engine
+app.route("/make-server-161cb90c/gamification", gamification);
 
 Deno.serve(app.fetch);

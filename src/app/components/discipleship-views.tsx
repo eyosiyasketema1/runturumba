@@ -181,9 +181,10 @@ const PLATFORM_MIX = [
   { label: "Messenger", pct:  7, dot: "bg-pink-500",    color: "bg-pink-500" },
 ];
 
-export function DiscipleshipDashboardView({ onNavigate, stats }: {
+export function DiscipleshipDashboardView({ onNavigate, stats, gamificationStats }: {
   onNavigate?: (view: string) => void;
   stats?: { activeSeekers: number; mentors: number; activeMatches: number; decisions: number };
+  gamificationStats?: { total_profiles: number; total_xp_awarded: number; avg_streak: number; tier_distribution: { bronze: number; silver: number; gold: number; platinum: number } } | null;
 }) {
   const activities = [
     { tone: "bg-emerald-500", icon: CheckCircle2, text: "Sarah M. completed", highlight: "'Foundations of Faith' campaign", when: "2m ago",  meta: "Milestone" },
@@ -294,6 +295,48 @@ export function DiscipleshipDashboardView({ onNavigate, stats }: {
           sparkData={[74, 76, 78, 79, 80, 81, 82]}
         />
       </section>
+
+      {/* ---------- GAMIFICATION OVERVIEW ---------- */}
+      {gamificationStats && (
+        <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="rounded-sm bg-card border border-border p-4 shadow-sm">
+            <div className="flex items-center gap-2 mb-2">
+              <div className="w-8 h-8 rounded-lg bg-amber-100 flex items-center justify-center">
+                <Star className="w-4 h-4 text-amber-600" />
+              </div>
+              <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Total XP Awarded</span>
+            </div>
+            <p className="text-2xl font-bold text-foreground">{gamificationStats.total_xp_awarded.toLocaleString()}</p>
+          </div>
+          <div className="rounded-sm bg-card border border-border p-4 shadow-sm">
+            <div className="flex items-center gap-2 mb-2">
+              <div className="w-8 h-8 rounded-lg bg-orange-100 flex items-center justify-center">
+                <Flame className="w-4 h-4 text-orange-600" />
+              </div>
+              <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Avg Streak</span>
+            </div>
+            <p className="text-2xl font-bold text-foreground">{gamificationStats.avg_streak} <span className="text-sm font-medium text-muted-foreground">days</span></p>
+          </div>
+          <div className="rounded-sm bg-card border border-border p-4 shadow-sm">
+            <div className="flex items-center gap-2 mb-2">
+              <div className="w-8 h-8 rounded-lg bg-purple-100 flex items-center justify-center">
+                <Crown className="w-4 h-4 text-purple-600" />
+              </div>
+              <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Gold+ Tier</span>
+            </div>
+            <p className="text-2xl font-bold text-foreground">{(gamificationStats.tier_distribution.gold || 0) + (gamificationStats.tier_distribution.platinum || 0)}</p>
+          </div>
+          <div className="rounded-sm bg-card border border-border p-4 shadow-sm">
+            <div className="flex items-center gap-2 mb-2">
+              <div className="w-8 h-8 rounded-lg bg-blue-100 flex items-center justify-center">
+                <Users className="w-4 h-4 text-blue-600" />
+              </div>
+              <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Gamified Profiles</span>
+            </div>
+            <p className="text-2xl font-bold text-foreground">{gamificationStats.total_profiles}</p>
+          </div>
+        </section>
+      )}
 
       {/* ---------- CHARTS ROW ---------- */}
       <section className="grid grid-cols-1 lg:grid-cols-[2fr,1fr] gap-4">
