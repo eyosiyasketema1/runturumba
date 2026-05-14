@@ -231,99 +231,85 @@ gam.get("/rules/:id", async (c) => {
 // POST /gamification/engine/process — Process an event through behavior rules
 gam.post("/engine/process", async (c) => {
   const body = await c.req.json();
-  const { account_id, actor_id, actor_type, event_type, event_data } = body;
+  const { account_id, actor_id, actor_type, event_type, event_data, source_event_id } = body;
 
   if (!account_id || !actor_id || !actor_type || !event_type) {
     return err(c, 400, "account_id, actor_id, actor_type, and event_type are required");
   }
 
+  const result = await processEngineEvent(supabase(), {
+    account_id,
+    actor_id,
+    actor_type,
+    event_type,
+    event_data,
+    source_event_id,
+  });
+
+  return c.json({ data: result });
+});
+
+
+// POST /gamification/streak/process — Streak Worker
+//
+// Scans gamification_profiles for stale streaks, resets them, and fans out
+// gamification.streak_broken events through the rules engine. Intended to be
+// invoked nightly by pg_cron (see migration 010 for the schedule snippet)
+// but is safe to call on demand.
+//
+// Body (all optional):
+//   { account_id?: string, grace_days?: number }
+gam.post("/streak/process", async (c) => {
+  const body = await c.req.json().catch(() => ({} as any));
+  const accountId: string | null = body?.account_id ?? null;
+  const graceDays: number = Number.isFinite(body?.grace_days) ? body.grace_days : 1;
+
   const db = supabase();
 
-  // 1. Load active rules for this trigger event
-  const { data: rules, error: rulesErr } = await db
-    .from("behavior_rules")
-    .select("*")
-    .eq("account_id", account_id)
-    .eq("is_active", true)
-    .eq("trigger_event", event_type)
-    .order("priority", { ascending: true });
+  // 1. Detect + reset stale streaks transactionally.
+  const { data: broken, error: brokenErr } = await db.rpc("find_and_break_stale_streaks", {
+    p_account_id: accountId,
+    p_grace_days: graceDays,
+  });
 
-  if (rulesErr) return err(c, 500, rulesErr.message);
-  if (!rules || rules.length === 0) {
-    return c.json({ data: { processed: 0, actions: [] } });
+  if (brokenErr) return err(c, 500, brokenErr.message);
+  const rows: any[] = Array.isArray(broken) ? broken : [];
+
+  // 2. Fan out streak_broken events through the rules engine.
+  let totalActions = 0;
+  const perActor: any[] = [];
+  for (const row of rows) {
+    const r = await processEngineEvent(db, {
+      account_id: row.account_id,
+      actor_id: row.actor_id,
+      actor_type: row.actor_type,
+      event_type: "gamification.streak_broken",
+      event_data: {
+        previous_streak: row.previous_streak,
+        previous_anchor: row.previous_anchor,
+        dropout_risk: row.dropout_risk,
+      },
+    });
+    totalActions += r.processed;
+    perActor.push({
+      account_id: row.account_id,
+      actor_id: row.actor_id,
+      actor_type: row.actor_type,
+      previous_streak: row.previous_streak,
+      dropout_risk: row.dropout_risk,
+      rules_fired: r.processed,
+    });
   }
 
-  const results: any[] = [];
-  const eventPayload = { event_type, actor_type, actor_id, ...event_data };
-  const sourceEventId = body.source_event_id || `evt-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
-
-  // 2. Evaluate each rule
-  for (const rule of rules) {
-    // Check actor_type filter
-    if (rule.actor_type !== "both" && rule.actor_type !== actor_type) continue;
-
-    // Check cooldown
-    if (rule.cooldown_seconds) {
-      const cooldownCutoff = new Date(Date.now() - rule.cooldown_seconds * 1000).toISOString();
-      const { data: recentTx } = await db
-        .from("point_transactions")
-        .select("id")
-        .eq("rule_id", rule.id)
-        .eq("actor_id", actor_id)
-        .gte("created_at", cooldownCutoff)
-        .limit(1);
-
-      if (recentTx && recentTx.length > 0) continue; // Still in cooldown
-    }
-
-    // Check daily cap
-    if (rule.daily_cap) {
-      const todayStart = new Date();
-      todayStart.setHours(0, 0, 0, 0);
-      const { data: todayTx } = await db
-        .from("point_transactions")
-        .select("id")
-        .eq("rule_id", rule.id)
-        .eq("actor_id", actor_id)
-        .gte("created_at", todayStart.toISOString());
-
-      if (todayTx && todayTx.length >= rule.daily_cap) continue; // Cap reached
-    }
-
-    // Evaluate conditions
-    const conditions = rule.conditions || [];
-    let allConditionsMet = true;
-
-    for (const cond of conditions) {
-      const fieldValue = getNestedField(eventPayload, cond.field);
-      if (!evaluateCondition(fieldValue, cond.op, cond.value)) {
-        allConditionsMet = false;
-        break;
-      }
-    }
-
-    if (!allConditionsMet) continue;
-
-    // 3. Execute actions
-    const actions = rule.actions || [];
-    for (const action of actions) {
-      try {
-        const result = await executeAction(db, action, {
-          account_id,
-          actor_id,
-          actor_type,
-          rule_id: rule.id,
-          source_event_id: sourceEventId,
-          event_data: eventPayload,
-        });
-        results.push({ rule: rule.name, action: action.type, result });
-      } catch (e: any) {
-        results.push({ rule: rule.name, action: action.type, error: e.message });
-      }
-    }
-  }
-
-  return c.json({ data: { processed: results.length, actions: results } });
+  return c.json({
+    data: {
+      scope: accountId ?? "all",
+      grace_days: graceDays,
+      streaks_broken: rows.length,
+      rules_fired: totalActions,
+      broken: perActor,
+    },
+  });
 });
 
 
@@ -779,6 +765,116 @@ function getISOWeek(d: Date): string {
 
 function getNestedField(obj: any, path: string): any {
   return path.split(".").reduce((o, k) => o?.[k], obj);
+}
+
+/**
+ * Run an event through the behavior rules engine.
+ *
+ * Loads all active rules matching the event_type, then for each rule checks
+ * actor_type, cooldown, daily_cap, and JSON conditions. Matching rules have
+ * their actions executed in order. Returns the list of action results.
+ *
+ * Shared between POST /engine/process and POST /streak/process so the Streak
+ * Worker can fan out gamification.streak_broken events without doing an HTTP
+ * self-call.
+ */
+async function processEngineEvent(
+  db: any,
+  params: {
+    account_id: string;
+    actor_id: string;
+    actor_type: string;
+    event_type: string;
+    event_data?: Record<string, any>;
+    source_event_id?: string;
+  }
+): Promise<{ processed: number; actions: any[] }> {
+  const { account_id, actor_id, actor_type, event_type, event_data } = params;
+
+  // 1. Load active rules for this trigger event
+  const { data: rules, error: rulesErr } = await db
+    .from("behavior_rules")
+    .select("*")
+    .eq("account_id", account_id)
+    .eq("is_active", true)
+    .eq("trigger_event", event_type)
+    .order("priority", { ascending: true });
+
+  if (rulesErr) throw new Error(rulesErr.message);
+  if (!rules || rules.length === 0) {
+    return { processed: 0, actions: [] };
+  }
+
+  const results: any[] = [];
+  const eventPayload = { event_type, actor_type, actor_id, ...(event_data || {}) };
+  const sourceEventId =
+    params.source_event_id || `evt-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+
+  // 2. Evaluate each rule
+  for (const rule of rules) {
+    // actor_type filter
+    if (rule.actor_type !== "both" && rule.actor_type !== actor_type) continue;
+
+    // cooldown
+    if (rule.cooldown_seconds) {
+      const cooldownCutoff = new Date(Date.now() - rule.cooldown_seconds * 1000).toISOString();
+      const { data: recentTx } = await db
+        .from("point_transactions")
+        .select("id")
+        .eq("rule_id", rule.id)
+        .eq("actor_id", actor_id)
+        .gte("created_at", cooldownCutoff)
+        .limit(1);
+
+      if (recentTx && recentTx.length > 0) continue;
+    }
+
+    // daily cap
+    if (rule.daily_cap) {
+      const todayStart = new Date();
+      todayStart.setHours(0, 0, 0, 0);
+      const { data: todayTx } = await db
+        .from("point_transactions")
+        .select("id")
+        .eq("rule_id", rule.id)
+        .eq("actor_id", actor_id)
+        .gte("created_at", todayStart.toISOString());
+
+      if (todayTx && todayTx.length >= rule.daily_cap) continue;
+    }
+
+    // conditions
+    const conditions = rule.conditions || [];
+    let allConditionsMet = true;
+    for (const cond of conditions) {
+      const fieldValue = getNestedField(eventPayload, cond.field);
+      if (!evaluateCondition(fieldValue, cond.op, cond.value)) {
+        allConditionsMet = false;
+        break;
+      }
+    }
+    if (!allConditionsMet) continue;
+
+    // 3. Execute actions
+    const actions = rule.actions || [];
+    for (const action of actions) {
+      try {
+        const result = await executeAction(db, action, {
+          account_id,
+          actor_id,
+          actor_type,
+          rule_id: rule.id,
+          source_event_id: sourceEventId,
+          event_data: eventPayload,
+        });
+        results.push({ rule: rule.name, action: action.type, result });
+      } catch (e: any) {
+        results.push({ rule: rule.name, action: action.type, error: e.message });
+      }
+    }
+  }
+
+  return { processed: results.length, actions: results };
 }
 
 function evaluateCondition(fieldValue: any, op: string, expected: any): boolean {
