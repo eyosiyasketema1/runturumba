@@ -417,6 +417,37 @@ gam.get("/leaderboard", async (c) => {
 });
 
 
+// POST /gamification/leaderboard/recompute — Leaderboard Worker
+//
+// Recomputes weekly, monthly, and all-time leaderboards for every active
+// tenant (or a single one if account_id is provided). Intended to run on a
+// 15-minute pg_cron schedule — see migration 011 — but is safe to call on
+// demand for live admin views or after a bulk XP backfill.
+//
+// Body (all optional):
+//   { account_id?: string }
+gam.post("/leaderboard/recompute", async (c) => {
+  const body = await c.req.json().catch(() => ({} as any));
+  const accountId: string | null = body?.account_id ?? null;
+
+  const db = supabase();
+  const { data, error } = await db.rpc("recompute_all_leaderboards", {
+    p_account_id: accountId,
+  });
+
+  if (error) return err(c, 500, error.message);
+  const rows: any[] = Array.isArray(data) ? data : [];
+
+  return c.json({
+    data: {
+      scope: accountId ?? "all",
+      periods_recomputed: rows.length,
+      details: rows,
+    },
+  });
+});
+
+
 // ═══════════════════════════════════════════════════════════════════════════════
 // NOTIFICATIONS (Phase 4)
 // ═══════════════════════════════════════════════════════════════════════════════
