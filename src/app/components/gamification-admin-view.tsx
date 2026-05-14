@@ -2,7 +2,9 @@ import React, { useState, useEffect, useMemo } from "react";
 import {
   Zap, Award, Trophy, BarChart3, Plus, Edit2, Trash2, Search,
   ChevronDown, ToggleLeft, ToggleRight, Shield, Flame, Star,
-  TrendingUp, Users, Activity, Check, X, Eye,
+  TrendingUp, Users, Activity, Check, X, Eye, RefreshCw,
+  Mail, Clock, AlertTriangle, Play, Pause, XCircle, CheckCircle,
+  MessageSquare, Send,
 } from "lucide-react";
 import {
   cn,
@@ -20,20 +22,23 @@ import {
 import {
   RulesService, BadgesService, LeaderboardService, AnalyticsService,
   AdminRulesService, AdminBadgesService,
+  ReengagementService, AdminReengagementService,
   type BehaviorRule, type BadgeDefinition, type LeaderboardEntry,
   type GamificationAnalytics,
+  type ReengagementTemplate, type AutomationEnrollment, type DripMessage,
   rarityColor,
 } from "../lib/gamification-service";
 
 // ─── Tab type ───────────────────────────────────────────────────────────────
 
-type AdminTab = "rules" | "badges" | "leaderboard" | "analytics";
+type AdminTab = "rules" | "badges" | "leaderboard" | "analytics" | "reengagement";
 
 const TABS: { id: AdminTab; label: string; icon: any }[] = [
   { id: "rules", label: "Behavior Rules", icon: Zap },
   { id: "badges", label: "Badges", icon: Award },
   { id: "leaderboard", label: "Leaderboard", icon: Trophy },
   { id: "analytics", label: "Analytics", icon: BarChart3 },
+  { id: "reengagement", label: "Re-engagement", icon: RefreshCw },
 ];
 
 const RARITY_OPTIONS = ["common", "rare", "epic", "legendary"];
@@ -51,7 +56,7 @@ export function GamificationAdminView({ accountId }: { accountId: string }) {
       <div className="flex items-start justify-between gap-4 flex-wrap">
         <div>
           <h1 className="text-2xl font-bold text-foreground tracking-tight">Gamification</h1>
-          <p className="text-sm text-muted-foreground mt-1">Manage rules, badges, leaderboards, and analytics</p>
+          <p className="text-sm text-muted-foreground mt-1">Manage rules, badges, leaderboards, analytics, and re-engagement</p>
         </div>
       </div>
 
@@ -80,7 +85,298 @@ export function GamificationAdminView({ accountId }: { accountId: string }) {
       {tab === "badges" && <BadgesTab accountId={accountId} />}
       {tab === "leaderboard" && <LeaderboardTab accountId={accountId} />}
       {tab === "analytics" && <AnalyticsTab accountId={accountId} />}
+      {tab === "reengagement" && <ReengagementTab accountId={accountId} />}
     </div>
+  );
+}
+
+// ─── Shared constants ───────────────────────────────────────────────────────
+
+const TRIGGER_EVENTS = [
+  "engagement.event_recorded",
+  "milestone.completed",
+  "gamification.streak_updated",
+  "gamification.streak_broken",
+  "journey.started",
+  "journey.stage_advanced",
+  "journey.completed",
+  "milestone.progressed",
+];
+
+const CONDITION_OPS = ["eq", "ne", "gt", "gte", "lt", "lte", "in", "contains", "exists"];
+
+const ACTION_TYPES = [
+  { value: "award_xp", label: "Award XP" },
+  { value: "check_badge", label: "Check Badge" },
+  { value: "update_streak", label: "Update Streak" },
+  { value: "send_notification", label: "Send Notification" },
+  { value: "enroll_automation", label: "Enroll in Automation" },
+  { value: "advance_journey", label: "Advance Journey" },
+  { value: "update_milestone", label: "Update Milestone" },
+];
+
+// ─── Rule Builder Modal ────────────────────────────────────────────────────
+
+interface RuleFormData {
+  name: string;
+  description: string;
+  actor_type: string;
+  trigger_event: string;
+  conditions: Array<{ field: string; op: string; value: string }>;
+  actions: Array<{ type: string; [key: string]: any }>;
+  cooldown_seconds: number | null;
+  daily_cap: number | null;
+  priority: number;
+  is_active: boolean;
+}
+
+const EMPTY_RULE: RuleFormData = {
+  name: "", description: "", actor_type: "seeker", trigger_event: TRIGGER_EVENTS[0],
+  conditions: [], actions: [{ type: "award_xp", points: 10 }],
+  cooldown_seconds: null, daily_cap: null, priority: 100, is_active: true,
+};
+
+function RuleBuilderModal({ isOpen, onClose, onSaved, editRule, accountId }: {
+  isOpen: boolean; onClose: () => void; onSaved: (rule: BehaviorRule) => void;
+  editRule: BehaviorRule | null; accountId: string;
+}) {
+  const [form, setForm] = useState<RuleFormData>(EMPTY_RULE);
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    if (editRule) {
+      setForm({
+        name: editRule.name,
+        description: editRule.description || "",
+        actor_type: editRule.actor_type,
+        trigger_event: editRule.trigger_event,
+        conditions: (editRule.conditions || []).map((c: any) => ({ field: c.field || "", op: c.op || "eq", value: String(c.value ?? "") })),
+        actions: editRule.actions || [{ type: "award_xp", points: 10 }],
+        cooldown_seconds: editRule.cooldown_seconds,
+        daily_cap: editRule.daily_cap,
+        priority: editRule.priority,
+        is_active: editRule.is_active,
+      });
+    } else {
+      setForm(EMPTY_RULE);
+    }
+  }, [editRule, isOpen]);
+
+  const setField = (key: keyof RuleFormData, val: any) => setForm(prev => ({ ...prev, [key]: val }));
+
+  const addCondition = () => setField("conditions", [...form.conditions, { field: "", op: "eq", value: "" }]);
+  const removeCondition = (i: number) => setField("conditions", form.conditions.filter((_, idx) => idx !== i));
+  const updateCondition = (i: number, key: string, val: string) => {
+    const next = [...form.conditions];
+    (next[i] as any)[key] = val;
+    setField("conditions", next);
+  };
+
+  const addAction = () => setField("actions", [...form.actions, { type: "award_xp", points: 10 }]);
+  const removeAction = (i: number) => setField("actions", form.actions.filter((_, idx) => idx !== i));
+  const updateAction = (i: number, key: string, val: any) => {
+    const next = [...form.actions];
+    (next[i] as any)[key] = val;
+    setField("actions", next);
+  };
+
+  const handleSave = async () => {
+    if (!form.name.trim() || !form.trigger_event) {
+      toast.error("Name and trigger event are required");
+      return;
+    }
+    setSaving(true);
+    try {
+      const payload = {
+        account_id: accountId,
+        name: form.name,
+        description: form.description,
+        actor_type: form.actor_type,
+        trigger_event: form.trigger_event,
+        conditions: form.conditions.filter(c => c.field.trim()),
+        actions: form.actions,
+        cooldown_seconds: form.cooldown_seconds,
+        daily_cap: form.daily_cap,
+        priority: form.priority,
+        is_active: form.is_active,
+      };
+
+      if (editRule) {
+        const { data } = await AdminRulesService.update(editRule.id, payload);
+        if (data) { onSaved(data); toast.success("Rule updated"); }
+      } else {
+        const { data } = await AdminRulesService.create(payload);
+        if (data) { onSaved(data); toast.success("Rule created"); }
+      }
+      onClose();
+    } catch (e) {
+      toast.error("Failed to save rule");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  // Human-readable preview
+  const preview = useMemo(() => {
+    const parts: string[] = [];
+    parts.push(`When "${form.trigger_event}" fires`);
+    if (form.conditions.length > 0) {
+      const conds = form.conditions.filter(c => c.field).map(c => `${c.field} ${c.op} ${c.value}`);
+      if (conds.length) parts.push(`and ${conds.join(" and ")}`);
+    }
+    const acts = form.actions.map(a => {
+      if (a.type === "award_xp") return `award ${a.points || 0} XP`;
+      if (a.type === "check_badge") return `check badge "${a.badge_slug || "?"}"`;
+      return a.type.replace(/_/g, " ");
+    });
+    parts.push(`→ ${acts.join(", ")}`);
+    if (form.cooldown_seconds) parts.push(`(cooldown: ${form.cooldown_seconds}s)`);
+    if (form.daily_cap) parts.push(`(max ${form.daily_cap}/day)`);
+    return parts.join(" ");
+  }, [form]);
+
+  return (
+    <Modal isOpen={isOpen} onClose={onClose} title={editRule ? "Edit Rule" : "Create Rule"} size="3xl">
+      <div className="space-y-5 max-h-[70vh] overflow-y-auto pr-1">
+        {/* Preview */}
+        <div className="bg-muted/40 border border-border rounded-md p-3">
+          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1">Preview</p>
+          <p className="text-sm text-foreground">{preview}</p>
+        </div>
+
+        {/* Name + Description */}
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <label className="text-xs font-semibold text-muted-foreground">Name *</label>
+            <Input value={form.name} onChange={e => setField("name", e.target.value)} placeholder="e.g. Content Viewed" className="mt-1" />
+          </div>
+          <div>
+            <label className="text-xs font-semibold text-muted-foreground">Description</label>
+            <Input value={form.description} onChange={e => setField("description", e.target.value)} placeholder="What this rule does" className="mt-1" />
+          </div>
+        </div>
+
+        {/* Trigger + Actor + Priority */}
+        <div className="grid grid-cols-3 gap-3">
+          <div>
+            <label className="text-xs font-semibold text-muted-foreground">Trigger Event *</label>
+            <select value={form.trigger_event} onChange={e => setField("trigger_event", e.target.value)}
+              className="mt-1 w-full h-9 rounded-md border border-input bg-background px-3 text-sm">
+              {TRIGGER_EVENTS.map(t => <option key={t} value={t}>{t}</option>)}
+            </select>
+          </div>
+          <div>
+            <label className="text-xs font-semibold text-muted-foreground">Actor Type</label>
+            <select value={form.actor_type} onChange={e => setField("actor_type", e.target.value)}
+              className="mt-1 w-full h-9 rounded-md border border-input bg-background px-3 text-sm">
+              <option value="seeker">Seeker</option>
+              <option value="mentor">Mentor</option>
+              <option value="both">Both</option>
+            </select>
+          </div>
+          <div>
+            <label className="text-xs font-semibold text-muted-foreground">Priority</label>
+            <Input type="number" value={form.priority} onChange={e => setField("priority", Number(e.target.value))} className="mt-1" />
+          </div>
+        </div>
+
+        {/* Conditions */}
+        <div>
+          <div className="flex items-center justify-between mb-2">
+            <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Conditions</label>
+            <button onClick={addCondition} className="text-xs text-primary font-semibold flex items-center gap-1 hover:underline">
+              <Plus className="w-3 h-3" /> Add condition
+            </button>
+          </div>
+          {form.conditions.length === 0 && (
+            <p className="text-xs text-muted-foreground italic">No conditions — rule fires on every matching event</p>
+          )}
+          <div className="space-y-2">
+            {form.conditions.map((c, i) => (
+              <div key={i} className="flex items-center gap-2">
+                <Input value={c.field} onChange={e => updateCondition(i, "field", e.target.value)} placeholder="field (e.g. event_type)" className="flex-1" />
+                <select value={c.op} onChange={e => updateCondition(i, "op", e.target.value)}
+                  className="h-9 rounded-md border border-input bg-background px-2 text-sm w-20">
+                  {CONDITION_OPS.map(op => <option key={op} value={op}>{op}</option>)}
+                </select>
+                <Input value={c.value} onChange={e => updateCondition(i, "value", e.target.value)} placeholder="value" className="flex-1" />
+                <button onClick={() => removeCondition(i)} className="p-1 text-muted-foreground hover:text-destructive"><X className="w-3.5 h-3.5" /></button>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Actions */}
+        <div>
+          <div className="flex items-center justify-between mb-2">
+            <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Actions</label>
+            <button onClick={addAction} className="text-xs text-primary font-semibold flex items-center gap-1 hover:underline">
+              <Plus className="w-3 h-3" /> Add action
+            </button>
+          </div>
+          <div className="space-y-2">
+            {form.actions.map((a, i) => (
+              <div key={i} className="flex items-center gap-2 bg-muted/20 border border-border rounded-md p-2">
+                <select value={a.type} onChange={e => updateAction(i, "type", e.target.value)}
+                  className="h-9 rounded-md border border-input bg-background px-2 text-sm">
+                  {ACTION_TYPES.map(at => <option key={at.value} value={at.value}>{at.label}</option>)}
+                </select>
+                {a.type === "award_xp" && (
+                  <Input type="number" value={a.points || ""} onChange={e => updateAction(i, "points", Number(e.target.value))} placeholder="XP points" className="w-24" />
+                )}
+                {a.type === "check_badge" && (
+                  <Input value={a.badge_slug || ""} onChange={e => updateAction(i, "badge_slug", e.target.value)} placeholder="badge slug" className="flex-1" />
+                )}
+                {a.type === "send_notification" && (
+                  <Input value={a.template || ""} onChange={e => updateAction(i, "template", e.target.value)} placeholder="template name" className="flex-1" />
+                )}
+                {a.type === "enroll_automation" && (
+                  <Input value={a.automation_id || ""} onChange={e => updateAction(i, "automation_id", e.target.value)} placeholder="automation ID" className="flex-1" />
+                )}
+                {a.type === "advance_journey" && (
+                  <Input value={a.journey_type || ""} onChange={e => updateAction(i, "journey_type", e.target.value)} placeholder="journey type" className="flex-1" />
+                )}
+                {a.type === "update_milestone" && (
+                  <>
+                    <Input value={a.milestone_type || ""} onChange={e => updateAction(i, "milestone_type", e.target.value)} placeholder="milestone type" className="flex-1" />
+                    <Input value={a.state || ""} onChange={e => updateAction(i, "state", e.target.value)} placeholder="state" className="w-24" />
+                  </>
+                )}
+                <button onClick={() => removeAction(i)} className="p-1 text-muted-foreground hover:text-destructive"><X className="w-3.5 h-3.5" /></button>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Guards */}
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <label className="text-xs font-semibold text-muted-foreground">Cooldown (seconds)</label>
+            <Input type="number" value={form.cooldown_seconds ?? ""} onChange={e => setField("cooldown_seconds", e.target.value ? Number(e.target.value) : null)} placeholder="No cooldown" className="mt-1" />
+          </div>
+          <div>
+            <label className="text-xs font-semibold text-muted-foreground">Daily Cap</label>
+            <Input type="number" value={form.daily_cap ?? ""} onChange={e => setField("daily_cap", e.target.value ? Number(e.target.value) : null)} placeholder="Unlimited" className="mt-1" />
+          </div>
+        </div>
+
+        {/* Active toggle */}
+        <div className="flex items-center gap-2">
+          <button onClick={() => setField("is_active", !form.is_active)}>
+            {form.is_active ? <ToggleRight className="w-5 h-5 text-emerald-500" /> : <ToggleLeft className="w-5 h-5 text-muted-foreground" />}
+          </button>
+          <span className="text-sm text-foreground">{form.is_active ? "Active" : "Inactive"}</span>
+        </div>
+      </div>
+
+      {/* Footer */}
+      <div className="flex justify-end gap-2 mt-5 pt-4 border-t border-border">
+        <Button variant="outline" onClick={onClose}>Cancel</Button>
+        <Button onClick={handleSave} disabled={saving}>
+          {saving ? "Saving..." : editRule ? "Update Rule" : "Create Rule"}
+        </Button>
+      </div>
+    </Modal>
   );
 }
 
@@ -90,6 +386,8 @@ function RulesTab({ accountId }: { accountId: string }) {
   const [rules, setRules] = useState<BehaviorRule[]>([]);
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
+  const [showForm, setShowForm] = useState(false);
+  const [editingRule, setEditingRule] = useState<BehaviorRule | null>(null);
 
   useEffect(() => {
     RulesService.list(accountId).then(({ data }) => {
@@ -117,6 +415,15 @@ function RulesTab({ accountId }: { accountId: string }) {
     toast.success("Rule deleted");
   };
 
+  const handleSaved = (rule: BehaviorRule) => {
+    setRules(prev => {
+      const idx = prev.findIndex(r => r.id === rule.id);
+      if (idx >= 0) { const next = [...prev]; next[idx] = rule; return next; }
+      return [rule, ...prev];
+    });
+    setEditingRule(null);
+  };
+
   return (
     <div className="space-y-4">
       <div className="flex items-center gap-3">
@@ -125,6 +432,9 @@ function RulesTab({ accountId }: { accountId: string }) {
           <Input placeholder="Search rules..." value={search} onChange={e => setSearch(e.target.value)} className="pl-9" />
         </div>
         <Badge variant="secondary">{rules.length} rules</Badge>
+        <Button size="sm" onClick={() => { setEditingRule(null); setShowForm(true); }} className="ml-auto">
+          <Plus className="w-3.5 h-3.5 mr-1" /> New Rule
+        </Button>
       </div>
 
       <div className="bg-card border border-border rounded-sm overflow-hidden">
@@ -174,9 +484,14 @@ function RulesTab({ accountId }: { accountId: string }) {
                   </button>
                 </td>
                 <td className="px-4 py-3 text-right">
-                  <button onClick={() => handleDelete(rule.id)} className="p-1.5 text-muted-foreground hover:text-destructive transition-colors">
-                    <Trash2 className="w-3.5 h-3.5" />
-                  </button>
+                  <div className="flex items-center justify-end gap-1">
+                    <button onClick={() => { setEditingRule(rule); setShowForm(true); }} className="p-1.5 text-muted-foreground hover:text-primary transition-colors">
+                      <Edit2 className="w-3.5 h-3.5" />
+                    </button>
+                    <button onClick={() => handleDelete(rule.id)} className="p-1.5 text-muted-foreground hover:text-destructive transition-colors">
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
                 </td>
               </tr>
             ))}
@@ -186,7 +501,217 @@ function RulesTab({ accountId }: { accountId: string }) {
           </tbody>
         </table>
       </div>
+
+      <RuleBuilderModal
+        isOpen={showForm}
+        onClose={() => { setShowForm(false); setEditingRule(null); }}
+        onSaved={handleSaved}
+        editRule={editingRule}
+        accountId={accountId}
+      />
     </div>
+  );
+}
+
+// ─── Badge Form Modal ──────────────────────────────────────────────────────
+
+const CRITERIA_TYPES = [
+  { value: "threshold", label: "Threshold (profile field)" },
+  { value: "event_count", label: "Event Count" },
+  { value: "milestone", label: "Milestone Completed" },
+  { value: "streak", label: "Streak Days" },
+  { value: "journey", label: "Journey Completed" },
+];
+
+interface BadgeFormData {
+  slug: string; name: string; description: string;
+  category: string; rarity: string; xp_reward: number;
+  criteria: Record<string, any>; is_active: boolean;
+}
+
+const EMPTY_BADGE: BadgeFormData = {
+  slug: "", name: "", description: "",
+  category: "achievement", rarity: "common", xp_reward: 10,
+  criteria: { type: "threshold", field: "total_xp", value: 100 },
+  is_active: true,
+};
+
+function BadgeFormModal({ isOpen, onClose, onSaved, editBadge, accountId }: {
+  isOpen: boolean; onClose: () => void; onSaved: (badge: BadgeDefinition) => void;
+  editBadge: BadgeDefinition | null; accountId: string;
+}) {
+  const [form, setForm] = useState<BadgeFormData>(EMPTY_BADGE);
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    if (editBadge) {
+      setForm({
+        slug: editBadge.slug, name: editBadge.name, description: editBadge.description,
+        category: editBadge.category, rarity: editBadge.rarity, xp_reward: editBadge.xp_reward,
+        criteria: editBadge.criteria || { type: "threshold", field: "total_xp", value: 100 },
+        is_active: editBadge.is_active,
+      });
+    } else {
+      setForm(EMPTY_BADGE);
+    }
+  }, [editBadge, isOpen]);
+
+  const setField = (key: keyof BadgeFormData, val: any) => setForm(prev => ({ ...prev, [key]: val }));
+  const setCriteria = (key: string, val: any) => setForm(prev => ({ ...prev, criteria: { ...prev.criteria, [key]: val } }));
+
+  const handleSave = async () => {
+    if (!form.name.trim() || !form.slug.trim()) {
+      toast.error("Name and slug are required");
+      return;
+    }
+    setSaving(true);
+    try {
+      const payload = { account_id: accountId, ...form };
+      if (editBadge) {
+        const { data } = await AdminBadgesService.update(editBadge.id, payload);
+        if (data) { onSaved(data); toast.success("Badge updated"); }
+      } else {
+        const { data } = await AdminBadgesService.create(payload);
+        if (data) { onSaved(data); toast.success("Badge created"); }
+      }
+      onClose();
+    } catch (e) {
+      toast.error("Failed to save badge");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const autoSlug = (name: string) => name.toLowerCase().replace(/[^a-z0-9]+/g, "_").replace(/^_|_$/g, "");
+
+  return (
+    <Modal isOpen={isOpen} onClose={onClose} title={editBadge ? "Edit Badge" : "Create Badge"} size="2xl">
+      <div className="space-y-5 max-h-[70vh] overflow-y-auto pr-1">
+        {/* Name + Slug */}
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <label className="text-xs font-semibold text-muted-foreground">Name *</label>
+            <Input value={form.name} onChange={e => { setField("name", e.target.value); if (!editBadge) setField("slug", autoSlug(e.target.value)); }} placeholder="e.g. Week Warrior" className="mt-1" />
+          </div>
+          <div>
+            <label className="text-xs font-semibold text-muted-foreground">Slug *</label>
+            <Input value={form.slug} onChange={e => setField("slug", e.target.value)} placeholder="week_warrior" className="mt-1" />
+          </div>
+        </div>
+
+        {/* Description */}
+        <div>
+          <label className="text-xs font-semibold text-muted-foreground">Description</label>
+          <Input value={form.description} onChange={e => setField("description", e.target.value)} placeholder="Complete a 7-day streak" className="mt-1" />
+        </div>
+
+        {/* Category + Rarity + XP */}
+        <div className="grid grid-cols-3 gap-3">
+          <div>
+            <label className="text-xs font-semibold text-muted-foreground">Category</label>
+            <select value={form.category} onChange={e => setField("category", e.target.value)}
+              className="mt-1 w-full h-9 rounded-md border border-input bg-background px-3 text-sm">
+              {CATEGORY_OPTIONS.map(c => <option key={c} value={c}>{c}</option>)}
+            </select>
+          </div>
+          <div>
+            <label className="text-xs font-semibold text-muted-foreground">Rarity</label>
+            <select value={form.rarity} onChange={e => setField("rarity", e.target.value)}
+              className="mt-1 w-full h-9 rounded-md border border-input bg-background px-3 text-sm">
+              {RARITY_OPTIONS.map(r => <option key={r} value={r}>{r}</option>)}
+            </select>
+          </div>
+          <div>
+            <label className="text-xs font-semibold text-muted-foreground">XP Reward</label>
+            <Input type="number" value={form.xp_reward} onChange={e => setField("xp_reward", Number(e.target.value))} className="mt-1" />
+          </div>
+        </div>
+
+        {/* Rarity preview */}
+        <div className="flex items-center gap-3">
+          <div className="w-12 h-12 rounded-lg flex items-center justify-center" style={{ backgroundColor: rarityColor(form.rarity) + "15" }}>
+            <Award className="w-6 h-6" style={{ color: rarityColor(form.rarity) }} />
+          </div>
+          <div>
+            <span className="px-2 py-0.5 text-xs font-semibold rounded-full" style={{ backgroundColor: rarityColor(form.rarity) + "15", color: rarityColor(form.rarity) }}>
+              {form.rarity}
+            </span>
+            <span className="text-xs text-muted-foreground ml-2">+{form.xp_reward} XP</span>
+          </div>
+        </div>
+
+        {/* Criteria builder */}
+        <div>
+          <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2 block">Criteria</label>
+          <div className="bg-muted/20 border border-border rounded-md p-3 space-y-3">
+            <div>
+              <label className="text-xs text-muted-foreground">Type</label>
+              <select value={form.criteria.type || "threshold"} onChange={e => setField("criteria", { type: e.target.value })}
+                className="mt-1 w-full h-9 rounded-md border border-input bg-background px-3 text-sm">
+                {CRITERIA_TYPES.map(ct => <option key={ct.value} value={ct.value}>{ct.label}</option>)}
+              </select>
+            </div>
+            {form.criteria.type === "threshold" && (
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="text-xs text-muted-foreground">Profile field</label>
+                  <Input value={form.criteria.field || ""} onChange={e => setCriteria("field", e.target.value)} placeholder="total_xp" className="mt-1" />
+                </div>
+                <div>
+                  <label className="text-xs text-muted-foreground">Value</label>
+                  <Input type="number" value={form.criteria.value || ""} onChange={e => setCriteria("value", Number(e.target.value))} placeholder="500" className="mt-1" />
+                </div>
+              </div>
+            )}
+            {form.criteria.type === "event_count" && (
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="text-xs text-muted-foreground">Event type</label>
+                  <Input value={form.criteria.event_type || ""} onChange={e => setCriteria("event_type", e.target.value)} placeholder="content_viewed" className="mt-1" />
+                </div>
+                <div>
+                  <label className="text-xs text-muted-foreground">Count</label>
+                  <Input type="number" value={form.criteria.count || ""} onChange={e => setCriteria("count", Number(e.target.value))} placeholder="10" className="mt-1" />
+                </div>
+              </div>
+            )}
+            {form.criteria.type === "milestone" && (
+              <div>
+                <label className="text-xs text-muted-foreground">Milestone type</label>
+                <Input value={form.criteria.milestone_type || ""} onChange={e => setCriteria("milestone_type", e.target.value)} placeholder="salvation" className="mt-1" />
+              </div>
+            )}
+            {form.criteria.type === "streak" && (
+              <div>
+                <label className="text-xs text-muted-foreground">Minimum days</label>
+                <Input type="number" value={form.criteria.min_days || ""} onChange={e => setCriteria("min_days", Number(e.target.value))} placeholder="7" className="mt-1" />
+              </div>
+            )}
+            {form.criteria.type === "journey" && (
+              <div>
+                <label className="text-xs text-muted-foreground">Journey type</label>
+                <Input value={form.criteria.journey_type || ""} onChange={e => setCriteria("journey_type", e.target.value)} placeholder="growth" className="mt-1" />
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Active toggle */}
+        <div className="flex items-center gap-2">
+          <button onClick={() => setField("is_active", !form.is_active)}>
+            {form.is_active ? <ToggleRight className="w-5 h-5 text-emerald-500" /> : <ToggleLeft className="w-5 h-5 text-muted-foreground" />}
+          </button>
+          <span className="text-sm text-foreground">{form.is_active ? "Active" : "Inactive"}</span>
+        </div>
+      </div>
+
+      <div className="flex justify-end gap-2 mt-5 pt-4 border-t border-border">
+        <Button variant="outline" onClick={onClose}>Cancel</Button>
+        <Button onClick={handleSave} disabled={saving}>
+          {saving ? "Saving..." : editBadge ? "Update Badge" : "Create Badge"}
+        </Button>
+      </div>
+    </Modal>
   );
 }
 
@@ -195,6 +720,8 @@ function RulesTab({ accountId }: { accountId: string }) {
 function BadgesTab({ accountId }: { accountId: string }) {
   const [badges, setBadges] = useState<BadgeDefinition[]>([]);
   const [loading, setLoading] = useState(true);
+  const [showForm, setShowForm] = useState(false);
+  const [editingBadge, setEditingBadge] = useState<BadgeDefinition | null>(null);
 
   useEffect(() => {
     BadgesService.listDefinitions(accountId).then(({ data }) => {
@@ -211,6 +738,21 @@ function BadgesTab({ accountId }: { accountId: string }) {
     }
   };
 
+  const handleSaved = (badge: BadgeDefinition) => {
+    setBadges(prev => {
+      const idx = prev.findIndex(b => b.id === badge.id);
+      if (idx >= 0) { const next = [...prev]; next[idx] = badge; return next; }
+      return [badge, ...prev];
+    });
+    setEditingBadge(null);
+  };
+
+  const handleDelete = async (id: string) => {
+    await AdminBadgesService.delete(id);
+    setBadges(prev => prev.filter(b => b.id !== id));
+    toast.success("Badge deleted");
+  };
+
   const groupedByCategory = useMemo(() => {
     const groups: Record<string, BadgeDefinition[]> = {};
     badges.forEach(b => {
@@ -223,6 +765,9 @@ function BadgesTab({ accountId }: { accountId: string }) {
     <div className="space-y-6">
       <div className="flex items-center gap-3">
         <Badge variant="secondary">{badges.length} badges</Badge>
+        <Button size="sm" onClick={() => { setEditingBadge(null); setShowForm(true); }} className="ml-auto">
+          <Plus className="w-3.5 h-3.5 mr-1" /> New Badge
+        </Button>
       </div>
 
       {Object.entries(groupedByCategory).map(([category, categoryBadges]) => (
@@ -241,7 +786,7 @@ function BadgesTab({ accountId }: { accountId: string }) {
                 <div
                   key={badge.id}
                   className={cn(
-                    "rounded-sm border p-4 transition-all",
+                    "rounded-sm border p-4 transition-all group",
                     badge.is_active ? "bg-card border-border" : "bg-muted/30 border-border opacity-60"
                   )}
                 >
@@ -249,12 +794,22 @@ function BadgesTab({ accountId }: { accountId: string }) {
                     <div className="w-10 h-10 rounded-lg flex items-center justify-center" style={{ backgroundColor: color + "15" }}>
                       <Award className="w-5 h-5" style={{ color }} />
                     </div>
-                    <button onClick={() => handleToggle(badge)} className="mt-0.5">
-                      {badge.is_active
-                        ? <ToggleRight className="w-5 h-5 text-emerald-500" />
-                        : <ToggleLeft className="w-5 h-5 text-muted-foreground" />
-                      }
-                    </button>
+                    <div className="flex items-center gap-1">
+                      <button onClick={() => { setEditingBadge(badge); setShowForm(true); }}
+                        className="p-1 text-muted-foreground hover:text-primary transition-colors opacity-0 group-hover:opacity-100">
+                        <Edit2 className="w-3.5 h-3.5" />
+                      </button>
+                      <button onClick={() => handleDelete(badge.id)}
+                        className="p-1 text-muted-foreground hover:text-destructive transition-colors opacity-0 group-hover:opacity-100">
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                      <button onClick={() => handleToggle(badge)} className="mt-0.5">
+                        {badge.is_active
+                          ? <ToggleRight className="w-5 h-5 text-emerald-500" />
+                          : <ToggleLeft className="w-5 h-5 text-muted-foreground" />
+                        }
+                      </button>
+                    </div>
                   </div>
                   <h4 className="font-semibold text-foreground text-sm">{badge.name}</h4>
                   <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2">{badge.description}</p>
@@ -272,6 +827,14 @@ function BadgesTab({ accountId }: { accountId: string }) {
           </div>
         </div>
       ))}
+
+      <BadgeFormModal
+        isOpen={showForm}
+        onClose={() => { setShowForm(false); setEditingBadge(null); }}
+        onSaved={handleSaved}
+        editBadge={editingBadge}
+        accountId={accountId}
+      />
     </div>
   );
 }
@@ -506,6 +1069,316 @@ function AnalyticsTab({ accountId }: { accountId: string }) {
           })}
         </div>
       </div>
+    </div>
+  );
+}
+
+// ─── Re-engagement Tab ─────────────────────────────────────────────────────
+
+const TRIGGER_TYPE_CONFIG: Record<string, { color: string; bg: string; label: string }> = {
+  manual: { color: "#64748b", bg: "#f1f5f9", label: "Manual" },
+  streak_broken: { color: "#f59e0b", bg: "#fffbeb", label: "Streak Broken" },
+  silence: { color: "#ef4444", bg: "#fef2f2", label: "Silence" },
+  dropout_risk: { color: "#dc2626", bg: "#fef2f2", label: "Dropout Risk" },
+};
+
+const DRIP_STATUS_CONFIG: Record<string, { color: string; icon: any }> = {
+  pending: { color: "#f59e0b", icon: Clock },
+  sent: { color: "#3b82f6", icon: Send },
+  delivered: { color: "#10b981", icon: CheckCircle },
+  failed: { color: "#ef4444", icon: XCircle },
+};
+
+function ReengagementTab({ accountId }: { accountId: string }) {
+  const [templates, setTemplates] = useState<ReengagementTemplate[]>([]);
+  const [enrollments, setEnrollments] = useState<AutomationEnrollment[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [subView, setSubView] = useState<"templates" | "enrollments">("templates");
+  const [showForm, setShowForm] = useState(false);
+  const [editingTemplate, setEditingTemplate] = useState<ReengagementTemplate | null>(null);
+
+  // Template form state
+  const [tForm, setTForm] = useState({
+    slug: "", name: "", description: "", trigger_type: "silence" as string,
+    steps: [{ delay_hours: 0, channel: "in_app", message: "" }] as Array<{ delay_hours: number; channel: string; message: string }>,
+    is_active: true,
+  });
+
+  useEffect(() => {
+    Promise.all([
+      ReengagementService.listTemplates(accountId),
+    ]).then(([tRes]) => {
+      if (tRes.data) setTemplates(Array.isArray(tRes.data) ? tRes.data : []);
+      setLoading(false);
+    });
+  }, [accountId]);
+
+  // Load enrollments when switching to that sub-view
+  useEffect(() => {
+    if (subView === "enrollments") {
+      // Fetch all enrollments — use a known actor or list all
+      // The API requires an actorId, so we show a message if no data
+      setEnrollments([]);
+    }
+  }, [subView, accountId]);
+
+  const openCreateTemplate = () => {
+    setEditingTemplate(null);
+    setTForm({ slug: "", name: "", description: "", trigger_type: "silence", steps: [{ delay_hours: 0, channel: "in_app", message: "" }], is_active: true });
+    setShowForm(true);
+  };
+
+  const openEditTemplate = (t: ReengagementTemplate) => {
+    setEditingTemplate(t);
+    setTForm({
+      slug: t.slug, name: t.name, description: t.description || "",
+      trigger_type: t.trigger_type, steps: t.steps || [{ delay_hours: 0, channel: "in_app", message: "" }],
+      is_active: t.is_active,
+    });
+    setShowForm(true);
+  };
+
+  const autoSlug = (name: string) => name.toLowerCase().replace(/[^a-z0-9]+/g, "_").replace(/^_|_$/g, "");
+
+  const addStep = () => setTForm(prev => ({ ...prev, steps: [...prev.steps, { delay_hours: 24, channel: "in_app", message: "" }] }));
+  const removeStep = (i: number) => setTForm(prev => ({ ...prev, steps: prev.steps.filter((_, idx) => idx !== i) }));
+  const updateStep = (i: number, key: string, val: any) => {
+    setTForm(prev => {
+      const next = [...prev.steps];
+      (next[i] as any)[key] = val;
+      return { ...prev, steps: next };
+    });
+  };
+
+  const handleSaveTemplate = async () => {
+    if (!tForm.name.trim() || !tForm.slug.trim()) {
+      toast.error("Name and slug are required");
+      return;
+    }
+    try {
+      const payload = { account_id: accountId, ...tForm };
+      if (editingTemplate) {
+        const { data } = await AdminReengagementService.updateTemplate(editingTemplate.id, payload);
+        if (data) {
+          setTemplates(prev => prev.map(t => t.id === data.id ? data : t));
+          toast.success("Template updated");
+        }
+      } else {
+        const { data } = await AdminReengagementService.createTemplate(payload);
+        if (data) {
+          setTemplates(prev => [data, ...prev]);
+          toast.success("Template created");
+        }
+      }
+      setShowForm(false);
+    } catch (e) {
+      toast.error("Failed to save template");
+    }
+  };
+
+  const handleDeleteTemplate = async (id: string) => {
+    await AdminReengagementService.deleteTemplate(id);
+    setTemplates(prev => prev.filter(t => t.id !== id));
+    toast.success("Template deleted");
+  };
+
+  const handleToggleTemplate = async (t: ReengagementTemplate) => {
+    const { data } = await AdminReengagementService.updateTemplate(t.id, { is_active: !t.is_active });
+    if (data) {
+      setTemplates(prev => prev.map(x => x.id === t.id ? { ...x, is_active: !x.is_active } : x));
+      toast.success(`Template ${t.is_active ? "disabled" : "enabled"}`);
+    }
+  };
+
+  if (loading) return <div className="py-12 text-center text-muted-foreground">Loading re-engagement data...</div>;
+
+  return (
+    <div className="space-y-4">
+      {/* Sub-tab switcher */}
+      <div className="flex items-center gap-3 flex-wrap">
+        <div className="inline-flex items-center gap-1 bg-muted/60 border border-border rounded-full p-1">
+          {([
+            { key: "templates" as const, label: "Templates", icon: Mail },
+            { key: "enrollments" as const, label: "Enrollments", icon: Users },
+          ]).map(({ key, label, icon: Icon }) => (
+            <button
+              key={key}
+              onClick={() => setSubView(key)}
+              className={cn(
+                "flex items-center gap-1.5 px-3 py-1 text-xs font-semibold rounded-full transition-all",
+                subView === key ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"
+              )}
+            >
+              <Icon className="w-3 h-3" />
+              {label}
+            </button>
+          ))}
+        </div>
+        <Badge variant="secondary">{templates.length} templates</Badge>
+        {subView === "templates" && (
+          <Button size="sm" onClick={openCreateTemplate} className="ml-auto">
+            <Plus className="w-3.5 h-3.5 mr-1" /> New Template
+          </Button>
+        )}
+      </div>
+
+      {/* Templates view */}
+      {subView === "templates" && (
+        <div className="space-y-3">
+          {templates.length === 0 && (
+            <div className="py-12 text-center text-muted-foreground">
+              <Mail className="w-10 h-10 mx-auto mb-3 opacity-40" />
+              <p className="text-sm">No re-engagement templates yet</p>
+            </div>
+          )}
+          {templates.map(t => {
+            const trigConf = TRIGGER_TYPE_CONFIG[t.trigger_type] || TRIGGER_TYPE_CONFIG.manual;
+            return (
+              <div key={t.id} className={cn(
+                "bg-card border border-border rounded-sm p-4 group transition-all",
+                !t.is_active && "opacity-60"
+              )}>
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2 mb-1">
+                      <h4 className="font-semibold text-foreground text-sm">{t.name}</h4>
+                      <span className="px-2 py-0.5 text-[10px] font-semibold rounded-full uppercase" style={{ backgroundColor: trigConf.bg, color: trigConf.color }}>
+                        {trigConf.label}
+                      </span>
+                      <code className="text-[10px] bg-muted px-1.5 py-0.5 rounded text-muted-foreground">{t.slug}</code>
+                    </div>
+                    {t.description && <p className="text-xs text-muted-foreground mb-2">{t.description}</p>}
+                    {/* Steps preview */}
+                    <div className="flex items-center gap-2 flex-wrap">
+                      {(t.steps || []).map((s, i) => (
+                        <div key={i} className="flex items-center gap-1 text-xs text-muted-foreground bg-muted/30 px-2 py-1 rounded">
+                          <Clock className="w-3 h-3" />
+                          <span>{s.delay_hours}h</span>
+                          <span className="text-muted-foreground/60">·</span>
+                          <span>{s.channel}</span>
+                        </div>
+                      ))}
+                      <span className="text-xs text-muted-foreground">{(t.steps || []).length} step{(t.steps || []).length !== 1 ? "s" : ""}</span>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <button onClick={() => openEditTemplate(t)} className="p-1.5 text-muted-foreground hover:text-primary transition-colors opacity-0 group-hover:opacity-100">
+                      <Edit2 className="w-3.5 h-3.5" />
+                    </button>
+                    <button onClick={() => handleDeleteTemplate(t.id)} className="p-1.5 text-muted-foreground hover:text-destructive transition-colors opacity-0 group-hover:opacity-100">
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                    <button onClick={() => handleToggleTemplate(t)}>
+                      {t.is_active ? <ToggleRight className="w-5 h-5 text-emerald-500" /> : <ToggleLeft className="w-5 h-5 text-muted-foreground" />}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {/* Enrollments view */}
+      {subView === "enrollments" && (
+        <div className="py-12 text-center text-muted-foreground">
+          <Users className="w-10 h-10 mx-auto mb-3 opacity-40" />
+          <p className="text-sm font-medium">Enrollment monitoring</p>
+          <p className="text-xs mt-1">Active enrollments appear here when seekers are enrolled in drip sequences. View individual seeker profiles for enrollment details.</p>
+        </div>
+      )}
+
+      {/* Template Form Modal */}
+      <Modal isOpen={showForm} onClose={() => setShowForm(false)} title={editingTemplate ? "Edit Template" : "Create Template"} size="3xl">
+        <div className="space-y-5 max-h-[70vh] overflow-y-auto pr-1">
+          {/* Name + Slug */}
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="text-xs font-semibold text-muted-foreground">Name *</label>
+              <Input value={tForm.name} onChange={e => { setTForm(p => ({ ...p, name: e.target.value })); if (!editingTemplate) setTForm(p => ({ ...p, slug: autoSlug(e.target.value) })); }} placeholder="e.g. We Miss You" className="mt-1" />
+            </div>
+            <div>
+              <label className="text-xs font-semibold text-muted-foreground">Slug *</label>
+              <Input value={tForm.slug} onChange={e => setTForm(p => ({ ...p, slug: e.target.value }))} placeholder="we_miss_you" className="mt-1" />
+            </div>
+          </div>
+
+          {/* Description + Trigger */}
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="text-xs font-semibold text-muted-foreground">Description</label>
+              <Input value={tForm.description} onChange={e => setTForm(p => ({ ...p, description: e.target.value }))} placeholder="Re-engage silent seekers" className="mt-1" />
+            </div>
+            <div>
+              <label className="text-xs font-semibold text-muted-foreground">Trigger Type</label>
+              <select value={tForm.trigger_type} onChange={e => setTForm(p => ({ ...p, trigger_type: e.target.value }))}
+                className="mt-1 w-full h-9 rounded-md border border-input bg-background px-3 text-sm">
+                <option value="manual">Manual</option>
+                <option value="streak_broken">Streak Broken</option>
+                <option value="silence">Silence</option>
+                <option value="dropout_risk">Dropout Risk</option>
+              </select>
+            </div>
+          </div>
+
+          {/* Steps builder */}
+          <div>
+            <div className="flex items-center justify-between mb-2">
+              <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Drip Steps</label>
+              <button onClick={addStep} className="text-xs text-primary font-semibold flex items-center gap-1 hover:underline">
+                <Plus className="w-3 h-3" /> Add step
+              </button>
+            </div>
+            <div className="space-y-2">
+              {tForm.steps.map((s, i) => (
+                <div key={i} className="bg-muted/20 border border-border rounded-md p-3 space-y-2">
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-bold text-muted-foreground w-16">Step {i + 1}</span>
+                    <div className="flex-1 grid grid-cols-2 gap-2">
+                      <div>
+                        <label className="text-[10px] text-muted-foreground">Delay (hours)</label>
+                        <Input type="number" value={s.delay_hours} onChange={e => updateStep(i, "delay_hours", Number(e.target.value))} className="mt-0.5" />
+                      </div>
+                      <div>
+                        <label className="text-[10px] text-muted-foreground">Channel</label>
+                        <select value={s.channel} onChange={e => updateStep(i, "channel", e.target.value)}
+                          className="mt-0.5 w-full h-9 rounded-md border border-input bg-background px-2 text-sm">
+                          <option value="in_app">In-App</option>
+                          <option value="push">Push</option>
+                          <option value="sms">SMS</option>
+                          <option value="whatsapp">WhatsApp</option>
+                        </select>
+                      </div>
+                    </div>
+                    <button onClick={() => removeStep(i)} className="p-1 text-muted-foreground hover:text-destructive self-start mt-4">
+                      <X className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                  <div>
+                    <label className="text-[10px] text-muted-foreground">Message</label>
+                    <Input value={s.message} onChange={e => updateStep(i, "message", e.target.value)} placeholder="Hey {FIRST_NAME}, we noticed..." className="mt-0.5" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Active toggle */}
+          <div className="flex items-center gap-2">
+            <button onClick={() => setTForm(p => ({ ...p, is_active: !p.is_active }))}>
+              {tForm.is_active ? <ToggleRight className="w-5 h-5 text-emerald-500" /> : <ToggleLeft className="w-5 h-5 text-muted-foreground" />}
+            </button>
+            <span className="text-sm text-foreground">{tForm.is_active ? "Active" : "Inactive"}</span>
+          </div>
+        </div>
+
+        <div className="flex justify-end gap-2 mt-5 pt-4 border-t border-border">
+          <Button variant="outline" onClick={() => setShowForm(false)}>Cancel</Button>
+          <Button onClick={handleSaveTemplate}>
+            {editingTemplate ? "Update Template" : "Create Template"}
+          </Button>
+        </div>
+      </Modal>
     </div>
   );
 }
