@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from "react";
 import {
   Zap, Award, Trophy, BarChart3, Plus, Edit2, Trash2, Search,
-  ChevronDown, ToggleLeft, ToggleRight, Shield, Flame, Star,
+  ChevronDown, Shield, Flame, Star,
   TrendingUp, Users, Activity, Check, X, Eye, RefreshCw,
   Mail, Clock, AlertTriangle, Play, Pause, XCircle, CheckCircle,
   MessageSquare, Send,
@@ -13,6 +13,7 @@ import { Button } from "./ui/button";
 import { Badge } from "./ui/badge";
 import { Input } from "./ui/input";
 import { Modal } from "./shared-ui";
+import { Switch } from "./ui/switch";
 import { toast } from "sonner";
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer,
@@ -362,9 +363,7 @@ function RuleBuilderModal({ isOpen, onClose, onSaved, editRule, accountId }: {
 
         {/* Active toggle */}
         <div className="flex items-center gap-2">
-          <button onClick={() => setField("is_active", !form.is_active)}>
-            {form.is_active ? <ToggleRight className="w-5 h-5 text-emerald-500" /> : <ToggleLeft className="w-5 h-5 text-muted-foreground" />}
-          </button>
+          <Switch checked={form.is_active} onCheckedChange={(v) => setField("is_active", v)} />
           <span className="text-sm text-foreground">{form.is_active ? "Active" : "Inactive"}</span>
         </div>
       </div>
@@ -476,12 +475,7 @@ function RulesTab({ accountId }: { accountId: string }) {
                   <span className="text-xs font-mono text-muted-foreground">{rule.priority}</span>
                 </td>
                 <td className="px-4 py-3 text-center">
-                  <button onClick={() => handleToggle(rule)} className="inline-flex">
-                    {rule.is_active
-                      ? <ToggleRight className="w-5 h-5 text-emerald-500" />
-                      : <ToggleLeft className="w-5 h-5 text-muted-foreground" />
-                    }
-                  </button>
+                  <Switch checked={rule.is_active} onCheckedChange={() => handleToggle(rule)} />
                 </td>
                 <td className="px-4 py-3 text-right">
                   <div className="flex items-center justify-end gap-1">
@@ -698,9 +692,7 @@ function BadgeFormModal({ isOpen, onClose, onSaved, editBadge, accountId }: {
 
         {/* Active toggle */}
         <div className="flex items-center gap-2">
-          <button onClick={() => setField("is_active", !form.is_active)}>
-            {form.is_active ? <ToggleRight className="w-5 h-5 text-emerald-500" /> : <ToggleLeft className="w-5 h-5 text-muted-foreground" />}
-          </button>
+          <Switch checked={form.is_active} onCheckedChange={(v) => setField("is_active", v)} />
           <span className="text-sm text-foreground">{form.is_active ? "Active" : "Inactive"}</span>
         </div>
       </div>
@@ -803,12 +795,7 @@ function BadgesTab({ accountId }: { accountId: string }) {
                         className="p-1 text-muted-foreground hover:text-destructive transition-colors opacity-0 group-hover:opacity-100">
                         <Trash2 className="w-3.5 h-3.5" />
                       </button>
-                      <button onClick={() => handleToggle(badge)} className="mt-0.5">
-                        {badge.is_active
-                          ? <ToggleRight className="w-5 h-5 text-emerald-500" />
-                          : <ToggleLeft className="w-5 h-5 text-muted-foreground" />
-                        }
-                      </button>
+                      <Switch checked={badge.is_active} onCheckedChange={() => handleToggle(badge)} />
                     </div>
                   </div>
                   <h4 className="font-semibold text-foreground text-sm">{badge.name}</h4>
@@ -1268,9 +1255,7 @@ function ReengagementTab({ accountId }: { accountId: string }) {
                     <button onClick={() => handleDeleteTemplate(t.id)} className="p-1.5 text-muted-foreground hover:text-destructive transition-colors opacity-0 group-hover:opacity-100">
                       <Trash2 className="w-3.5 h-3.5" />
                     </button>
-                    <button onClick={() => handleToggleTemplate(t)}>
-                      {t.is_active ? <ToggleRight className="w-5 h-5 text-emerald-500" /> : <ToggleLeft className="w-5 h-5 text-muted-foreground" />}
-                    </button>
+                    <Switch checked={t.is_active} onCheckedChange={() => handleToggleTemplate(t)} />
                   </div>
                 </div>
               </div>
@@ -1365,9 +1350,7 @@ function ReengagementTab({ accountId }: { accountId: string }) {
 
           {/* Active toggle */}
           <div className="flex items-center gap-2">
-            <button onClick={() => setTForm(p => ({ ...p, is_active: !p.is_active }))}>
-              {tForm.is_active ? <ToggleRight className="w-5 h-5 text-emerald-500" /> : <ToggleLeft className="w-5 h-5 text-muted-foreground" />}
-            </button>
+            <Switch checked={tForm.is_active} onCheckedChange={(v) => setTForm(p => ({ ...p, is_active: v }))} />
             <span className="text-sm text-foreground">{tForm.is_active ? "Active" : "Inactive"}</span>
           </div>
         </div>
