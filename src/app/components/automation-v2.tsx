@@ -598,6 +598,191 @@ const NodeInspector = ({ node, onUpdate, onClose, onDelete, isJourney }: {
 };
 
 // ============================================================================
+// NODE CONFIG MODAL — shown BEFORE adding a node to the canvas
+// ============================================================================
+
+const getNodeConfigFields = (category: string): { key: string; label: string; type: "text" | "select" | "textarea" | "number"; placeholder?: string; options?: { value: string; label: string }[]; required?: boolean; hint?: string }[] => {
+  switch (category) {
+    case "message_received":
+      return [
+        { key: "keyword", label: "Keyword Filter", type: "text", placeholder: "e.g. help, info, start", hint: "Leave empty to trigger on any message" },
+      ];
+    case "contact_added":
+      return [
+        { key: "source", label: "Source Filter", type: "select", options: [{ value: "any", label: "Any source" }, { value: "whatsapp", label: "WhatsApp" }, { value: "telegram", label: "Telegram" }, { value: "web", label: "Web form" }, { value: "manual", label: "Manual entry" }] },
+      ];
+    case "tag_added":
+      return [
+        { key: "tag", label: "Tag Name", type: "text", placeholder: "e.g. new-believer, vip", required: true },
+      ];
+    case "webhook":
+      return [
+        { key: "url", label: "Webhook URL", type: "text", placeholder: "Auto-generated on save", hint: "A unique URL will be generated for this trigger" },
+      ];
+    case "schedule":
+      return [
+        { key: "interval", label: "Frequency", type: "select", options: [{ value: "hourly", label: "Every hour" }, { value: "daily", label: "Every day" }, { value: "weekly", label: "Every week" }, { value: "monthly", label: "Every month" }] },
+        { key: "time", label: "Time", type: "text", placeholder: "e.g. 09:00" },
+      ];
+    case "milestone_reached":
+      return [
+        { key: "milestone", label: "Milestone", type: "select", options: [{ value: "any", label: "Any milestone" }, { value: "lesson_complete", label: "Lesson completed" }, { value: "module_complete", label: "Module completed" }, { value: "course_complete", label: "Course completed" }] },
+      ];
+    case "send_message":
+      return [
+        { key: "message", label: "Message Content", type: "textarea", placeholder: "Type your message...", required: true },
+        { key: "channel", label: "Channel", type: "select", options: [{ value: "whatsapp", label: "WhatsApp" }, { value: "telegram", label: "Telegram" }, { value: "sms", label: "SMS" }] },
+      ];
+    case "send_email":
+      return [
+        { key: "subject", label: "Subject", type: "text", placeholder: "Email subject line", required: true },
+        { key: "body", label: "Email Body", type: "textarea", placeholder: "Write your email content...", required: true },
+      ];
+    case "add_tag":
+    case "remove_tag":
+      return [
+        { key: "tag", label: "Tag Name", type: "text", placeholder: "e.g. engaged, vip, dormant", required: true },
+      ];
+    case "add_to_group":
+      return [
+        { key: "group", label: "Group Name", type: "text", placeholder: "e.g. Prayer Warriors, New Believers", required: true },
+      ];
+    case "webhook_call":
+      return [
+        { key: "url", label: "Request URL", type: "text", placeholder: "https://api.example.com/endpoint", required: true },
+        { key: "method", label: "Method", type: "select", options: [{ value: "POST", label: "POST" }, { value: "GET", label: "GET" }, { value: "PUT", label: "PUT" }, { value: "DELETE", label: "DELETE" }] },
+      ];
+    case "ai_respond":
+      return [
+        { key: "message", label: "AI Prompt / Instructions", type: "textarea", placeholder: "Describe how the AI should respond...", required: true },
+        { key: "tone", label: "Tone", type: "select", options: [{ value: "friendly", label: "Friendly" }, { value: "formal", label: "Formal" }, { value: "pastoral", label: "Pastoral" }, { value: "encouraging", label: "Encouraging" }] },
+      ];
+    case "assign_mentor":
+      return [
+        { key: "criteria", label: "Matching Criteria", type: "select", options: [{ value: "auto", label: "Auto-match (availability)" }, { value: "language", label: "Match by language" }, { value: "location", label: "Match by location" }, { value: "gender", label: "Match by gender" }] },
+      ];
+    case "update_stage":
+      return [
+        { key: "stage", label: "New Stage", type: "select", options: [{ value: "new_seeker", label: "New Seeker" }, { value: "engaged", label: "Engaged" }, { value: "growing", label: "Growing" }, { value: "committed", label: "Committed" }, { value: "multiplying", label: "Multiplying" }], required: true },
+      ];
+    case "if_else":
+      return [
+        { key: "condition", label: "Condition", type: "select", options: [{ value: "has_replied", label: "Contact has replied" }, { value: "has_tag", label: "Contact has tag" }, { value: "message_contains", label: "Message contains keyword" }, { value: "milestone_count", label: "Milestone count is" }, { value: "days_since_last", label: "Days since last message" }, { value: "in_group", label: "Contact is in group" }], required: true },
+        { key: "value", label: "Value", type: "text", placeholder: "e.g. tag name, keyword, or number" },
+      ];
+    case "filter":
+      return [
+        { key: "condition", label: "Filter Condition", type: "select", options: [{ value: "has_tag", label: "Has tag" }, { value: "in_group", label: "In group" }, { value: "message_contains", label: "Message contains" }, { value: "days_inactive", label: "Days inactive >" }], required: true },
+        { key: "value", label: "Value", type: "text", placeholder: "Condition value" },
+      ];
+    case "wait":
+      return [
+        { key: "hours", label: "Duration", type: "number", placeholder: "24", required: true },
+        { key: "unit", label: "Unit", type: "select", options: [{ value: "minutes", label: "Minutes" }, { value: "hours", label: "Hours" }, { value: "days", label: "Days" }] },
+      ];
+    case "loop":
+      return [
+        { key: "list", label: "Loop Over", type: "select", options: [{ value: "contacts", label: "Contact list" }, { value: "tags", label: "Tags" }, { value: "messages", label: "Messages" }] },
+      ];
+    default:
+      return [];
+  }
+};
+
+const NodeConfigModal = ({ item, onConfirm, onCancel }: {
+  item: NodeCatalogItem;
+  onConfirm: (item: NodeCatalogItem, config: Record<string, any>) => void;
+  onCancel: () => void;
+}) => {
+  const fields = getNodeConfigFields(item.category);
+  const [config, setConfig] = useState<Record<string, any>>(() => {
+    const defaults: Record<string, any> = {};
+    fields.forEach(f => {
+      if (f.type === "select" && f.options?.length) defaults[f.key] = f.options[0].value;
+      else if (f.type === "number") defaults[f.key] = 24;
+      else defaults[f.key] = "";
+    });
+    return defaults;
+  });
+  const [label, setLabel] = useState(item.label);
+
+  const Icon = item.icon;
+  const colors = getNodeTypeColor(item.type);
+  const hasRequired = fields.filter(f => f.required).every(f => config[f.key]);
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm animate-in fade-in duration-200" onClick={onCancel}>
+      <div className="bg-card border border-border rounded-2xl shadow-2xl w-full max-w-md mx-4 animate-in zoom-in-95 duration-300" onClick={e => e.stopPropagation()}>
+        <div className="p-5 border-b border-border">
+          <div className="flex items-center gap-3">
+            <div className={cn("w-10 h-10 rounded-xl flex items-center justify-center", item.iconBg)}>
+              <Icon className={cn("w-5 h-5", item.iconColor)} />
+            </div>
+            <div>
+              <h3 className="text-base font-bold text-foreground">Configure {item.label}</h3>
+              <p className="text-xs text-muted-foreground mt-0.5">{item.description}</p>
+            </div>
+          </div>
+        </div>
+
+        <div className="p-5 space-y-4 max-h-[400px] overflow-y-auto">
+          {/* Node label */}
+          <div className="space-y-1.5">
+            <Label className="text-xs font-semibold text-foreground">Node Label</Label>
+            <Input value={label} onChange={(e) => setLabel(e.target.value)} className="h-9 text-sm" placeholder={item.label} />
+          </div>
+
+          {fields.length === 0 && (
+            <div className="text-center py-6">
+              <p className="text-sm text-muted-foreground">No configuration needed for this node.</p>
+              <p className="text-xs text-muted-foreground mt-1">You can customize it later from the inspector panel.</p>
+            </div>
+          )}
+
+          {fields.map(field => (
+            <div key={field.key} className="space-y-1.5">
+              <Label className="text-xs font-semibold text-foreground">
+                {field.label}
+                {field.required && <span className="text-destructive ml-0.5">*</span>}
+              </Label>
+              {field.type === "text" && (
+                <Input value={config[field.key] || ""} onChange={(e) => setConfig(prev => ({ ...prev, [field.key]: e.target.value }))}
+                  className="h-9 text-sm" placeholder={field.placeholder} />
+              )}
+              {field.type === "number" && (
+                <Input type="number" value={config[field.key] || ""} onChange={(e) => setConfig(prev => ({ ...prev, [field.key]: parseInt(e.target.value) || 0 }))}
+                  className="h-9 text-sm" placeholder={field.placeholder} min={1} />
+              )}
+              {field.type === "textarea" && (
+                <Textarea value={config[field.key] || ""} onChange={(e) => setConfig(prev => ({ ...prev, [field.key]: e.target.value }))}
+                  className="min-h-[80px] text-sm" placeholder={field.placeholder} />
+              )}
+              {field.type === "select" && field.options && (
+                <select value={config[field.key] || field.options[0]?.value} onChange={(e) => setConfig(prev => ({ ...prev, [field.key]: e.target.value }))}
+                  className="h-9 px-3 rounded-md border border-input bg-background text-sm w-full">
+                  {field.options.map(opt => <option key={opt.value} value={opt.value}>{opt.label}</option>)}
+                </select>
+              )}
+              {field.hint && <p className="text-[11px] text-muted-foreground">{field.hint}</p>}
+            </div>
+          ))}
+        </div>
+
+        <div className="p-5 border-t border-border flex items-center justify-between">
+          <Badge variant="outline" className={cn("text-[10px]", colors.badge)}>{item.type}</Badge>
+          <div className="flex items-center gap-2">
+            <Button variant="outline" size="sm" onClick={onCancel}>Cancel</Button>
+            <Button size="sm" onClick={() => onConfirm({ ...item, label: label || item.label } as any, config)} disabled={!hasRequired && fields.some(f => f.required)}>
+              <Plus className="w-3.5 h-3.5" /> Add to Canvas
+            </Button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// ============================================================================
 // AUTOMATION CANVAS
 // ============================================================================
 
@@ -610,6 +795,7 @@ const AutomationCanvas = ({ automation, onBack, onSave, onUpdate }: {
   const [autoName, setAutoName] = useState(automation.name);
   const [isEditingName, setIsEditingName] = useState(false);
   const [zoom, setZoom] = useState(1);
+  const [configModalItem, setConfigModalItem] = useState<NodeCatalogItem | null>(null);
 
   const selectedNode = automation.nodes.find(n => n.id === selectedNodeId) || null;
   const modeInfo = getModeInfo(automation.mode);
@@ -625,7 +811,17 @@ const AutomationCanvas = ({ automation, onBack, onSave, onUpdate }: {
     return { width: maxX + CANVAS_PADDING * 2 + 200, height: maxY + CANVAS_PADDING * 2 + 100 };
   }, [automation.nodes]);
 
-  const addNode = useCallback((item: NodeCatalogItem) => {
+  const handleNodeSelected = useCallback((item: NodeCatalogItem) => {
+    // Open config modal instead of directly adding
+    setConfigModalItem(item);
+  }, []);
+
+  const handleConfigConfirm = useCallback((item: NodeCatalogItem & { label?: string }, config: Record<string, any>) => {
+    setConfigModalItem(null);
+    addNode(item, config, item.label);
+  }, [addNode]);
+
+  const addNode = useCallback((item: NodeCatalogItem, preConfig?: Record<string, any>, customLabel?: string) => {
     const isJourney = automation.mode === "journey";
     let posX = 0, posY = isJourney ? 1 : 0;
 
@@ -639,10 +835,27 @@ const AutomationCanvas = ({ automation, onBack, onSave, onUpdate }: {
           return n;
         });
         const newId = `n-${Date.now()}`;
-        const newNode: FlowNode = { id: newId, type: item.type, category: item.category, label: item.label, description: item.description, icon: item.icon, iconColor: item.iconColor, iconBg: item.iconBg, config: {}, position: { x: posX, y: posY } };
+        const newNode: FlowNode = { id: newId, type: item.type, category: item.category, label: customLabel || item.label, description: item.description, icon: item.icon, iconColor: item.iconColor, iconBg: item.iconBg, config: preConfig || (item.category === "if_else" ? { condition: "has_replied" } : {}), position: { x: posX, y: posY } };
         const existingConn = automation.connections.find(c => c.from === insertAfterNodeId);
         let finalConnections = automation.connections.filter(c => c.from !== insertAfterNodeId);
         finalConnections.push({ id: `c-${Date.now()}-a`, from: insertAfterNodeId, to: newId });
+
+        // IF/ELSE branching when inserting after a node
+        if (item.category === "if_else") {
+          const trueId = `n-${Date.now()}-true`;
+          const falseId = `n-${Date.now()}-false`;
+          const trueCatalog = NODE_CATALOG[1].items[0];
+          const trueNode: FlowNode = { id: trueId, type: "action", category: trueCatalog.category, label: "True Path", description: "Add action for TRUE branch", icon: trueCatalog.icon, iconColor: trueCatalog.iconColor, iconBg: trueCatalog.iconBg, config: {}, position: { x: posX + 1, y: posY - 1 } };
+          const falseNode: FlowNode = { id: falseId, type: "action", category: trueCatalog.category, label: "False Path", description: "Add action for FALSE branch", icon: trueCatalog.icon, iconColor: trueCatalog.iconColor, iconBg: trueCatalog.iconBg, config: {}, position: { x: posX + 1, y: posY + 1 } };
+          finalConnections.push({ id: `c-${Date.now()}-t`, from: newId, to: trueId, label: "Yes", type: "true" });
+          finalConnections.push({ id: `c-${Date.now()}-f`, from: newId, to: falseId, label: "No", type: "false" });
+          if (existingConn) finalConnections.push({ id: `c-${Date.now()}-b`, from: trueId, to: existingConn.to });
+          onUpdate({ ...automation, nodes: [...updatedNodes, newNode, trueNode, falseNode], connections: finalConnections });
+          setIsNodePickerOpen(false); setInsertAfterNodeId(null); setSelectedNodeId(newId);
+          toast.success(`Added "${item.label}" with TRUE/FALSE branches`);
+          return;
+        }
+
         if (existingConn) finalConnections.push({ id: `c-${Date.now()}-b`, from: newId, to: existingConn.to });
         onUpdate({ ...automation, nodes: [...updatedNodes, newNode], connections: finalConnections });
         setIsNodePickerOpen(false); setInsertAfterNodeId(null); setSelectedNodeId(newId);
@@ -657,11 +870,27 @@ const AutomationCanvas = ({ automation, onBack, onSave, onUpdate }: {
       posY = automation.nodes[0]?.position.y ?? (isJourney ? 1 : 0);
     }
     const newId = `n-${Date.now()}`;
-    const newNode: FlowNode = { id: newId, type: item.type, category: item.category, label: item.label, description: item.description, icon: item.icon, iconColor: item.iconColor, iconBg: item.iconBg, config: {}, position: { x: posX, y: posY } };
+    const newNode: FlowNode = { id: newId, type: item.type, category: item.category, label: customLabel || item.label, description: item.description, icon: item.icon, iconColor: item.iconColor, iconBg: item.iconBg, config: preConfig || (item.category === "if_else" ? { condition: "has_replied" } : {}), position: { x: posX, y: posY } };
     const nodesAtMaxX = automation.nodes.filter(n => n.position.x === Math.max(...automation.nodes.map(n2 => n2.position.x)));
     const lastNode = nodesAtMaxX.length > 0 ? nodesAtMaxX[0] : null;
     const newConns = [...automation.connections];
     if (lastNode) newConns.push({ id: `c-${Date.now()}`, from: lastNode.id, to: newId });
+
+    // IF/ELSE branching: auto-create true/false placeholder nodes
+    if (item.category === "if_else") {
+      const trueId = `n-${Date.now()}-true`;
+      const falseId = `n-${Date.now()}-false`;
+      const trueCatalog = NODE_CATALOG[1].items[0]; // Send Message as placeholder
+      const trueNode: FlowNode = { id: trueId, type: "action", category: trueCatalog.category, label: "True Path", description: "Add action for TRUE branch", icon: trueCatalog.icon, iconColor: trueCatalog.iconColor, iconBg: trueCatalog.iconBg, config: {}, position: { x: posX + 1, y: posY - 1 } };
+      const falseNode: FlowNode = { id: falseId, type: "action", category: trueCatalog.category, label: "False Path", description: "Add action for FALSE branch", icon: trueCatalog.icon, iconColor: trueCatalog.iconColor, iconBg: trueCatalog.iconBg, config: {}, position: { x: posX + 1, y: posY + 1 } };
+      newConns.push({ id: `c-${Date.now()}-t`, from: newId, to: trueId, label: "Yes", type: "true" });
+      newConns.push({ id: `c-${Date.now()}-f`, from: newId, to: falseId, label: "No", type: "false" });
+      onUpdate({ ...automation, nodes: [...automation.nodes, newNode, trueNode, falseNode], connections: newConns });
+      setIsNodePickerOpen(false); setInsertAfterNodeId(null); setSelectedNodeId(newId);
+      toast.success(`Added "${item.label}" with TRUE/FALSE branches`);
+      return;
+    }
+
     onUpdate({ ...automation, nodes: [...automation.nodes, newNode], connections: newConns });
     setIsNodePickerOpen(false); setInsertAfterNodeId(null); setSelectedNodeId(newId);
     toast.success(`Added "${item.label}"`);
@@ -687,6 +916,13 @@ const AutomationCanvas = ({ automation, onBack, onSave, onUpdate }: {
   const handleOpenPicker = (afterNodeId?: string) => {
     setInsertAfterNodeId(afterNodeId || null); setIsNodePickerOpen(true); setSelectedNodeId(null);
   };
+
+  const handleWheel = useCallback((e: React.WheelEvent) => {
+    if (e.ctrlKey || e.metaKey) {
+      e.preventDefault();
+      setZoom(z => Math.min(Math.max(z + (e.deltaY > 0 ? -0.05 : 0.05), 0.3), 2));
+    }
+  }, []);
 
   return (
     <div className="h-[calc(100vh-64px)] flex flex-col bg-background">
@@ -724,12 +960,13 @@ const AutomationCanvas = ({ automation, onBack, onSave, onUpdate }: {
       <div className="flex-1 flex overflow-hidden">
         {/* Canvas */}
         <div className="flex-1 overflow-auto relative bg-[radial-gradient(circle,_hsl(var(--muted-foreground)/0.08)_1px,_transparent_1px)] bg-[length:24px_24px]"
+          onWheel={handleWheel}
           onClick={() => { setSelectedNodeId(null); setIsNodePickerOpen(false); }}>
           <div className="absolute bottom-4 left-4 flex items-center gap-1 bg-card border border-border rounded-lg p-1 z-20 shadow-sm">
             <button onClick={() => setZoom(1)} className="p-1.5 rounded-md hover:bg-muted text-muted-foreground text-xs font-mono w-10 text-center">{Math.round(zoom * 100)}%</button>
             <div className="w-px h-5 bg-border" />
-            <button onClick={() => setZoom(z => Math.min(z + 0.1, 1.5))} className="p-1.5 rounded-md hover:bg-muted text-muted-foreground"><ZoomIn className="w-3.5 h-3.5" /></button>
-            <button onClick={() => setZoom(z => Math.max(z - 0.1, 0.5))} className="p-1.5 rounded-md hover:bg-muted text-muted-foreground"><ZoomOut className="w-3.5 h-3.5" /></button>
+            <button onClick={() => setZoom(z => Math.min(z + 0.1, 2))} className="p-1.5 rounded-md hover:bg-muted text-muted-foreground"><ZoomIn className="w-3.5 h-3.5" /></button>
+            <button onClick={() => setZoom(z => Math.max(z - 0.1, 0.3))} className="p-1.5 rounded-md hover:bg-muted text-muted-foreground"><ZoomOut className="w-3.5 h-3.5" /></button>
           </div>
           {automation.mode === "journey" && automation.nodes.length === 0 && (
             <div className="absolute top-4 left-1/2 -translate-x-1/2 bg-card border border-border rounded-xl px-6 py-3 shadow-sm z-20 flex items-center gap-3">
@@ -744,17 +981,10 @@ const AutomationCanvas = ({ automation, onBack, onSave, onUpdate }: {
             <ConnectionLines nodes={automation.nodes} connections={automation.connections} />
             {automation.nodes.length === 0 && (
               <div className="absolute inset-0 flex items-center justify-center">
-                <div className="flex items-center gap-8">
-                  <button onClick={() => handleOpenPicker()} className="w-[160px] h-[160px] border-2 border-dashed border-border rounded-2xl flex flex-col items-center justify-center gap-3 hover:border-primary/50 hover:bg-primary/5 transition-all group">
-                    <Plus className="w-8 h-8 text-muted-foreground group-hover:text-primary transition-colors" />
-                    <span className="text-sm font-medium text-muted-foreground group-hover:text-foreground">Add first step</span>
-                  </button>
-                  <span className="text-sm text-muted-foreground">or</span>
-                  <button onClick={() => { addNode(NODE_CATALOG[0].items[5]); }} className="w-[160px] h-[160px] border-2 border-dashed border-border rounded-2xl flex flex-col items-center justify-center gap-3 hover:border-primary/50 hover:bg-primary/5 transition-all group">
-                    <Sparkles className="w-8 h-8 text-muted-foreground group-hover:text-primary transition-colors" />
-                    <span className="text-sm font-medium text-muted-foreground group-hover:text-foreground">Quick start</span>
-                  </button>
-                </div>
+                <button onClick={() => handleOpenPicker()} className="w-[180px] h-[180px] border-2 border-dashed border-border rounded-2xl flex flex-col items-center justify-center gap-3 hover:border-primary/50 hover:bg-primary/5 transition-all group">
+                  <Plus className="w-8 h-8 text-muted-foreground group-hover:text-primary transition-colors" />
+                  <span className="text-sm font-medium text-muted-foreground group-hover:text-foreground">Add first step</span>
+                </button>
               </div>
             )}
             {automation.nodes.map(node => (
@@ -773,7 +1003,10 @@ const AutomationCanvas = ({ automation, onBack, onSave, onUpdate }: {
         </div>
         {isNodePickerOpen && (
           <NodePickerPanel isOpen={isNodePickerOpen} onClose={() => { setIsNodePickerOpen(false); setInsertAfterNodeId(null); }}
-            onSelectNode={addNode} title={insertAfterNodeId ? "Add next step" : "What happens first?"} mode={automation.mode} />
+            onSelectNode={handleNodeSelected} title={insertAfterNodeId ? "Add next step" : "What happens first?"} mode={automation.mode} />
+        )}
+        {configModalItem && (
+          <NodeConfigModal item={configModalItem} onConfirm={handleConfigConfirm} onCancel={() => setConfigModalItem(null)} />
         )}
         {selectedNode && !isNodePickerOpen && (
           <NodeInspector node={selectedNode} onUpdate={(updates) => updateNode(selectedNode.id, updates)}
@@ -1133,8 +1366,8 @@ export const AutomationV2View = () => {
                   <div key={a.id} className="bg-card border border-border rounded-xl px-5 py-4 hover:border-primary/30 hover:shadow-sm transition-all group cursor-pointer"
                     onClick={() => setEditingAutomation(a)}>
                     <div className="flex items-center gap-4">
-                      <div className={cn("w-10 h-10 rounded-xl flex items-center justify-center shrink-0", a.enabled ? "bg-emerald-50 dark:bg-emerald-500/10" : "bg-muted")}>
-                        <ModeIcon className={cn("w-5 h-5", a.enabled ? mInfo.color : "text-muted-foreground")} />
+                      <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0 bg-muted">
+                        <ModeIcon className="w-5 h-5 text-muted-foreground" />
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2">
