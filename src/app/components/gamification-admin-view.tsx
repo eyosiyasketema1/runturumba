@@ -18,6 +18,7 @@ import { toast } from "sonner";
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer,
   PieChart, Pie, Cell, AreaChart, Area,
+  ScatterChart, Scatter, ZAxis, CartesianGrid,
 } from "recharts";
 
 import {
@@ -1089,6 +1090,89 @@ function AnalyticsTab({ accountId }: { accountId: string }) {
                 );
               })}
             </div>
+          );
+        })()}
+      </div>
+
+      {/* Engagement Correlation */}
+      <div className="rounded-sm bg-card border border-border p-5">
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <h3 className="text-sm font-bold text-foreground">Engagement Correlation</h3>
+            <p className="text-[10px] text-muted-foreground mt-0.5">
+              Each dot is one seeker. X = engagement events (last 30 days), Y = total XP.
+            </p>
+          </div>
+          <div className="flex items-center gap-3 text-[10px]">
+            {(["bronze", "silver", "gold", "platinum"] as const).map((t) => (
+              <div key={t} className="flex items-center gap-1.5">
+                <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: TIER_COLORS[t] }} />
+                <span className="capitalize text-muted-foreground">{t}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+        {(() => {
+          const points = data.engagement_correlation || [];
+          if (points.length === 0) {
+            return <div className="text-xs text-muted-foreground py-4 text-center">No seeker data yet.</div>;
+          }
+          // Group by tier so each tier gets its own colored Scatter series.
+          const tiers: Array<"bronze" | "silver" | "gold" | "platinum"> = ["bronze", "silver", "gold", "platinum"];
+          const byTier = tiers.map((tier) => ({
+            tier,
+            data: points
+              .filter((p) => p.tier === tier)
+              .map((p) => ({
+                x: p.engagement_events,
+                y: p.total_xp,
+                actor: p.actor_id,
+                streak: p.current_streak,
+              })),
+          }));
+          return (
+            <ResponsiveContainer width="100%" height={300}>
+              <ScatterChart margin={{ top: 10, right: 16, bottom: 24, left: 8 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                <XAxis
+                  type="number"
+                  dataKey="x"
+                  name="Engagement events"
+                  tick={{ fontSize: 11 }}
+                  label={{ value: "Engagement events (30d)", position: "insideBottom", offset: -10, fontSize: 11, fill: "#94a3b8" }}
+                />
+                <YAxis
+                  type="number"
+                  dataKey="y"
+                  name="Total XP"
+                  tick={{ fontSize: 11 }}
+                  label={{ value: "Total XP", angle: -90, position: "insideLeft", fontSize: 11, fill: "#94a3b8" }}
+                />
+                <ZAxis range={[60, 220]} />
+                <Tooltip
+                  cursor={{ strokeDasharray: "3 3" }}
+                  content={({ active, payload }) => {
+                    if (!active || !payload || payload.length === 0) return null;
+                    const p: any = payload[0].payload;
+                    return (
+                      <div className="rounded-md border border-border bg-card px-3 py-2 shadow-sm text-xs">
+                        <div className="font-bold text-foreground">{p.actor}</div>
+                        <div className="text-muted-foreground mt-1 space-y-0.5">
+                          <div>Engagement: <span className="text-foreground font-semibold">{p.x}</span></div>
+                          <div>Total XP: <span className="text-foreground font-semibold">{p.y}</span></div>
+                          <div>Streak: <span className="text-foreground font-semibold">{p.streak}</span></div>
+                        </div>
+                      </div>
+                    );
+                  }}
+                />
+                {byTier.map(({ tier, data: tdata }) => (
+                  tdata.length > 0 && (
+                    <Scatter key={tier} name={tier} data={tdata} fill={TIER_COLORS[tier]} />
+                  )
+                ))}
+              </ScatterChart>
+            </ResponsiveContainer>
           );
         })()}
       </div>

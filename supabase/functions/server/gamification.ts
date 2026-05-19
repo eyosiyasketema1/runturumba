@@ -665,7 +665,7 @@ gam.get("/analytics", async (c) => {
   const db = supabase();
 
   const [profilesRes, badgesRes, awardsRes, txRes, journeysRes] = await Promise.all([
-    db.from("gamification_profiles").select("actor_type, total_xp, level, tier, current_streak").eq("account_id", accountId),
+    db.from("gamification_profiles").select("actor_id, actor_type, total_xp, level, tier, current_streak").eq("account_id", accountId),
     db.from("badge_definitions").select("id, slug, name, rarity").eq("account_id", accountId).eq("is_active", true),
     db.from("badge_awards").select("badge_id, actor_id").eq("account_id", accountId),
     db.from("point_transactions").select("actor_id, points, reason, created_at").eq("account_id", accountId),
@@ -739,6 +739,29 @@ gam.get("/analytics", async (c) => {
     count: seekersByStage[stage].size,
   }));
 
+  // Engagement Correlation — one point per seeker plotting gamification
+  // participation (total_xp) against recent engagement activity (count of
+  // point_transactions in the last 30 days, used as a proxy for active
+  // engagement). Lets admins spot grinders, sleepers, and at-risk users.
+  const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+  const engagementCountsByActor: Record<string, number> = {};
+  for (const t of txs as any[]) {
+    if (new Date(t.created_at) >= thirtyDaysAgo) {
+      engagementCountsByActor[t.actor_id] = (engagementCountsByActor[t.actor_id] || 0) + 1;
+    }
+  }
+  // Build the correlation series for seekers only — mentors have different
+  // engagement dynamics and would skew the chart.
+  const engagementCorrelation = (profiles as any[])
+    .filter((p) => p.actor_type === "seeker")
+    .map((p) => ({
+      actor_id: p.actor_id,
+      total_xp: p.total_xp || 0,
+      engagement_events: engagementCountsByActor[p.actor_id] || 0,
+      current_streak: p.current_streak || 0,
+      tier: p.tier,
+    }));
+
   return c.json({
     data: {
       xp_distribution: xpDistribution,
@@ -747,6 +770,7 @@ gam.get("/analytics", async (c) => {
       tier_distribution: tierDistribution,
       xp_timeline: xpTimeline,
       milestone_funnel: milestoneFunnel,
+      engagement_correlation: engagementCorrelation,
       totals: {
         profiles: profiles.length,
         seekers: seekers.length,
