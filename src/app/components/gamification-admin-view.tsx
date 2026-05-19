@@ -1031,6 +1031,68 @@ function AnalyticsTab({ accountId }: { accountId: string }) {
         </div>
       </div>
 
+      {/* Milestone Funnel */}
+      <div className="rounded-sm bg-card border border-border p-5">
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-sm font-bold text-foreground">Milestone Funnel</h3>
+          <span className="text-[10px] text-muted-foreground uppercase tracking-wider">
+            Touchpoint → Decision
+          </span>
+        </div>
+        {(() => {
+          const funnel = data.milestone_funnel || [];
+          if (funnel.length === 0) {
+            return <div className="text-xs text-muted-foreground py-4 text-center">No journey data yet.</div>;
+          }
+          const max = Math.max(1, ...funnel.map(f => f.count));
+          const top = funnel[0]?.count || 0;
+          // Stage-specific colors that read as a progression
+          const STAGE_COLORS: Record<string, string> = {
+            "Touchpoint": "#94a3b8",
+            "Engaged":    "#3b82f6",
+            "Active Journey": "#10b981",
+            "Decision":   "#a855f7",
+          };
+          return (
+            <div className="space-y-2">
+              {funnel.map((f, i) => {
+                const widthPct = (f.count / max) * 100;
+                const prev = i > 0 ? funnel[i - 1].count : 0;
+                const stepConversion = prev > 0 ? Math.round((f.count / prev) * 100) : null;
+                const overallConversion = top > 0 ? Math.round((f.count / top) * 100) : 0;
+                const color = STAGE_COLORS[f.stage] || "#3b82f6";
+                return (
+                  <div key={f.stage}>
+                    {i > 0 && stepConversion !== null && (
+                      <div className="flex items-center gap-2 pl-3 py-1">
+                        <div className="w-px h-3 bg-border" />
+                        <span className="text-[10px] text-muted-foreground font-medium">
+                          {stepConversion}% continued
+                        </span>
+                      </div>
+                    )}
+                    <div className="flex items-center gap-3">
+                      <div className="w-32 shrink-0 text-xs font-semibold text-foreground">{f.stage}</div>
+                      <div className="flex-1 h-8 bg-muted/30 rounded-md overflow-hidden">
+                        <div
+                          className="h-full flex items-center justify-end pr-3 transition-all"
+                          style={{ width: `${Math.max(widthPct, 4)}%`, backgroundColor: color }}
+                        >
+                          <span className="text-xs font-bold text-white">{f.count}</span>
+                        </div>
+                      </div>
+                      <div className="w-12 shrink-0 text-right text-xs font-semibold text-muted-foreground">
+                        {overallConversion}%
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          );
+        })()}
+      </div>
+
       {/* Badge Earning Rates */}
       <div className="rounded-sm bg-card border border-border p-5">
         <h3 className="text-sm font-bold text-foreground mb-4">Badge Earning Rates</h3>

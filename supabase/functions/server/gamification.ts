@@ -664,17 +664,19 @@ gam.get("/analytics", async (c) => {
 
   const db = supabase();
 
-  const [profilesRes, badgesRes, awardsRes, txRes] = await Promise.all([
+  const [profilesRes, badgesRes, awardsRes, txRes, journeysRes] = await Promise.all([
     db.from("gamification_profiles").select("actor_type, total_xp, level, tier, current_streak").eq("account_id", accountId),
     db.from("badge_definitions").select("id, slug, name, rarity").eq("account_id", accountId).eq("is_active", true),
     db.from("badge_awards").select("badge_id, actor_id").eq("account_id", accountId),
     db.from("point_transactions").select("actor_id, points, reason, created_at").eq("account_id", accountId),
+    db.from("faith_journeys").select("stage, contact_id").eq("tenant_id", accountId),
   ]);
 
   const profiles = profilesRes.data || [];
   const badges = badgesRes.data || [];
   const awards = awardsRes.data || [];
   const txs = txRes.data || [];
+  const journeys = journeysRes.data || [];
 
   const seekers = profiles.filter((p: any) => p.actor_type === "seeker");
 
@@ -721,6 +723,22 @@ gam.get("/analytics", async (c) => {
     .sort(([a], [b]) => a.localeCompare(b))
     .map(([date, xp]) => ({ date, xp }));
 
+  // Milestone Funnel — count distinct seekers at each stage of the spiritual
+  // journey. Stages are ordered by progression. The conversion rate at each
+  // step is computed in the UI for flexibility.
+  const FUNNEL_STAGES = ["Touchpoint", "Engaged", "Active Journey", "Decision"] as const;
+  const seekersByStage: Record<string, Set<string>> = {};
+  for (const stage of FUNNEL_STAGES) seekersByStage[stage] = new Set<string>();
+  for (const j of journeys as any[]) {
+    if (j.stage && seekersByStage[j.stage]) {
+      seekersByStage[j.stage].add(j.contact_id);
+    }
+  }
+  const milestoneFunnel = FUNNEL_STAGES.map((stage) => ({
+    stage,
+    count: seekersByStage[stage].size,
+  }));
+
   return c.json({
     data: {
       xp_distribution: xpDistribution,
@@ -728,6 +746,7 @@ gam.get("/analytics", async (c) => {
       streak_distribution: streakDistribution,
       tier_distribution: tierDistribution,
       xp_timeline: xpTimeline,
+      milestone_funnel: milestoneFunnel,
       totals: {
         profiles: profiles.length,
         seekers: seekers.length,

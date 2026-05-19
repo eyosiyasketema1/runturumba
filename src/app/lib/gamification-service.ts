@@ -328,6 +328,7 @@ export interface GamificationAnalytics {
   streak_distribution: { label: string; count: number }[];
   tier_distribution: { bronze: number; silver: number; gold: number; platinum: number };
   xp_timeline: { date: string; xp: number }[];
+  milestone_funnel: { stage: string; count: number }[];
   totals: { profiles: number; seekers: number; mentors: number; badges_defined: number; badges_awarded: number; total_xp: number };
 }
 
