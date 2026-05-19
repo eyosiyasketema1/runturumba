@@ -473,4 +473,20 @@ export const AdminReengagementService = {
       method: "DELETE",
     });
   },
+  /**
+   * Tenant-wide enrollments list, joined to the template definition. Powers
+   * the admin Re-engagement → Enrollments sub-tab.
+   */
+  async listAllEnrollments(
+    accountId: string,
+    opts: { status?: "all" | "active" | "completed" | "cancelled"; templateId?: string; limit?: number } = {}
+  ) {
+    const params: Record<string, string> = { account_id: accountId };
+    if (opts.status) params.status = opts.status;
+    if (opts.templateId) params.template_id = opts.templateId;
+    if (opts.limit) params.limit = String(opts.limit);
+    return api<AutomationEnrollment[]>("/gamification/admin/reengagement/enrollments", {
+      params,
+    });
+  },
 };

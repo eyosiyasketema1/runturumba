@@ -1297,6 +1297,31 @@ gam.post("/reengagement/process-drips", async (c) => {
   return c.json({ data: { processed: processed.length, drips: processed } });
 });
 
+// Admin: List enrollments across all actors for a tenant
+// GET /gamification/admin/reengagement/enrollments?account_id=...&status=...&limit=...
+gam.get("/admin/reengagement/enrollments", async (c) => {
+  const accountId = c.req.query("account_id");
+  const status = c.req.query("status") || "all";
+  const limit = parseInt(c.req.query("limit") || "200");
+  const templateId = c.req.query("template_id");
+  if (!accountId) return err(c, 400, "account_id required");
+
+  const db = supabase();
+  let query = db
+    .from("automation_enrollments")
+    .select("*, reengagement_templates(id, slug, name, description, trigger_type, steps)")
+    .eq("account_id", accountId)
+    .order("enrolled_at", { ascending: false })
+    .limit(limit);
+
+  if (status !== "all") query = query.eq("status", status);
+  if (templateId) query = query.eq("template_id", templateId);
+
+  const { data, error } = await query;
+  if (error) return err(c, 500, error.message);
+  return c.json({ data });
+});
+
 // Admin: Create/update/delete re-engagement templates
 gam.post("/admin/reengagement/templates", async (c) => {
   const body = await c.req.json();

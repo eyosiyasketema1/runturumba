@@ -1079,6 +1079,9 @@ const DRIP_STATUS_CONFIG: Record<string, { color: string; icon: any }> = {
 function ReengagementTab({ accountId }: { accountId: string }) {
   const [templates, setTemplates] = useState<ReengagementTemplate[]>([]);
   const [enrollments, setEnrollments] = useState<AutomationEnrollment[]>([]);
+  const [enrollmentsLoading, setEnrollmentsLoading] = useState(false);
+  const [enrollmentStatusFilter, setEnrollmentStatusFilter] = useState<"all" | "active" | "completed" | "cancelled">("active");
+  const [enrollmentTemplateFilter, setEnrollmentTemplateFilter] = useState<string>("all");
   const [loading, setLoading] = useState(true);
   const [subView, setSubView] = useState<"templates" | "enrollments">("templates");
   const [showForm, setShowForm] = useState(false);
@@ -1100,14 +1103,35 @@ function ReengagementTab({ accountId }: { accountId: string }) {
     });
   }, [accountId]);
 
-  // Load enrollments when switching to that sub-view
+  // Load enrollments tenant-wide whenever the sub-view or filters change.
   useEffect(() => {
-    if (subView === "enrollments") {
-      // Fetch all enrollments — use a known actor or list all
-      // The API requires an actorId, so we show a message if no data
-      setEnrollments([]);
+    if (subView !== "enrollments") return;
+    let cancelled = false;
+    setEnrollmentsLoading(true);
+    AdminReengagementService.listAllEnrollments(accountId, {
+      status: enrollmentStatusFilter,
+      templateId: enrollmentTemplateFilter !== "all" ? enrollmentTemplateFilter : undefined,
+      limit: 200,
+    })
+      .then((res) => {
+        if (cancelled) return;
+        const list = Array.isArray(res.data) ? res.data : [];
+        setEnrollments(list);
+      })
+      .catch(() => { if (!cancelled) setEnrollments([]); })
+      .finally(() => { if (!cancelled) setEnrollmentsLoading(false); });
+    return () => { cancelled = true; };
+  }, [subView, accountId, enrollmentStatusFilter, enrollmentTemplateFilter]);
+
+  const cancelEnrollment = async (id: string) => {
+    try {
+      await ReengagementService.cancelEnrollment(id);
+      setEnrollments(prev => prev.map(e => e.id === id ? { ...e, status: "cancelled" } : e));
+      toast.success("Enrollment cancelled");
+    } catch {
+      toast.error("Failed to cancel enrollment");
     }
-  }, [subView, accountId]);
+  };
 
   const openCreateTemplate = () => {
     setEditingTemplate(null);
@@ -1266,10 +1290,110 @@ function ReengagementTab({ accountId }: { accountId: string }) {
 
       {/* Enrollments view */}
       {subView === "enrollments" && (
-        <div className="py-12 text-center text-muted-foreground">
-          <Users className="w-10 h-10 mx-auto mb-3 opacity-40" />
-          <p className="text-sm font-medium">Enrollment monitoring</p>
-          <p className="text-xs mt-1">Active enrollments appear here when seekers are enrolled in drip sequences. View individual seeker profiles for enrollment details.</p>
+        <div className="space-y-3">
+          {/* Filter bar */}
+          <div className="flex items-center gap-3 flex-wrap">
+            <div className="inline-flex items-center gap-1 bg-muted/60 border border-border rounded-full p-1">
+              {(["active", "completed", "cancelled", "all"] as const).map((s) => (
+                <button
+                  key={s}
+                  onClick={() => setEnrollmentStatusFilter(s)}
+                  className={cn(
+                    "px-3 py-1 text-xs font-semibold rounded-full transition-all capitalize",
+                    enrollmentStatusFilter === s ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"
+                  )}
+                >
+                  {s}
+                </button>
+              ))}
+            </div>
+            {templates.length > 0 && (
+              <select
+                value={enrollmentTemplateFilter}
+                onChange={e => setEnrollmentTemplateFilter(e.target.value)}
+                className="h-8 text-xs rounded-md border border-input bg-background px-2"
+              >
+                <option value="all">All templates</option>
+                {templates.map(t => (
+                  <option key={t.id} value={t.id}>{t.name}</option>
+                ))}
+              </select>
+            )}
+            <span className="text-xs text-muted-foreground ml-auto">
+              {enrollmentsLoading ? "Loading…" : `${enrollments.length} ${enrollments.length === 1 ? "enrollment" : "enrollments"}`}
+            </span>
+          </div>
+
+          {/* Table */}
+          {enrollmentsLoading ? (
+            <div className="py-12 text-center text-muted-foreground text-sm">Loading enrollments…</div>
+          ) : enrollments.length === 0 ? (
+            <div className="py-12 text-center text-muted-foreground">
+              <Users className="w-10 h-10 mx-auto mb-3 opacity-40" />
+              <p className="text-sm font-medium">No enrollments match these filters</p>
+              <p className="text-xs mt-1">Enrollments are created automatically when behavior rules fire — e.g. when the Streak Worker breaks a seeker's streak.</p>
+            </div>
+          ) : (
+            <div className="border border-border rounded-lg overflow-hidden">
+              <table className="w-full text-sm">
+                <thead className="bg-muted/40">
+                  <tr className="text-left text-xs uppercase tracking-wider text-muted-foreground">
+                    <th className="px-3 py-2 font-semibold">Template</th>
+                    <th className="px-3 py-2 font-semibold">Actor</th>
+                    <th className="px-3 py-2 font-semibold">Status</th>
+                    <th className="px-3 py-2 font-semibold">Step</th>
+                    <th className="px-3 py-2 font-semibold">Enrolled</th>
+                    <th className="px-3 py-2 font-semibold text-right">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {enrollments.map((e) => {
+                    const tmpl = e.reengagement_templates;
+                    const stepsCount = Array.isArray(tmpl?.steps) ? tmpl!.steps.length : 0;
+                    const statusColor = e.status === "active"
+                      ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                      : e.status === "completed"
+                      ? "bg-blue-50 text-blue-700 border-blue-200"
+                      : "bg-slate-100 text-slate-600 border-slate-200";
+                    const triggerLabel = tmpl?.trigger_type?.replace(/_/g, " ") || "manual";
+                    return (
+                      <tr key={e.id} className="border-t border-border hover:bg-muted/20">
+                        <td className="px-3 py-2">
+                          <div className="font-semibold">{tmpl?.name || "—"}</div>
+                          <div className="text-xs text-muted-foreground capitalize">{triggerLabel}</div>
+                        </td>
+                        <td className="px-3 py-2">
+                          <div className="font-mono text-xs">{e.actor_id}</div>
+                          <div className="text-xs text-muted-foreground capitalize">{e.actor_type}</div>
+                        </td>
+                        <td className="px-3 py-2">
+                          <span className={cn("inline-block px-2 py-0.5 text-xs font-semibold border rounded-full capitalize", statusColor)}>
+                            {e.status}
+                          </span>
+                        </td>
+                        <td className="px-3 py-2 text-xs">
+                          {e.current_step + 1}{stepsCount > 0 ? ` / ${stepsCount}` : ""}
+                        </td>
+                        <td className="px-3 py-2 text-xs text-muted-foreground">
+                          {new Date(e.enrolled_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
+                        </td>
+                        <td className="px-3 py-2 text-right">
+                          {e.status === "active" && (
+                            <button
+                              onClick={() => cancelEnrollment(e.id)}
+                              className="text-xs font-semibold text-red-600 hover:underline"
+                            >
+                              Cancel
+                            </button>
+                          )}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
         </div>
       )}
 
