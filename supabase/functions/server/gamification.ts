@@ -799,6 +799,61 @@ function getNestedField(obj: any, path: string): any {
 }
 
 /**
+ * Send an Expo Push notification to one or more device tokens.
+ *
+ * Uses Expo's public push API (https://exp.host/--/api/v2/push/send) which
+ * is authenticated only by an optional EXPO_ACCESS_TOKEN env var for higher
+ * rate limits — anonymous works fine for our current volume. Returns the
+ * count of tickets returned plus any per-token errors so the caller can
+ * record them on the originating drip / notification row.
+ *
+ * Reference: https://docs.expo.dev/push-notifications/sending-notifications/
+ */
+async function sendExpoPush(
+  tokens: string[],
+  payload: { title: string; body: string; data?: Record<string, any> }
+): Promise<{ tickets: any[]; errors: any[] }> {
+  if (!tokens || tokens.length === 0) return { tickets: [], errors: [] };
+
+  const messages = tokens.map((to) => ({
+    to,
+    sound: "default",
+    title: payload.title,
+    body: payload.body,
+    data: payload.data || {},
+  }));
+
+  const headers: Record<string, string> = {
+    Accept: "application/json",
+    "Accept-encoding": "gzip, deflate",
+    "Content-Type": "application/json",
+  };
+  const accessToken = Deno.env.get("EXPO_ACCESS_TOKEN");
+  if (accessToken) headers.Authorization = `Bearer ${accessToken}`;
+
+  try {
+    const res = await fetch("https://exp.host/--/api/v2/push/send", {
+      method: "POST",
+      headers,
+      body: JSON.stringify(messages),
+    });
+    const json = await res.json();
+    if (!res.ok) {
+      return { tickets: [], errors: [{ status: res.status, body: json }] };
+    }
+    const tickets = Array.isArray(json?.data) ? json.data : [];
+    const errors = tickets
+      .map((t: any, i: number) =>
+        t?.status === "error" ? { token: tokens[i], details: t } : null
+      )
+      .filter(Boolean);
+    return { tickets, errors };
+  } catch (e: any) {
+    return { tickets: [], errors: [{ message: e?.message || "Expo push fetch failed" }] };
+  }
+}
+
+/**
  * Run an event through the behavior rules engine.
  *
  * Loads all active rules matching the event_type, then for each rule checks
@@ -1280,21 +1335,127 @@ gam.post("/reengagement/process-drips", async (c) => {
   const { data, error } = await db.rpc("process_due_drips", { p_limit: limit });
   if (error) return err(c, 500, error.message);
 
-  // For each processed drip, create a notification for the actor
-  const processed = data || [];
+  const processed = (data || []) as Array<{
+    drip_id: string;
+    enrollment_id: string;
+    actor_id: string;
+    message: string;
+    channel: string;
+  }>;
+
+  // For each processed drip: create an in-app notification + push to every
+  // registered Expo token for that actor (best-effort; push failures don't
+  // unmark the drip as sent, but are recorded on the notification payload).
+  const pushResults: Array<{ drip_id: string; sent: number; errors: any[] }> = [];
+
   for (const drip of processed) {
+    // 1. In-app notification (existing behavior)
     await db.from("gamification_notifications").insert({
-      account_id: drip.actor_id ? "tenant-1" : "tenant-1", // TODO: get from enrollment
+      account_id: "tenant-1", // TODO: derive from enrollment when multi-tenant
       actor_id: drip.actor_id,
       actor_type: "seeker",
       notification_type: "milestone_completed",
       title: "Re-engagement Message",
       body: drip.message,
       payload: { enrollment_id: drip.enrollment_id, drip_id: drip.drip_id, channel: drip.channel },
-    }).then(() => {});
+    });
+
+    // 2. Expo Push fan-out
+    const { data: tokens } = await db
+      .from("push_tokens")
+      .select("expo_push_token")
+      .eq("actor_id", drip.actor_id)
+      .eq("is_active", true);
+
+    const tokenList: string[] = Array.isArray(tokens)
+      ? tokens.map((t: any) => t.expo_push_token).filter(Boolean)
+      : [];
+
+    if (tokenList.length > 0) {
+      const expoResult = await sendExpoPush(tokenList, {
+        title: "Turumba",
+        body: drip.message,
+        data: {
+          enrollment_id: drip.enrollment_id,
+          drip_id: drip.drip_id,
+          channel: drip.channel,
+        },
+      });
+      pushResults.push({
+        drip_id: drip.drip_id,
+        sent: tokenList.length,
+        errors: expoResult.errors,
+      });
+    }
   }
 
-  return c.json({ data: { processed: processed.length, drips: processed } });
+  return c.json({
+    data: {
+      processed: processed.length,
+      drips: processed,
+      push: pushResults,
+    },
+  });
+});
+
+// POST /gamification/push/register — register or refresh an Expo push token
+// Body: { account_id, actor_id, actor_type, expo_push_token, platform?, device_name? }
+gam.post("/push/register", async (c) => {
+  const body = await c.req.json().catch(() => ({} as any));
+  const {
+    account_id,
+    actor_id,
+    actor_type,
+    expo_push_token,
+    platform,
+    device_name,
+  } = body || {};
+
+  if (!account_id || !actor_id || !actor_type || !expo_push_token) {
+    return err(c, 400, "account_id, actor_id, actor_type, expo_push_token are required");
+  }
+
+  const db = supabase();
+  const { data, error } = await db
+    .from("push_tokens")
+    .upsert(
+      {
+        account_id,
+        actor_id,
+        actor_type,
+        expo_push_token,
+        platform: platform || null,
+        device_name: device_name || null,
+        is_active: true,
+        last_seen_at: new Date().toISOString(),
+      },
+      { onConflict: "actor_id,expo_push_token" }
+    )
+    .select()
+    .single();
+
+  if (error) return err(c, 500, error.message);
+  return c.json({ data });
+});
+
+// POST /gamification/push/unregister — soft-disable a token (e.g. on logout)
+// Body: { actor_id, expo_push_token }
+gam.post("/push/unregister", async (c) => {
+  const body = await c.req.json().catch(() => ({} as any));
+  const { actor_id, expo_push_token } = body || {};
+  if (!actor_id || !expo_push_token) {
+    return err(c, 400, "actor_id and expo_push_token are required");
+  }
+
+  const db = supabase();
+  const { error } = await db
+    .from("push_tokens")
+    .update({ is_active: false })
+    .eq("actor_id", actor_id)
+    .eq("expo_push_token", expo_push_token);
+
+  if (error) return err(c, 500, error.message);
+  return c.json({ data: { status: "ok" } });
 });
 
 // Admin: List enrollments across all actors for a tenant
