@@ -5,7 +5,8 @@ import {
   AlertCircle, Check, X, Globe, Link2, Copy, Eye,
   Settings2, Filter, Tag, Users, MessageSquare, Send,
   RefreshCw, ExternalLink, ChevronRight, Shield,
-  Inbox, ListOrdered, GitBranch, FolderPlus, Folder, FolderOpen
+  Inbox, ListOrdered, GitBranch, FolderPlus, Folder, FolderOpen,
+  ArrowUpDown, SlidersHorizontal, ChevronDown
 } from "lucide-react";
 // motion/AnimatePresence removed — webhooks tab eliminated.
 import { toast } from "sonner";
@@ -123,8 +124,18 @@ export const AutomationView = ({
   const [isTypePickerOpen, setIsTypePickerOpen] = useState(false);
   const [isNewFolderOpen, setIsNewFolderOpen] = useState(false);
   const [newFolderName, setNewFolderName] = useState("");
-  const [customFolders, setCustomFolders] = useState<{ id: string; name: string; automationIds: string[] }[]>([]);
+  const [customFolders, setCustomFolders] = useState<{ id: string; name: string; automationIds: string[] }[]>([
+    { id: "folder-onboarding",   name: "Onboarding",    automationIds: ["auto-1", "auto-6", "auto-11"] },
+    { id: "folder-followups",    name: "Follow-ups",    automationIds: ["auto-10", "auto-15"] },
+    { id: "folder-discipleship", name: "Discipleship",  automationIds: ["auto-8", "auto-12", "auto-14"] },
+  ]);
   const [movingRule, setMovingRule] = useState<AutomationRule | null>(null);
+  // Filters
+  const [filterStatus, setFilterStatus] = useState<"all" | "active" | "draft" | "stopped">("all");
+  const [filterType, setFilterType] = useState<"all" | AutoType>("all");
+  const [sortBy, setSortBy] = useState<"name" | "modified" | "runs" | "status">("modified");
+  const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
+  const [showFilters, setShowFilters] = useState(false);
 
   const handleCreateFolder = () => {
     if (!newFolderName.trim()) return;
@@ -213,15 +224,38 @@ export const AutomationView = ({
     flow:     typedAutos.filter(a => a._type === "flow").length,
   }), [typedAutos]);
 
-  const filteredRules = typedAutos.filter(a => {
-    const customFolder = customFolders.find(f => f.id === activeFolder);
-    const matchesFolder = activeFolder === "all"
-      || a._type === activeFolder
-      || (customFolder && customFolder.automationIds.includes(a.id));
-    const q = searchQuery.toLowerCase();
-    const matchesSearch = !q || a.name.toLowerCase().includes(q) || a.description.toLowerCase().includes(q);
-    return matchesFolder && matchesSearch;
-  });
+  const filteredRules = useMemo(() => {
+    const filtered = typedAutos.filter(a => {
+      const customFolder = customFolders.find(f => f.id === activeFolder);
+      const matchesFolder = activeFolder === "all"
+        || a._type === activeFolder
+        || (customFolder && customFolder.automationIds.includes(a.id));
+      const q = searchQuery.toLowerCase();
+      const matchesSearch = !q || a.name.toLowerCase().includes(q) || a.description.toLowerCase().includes(q);
+      const matchesStatus = filterStatus === "all" || getAutoStatus(a) === filterStatus;
+      const matchesType = filterType === "all" || a._type === filterType;
+      return matchesFolder && matchesSearch && matchesStatus && matchesType;
+    });
+    // Sort
+    const dir = sortDir === "asc" ? 1 : -1;
+    filtered.sort((a, b) => {
+      switch (sortBy) {
+        case "name":     return dir * a.name.localeCompare(b.name);
+        case "runs":     return dir * (a.triggerCount - b.triggerCount);
+        case "status": {
+          const order = { active: 0, draft: 1, stopped: 2 };
+          return dir * (order[getAutoStatus(a)] - order[getAutoStatus(b)]);
+        }
+        case "modified":
+        default: {
+          const ta = new Date(a.lastTriggeredAt || a.createdAt).getTime();
+          const tb = new Date(b.lastTriggeredAt || b.createdAt).getTime();
+          return dir * (ta - tb);
+        }
+      }
+    });
+    return filtered;
+  }, [typedAutos, activeFolder, customFolders, searchQuery, filterStatus, filterType, sortBy, sortDir]);
 
   const filteredWebhooks = webhooks.filter(w =>
     w.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -459,10 +493,104 @@ export const AutomationView = ({
                     );
                   })()}
                 </div>
-                {searchQuery && (
-                  <span className="text-xs text-muted-foreground">Filtered by "{searchQuery}"</span>
-                )}
+                <div className="flex items-center gap-2">
+                  {searchQuery && (
+                    <span className="text-xs text-muted-foreground">Filtered by "{searchQuery}"</span>
+                  )}
+                  <button
+                    onClick={() => setShowFilters(!showFilters)}
+                    className={cn(
+                      "inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium rounded-md border transition-colors",
+                      showFilters || filterStatus !== "all" || filterType !== "all"
+                        ? "border-primary/40 bg-primary/5 text-primary"
+                        : "border-border text-muted-foreground hover:text-foreground hover:bg-muted"
+                    )}
+                  >
+                    <SlidersHorizontal className="w-3 h-3" />
+                    Filters
+                    {(filterStatus !== "all" || filterType !== "all") && (
+                      <span className="w-4 h-4 rounded-full bg-primary text-[10px] text-primary-foreground flex items-center justify-center font-bold">
+                        {(filterStatus !== "all" ? 1 : 0) + (filterType !== "all" ? 1 : 0)}
+                      </span>
+                    )}
+                  </button>
+                </div>
               </div>
+              {/* Filter bar */}
+              {showFilters && (
+                <div className="flex flex-wrap items-center gap-3 px-5 py-3 border-b border-border bg-muted/20 animate-in slide-in-from-top-1 duration-200">
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-semibold text-muted-foreground">Status:</span>
+                    {(["all", "active", "draft", "stopped"] as const).map(s => (
+                      <button
+                        key={s}
+                        onClick={() => setFilterStatus(s)}
+                        className={cn(
+                          "px-2.5 py-1 text-xs font-medium rounded-full border transition-colors capitalize",
+                          filterStatus === s
+                            ? s === "active" ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                              : s === "draft" ? "bg-amber-50 text-amber-700 border-amber-200"
+                              : s === "stopped" ? "bg-rose-50 text-rose-700 border-rose-200"
+                              : "bg-primary/10 text-primary border-primary/30"
+                            : "border-border text-muted-foreground hover:bg-muted hover:text-foreground"
+                        )}
+                      >
+                        {s}
+                      </button>
+                    ))}
+                  </div>
+                  <Separator orientation="vertical" className="h-6" />
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-semibold text-muted-foreground">Type:</span>
+                    {([["all", "All"], ["basic", "Basic"], ["sequence", "Sequence"], ["flow", "Journey"]] as const).map(([k, label]) => (
+                      <button
+                        key={k}
+                        onClick={() => setFilterType(k as any)}
+                        className={cn(
+                          "px-2.5 py-1 text-xs font-medium rounded-full border transition-colors",
+                          filterType === k
+                            ? "bg-primary/10 text-primary border-primary/30"
+                            : "border-border text-muted-foreground hover:bg-muted hover:text-foreground"
+                        )}
+                      >
+                        {label}
+                      </button>
+                    ))}
+                  </div>
+                  <Separator orientation="vertical" className="h-6" />
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-semibold text-muted-foreground">Sort:</span>
+                    <select
+                      value={sortBy}
+                      onChange={(e) => setSortBy(e.target.value as any)}
+                      className="h-7 px-2 rounded-md border border-input bg-background text-xs"
+                    >
+                      <option value="modified">Last Modified</option>
+                      <option value="name">Name</option>
+                      <option value="runs">Runs</option>
+                      <option value="status">Status</option>
+                    </select>
+                    <button
+                      onClick={() => setSortDir(d => d === "asc" ? "desc" : "asc")}
+                      className="p-1 rounded-md border border-input hover:bg-muted transition-colors"
+                      title={sortDir === "asc" ? "Ascending" : "Descending"}
+                    >
+                      <ArrowUpDown className="w-3 h-3 text-muted-foreground" />
+                    </button>
+                  </div>
+                  {(filterStatus !== "all" || filterType !== "all") && (
+                    <>
+                      <Separator orientation="vertical" className="h-6" />
+                      <button
+                        onClick={() => { setFilterStatus("all"); setFilterType("all"); }}
+                        className="text-xs text-muted-foreground hover:text-foreground underline"
+                      >
+                        Clear all
+                      </button>
+                    </>
+                  )}
+                </div>
+              )}
               {filteredRules.length === 0 ? (
                 <div className="px-6 py-16 text-center max-w-md mx-auto">
                   <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">

@@ -28,13 +28,15 @@ import { cn } from "./types";
 
 export type BasicTriggerKind = "welcome" | "default_reply" | "keyword" | "event";
 
+export type ChannelId = "telegram" | "whatsapp" | "sms" | "web";
+
 export interface BasicAutomationDraft {
   id?: string;
   name: string;
   triggerKind: BasicTriggerKind;
   keyword?: string;          // for keyword triggers
   eventName?: string;        // for event triggers
-  channel: "all" | "telegram" | "whatsapp" | "sms" | "web";
+  channels: ChannelId[];     // multiple channels selected
   message: string;
   quickReplies: string[];
 }
@@ -43,7 +45,7 @@ export interface SequenceStep {
   id: string;
   delay: { amount: number; unit: "minutes" | "hours" | "days" };
   message: string;
-  channel: "all" | "telegram" | "whatsapp" | "sms" | "web";
+  channels: ChannelId[];     // multiple channels selected
   aiPersonalize: boolean;
   quickReplies: string[];
 }
@@ -131,43 +133,97 @@ function BuilderHeader({
 // Shared: channel preview
 // ============================================================================
 
-type Channel = "telegram" | "whatsapp" | "sms" | "web";
+const ALL_CHANNELS: ChannelId[] = ["telegram", "whatsapp", "sms", "web"];
 
-const CHANNELS: { id: Channel; label: string; icon: any }[] = [
+const CHANNELS: { id: ChannelId; label: string; icon: any }[] = [
   { id: "telegram", label: "Telegram", icon: Send },
   { id: "whatsapp", label: "WhatsApp", icon: MessageCircle },
   { id: "sms",      label: "SMS",      icon: Smartphone },
   { id: "web",      label: "Web",      icon: Globe },
 ];
 
+/** Multi-select channel picker with "All" toggle */
+function MultiChannelSelector({
+  selected, onChange,
+}: { selected: ChannelId[]; onChange: (next: ChannelId[]) => void }) {
+  const allSelected = selected.length === ALL_CHANNELS.length;
+
+  const toggle = (id: ChannelId) => {
+    if (selected.includes(id)) {
+      const next = selected.filter(c => c !== id);
+      onChange(next.length === 0 ? ALL_CHANNELS : next);
+    } else {
+      onChange([...selected, id]);
+    }
+  };
+
+  return (
+    <div className="flex items-center gap-1.5 flex-wrap">
+      <button
+        onClick={() => onChange(ALL_CHANNELS)}
+        className={cn(
+          "flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-full border transition-all",
+          allSelected
+            ? "bg-primary text-primary-foreground border-primary"
+            : "bg-background text-muted-foreground border-border hover:border-foreground/30"
+        )}
+      >
+        All Channels
+      </button>
+      {CHANNELS.map(c => {
+        const isOn = selected.includes(c.id);
+        const Icon = c.icon;
+        return (
+          <button
+            key={c.id}
+            onClick={() => toggle(c.id)}
+            className={cn(
+              "flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-full border transition-all",
+              isOn
+                ? "bg-primary/10 text-primary border-primary/40"
+                : "bg-background text-muted-foreground border-border hover:border-foreground/30"
+            )}
+          >
+            <Icon className="w-3 h-3" />
+            {c.label}
+            {isOn && <Check className="w-3 h-3" />}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
 function ChannelPreview({
-  channel: forcedChannel, message, quickReplies = [],
-}: { channel?: Channel; message: string; quickReplies?: string[] }) {
-  const [channel, setChannel] = useState<Channel>(forcedChannel ?? "telegram");
-  const active = forcedChannel ?? channel;
+  channels: selectedChannels, message, quickReplies = [],
+}: { channels?: ChannelId[]; message: string; quickReplies?: string[] }) {
+  // Show all channels if none specified, or only the selected ones
+  const previewChannels = (!selectedChannels || selectedChannels.length === ALL_CHANNELS.length)
+    ? ALL_CHANNELS
+    : selectedChannels;
+  const [channel, setChannel] = useState<ChannelId>(previewChannels[0] ?? "telegram");
+  const active = previewChannels.includes(channel) ? channel : previewChannels[0] ?? "telegram";
   return (
     <div className="space-y-3">
-      {!forcedChannel && (
-        <div className="flex items-center gap-1 bg-muted/60 rounded-md p-0.5 w-fit">
-          {CHANNELS.map(c => {
-            const isActive = active === c.id;
-            const Icon = c.icon;
-            return (
-              <button
-                key={c.id}
-                onClick={() => setChannel(c.id)}
-                className={cn(
-                  "flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-semibold rounded transition-all",
-                  isActive ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
-                )}
-              >
-                <Icon className="w-3 h-3" />
-                <span>{c.label}</span>
-              </button>
-            );
-          })}
-        </div>
-      )}
+      <div className="flex items-center gap-1 bg-muted/60 rounded-md p-0.5 w-fit">
+        {CHANNELS.filter(c => previewChannels.includes(c.id)).map(c => {
+          const isActive = active === c.id;
+          const Icon = c.icon;
+          return (
+            <button
+              key={c.id}
+              onClick={() => setChannel(c.id)}
+              className={cn(
+                "flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-semibold rounded transition-all",
+                isActive ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
+              )}
+            >
+              <Icon className="w-3 h-3" />
+              <span>{c.label}</span>
+            </button>
+          );
+        })}
+      </div>
 
       <div className="bg-muted rounded-2xl p-4 min-h-[280px]">
         <div className="text-xs text-muted-foreground text-center mb-3 font-medium">
@@ -331,11 +387,11 @@ export function BasicAutomationBuilder({
   const [triggerKind, setTriggerKind] = useState<BasicTriggerKind>(initial?.triggerKind ?? "welcome");
   const [keyword, setKeyword]         = useState(initial?.keyword ?? "");
   const [eventName, setEventName]     = useState(initial?.eventName ?? "intake_complete");
-  const [channel, setChannel]         = useState<BasicAutomationDraft["channel"]>(initial?.channel ?? "all");
+  const [channels, setChannels]       = useState<ChannelId[]>(initial?.channels ?? ALL_CHANNELS);
   const [message, setMessage]         = useState(initial?.message ?? "Welcome! I'm so glad you're here. Let me know what you're curious about and I'll share some resources with you.");
   const [quickReplies, setQuickReplies] = useState<string[]>(initial?.quickReplies ?? ["Prayer", "Bible Study", "Community"]);
 
-  const draft: BasicAutomationDraft = { id: initial?.id, name, triggerKind, keyword, eventName, channel, message, quickReplies };
+  const draft: BasicAutomationDraft = { id: initial?.id, name, triggerKind, keyword, eventName, channels, message, quickReplies };
 
   const isValid = name.trim().length > 0 && message.trim().length > 0 && (triggerKind !== "keyword" || keyword.trim().length > 0);
 
@@ -422,34 +478,17 @@ export function BasicAutomationBuilder({
               </Section>
             )}
 
-            {/* Channel */}
+            {/* Channels — multi-select */}
             <Section
-              title={`${triggerKind === "welcome" || triggerKind === "default_reply" ? "2" : "3"}. Channel`}
-              description="Which channel should this automation listen to?"
+              title={`${triggerKind === "welcome" || triggerKind === "default_reply" ? "2" : "3"}. Channels`}
+              description="Select one or more channels this automation should listen to."
             >
-              <div className="flex items-center gap-1 bg-muted/60 rounded-md p-0.5 w-fit">
-                {([
-                  ["all",      "All channels"],
-                  ["telegram", "Telegram"],
-                  ["whatsapp", "WhatsApp"],
-                  ["sms",      "SMS"],
-                  ["web",      "Web"],
-                ] as const).map(([k, label]) => {
-                  const isActive = channel === k;
-                  return (
-                    <button
-                      key={k}
-                      onClick={() => setChannel(k)}
-                      className={cn(
-                        "px-3 py-1.5 text-xs font-semibold rounded transition-all",
-                        isActive ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
-                      )}
-                    >
-                      {label}
-                    </button>
-                  );
-                })}
-              </div>
+              <MultiChannelSelector selected={channels} onChange={setChannels} />
+              <p className="text-xs text-muted-foreground mt-1">
+                {channels.length === ALL_CHANNELS.length
+                  ? "Listening on all channels"
+                  : `Listening on ${channels.map(c => CHANNELS.find(ch => ch.id === c)?.label).join(", ")}`}
+              </p>
             </Section>
 
             {/* Message */}
@@ -484,7 +523,7 @@ export function BasicAutomationBuilder({
               <p className="text-sm text-muted-foreground mt-0.5">See how the message will appear on each channel.</p>
             </div>
             <ChannelPreview
-              channel={channel === "all" ? undefined : channel}
+              channels={channels}
               message={message}
               quickReplies={quickReplies}
             />
@@ -521,15 +560,15 @@ const emptyStep = (index: number): SequenceStep => ({
   id: `step-${Date.now()}-${index}`,
   delay: { amount: index === 0 ? 0 : 1, unit: "days" },
   message: "",
-  channel: "all",
+  channels: ALL_CHANNELS,
   aiPersonalize: false,
   quickReplies: [],
 });
 
 const DEFAULT_SEQUENCE_STEPS: SequenceStep[] = [
-  { id: "s1", delay: { amount: 0, unit: "days" }, message: "Welcome to the Foundations of Faith journey. Over the next week we'll walk through a few foundational ideas together.", channel: "all", aiPersonalize: false, quickReplies: ["Let's start", "Tell me more"] },
-  { id: "s2", delay: { amount: 1, unit: "days" }, message: "Day 2: Prayer is simply talking with God. Try a 2-minute prayer today — there's no wrong way to do it.", channel: "all", aiPersonalize: false, quickReplies: ["Done", "Need help"] },
-  { id: "s3", delay: { amount: 3, unit: "days" }, message: "Day 3: Scripture reading. Try John 3 today — it's a great starting point.", channel: "all", aiPersonalize: true, quickReplies: ["I read it", "Remind me later"] },
+  { id: "s1", delay: { amount: 0, unit: "days" }, message: "Welcome to the Foundations of Faith journey. Over the next week we'll walk through a few foundational ideas together.", channels: ["telegram", "whatsapp"], aiPersonalize: false, quickReplies: ["Let's start", "Tell me more"] },
+  { id: "s2", delay: { amount: 1, unit: "days" }, message: "Day 2: Prayer is simply talking with God. Try a 2-minute prayer today — there's no wrong way to do it.", channels: ALL_CHANNELS, aiPersonalize: false, quickReplies: ["Done", "Need help"] },
+  { id: "s3", delay: { amount: 3, unit: "days" }, message: "Day 3: Scripture reading. Try John 3 today — it's a great starting point.", channels: ["telegram", "whatsapp", "web"], aiPersonalize: true, quickReplies: ["I read it", "Remind me later"] },
 ];
 
 export function SequenceBuilder({
@@ -644,7 +683,7 @@ export function SequenceBuilder({
                                 : `After ${step.delay.amount} ${step.delay.unit}`}
                             </Badge>
                             <Badge variant="outline" className="bg-muted border-transparent text-foreground font-semibold">
-                              {step.channel === "all" ? "All channels" : step.channel}
+                              {step.channels.length === ALL_CHANNELS.length ? "All channels" : step.channels.join(", ")}
                             </Badge>
                             {step.aiPersonalize && (
                               <Badge variant="outline" className="bg-pink-50 text-pink-700 border-pink-200 font-semibold">
@@ -749,28 +788,8 @@ function StepInspector({
           {step.delay.amount === 0 ? "Sends immediately" : `Waits ${step.delay.amount} ${step.delay.unit} before sending.`}
         </p>
 
-        <div className="mt-4 flex items-center gap-1 bg-muted/60 rounded-md p-0.5 w-fit">
-          {([
-            ["all",      "All"],
-            ["telegram", "Telegram"],
-            ["whatsapp", "WhatsApp"],
-            ["sms",      "SMS"],
-            ["web",      "Web"],
-          ] as const).map(([k, label]) => {
-            const isActive = step.channel === k;
-            return (
-              <button
-                key={k}
-                onClick={() => onUpdate({ channel: k })}
-                className={cn(
-                  "px-2.5 py-1 text-xs font-semibold rounded transition-all",
-                  isActive ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
-                )}
-              >
-                {label}
-              </button>
-            );
-          })}
+        <div className="mt-4">
+          <MultiChannelSelector selected={step.channels} onChange={(next) => onUpdate({ channels: next })} />
         </div>
       </div>
 
@@ -802,7 +821,7 @@ function StepInspector({
       <div className="p-5">
         <p className="text-sm font-bold text-foreground mb-3">Preview</p>
         <ChannelPreview
-          channel={step.channel === "all" ? undefined : step.channel}
+          channels={step.channels}
           message={step.message}
           quickReplies={step.quickReplies}
         />
