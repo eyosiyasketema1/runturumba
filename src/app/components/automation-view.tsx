@@ -400,6 +400,26 @@ export const AutomationView = ({
         </select>
       </div>
 
+      {/* Mini dashboard */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 px-6 py-4 border-b border-border bg-background">
+        {[
+          { label: "Total Automations", value: automations.length, icon: Zap, color: "text-blue-600", bg: "bg-blue-50" },
+          { label: "Active", value: activeAutomations, icon: Play, color: "text-emerald-600", bg: "bg-emerald-50" },
+          { label: "Total Runs", value: totalTriggers.toLocaleString(), icon: Activity, color: "text-violet-600", bg: "bg-violet-50" },
+          { label: "Draft", value: automations.filter(a => !a.enabled && a.triggerCount === 0).length, icon: Clock, color: "text-amber-600", bg: "bg-amber-50" },
+        ].map(stat => (
+          <div key={stat.label} className="flex items-center gap-3 px-4 py-3 rounded-xl border border-border bg-card">
+            <div className={cn("w-10 h-10 rounded-lg flex items-center justify-center shrink-0", stat.bg)}>
+              <stat.icon className={cn("w-4.5 h-4.5", stat.color)} />
+            </div>
+            <div>
+              <p className="text-xl font-bold text-foreground leading-none tabular-nums">{stat.value}</p>
+              <p className="text-xs text-muted-foreground mt-1">{stat.label}</p>
+            </div>
+          </div>
+        ))}
+      </div>
+
       {/* Content: sidebar + table */}
       <div className="flex items-start">
         {/* Folders sidebar */}
