@@ -689,55 +689,59 @@ const getNodeConfigFields = (category: string): { key: string; label: string; ty
   }
 };
 
-const NodeConfigModal = ({ item, onConfirm, onCancel }: {
-  item: NodeCatalogItem;
-  onConfirm: (item: NodeCatalogItem, config: Record<string, any>) => void;
+const NodeConfigModal = ({ node, onSave, onCancel, onDelete, isJourney }: {
+  node: FlowNode;
+  onSave: (updates: Partial<FlowNode>) => void;
   onCancel: () => void;
+  onDelete: () => void;
+  isJourney?: boolean;
 }) => {
-  const fields = getNodeConfigFields(item.category);
+  const fields = getNodeConfigFields(node.category);
   const [config, setConfig] = useState<Record<string, any>>(() => {
     const defaults: Record<string, any> = {};
     fields.forEach(f => {
-      if (f.type === "select" && f.options?.length) defaults[f.key] = f.options[0].value;
-      else if (f.type === "number") defaults[f.key] = 24;
-      else defaults[f.key] = "";
+      defaults[f.key] = node.config[f.key] ?? (f.type === "select" && f.options?.length ? f.options[0].value : f.type === "number" ? 24 : "");
     });
     return defaults;
   });
-  const [label, setLabel] = useState(item.label);
+  const [label, setLabel] = useState(node.label);
+  const [description, setDescription] = useState(node.description);
 
-  const Icon = item.icon;
-  const colors = getNodeTypeColor(item.type);
-  const hasRequired = fields.filter(f => f.required).every(f => config[f.key]);
+  const Icon = node.icon;
+  const colors = getNodeTypeColor(node.type);
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm animate-in fade-in duration-200" onClick={onCancel}>
       <div className="bg-card border border-border rounded-2xl shadow-2xl w-full max-w-md mx-4 animate-in zoom-in-95 duration-300" onClick={e => e.stopPropagation()}>
         <div className="p-5 border-b border-border">
           <div className="flex items-center gap-3">
-            <div className={cn("w-10 h-10 rounded-xl flex items-center justify-center", item.iconBg)}>
-              <Icon className={cn("w-5 h-5", item.iconColor)} />
+            <div className={cn("w-10 h-10 rounded-xl flex items-center justify-center", node.iconBg)}>
+              <Icon className={cn("w-5 h-5", node.iconColor)} />
             </div>
-            <div>
-              <h3 className="text-base font-bold text-foreground">Configure {item.label}</h3>
-              <p className="text-xs text-muted-foreground mt-0.5">{item.description}</p>
+            <div className="flex-1">
+              <h3 className="text-base font-bold text-foreground">{node.label}</h3>
+              <div className="flex items-center gap-2 mt-0.5">
+                <Badge variant="outline" className={cn("text-[10px]", colors.badge)}>{node.type}</Badge>
+                <span className="text-xs text-muted-foreground">{node.description}</span>
+              </div>
             </div>
+            <button onClick={onCancel} className="p-1.5 rounded-md hover:bg-muted text-muted-foreground hover:text-foreground"><X className="w-4 h-4" /></button>
           </div>
         </div>
 
-        <div className="p-5 space-y-4 max-h-[400px] overflow-y-auto">
-          {/* Node label */}
-          <div className="space-y-1.5">
-            <Label className="text-xs font-semibold text-foreground">Node Label</Label>
-            <Input value={label} onChange={(e) => setLabel(e.target.value)} className="h-9 text-sm" placeholder={item.label} />
+        <div className="p-5 space-y-4 max-h-[420px] overflow-y-auto">
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-1.5">
+              <Label className="text-xs font-semibold text-foreground">Label</Label>
+              <Input value={label} onChange={(e) => setLabel(e.target.value)} className="h-9 text-sm" />
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-xs font-semibold text-foreground">Description</Label>
+              <Input value={description} onChange={(e) => setDescription(e.target.value)} className="h-9 text-sm" placeholder="What does this step do?" />
+            </div>
           </div>
 
-          {fields.length === 0 && (
-            <div className="text-center py-6">
-              <p className="text-sm text-muted-foreground">No configuration needed for this node.</p>
-              <p className="text-xs text-muted-foreground mt-1">You can customize it later from the inspector panel.</p>
-            </div>
-          )}
+          {fields.length > 0 && <div className="h-px bg-border" />}
 
           {fields.map(field => (
             <div key={field.key} className="space-y-1.5">
@@ -766,14 +770,38 @@ const NodeConfigModal = ({ item, onConfirm, onCancel }: {
               {field.hint && <p className="text-[11px] text-muted-foreground">{field.hint}</p>}
             </div>
           ))}
+
+          {node.category === "if_else" && isJourney && (
+            <div className="bg-orange-50 dark:bg-orange-500/10 rounded-lg p-3 border border-orange-200 dark:border-orange-500/20">
+              <div className="flex items-start gap-2">
+                <Split className="w-4 h-4 text-orange-500 mt-0.5 shrink-0" />
+                <div>
+                  <p className="text-xs font-semibold text-orange-700 dark:text-orange-400">Branching Node</p>
+                  <p className="text-[11px] text-orange-600 dark:text-orange-400/80 mt-0.5">TRUE path goes up, FALSE path goes down.</p>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {isJourney && (
+            <div className="space-y-1.5">
+              <Label className="text-xs font-semibold text-foreground">Grid Position</Label>
+              <div className="flex items-center gap-3">
+                <div className="flex-1"><p className="text-[10px] text-muted-foreground mb-1">Column (X)</p><Input type="number" value={node.position.x} readOnly className="h-8 text-xs bg-muted/50" /></div>
+                <div className="flex-1"><p className="text-[10px] text-muted-foreground mb-1">Row (Y)</p><Input type="number" value={node.position.y} readOnly className="h-8 text-xs bg-muted/50" /></div>
+              </div>
+            </div>
+          )}
         </div>
 
         <div className="p-5 border-t border-border flex items-center justify-between">
-          <Badge variant="outline" className={cn("text-[10px]", colors.badge)}>{item.type}</Badge>
+          <Button variant="outline" size="sm" className="text-destructive hover:text-destructive hover:bg-destructive/5" onClick={onDelete}>
+            <Trash2 className="w-3.5 h-3.5" /> Remove
+          </Button>
           <div className="flex items-center gap-2">
             <Button variant="outline" size="sm" onClick={onCancel}>Cancel</Button>
-            <Button size="sm" onClick={() => onConfirm({ ...item, label: label || item.label } as any, config)} disabled={!hasRequired && fields.some(f => f.required)}>
-              <Plus className="w-3.5 h-3.5" /> Add to Canvas
+            <Button size="sm" onClick={() => onSave({ label, description, config: { ...node.config, ...config } })}>
+              <Save className="w-3.5 h-3.5" /> Save
             </Button>
           </div>
         </div>
@@ -795,7 +823,7 @@ const AutomationCanvas = ({ automation, onBack, onSave, onUpdate }: {
   const [autoName, setAutoName] = useState(automation.name);
   const [isEditingName, setIsEditingName] = useState(false);
   const [zoom, setZoom] = useState(1);
-  const [configModalItem, setConfigModalItem] = useState<NodeCatalogItem | null>(null);
+  const [configNodeId, setConfigNodeId] = useState<string | null>(null);
 
   const selectedNode = automation.nodes.find(n => n.id === selectedNodeId) || null;
   const modeInfo = getModeInfo(automation.mode);
@@ -885,15 +913,6 @@ const AutomationCanvas = ({ automation, onBack, onSave, onUpdate }: {
     setIsNodePickerOpen(false); setInsertAfterNodeId(null); setSelectedNodeId(newId);
     toast.success(`Added "${item.label}"`);
   }, [automation, insertAfterNodeId, onUpdate]);
-
-  const handleNodeSelected = useCallback((item: NodeCatalogItem) => {
-    setConfigModalItem(item);
-  }, []);
-
-  const handleConfigConfirm = useCallback((item: NodeCatalogItem & { label?: string }, config: Record<string, any>) => {
-    setConfigModalItem(null);
-    addNode(item, config, item.label);
-  }, [addNode]);
 
   const deleteNode = (nodeId: string) => {
     const newNodes = automation.nodes.filter(n => n.id !== nodeId);
@@ -987,8 +1006,8 @@ const AutomationCanvas = ({ automation, onBack, onSave, onUpdate }: {
               </div>
             )}
             {automation.nodes.map(node => (
-              <CanvasNode key={node.id} node={node} isSelected={selectedNodeId === node.id}
-                onClick={() => { setSelectedNodeId(node.id); setIsNodePickerOpen(false); }}
+              <CanvasNode key={node.id} node={node} isSelected={selectedNodeId === node.id || configNodeId === node.id}
+                onClick={() => { setConfigNodeId(node.id); setSelectedNodeId(null); setIsNodePickerOpen(false); }}
                 onDelete={() => deleteNode(node.id)} onAddAfter={() => handleOpenPicker(node.id)} />
             ))}
             {automation.nodes.length > 0 && !isNodePickerOpen && !selectedNode && (
@@ -1002,15 +1021,21 @@ const AutomationCanvas = ({ automation, onBack, onSave, onUpdate }: {
         </div>
         {isNodePickerOpen && (
           <NodePickerPanel isOpen={isNodePickerOpen} onClose={() => { setIsNodePickerOpen(false); setInsertAfterNodeId(null); }}
-            onSelectNode={handleNodeSelected} title={insertAfterNodeId ? "Add next step" : "What happens first?"} mode={automation.mode} />
+            onSelectNode={addNode} title={insertAfterNodeId ? "Add next step" : "What happens first?"} mode={automation.mode} />
         )}
-        {configModalItem && (
-          <NodeConfigModal item={configModalItem} onConfirm={handleConfigConfirm} onCancel={() => setConfigModalItem(null)} />
-        )}
-        {selectedNode && !isNodePickerOpen && (
-          <NodeInspector node={selectedNode} onUpdate={(updates) => updateNode(selectedNode.id, updates)}
-            onClose={() => setSelectedNodeId(null)} onDelete={() => deleteNode(selectedNode.id)} isJourney={automation.mode === "journey"} />
-        )}
+        {configNodeId && (() => {
+          const configNode = automation.nodes.find(n => n.id === configNodeId);
+          if (!configNode) return null;
+          return (
+            <NodeConfigModal
+              node={configNode}
+              onSave={(updates) => { updateNode(configNodeId, updates); setConfigNodeId(null); }}
+              onCancel={() => setConfigNodeId(null)}
+              onDelete={() => { deleteNode(configNodeId); setConfigNodeId(null); }}
+              isJourney={automation.mode === "journey"}
+            />
+          );
+        })()}
       </div>
     </div>
   );
