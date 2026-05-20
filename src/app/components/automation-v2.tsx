@@ -349,15 +349,15 @@ const ConnectionLines = ({ nodes, connections }: { nodes: FlowNode[]; connection
 // CANVAS NODE
 // ============================================================================
 
-const CanvasNode = ({ node, isSelected, onClick, onDelete, onAddAfter }: {
-  node: FlowNode; isSelected: boolean; onClick: () => void; onDelete: () => void; onAddAfter?: () => void;
+const CanvasNode = ({ node, isSelected, onClick, onDoubleClick, onDelete, onAddAfter }: {
+  node: FlowNode; isSelected: boolean; onClick: () => void; onDoubleClick?: () => void; onDelete: () => void; onAddAfter?: () => void;
 }) => {
   const Icon = node.icon;
   const colors = getNodeTypeColor(node.type);
   const pos = gridToPixel(node.position.x, node.position.y);
   return (
     <div className="absolute group" style={{ left: pos.px, top: pos.py, width: NODE_WIDTH, height: NODE_HEIGHT }}>
-      <div onClick={onClick} className={cn(
+      <div onClick={onClick} onDoubleClick={onDoubleClick} className={cn(
         "w-full h-full rounded-xl border-2 cursor-pointer transition-all duration-200 bg-card hover:shadow-lg hover:shadow-primary/5",
         isSelected ? `border-primary shadow-lg shadow-primary/10 ring-2 ${colors.ring}` : "border-border hover:border-primary/40"
       )}>
@@ -711,8 +711,8 @@ const NodeConfigModal = ({ node, onSave, onCancel, onDelete, isJourney }: {
   const colors = getNodeTypeColor(node.type);
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm animate-in fade-in duration-200" onClick={onCancel}>
-      <div className="bg-card border border-border rounded-2xl shadow-2xl w-full max-w-md mx-4 animate-in zoom-in-95 duration-300" onClick={e => e.stopPropagation()}>
+    <div className="fixed inset-0 z-50 flex items-center justify-center pointer-events-none animate-in fade-in duration-200">
+      <div className="bg-card border border-border rounded-2xl shadow-2xl w-full max-w-md mx-4 animate-in zoom-in-95 duration-300 pointer-events-auto">
         <div className="p-5 border-b border-border">
           <div className="flex items-center gap-3">
             <div className={cn("w-10 h-10 rounded-xl flex items-center justify-center", node.iconBg)}>
@@ -1006,8 +1006,9 @@ const AutomationCanvas = ({ automation, onBack, onSave, onUpdate }: {
               </div>
             )}
             {automation.nodes.map(node => (
-              <CanvasNode key={node.id} node={node} isSelected={selectedNodeId === node.id || configNodeId === node.id}
-                onClick={() => { setConfigNodeId(node.id); setSelectedNodeId(null); setIsNodePickerOpen(false); }}
+              <CanvasNode key={node.id} node={node} isSelected={selectedNodeId === node.id}
+                onClick={() => { setSelectedNodeId(node.id); setIsNodePickerOpen(false); }}
+                onDoubleClick={() => { setConfigNodeId(node.id); }}
                 onDelete={() => deleteNode(node.id)} onAddAfter={() => handleOpenPicker(node.id)} />
             ))}
             {automation.nodes.length > 0 && !isNodePickerOpen && !selectedNode && (
@@ -1022,6 +1023,10 @@ const AutomationCanvas = ({ automation, onBack, onSave, onUpdate }: {
         {isNodePickerOpen && (
           <NodePickerPanel isOpen={isNodePickerOpen} onClose={() => { setIsNodePickerOpen(false); setInsertAfterNodeId(null); }}
             onSelectNode={addNode} title={insertAfterNodeId ? "Add next step" : "What happens first?"} mode={automation.mode} />
+        )}
+        {selectedNode && !isNodePickerOpen && (
+          <NodeInspector node={selectedNode} onUpdate={(updates) => updateNode(selectedNode.id, updates)}
+            onClose={() => setSelectedNodeId(null)} onDelete={() => deleteNode(selectedNode.id)} isJourney={automation.mode === "journey"} />
         )}
         {configNodeId && (() => {
           const configNode = automation.nodes.find(n => n.id === configNodeId);
