@@ -665,6 +665,7 @@ export const INITIAL_CHANNELS: DeliveryChannel[] = [
 ];
 
 export const INITIAL_AUTOMATIONS: AutomationRule[] = [
+  // ── Basic automations (trigger → single action) ───────────────────────
   {
     id: "auto-1", tenantId: "tenant-1", name: "Welcome Message",
     description: "Send a welcome message when a new contact is added",
@@ -682,20 +683,110 @@ export const INITIAL_AUTOMATIONS: AutomationRule[] = [
     createdAt: "2025-02-01T10:00:00Z"
   },
   {
+    id: "auto-5", tenantId: "tenant-1", name: "Keyword Auto-Reply",
+    description: "Basic · keyword — reply with info when seeker says 'prayer'",
+    trigger: "message_received", triggerConfig: { keywords: ["prayer", "pray"] },
+    action: "send_message", actionConfig: { template: "PrayerInfo" },
+    enabled: true, lastTriggeredAt: "2026-03-10T16:20:00Z", triggerCount: 321,
+    createdAt: "2025-03-01T10:00:00Z"
+  },
+  {
+    id: "auto-6", tenantId: "tenant-1", name: "New Contact Tag",
+    description: "Basic · Apply 'new-seeker' tag when a contact is added",
+    trigger: "contact_added", triggerConfig: {},
+    action: "add_tag", actionConfig: { tag: "new-seeker" },
+    enabled: true, lastTriggeredAt: "2026-03-15T08:00:00Z", triggerCount: 89,
+    createdAt: "2025-03-05T10:00:00Z"
+  },
+  {
+    id: "auto-7", tenantId: "tenant-1", name: "Default Reply",
+    description: "Basic · default_reply — fallback when no keyword matches",
+    trigger: "message_received", triggerConfig: { defaultReply: true },
+    action: "send_message", actionConfig: { template: "DefaultFallback" },
+    enabled: false, triggerCount: 0,
+    createdAt: "2025-04-01T10:00:00Z"
+  },
+  // ── Sequences (scheduled / broadcast → multi-step drips) ──────────────
+  {
     id: "auto-3", tenantId: "tenant-1", name: "Failed Delivery Re-route",
-    description: "When a broadcast fails, retry via SMS channel",
+    description: "Sequence · retry via SMS when a broadcast fails",
     trigger: "broadcast_completed", triggerConfig: { status: "failed" },
     action: "send_message", actionConfig: { channelType: "sms", retryFailed: true },
     enabled: false, triggerCount: 0,
     createdAt: "2025-02-10T10:00:00Z"
   },
   {
+    id: "auto-8", tenantId: "tenant-1", name: "Foundations of Faith Drip",
+    description: "Sequence · 7-step onboarding drip for new seekers",
+    trigger: "scheduled", triggerConfig: { event: "intake_complete" },
+    action: "send_message", actionConfig: { steps: 7 },
+    enabled: true, lastTriggeredAt: "2026-04-01T06:00:00Z", triggerCount: 214,
+    createdAt: "2025-02-20T10:00:00Z"
+  },
+  {
+    id: "auto-9", tenantId: "tenant-1", name: "Weekly Check-in Sequence",
+    description: "Sequence · 4-week accountability series for matched mentors",
+    trigger: "scheduled", triggerConfig: { cron: "0 8 * * 1" },
+    action: "send_message", actionConfig: { steps: 4 },
+    enabled: true, lastTriggeredAt: "2026-04-07T08:00:00Z", triggerCount: 128,
+    createdAt: "2025-03-10T10:00:00Z"
+  },
+  {
+    id: "auto-10", tenantId: "tenant-1", name: "Re-engagement Nudge",
+    description: "Sequence · 3-step nudge for inactive seekers (3, 7, 14 days)",
+    trigger: "scheduled", triggerConfig: { event: "inactivity_detected" },
+    action: "send_broadcast", actionConfig: { steps: 3 },
+    enabled: true, lastTriggeredAt: "2026-03-28T10:00:00Z", triggerCount: 67,
+    createdAt: "2025-03-15T10:00:00Z"
+  },
+  {
+    id: "auto-14", tenantId: "tenant-1", name: "Post-Baptism Follow-up",
+    description: "Sequence · 5-step follow-up after baptism milestone",
+    trigger: "scheduled", triggerConfig: { event: "baptism_completed" },
+    action: "send_message", actionConfig: { steps: 5 },
+    enabled: false, triggerCount: 0,
+    createdAt: "2025-04-10T10:00:00Z"
+  },
+  // ── Journeys / Flows (webhook + branching logic) ──────────────────────
+  {
     id: "auto-4", tenantId: "tenant-1", name: "CRM Sync Webhook",
-    description: "Post contact data to CRM when message is received",
+    description: "Journey · Post contact data to CRM on message received",
     trigger: "message_received", triggerConfig: {},
     action: "webhook_call", actionConfig: { url: "https://crm.acme.com/api/sync" },
     enabled: true, lastTriggeredAt: "2026-02-21T07:45:00Z", triggerCount: 892,
     createdAt: "2025-01-25T10:00:00Z"
+  },
+  {
+    id: "auto-11", tenantId: "tenant-1", name: "New Believer Onboarding",
+    description: "Journey · Welcome flow with devotional, AI personalization, and mentor alerts",
+    trigger: "webhook_received", triggerConfig: { event: "intake_complete" },
+    action: "webhook_call", actionConfig: { template: "new-believer" },
+    enabled: true, lastTriggeredAt: "2026-04-05T12:30:00Z", triggerCount: 445,
+    createdAt: "2025-02-01T10:00:00Z"
+  },
+  {
+    id: "auto-12", tenantId: "tenant-1", name: "Baptism Preparation Path",
+    description: "Journey · 4-week guided path to baptism with milestone tracking",
+    trigger: "webhook_received", triggerConfig: { event: "baptism_interest" },
+    action: "webhook_call", actionConfig: { template: "baptism-prep" },
+    enabled: true, lastTriggeredAt: "2026-03-20T09:15:00Z", triggerCount: 178,
+    createdAt: "2025-02-15T10:00:00Z"
+  },
+  {
+    id: "auto-13", tenantId: "tenant-1", name: "Prayer Partner Matching",
+    description: "Journey · AI matching + weekly check-ins with prayer partners",
+    trigger: "webhook_received", triggerConfig: { event: "partner_request" },
+    action: "webhook_call", actionConfig: { template: "prayer-partner" },
+    enabled: false, triggerCount: 0,
+    createdAt: "2025-03-01T10:00:00Z"
+  },
+  {
+    id: "auto-15", tenantId: "tenant-1", name: "Dropout Prevention Flow",
+    description: "Journey · 3-stage intervention for disengaged seekers",
+    trigger: "webhook_received", triggerConfig: { event: "engagement_drop" },
+    action: "webhook_call", actionConfig: { template: "dropout-rescue" },
+    enabled: true, lastTriggeredAt: "2026-04-10T15:00:00Z", triggerCount: 53,
+    createdAt: "2025-04-01T10:00:00Z"
   },
 ];
 

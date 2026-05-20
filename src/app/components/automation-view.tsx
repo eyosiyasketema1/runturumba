@@ -330,16 +330,24 @@ export const AutomationView = ({
         </div>
       </header>
 
-      {/* Summary badges */}
-      <div className="flex items-center gap-3">
-        <Badge variant="secondary" className="text-xs">
-          <Zap className="w-3 h-3 mr-1" />
-          {automations.length} Automations
-        </Badge>
-        <Badge variant="secondary" className="text-xs">
-          <Activity className="w-3 h-3 mr-1" />
-          {activeAutomations} Active
-        </Badge>
+      {/* Summary stats */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        {[
+          { label: "Total", value: automations.length, icon: Zap, color: "text-primary" },
+          { label: "Active", value: activeAutomations, icon: Play, color: "text-emerald-600" },
+          { label: "Total Runs", value: totalTriggers.toLocaleString(), icon: Activity, color: "text-blue-600" },
+          { label: "Webhooks", value: webhooks.filter(w => w.enabled).length, icon: Globe, color: "text-violet-600" },
+        ].map(stat => (
+          <div key={stat.label} className="bg-card border border-border rounded-lg px-4 py-3 flex items-center gap-3">
+            <div className="w-9 h-9 rounded-lg bg-muted flex items-center justify-center shrink-0">
+              <stat.icon className={cn("w-4 h-4", stat.color)} />
+            </div>
+            <div>
+              <p className="text-lg font-bold text-foreground leading-none">{stat.value}</p>
+              <p className="text-xs text-muted-foreground mt-0.5">{stat.label}</p>
+            </div>
+          </div>
+        ))}
       </div>
 
       {/* Content */}
@@ -473,15 +481,22 @@ export const AutomationView = ({
                     {searchQuery ? "Try a different keyword or clear your search." : folderCopy.emptyBody}
                   </p>
                   {!searchQuery && (
-                    <Button className="mt-5" onClick={() => {
-                      if (activeFolder === "basic")    setBuilderState({ kind: "basic",    mode: "new" });
-                      else if (activeFolder === "sequence") setBuilderState({ kind: "sequence", mode: "new" });
-                      else if (activeFolder === "flow")     setBuilderState({ kind: "flow",     mode: "new" });
-                      else setIsTypePickerOpen(true);
-                    }}>
-                      <Plus className="w-4 h-4 mr-1.5" />
-                      {folderCopy.createLabel}
-                    </Button>
+                    customFolderMatch ? (
+                      <Button variant="outline" className="mt-5" onClick={() => setActiveFolder("all")}>
+                        <Inbox className="w-4 h-4 mr-1.5" />
+                        Browse All Automations
+                      </Button>
+                    ) : (
+                      <Button className="mt-5" onClick={() => {
+                        if (activeFolder === "basic")    setBuilderState({ kind: "basic",    mode: "new" });
+                        else if (activeFolder === "sequence") setBuilderState({ kind: "sequence", mode: "new" });
+                        else if (activeFolder === "flow")     setBuilderState({ kind: "flow",     mode: "new" });
+                        else setIsTypePickerOpen(true);
+                      }}>
+                        <Plus className="w-4 h-4 mr-1.5" />
+                        {folderCopy.createLabel}
+                      </Button>
+                    )
                   )}
                 </div>
               ) : (
@@ -505,20 +520,41 @@ export const AutomationView = ({
                       return (
                         <tr key={rule.id} className="border-b border-border last:border-0 hover:bg-muted/30 transition-colors group">
                           <td className="px-5 py-4">
-                            <div className="flex flex-col gap-0.5">
-                              <span className="text-sm font-semibold text-foreground">{rule.name}</span>
+                            <button
+                              onClick={() => setBuilderState({ kind: rule._type, mode: "edit", rule })}
+                              className="flex flex-col gap-0.5 text-left group/name"
+                            >
+                              <div className="flex items-center gap-2">
+                                <span className="text-sm font-semibold text-foreground group-hover/name:text-primary transition-colors">{rule.name}</span>
+                                {(() => {
+                                  const f = customFolders.find(f => f.automationIds.includes(rule.id));
+                                  if (!f) return null;
+                                  return (
+                                    <span className="inline-flex items-center gap-1 px-1.5 py-0.5 text-[10px] font-medium bg-muted text-muted-foreground rounded">
+                                      <Folder className="w-2.5 h-2.5" />{f.name}
+                                    </span>
+                                  );
+                                })()}
+                              </div>
                               {rule.description && (
                                 <span className="text-xs text-muted-foreground truncate max-w-[420px]">{rule.description}</span>
                               )}
-                            </div>
+                            </button>
                           </td>
                           <td className="px-5 py-4">
-                            <span className={cn(
-                              "inline-flex items-center px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider border rounded-full",
-                              statusBadge(status)
-                            )}>
-                              {status}
-                            </span>
+                            <button
+                              onClick={() => onToggleAutomation(rule.id)}
+                              title={rule.enabled ? "Click to stop" : "Click to activate"}
+                              className="cursor-pointer"
+                            >
+                              <span className={cn(
+                                "inline-flex items-center px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider border rounded-full transition-all hover:ring-2 hover:ring-offset-1",
+                                statusBadge(status),
+                                status === "active" ? "hover:ring-emerald-300" : status === "draft" ? "hover:ring-amber-300" : "hover:ring-rose-300"
+                              )}>
+                                {status}
+                              </span>
+                            </button>
                           </td>
                           <td className="px-5 py-4 text-sm text-foreground">{typeLabel(rule._type)}</td>
                           <td className="px-5 py-4 text-sm font-medium text-foreground tabular-nums">{rule.triggerCount.toLocaleString()}</td>

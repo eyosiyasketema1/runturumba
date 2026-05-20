@@ -1211,11 +1211,11 @@ export default function App() {
                   webhooks={webhooks}
                   onAddAutomation={(data) => {
                     const newRule: AutomationRule = {
-                      ...data as any,
                       id: `auto-${Date.now()}`,
                       createdAt: new Date().toISOString(),
                       triggerCount: 0,
                       enabled: false,
+                      ...data as any,
                     };
                     setAutomations(prev => [...prev, newRule]);
                   }}
