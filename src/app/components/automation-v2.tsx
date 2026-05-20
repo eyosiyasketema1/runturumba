@@ -586,15 +586,6 @@ const NodeInspector = ({ node, onUpdate, onClose, onDelete, isJourney }: {
             </select>
           </div>
         )}
-        {isJourney && (
-          <div className="space-y-1.5">
-            <Label className="text-xs font-semibold text-foreground">Grid Position</Label>
-            <div className="flex items-center gap-2">
-              <div className="flex-1"><p className="text-[10px] text-muted-foreground mb-1">Column (X)</p><Input type="number" value={node.position.x} onChange={(e) => onUpdate({ position: { ...node.position, x: parseFloat(e.target.value) || 0 } })} className="h-8 text-xs" min={0} /></div>
-              <div className="flex-1"><p className="text-[10px] text-muted-foreground mb-1">Row (Y)</p><Input type="number" value={node.position.y} onChange={(e) => onUpdate({ position: { ...node.position, y: parseFloat(e.target.value) || 0 } })} className="h-8 text-xs" min={0} step={0.5} /></div>
-            </div>
-          </div>
-        )}
         <div className="pt-4 border-t border-border">
           <Button variant="outline" size="sm" className="w-full text-destructive hover:text-destructive hover:bg-destructive/5" onClick={onDelete}><Trash2 className="w-3.5 h-3.5" /> Remove Node</Button>
         </div>
@@ -789,15 +780,6 @@ const NodeConfigModal = ({ node, onSave, onCancel, onDelete, isJourney }: {
             </div>
           )}
 
-          {isJourney && (
-            <div className="space-y-1.5">
-              <Label className="text-xs font-semibold text-foreground">Grid Position</Label>
-              <div className="flex items-center gap-3">
-                <div className="flex-1"><p className="text-[10px] text-muted-foreground mb-1">Column (X)</p><Input type="number" value={node.position.x} readOnly className="h-8 text-xs bg-muted/50" /></div>
-                <div className="flex-1"><p className="text-[10px] text-muted-foreground mb-1">Row (Y)</p><Input type="number" value={node.position.y} readOnly className="h-8 text-xs bg-muted/50" /></div>
-              </div>
-            </div>
-          )}
         </div>
 
         <div className="p-5 border-t border-border flex items-center justify-between">
@@ -978,11 +960,10 @@ const AutomationCanvas = ({ automation, onBack, onSave, onUpdate }: {
         e.preventDefault();
         const dx = (e.clientX - dragStart.mouseX) / zoom;
         const dy = (e.clientY - dragStart.mouseY) / zoom;
-        // Convert pixel delta back to grid units
         const gridDx = dx / (NODE_WIDTH + HORIZONTAL_GAP);
         const gridDy = dy / (NODE_HEIGHT + VERTICAL_GAP);
-        const newX = Math.round((dragStart.nodeX + gridDx) * 4) / 4; // snap to 0.25 grid
-        const newY = Math.round((dragStart.nodeY + gridDy) * 4) / 4;
+        const newX = dragStart.nodeX + gridDx;
+        const newY = dragStart.nodeY + gridDy;
         onUpdate({
           ...automation,
           nodes: automation.nodes.map(n => n.id === draggingNodeId ? { ...n, position: { x: Math.max(0, newX), y: Math.max(0, newY) } } : n),
