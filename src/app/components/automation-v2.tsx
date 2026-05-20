@@ -883,7 +883,6 @@ const FolderSidebar = ({ folders, selectedFolderId, automations, onSelectFolder,
   useEffect(() => { if (isCreating && inputRef.current) inputRef.current.focus(); }, [isCreating]);
 
   const totalCount = automations.length;
-  const unfiledCount = automations.filter(a => !a.folderId).length;
   const getFolderCount = (fid: string) => automations.filter(a => a.folderId === fid).length;
 
   const handleCreateSubmit = () => {
@@ -913,16 +912,6 @@ const FolderSidebar = ({ folders, selectedFolderId, automations, onSelectFolder,
           <Inbox className="w-4 h-4 shrink-0" />
           <span className="text-sm flex-1 truncate">All Automations</span>
           <span className={cn("text-[11px] tabular-nums", selectedFolderId === null ? "text-primary" : "text-muted-foreground")}>{totalCount}</span>
-        </button>
-
-        {/* Unfiled */}
-        <button onClick={() => onSelectFolder("unfiled")} className={cn(
-          "w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-left transition-colors mb-0.5",
-          selectedFolderId === "unfiled" ? "bg-primary/10 text-primary font-semibold" : "hover:bg-muted/70 text-foreground"
-        )}>
-          <FileText className="w-4 h-4 shrink-0" />
-          <span className="text-sm flex-1 truncate">Unfiled</span>
-          <span className={cn("text-[11px] tabular-nums", selectedFolderId === "unfiled" ? "text-primary" : "text-muted-foreground")}>{unfiledCount}</span>
         </button>
 
         <div className="h-px bg-border my-2" />
@@ -1015,9 +1004,7 @@ export const AutomationV2View = () => {
       const matchesSearch = !q || a.name.toLowerCase().includes(q) || a.description.toLowerCase().includes(q);
       const matchesMode = filterMode === "all" || a.mode === filterMode;
       const matchesStatus = filterStatus === "all" || (filterStatus === "active" && a.enabled) || (filterStatus === "draft" && !a.enabled);
-      const matchesFolder = selectedFolderId === null
-        || (selectedFolderId === "unfiled" && !a.folderId)
-        || a.folderId === selectedFolderId;
+      const matchesFolder = selectedFolderId === null || a.folderId === selectedFolderId;
       return matchesSearch && matchesMode && matchesStatus && matchesFolder;
     });
   }, [automations, searchQuery, filterMode, filterStatus, selectedFolderId]);
@@ -1039,8 +1026,12 @@ export const AutomationV2View = () => {
   const handleMoveToFolder = (automationId: string, folderId: string | null) => {
     setAutomations(prev => prev.map(a => a.id === automationId ? { ...a, folderId } : a));
     setMovingAutomationId(null);
-    const folderName = folderId ? folders.find(f => f.id === folderId)?.name || "folder" : "Unfiled";
-    toast.success(`Moved to ${folderName}`);
+    if (folderId) {
+      const folderName = folders.find(f => f.id === folderId)?.name || "folder";
+      toast.success(`Moved to ${folderName}`);
+    } else {
+      toast.success("Removed from folder");
+    }
   };
 
   // Automation CRUD
@@ -1126,7 +1117,7 @@ export const AutomationV2View = () => {
               <div className="w-14 h-14 rounded-full bg-muted flex items-center justify-center mx-auto mb-4"><Zap className="w-6 h-6 text-muted-foreground" /></div>
               <h3 className="text-base font-semibold text-foreground">No automations found</h3>
               <p className="text-sm text-muted-foreground mt-1">
-                {selectedFolderId && selectedFolderId !== "unfiled"
+                {selectedFolderId
                   ? "This folder is empty. Create a new automation or move one here."
                   : "Create your first automation to get started."}
               </p>
@@ -1224,8 +1215,8 @@ export const AutomationV2View = () => {
             <div className="p-3 max-h-[300px] overflow-y-auto">
               <button onClick={() => handleMoveToFolder(movingAutomationId, null)}
                 className="w-full flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-muted/70 transition-colors text-left">
-                <FileText className="w-4 h-4 text-muted-foreground" />
-                <span className="text-sm font-medium">Unfiled</span>
+                <X className="w-4 h-4 text-muted-foreground" />
+                <span className="text-sm font-medium">Remove from folder</span>
               </button>
               {folders.map(f => (
                 <button key={f.id} onClick={() => handleMoveToFolder(movingAutomationId, f.id)}
