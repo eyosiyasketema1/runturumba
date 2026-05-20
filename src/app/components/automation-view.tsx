@@ -4,9 +4,10 @@ import {
   Webhook, ArrowRight, MoreVertical, Activity, Clock,
   AlertCircle, Check, X, Globe, Link2, Copy, Eye,
   Settings2, Filter, Tag, Users, MessageSquare, Send,
-  RefreshCw, ExternalLink, ChevronRight, Shield,
+  RefreshCw, ExternalLink, ChevronRight, ChevronLeft, Shield,
   Inbox, ListOrdered, GitBranch, FolderPlus, Folder, FolderOpen,
-  ArrowUpDown, SlidersHorizontal, ChevronDown
+  ArrowUpDown, SlidersHorizontal, ChevronDown,
+  CornerDownRight, FileText
 } from "lucide-react";
 // motion/AnimatePresence removed — webhooks tab eliminated.
 import { toast } from "sonner";
@@ -93,6 +94,26 @@ const statusBadge = (s: "active" | "draft" | "stopped") => {
 };
 const typeLabel = (t: AutoType) => t === "basic" ? "Basic" : t === "sequence" ? "Sequence" : "Journey";
 
+// Colorful type badge derived from trigger+action
+type TypeBadgeInfo = { label: string; icon: any; color: string; bg: string; border: string };
+const getTypeBadge = (a: AutomationRule): TypeBadgeInfo => {
+  if (a.trigger === "message_received" && a.action === "send_message")
+    return { label: "Auto-Reply", icon: CornerDownRight, color: "text-blue-700", bg: "bg-blue-50", border: "border-blue-200" };
+  if (a.action === "add_tag" || a.action === "remove_tag")
+    return { label: "Tag Rule", icon: Tag, color: "text-rose-600", bg: "bg-rose-50", border: "border-rose-200" };
+  if (a.action === "add_to_group")
+    return { label: "Survey", icon: FileText, color: "text-amber-700", bg: "bg-amber-50", border: "border-amber-200" };
+  if (a.action === "send_broadcast" || a.trigger === "broadcast_completed")
+    return { label: "Broadcast", icon: Send, color: "text-purple-700", bg: "bg-purple-50", border: "border-purple-200" };
+  if (a.trigger === "scheduled")
+    return { label: "Drip", icon: Clock, color: "text-teal-700", bg: "bg-teal-50", border: "border-teal-200" };
+  if (a.trigger === "webhook_received" || a.action === "webhook_call")
+    return { label: "Flow", icon: GitBranch, color: "text-indigo-700", bg: "bg-indigo-50", border: "border-indigo-200" };
+  if (a.trigger === "contact_added")
+    return { label: "Auto-Reply", icon: CornerDownRight, color: "text-blue-700", bg: "bg-blue-50", border: "border-blue-200" };
+  return { label: "Auto-Reply", icon: CornerDownRight, color: "text-blue-700", bg: "bg-blue-50", border: "border-blue-200" };
+};
+
 export const AutomationView = ({
   automations,
   webhooks,
@@ -136,6 +157,8 @@ export const AutomationView = ({
   const [sortBy, setSortBy] = useState<"name" | "modified" | "runs" | "status">("modified");
   const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
   const [showFilters, setShowFilters] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(25);
 
   const handleCreateFolder = () => {
     if (!newFolderName.trim()) return;
@@ -628,125 +651,168 @@ export const AutomationView = ({
                   )}
                 </div>
               ) : (
+                <>
                 <table className="w-full">
                   <thead>
-                    <tr className="border-b border-border text-xs font-medium text-muted-foreground bg-muted/30">
-                      <th className="px-5 py-3 text-left">Name</th>
-                      <th className="px-5 py-3 text-left">Status</th>
-                      <th className="px-5 py-3 text-left">Type</th>
-                      <th className="px-5 py-3 text-left">Runs</th>
-                      <th className="px-5 py-3 text-left">CTR</th>
-                      <th className="px-5 py-3 text-left">Modified</th>
-                      <th className="px-5 py-3 text-right w-10"></th>
+                    <tr className="border-b border-border">
+                      <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground tracking-wide">Name</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground tracking-wide">Type</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground tracking-wide">Status</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground tracking-wide">Version</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground tracking-wide">Modified</th>
+                      <th className="px-4 py-3 w-10"></th>
                     </tr>
                   </thead>
                   <tbody>
-                    {filteredRules.map((rule) => {
-                      const status = getAutoStatus(rule);
-                      const ctr = getAutoCtr(rule);
-                      const modified = rule.lastTriggeredAt || rule.createdAt;
-                      return (
-                        <tr key={rule.id} className="border-b border-border last:border-0 hover:bg-muted/30 transition-colors group">
-                          <td className="px-5 py-4">
-                            <button
-                              onClick={() => setBuilderState({ kind: rule._type, mode: "edit", rule })}
-                              className="flex flex-col gap-0.5 text-left group/name"
-                            >
-                              <div className="flex items-center gap-2">
-                                <span className="text-sm font-semibold text-foreground group-hover/name:text-primary transition-colors">{rule.name}</span>
-                                {(() => {
-                                  const f = customFolders.find(f => f.automationIds.includes(rule.id));
-                                  if (!f) return null;
-                                  return (
-                                    <span className="inline-flex items-center gap-1 px-1.5 py-0.5 text-[10px] font-medium bg-muted text-muted-foreground rounded">
-                                      <Folder className="w-2.5 h-2.5" />{f.name}
-                                    </span>
-                                  );
-                                })()}
-                              </div>
-                              {rule.description && (
-                                <span className="text-xs text-muted-foreground truncate max-w-[420px]">{rule.description}</span>
-                              )}
-                            </button>
-                          </td>
-                          <td className="px-5 py-4">
-                            <button
-                              onClick={() => onToggleAutomation(rule.id)}
-                              title={rule.enabled ? "Click to stop" : "Click to activate"}
-                              className="cursor-pointer"
-                            >
-                              <span className={cn(
-                                "inline-flex items-center px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider border rounded-full transition-all hover:ring-2 hover:ring-offset-1",
-                                statusBadge(status),
-                                status === "active" ? "hover:ring-emerald-300" : status === "draft" ? "hover:ring-amber-300" : "hover:ring-rose-300"
-                              )}>
-                                {status}
-                              </span>
-                            </button>
-                          </td>
-                          <td className="px-5 py-4 text-sm text-foreground">{typeLabel(rule._type)}</td>
-                          <td className="px-5 py-4 text-sm font-medium text-foreground tabular-nums">{rule.triggerCount.toLocaleString()}</td>
-                          <td className="px-5 py-4 text-sm text-foreground tabular-nums">{ctr !== null ? `${ctr}%` : <span className="text-muted-foreground">—</span>}</td>
-                          <td className="px-5 py-4 text-sm text-muted-foreground">{formatTimeAgo(modified)}</td>
-                          <td className="px-5 py-4 text-right">
-                            <DropdownMenu>
-                              <DropdownMenuTrigger
-                                className={cn(
-                                  "inline-flex items-center justify-center h-8 w-8 rounded-md",
-                                  "text-muted-foreground hover:text-foreground hover:bg-muted",
-                                  "transition-colors outline-none",
-                                  "focus-visible:ring-2 focus-visible:ring-ring"
-                                )}
-                                aria-label={`Actions for ${rule.name}`}
+                    {(() => {
+                      const totalPages = Math.max(1, Math.ceil(filteredRules.length / pageSize));
+                      const safePage = Math.min(currentPage, totalPages);
+                      const paged = filteredRules.slice((safePage - 1) * pageSize, safePage * pageSize);
+                      return paged.map((rule) => {
+                        const status = getAutoStatus(rule);
+                        const badge = getTypeBadge(rule);
+                        const BadgeIcon = badge.icon;
+                        const modified = rule.lastTriggeredAt || rule.createdAt;
+                        return (
+                          <tr key={rule.id} className="border-b border-border last:border-0 hover:bg-muted/30 transition-colors group">
+                            <td className="px-6 py-4">
+                              <button
+                                onClick={() => setBuilderState({ kind: rule._type, mode: "edit", rule })}
+                                className="flex flex-col gap-0.5 text-left group/name"
                               >
-                                <MoreVertical className="w-4 h-4" />
-                              </DropdownMenuTrigger>
-                              <DropdownMenuContent align="end" className="w-44">
-                                <DropdownMenuItem onSelect={() => {
-                                  setBuilderState({ kind: rule._type, mode: "edit", rule });
-                                }}>
-                                  <Edit2 className="w-3.5 h-3.5" />
-                                  Edit
-                                </DropdownMenuItem>
-                                <DropdownMenuItem onSelect={() => handleDuplicateRule(rule)}>
-                                  <Copy className="w-3.5 h-3.5" />
-                                  Duplicate
-                                </DropdownMenuItem>
-                                <DropdownMenuItem onSelect={() => onToggleAutomation(rule.id)}>
-                                  {rule.enabled
-                                    ? <><Pause className="w-3.5 h-3.5" />Stop</>
-                                    : <><Play className="w-3.5 h-3.5" />Activate</>}
-                                </DropdownMenuItem>
-                                <DropdownMenuItem onSelect={() => setMovingRule(rule)}>
-                                  <FolderPlus className="w-3.5 h-3.5" />
-                                  Move to Folder
-                                </DropdownMenuItem>
-                                {(() => {
-                                  const parentFolder = customFolders.find(f => f.automationIds.includes(rule.id));
-                                  if (!parentFolder) return null;
-                                  return (
-                                    <DropdownMenuItem onSelect={() => handleRemoveFromFolder(rule.id, parentFolder.id)}>
-                                      <X className="w-3.5 h-3.5" />
-                                      Remove from "{parentFolder.name}"
-                                    </DropdownMenuItem>
-                                  );
-                                })()}
-                                <DropdownMenuSeparator />
-                                <DropdownMenuItem
-                                  variant="destructive"
-                                  onSelect={() => setRuleToDelete(rule)}
+                                <div className="flex items-center gap-2">
+                                  <span className="text-sm font-semibold text-foreground group-hover/name:text-primary transition-colors">{rule.name}</span>
+                                  {(() => {
+                                    const f = customFolders.find(f => f.automationIds.includes(rule.id));
+                                    if (!f) return null;
+                                    return (
+                                      <span className="inline-flex items-center gap-1 px-1.5 py-0.5 text-[10px] font-medium bg-muted text-muted-foreground rounded">
+                                        <Folder className="w-2.5 h-2.5" />{f.name}
+                                      </span>
+                                    );
+                                  })()}
+                                </div>
+                                {rule.description && (
+                                  <span className="text-xs text-muted-foreground truncate max-w-[420px]">{rule.description}</span>
+                                )}
+                              </button>
+                            </td>
+                            <td className="px-4 py-4">
+                              <span className={cn(
+                                "inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded-full border",
+                                badge.bg, badge.color, badge.border
+                              )}>
+                                <BadgeIcon className="w-3 h-3" />
+                                {badge.label}
+                              </span>
+                            </td>
+                            <td className="px-4 py-4">
+                              <button
+                                onClick={() => onToggleAutomation(rule.id)}
+                                title={rule.enabled ? "Click to stop" : "Click to activate"}
+                                className="cursor-pointer"
+                              >
+                                <span className={cn(
+                                  "inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded-full border transition-all hover:ring-2 hover:ring-offset-1",
+                                  statusBadge(status),
+                                  status === "active" ? "hover:ring-emerald-300" : status === "draft" ? "hover:ring-amber-300" : "hover:ring-rose-300"
+                                )}>
+                                  <span className={cn(
+                                    "w-1.5 h-1.5 rounded-full",
+                                    status === "active" ? "bg-emerald-500" : status === "draft" ? "bg-amber-500" : "bg-rose-500"
+                                  )} />
+                                  {status === "active" ? "Active" : status === "draft" ? "Draft" : "Stopped"}
+                                </span>
+                              </button>
+                            </td>
+                            <td className="px-4 py-4 text-sm text-muted-foreground">v1</td>
+                            <td className="px-4 py-4 text-sm text-muted-foreground">{formatTimeAgo(modified)}</td>
+                            <td className="px-4 py-4 text-right">
+                              <DropdownMenu>
+                                <DropdownMenuTrigger
+                                  className="inline-flex items-center justify-center h-8 w-8 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted transition-colors outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                                  aria-label={`Actions for ${rule.name}`}
                                 >
-                                  <Trash2 className="w-3.5 h-3.5" />
-                                  Delete
-                                </DropdownMenuItem>
-                              </DropdownMenuContent>
-                            </DropdownMenu>
-                          </td>
-                        </tr>
-                      );
-                    })}
+                                  <MoreVertical className="w-4 h-4" />
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end" className="w-44">
+                                  <DropdownMenuItem onSelect={() => setBuilderState({ kind: rule._type, mode: "edit", rule })}>
+                                    <Edit2 className="w-3.5 h-3.5" /> Edit
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem onSelect={() => handleDuplicateRule(rule)}>
+                                    <Copy className="w-3.5 h-3.5" /> Duplicate
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem onSelect={() => onToggleAutomation(rule.id)}>
+                                    {rule.enabled ? <><Pause className="w-3.5 h-3.5" />Stop</> : <><Play className="w-3.5 h-3.5" />Activate</>}
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem onSelect={() => setMovingRule(rule)}>
+                                    <FolderPlus className="w-3.5 h-3.5" /> Move to Folder
+                                  </DropdownMenuItem>
+                                  {(() => {
+                                    const parentFolder = customFolders.find(f => f.automationIds.includes(rule.id));
+                                    if (!parentFolder) return null;
+                                    return (
+                                      <DropdownMenuItem onSelect={() => handleRemoveFromFolder(rule.id, parentFolder.id)}>
+                                        <X className="w-3.5 h-3.5" /> Remove from "{parentFolder.name}"
+                                      </DropdownMenuItem>
+                                    );
+                                  })()}
+                                  <DropdownMenuSeparator />
+                                  <DropdownMenuItem variant="destructive" onSelect={() => setRuleToDelete(rule)}>
+                                    <Trash2 className="w-3.5 h-3.5" /> Delete
+                                  </DropdownMenuItem>
+                                </DropdownMenuContent>
+                              </DropdownMenu>
+                            </td>
+                          </tr>
+                        );
+                      });
+                    })()}
                   </tbody>
                 </table>
+                {/* Pagination footer */}
+                {(() => {
+                  const totalPages = Math.max(1, Math.ceil(filteredRules.length / pageSize));
+                  const safePage = Math.min(currentPage, totalPages);
+                  const from = filteredRules.length === 0 ? 0 : (safePage - 1) * pageSize + 1;
+                  const to = Math.min(safePage * pageSize, filteredRules.length);
+                  return (
+                    <div className="flex items-center justify-between px-6 py-3 border-t border-border text-sm">
+                      <span className="text-muted-foreground">
+                        Showing {from}–{to} of {filteredRules.length}
+                      </span>
+                      <div className="flex items-center gap-3">
+                        <select
+                          value={pageSize}
+                          onChange={(e) => { setPageSize(Number(e.target.value)); setCurrentPage(1); }}
+                          className="h-8 px-2 pr-7 rounded-md border border-border bg-background text-sm text-foreground appearance-none cursor-pointer"
+                          style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 24 24' fill='none' stroke='%239ca3af' stroke-width='2'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E")`, backgroundRepeat: "no-repeat", backgroundPosition: "right 6px center" }}
+                        >
+                          <option value={10}>10 / page</option>
+                          <option value={25}>25 / page</option>
+                          <option value={50}>50 / page</option>
+                        </select>
+                        <div className="flex items-center gap-1">
+                          <button
+                            onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                            disabled={safePage <= 1}
+                            className="h-8 w-8 rounded-md border border-border flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted disabled:opacity-30 disabled:pointer-events-none transition-colors"
+                          >
+                            <ChevronLeft className="w-4 h-4" />
+                          </button>
+                          <button
+                            onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                            disabled={safePage >= totalPages}
+                            className="h-8 w-8 rounded-md border border-border flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted disabled:opacity-30 disabled:pointer-events-none transition-colors"
+                          >
+                            <ChevronRight className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })()}
+                </>
               )}
             </div>
       </div>
