@@ -5,7 +5,7 @@ import {
   AlertCircle, Check, X, Globe, Link2, Copy, Eye,
   Settings2, Filter, Tag, Users, MessageSquare, Send,
   RefreshCw, ExternalLink, ChevronRight, Shield,
-  Inbox, ListOrdered, GitBranch, FolderPlus
+  Inbox, ListOrdered, GitBranch, FolderPlus, Folder, FolderOpen
 } from "lucide-react";
 // motion/AnimatePresence removed — webhooks tab eliminated.
 import { toast } from "sonner";
@@ -121,6 +121,50 @@ export const AutomationView = ({
     | null
   >(null);
   const [isTypePickerOpen, setIsTypePickerOpen] = useState(false);
+  const [isNewFolderOpen, setIsNewFolderOpen] = useState(false);
+  const [newFolderName, setNewFolderName] = useState("");
+  const [customFolders, setCustomFolders] = useState<{ id: string; name: string; automationIds: string[] }[]>([]);
+  const [movingRule, setMovingRule] = useState<AutomationRule | null>(null);
+
+  const handleCreateFolder = () => {
+    if (!newFolderName.trim()) return;
+    const id = `folder-${Date.now()}`;
+    setCustomFolders(prev => [...prev, { id, name: newFolderName.trim(), automationIds: [] }]);
+    setActiveFolder(id as any);
+    toast.success(`Folder "${newFolderName.trim()}" created`);
+    setNewFolderName("");
+    setIsNewFolderOpen(false);
+  };
+
+  const handleDeleteFolder = (folderId: string) => {
+    setCustomFolders(prev => prev.filter(f => f.id !== folderId));
+    if (activeFolder === folderId) setActiveFolder("all");
+    toast.success("Folder deleted");
+  };
+
+  const handleRenameFolder = (folderId: string, newName: string) => {
+    setCustomFolders(prev => prev.map(f => f.id === folderId ? { ...f, name: newName } : f));
+    toast.success("Folder renamed");
+  };
+
+  const handleMoveToFolder = (ruleId: string, folderId: string) => {
+    setCustomFolders(prev => prev.map(f => ({
+      ...f,
+      automationIds: f.id === folderId
+        ? [...new Set([...f.automationIds, ruleId])]
+        : f.automationIds.filter(id => id !== ruleId),
+    })));
+    setMovingRule(null);
+    const folderName = customFolders.find(f => f.id === folderId)?.name || "folder";
+    toast.success(`Moved to "${folderName}"`);
+  };
+
+  const handleRemoveFromFolder = (ruleId: string, folderId: string) => {
+    setCustomFolders(prev => prev.map(f =>
+      f.id === folderId ? { ...f, automationIds: f.automationIds.filter(id => id !== ruleId) } : f
+    ));
+    toast.success("Removed from folder");
+  };
 
   const handleDuplicateRule = (rule: AutomationRule) => {
     onAddAutomation({
@@ -146,12 +190,15 @@ export const AutomationView = ({
 
   // Contextual copy per folder so the create button, modal, and empty state
   // feel native to whichever category the user is in.
-  const folderCopy = {
-    all:      { createLabel: "New Automation", singular: "Automation", emptyTitle: "Create your first Automation", emptyBody: "Automate interactions with your contacts by creating rules, sequences, and flows so you have more time to handle meaningful conversations." },
-    basic:    { createLabel: "New Basic",      singular: "Basic rule", emptyTitle: "Create your first Basic rule", emptyBody: "Basic rules pair a single trigger with a single action — perfect for welcome messages, keyword replies, and quick automations." },
-    sequence: { createLabel: "New Sequence",   singular: "Sequence",   emptyTitle: "Create your first Sequence", emptyBody: "Automate interactions with your contacts by creating a series of automatic messages so you have more time to handle meaningful conversations." },
-    flow:     { createLabel: "New Journey",     singular: "Journey",    emptyTitle: "Create your first Journey",  emptyBody: "Journeys let you build branching, multi-step automations with milestones and webhooks — ideal for discipleship paths." },
-  }[activeTab === "rules" ? activeFolder : "all"];
+  const customFolderMatch = customFolders.find(f => f.id === activeFolder);
+  const folderCopy = customFolderMatch
+    ? { createLabel: "New Automation", singular: "Automation", emptyTitle: `No automations in "${customFolderMatch.name}"`, emptyBody: "Move automations into this folder using the menu on each automation row." }
+    : {
+      all:      { createLabel: "New Automation", singular: "Automation", emptyTitle: "Create your first Automation", emptyBody: "Automate interactions with your contacts by creating rules, sequences, and flows so you have more time to handle meaningful conversations." },
+      basic:    { createLabel: "New Basic",      singular: "Basic rule", emptyTitle: "Create your first Basic rule", emptyBody: "Basic rules pair a single trigger with a single action — perfect for welcome messages, keyword replies, and quick automations." },
+      sequence: { createLabel: "New Sequence",   singular: "Sequence",   emptyTitle: "Create your first Sequence", emptyBody: "Automate interactions with your contacts by creating a series of automatic messages so you have more time to handle meaningful conversations." },
+      flow:     { createLabel: "New Journey",     singular: "Journey",    emptyTitle: "Create your first Journey",  emptyBody: "Journeys let you build branching, multi-step automations with milestones and webhooks — ideal for discipleship paths." },
+    }[activeTab === "rules" ? (activeFolder as "all" | AutoType) : "all"];
 
   const activeAutomations = automations.filter(a => a.enabled).length;
   const totalTriggers = automations.reduce((sum, a) => sum + a.triggerCount, 0);
@@ -167,7 +214,10 @@ export const AutomationView = ({
   }), [typedAutos]);
 
   const filteredRules = typedAutos.filter(a => {
-    const matchesFolder = activeFolder === "all" || a._type === activeFolder;
+    const customFolder = customFolders.find(f => f.id === activeFolder);
+    const matchesFolder = activeFolder === "all"
+      || a._type === activeFolder
+      || (customFolder && customFolder.automationIds.includes(a.id));
     const q = searchQuery.toLowerCase();
     const matchesSearch = !q || a.name.toLowerCase().includes(q) || a.description.toLowerCase().includes(q);
     return matchesFolder && matchesSearch;
@@ -327,10 +377,49 @@ export const AutomationView = ({
                     </button>
                   );
                 })}
+                {/* Custom folders */}
+                {customFolders.length > 0 && (
+                  <div className="border-t border-border mt-2 pt-2">
+                    {customFolders.map(folder => {
+                      const isActive = activeFolder === folder.id;
+                      const count = folder.automationIds.length;
+                      return (
+                        <div key={folder.id} className="group/folder relative">
+                          <button
+                            role="tab"
+                            aria-selected={isActive}
+                            onClick={() => setActiveFolder(folder.id as any)}
+                            className={cn(
+                              "w-full flex items-center gap-3 px-3 py-2 text-sm rounded-md transition-colors",
+                              isActive
+                                ? "bg-primary/10 text-primary font-semibold"
+                                : "text-muted-foreground font-medium hover:bg-muted hover:text-foreground"
+                            )}
+                          >
+                            {isActive ? <FolderOpen className="w-4 h-4" /> : <Folder className="w-4 h-4" />}
+                            <span className="flex-1 text-left truncate">{folder.name}</span>
+                            <span className={cn(
+                              "text-xs tabular-nums",
+                              isActive ? "text-primary" : "text-muted-foreground"
+                            )}>{count}</span>
+                          </button>
+                          {/* Delete on hover */}
+                          <button
+                            onClick={(e) => { e.stopPropagation(); handleDeleteFolder(folder.id); }}
+                            className="absolute right-1 top-1/2 -translate-y-1/2 opacity-0 group-hover/folder:opacity-100 p-1 rounded hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-all"
+                            title="Delete folder"
+                          >
+                            <Trash2 className="w-3 h-3" />
+                          </button>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+
                 <button
-                  disabled
-                  title="Coming soon"
-                  className="w-full flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-md text-muted-foreground/60 hover:bg-muted/30 transition-colors cursor-not-allowed"
+                  onClick={() => setIsNewFolderOpen(true)}
+                  className="w-full flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-md text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
                 >
                   <FolderPlus className="w-4 h-4" />
                   <span className="flex-1 text-left">New Folder</span>
@@ -344,10 +433,13 @@ export const AutomationView = ({
               <div className="flex items-center justify-between gap-3 px-5 py-3 border-b border-border">
                 <div className="flex items-center gap-2.5">
                   {(() => {
-                    const Icon = activeFolder === "all" ? Inbox
+                    const customFolder = customFolders.find(f => f.id === activeFolder);
+                    const Icon = customFolder ? FolderOpen
+                      : activeFolder === "all" ? Inbox
                       : activeFolder === "basic" ? Zap
                       : activeFolder === "sequence" ? ListOrdered : GitBranch;
-                    const label = activeFolder === "all" ? "All Automations"
+                    const label = customFolder ? customFolder.name
+                      : activeFolder === "all" ? "All Automations"
                       : activeFolder === "basic" ? "Basic"
                       : activeFolder === "sequence" ? "Sequences" : "Journey Builder";
                     return (
@@ -367,7 +459,8 @@ export const AutomationView = ({
                 <div className="px-6 py-16 text-center max-w-md mx-auto">
                   <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">
                     {(() => {
-                      const EmptyIcon = activeFolder === "sequence" ? ListOrdered
+                      const EmptyIcon = customFolderMatch ? FolderOpen
+                        : activeFolder === "sequence" ? ListOrdered
                         : activeFolder === "flow" ? GitBranch
                         : activeFolder === "basic" ? Zap : Inbox;
                       return <EmptyIcon className="w-5 h-5 text-primary" />;
@@ -460,6 +553,22 @@ export const AutomationView = ({
                                     ? <><Pause className="w-3.5 h-3.5" />Stop</>
                                     : <><Play className="w-3.5 h-3.5" />Activate</>}
                                 </DropdownMenuItem>
+                                {customFolders.length > 0 && (
+                                  <DropdownMenuItem onSelect={() => setMovingRule(rule)}>
+                                    <FolderPlus className="w-3.5 h-3.5" />
+                                    Move to Folder
+                                  </DropdownMenuItem>
+                                )}
+                                {(() => {
+                                  const parentFolder = customFolders.find(f => f.automationIds.includes(rule.id));
+                                  if (!parentFolder) return null;
+                                  return (
+                                    <DropdownMenuItem onSelect={() => handleRemoveFromFolder(rule.id, parentFolder.id)}>
+                                      <X className="w-3.5 h-3.5" />
+                                      Remove from "{parentFolder.name}"
+                                    </DropdownMenuItem>
+                                  );
+                                })()}
                                 <DropdownMenuSeparator />
                                 <DropdownMenuItem
                                   variant="destructive"
@@ -530,6 +639,71 @@ export const AutomationView = ({
               Delete
             </Button>
           </div>
+        </div>
+      </Modal>
+
+      {/* New Folder modal */}
+      <Modal
+        isOpen={isNewFolderOpen}
+        onClose={() => { setIsNewFolderOpen(false); setNewFolderName(""); }}
+        title="Create Folder"
+        size="sm"
+      >
+        <div className="space-y-4">
+          <div className="grid gap-2">
+            <Label className="text-xs font-semibold">Folder Name</Label>
+            <Input
+              placeholder="e.g. Onboarding, Follow-ups"
+              value={newFolderName}
+              onChange={(e) => setNewFolderName(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && handleCreateFolder()}
+              className="h-9 text-sm"
+              autoFocus
+            />
+          </div>
+          <div className="flex items-center justify-end gap-2">
+            <Button variant="outline" size="sm" onClick={() => { setIsNewFolderOpen(false); setNewFolderName(""); }}>Cancel</Button>
+            <Button size="sm" disabled={!newFolderName.trim()} onClick={handleCreateFolder}>
+              <FolderPlus className="w-3.5 h-3.5" />
+              Create Folder
+            </Button>
+          </div>
+        </div>
+      </Modal>
+
+      {/* Move to Folder modal */}
+      <Modal
+        isOpen={movingRule !== null}
+        onClose={() => setMovingRule(null)}
+        title={`Move "${movingRule?.name}" to Folder`}
+        size="sm"
+      >
+        <div className="space-y-2">
+          {customFolders.length === 0 ? (
+            <p className="text-sm text-muted-foreground py-4 text-center">No custom folders yet. Create one first.</p>
+          ) : (
+            customFolders.map(folder => {
+              const alreadyIn = movingRule ? folder.automationIds.includes(movingRule.id) : false;
+              return (
+                <button
+                  key={folder.id}
+                  disabled={alreadyIn}
+                  onClick={() => movingRule && handleMoveToFolder(movingRule.id, folder.id)}
+                  className={cn(
+                    "w-full flex items-center gap-3 px-4 py-3 text-sm rounded-lg border transition-colors text-left",
+                    alreadyIn
+                      ? "bg-muted/50 text-muted-foreground border-border cursor-not-allowed"
+                      : "hover:bg-primary/5 hover:border-primary/30 border-border"
+                  )}
+                >
+                  <Folder className="w-4 h-4 shrink-0" />
+                  <span className="flex-1 font-medium">{folder.name}</span>
+                  {alreadyIn && <span className="text-xs text-muted-foreground">Already here</span>}
+                  <span className="text-xs text-muted-foreground">{folder.automationIds.length} items</span>
+                </button>
+              );
+            })
+          )}
         </div>
       </Modal>
 
