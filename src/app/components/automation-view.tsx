@@ -6,8 +6,7 @@ import {
   Settings2, Filter, Tag, Users, MessageSquare, Send,
   RefreshCw, ExternalLink, ChevronRight, Shield,
   Inbox, ListOrdered, GitBranch, FolderPlus, Folder, FolderOpen,
-  ArrowUpDown, SlidersHorizontal, ChevronDown,
-  ChevronLeft, CornerDownRight, FileText
+  ArrowUpDown, SlidersHorizontal, ChevronDown
 } from "lucide-react";
 // motion/AnimatePresence removed — webhooks tab eliminated.
 import { toast } from "sonner";
@@ -94,26 +93,6 @@ const statusBadge = (s: "active" | "draft" | "stopped") => {
 };
 const typeLabel = (t: AutoType) => t === "basic" ? "Basic" : t === "sequence" ? "Sequence" : "Journey";
 
-// Richer type badge derived from trigger+action for colorful pill display
-type TypeBadgeInfo = { label: string; icon: any; color: string; bg: string; border: string };
-const getTypeBadge = (a: AutomationRule): TypeBadgeInfo => {
-  if (a.trigger === "message_received" && a.action === "send_message")
-    return { label: "Auto-Reply", icon: CornerDownRight, color: "text-blue-700", bg: "bg-blue-50", border: "border-blue-200" };
-  if (a.action === "add_tag" || a.action === "remove_tag")
-    return { label: "Tag Rule", icon: Tag, color: "text-rose-600", bg: "bg-rose-50", border: "border-rose-200" };
-  if (a.action === "add_to_group")
-    return { label: "Survey", icon: FileText, color: "text-amber-700", bg: "bg-amber-50", border: "border-amber-200" };
-  if (a.action === "send_broadcast" || a.trigger === "broadcast_completed")
-    return { label: "Broadcast", icon: Send, color: "text-purple-700", bg: "bg-purple-50", border: "border-purple-200" };
-  if (a.trigger === "scheduled")
-    return { label: "Drip", icon: Clock, color: "text-teal-700", bg: "bg-teal-50", border: "border-teal-200" };
-  if (a.trigger === "webhook_received" || a.action === "webhook_call")
-    return { label: "Flow", icon: GitBranch, color: "text-indigo-700", bg: "bg-indigo-50", border: "border-indigo-200" };
-  if (a.trigger === "contact_added")
-    return { label: "Auto-Reply", icon: CornerDownRight, color: "text-blue-700", bg: "bg-blue-50", border: "border-blue-200" };
-  return { label: "Auto-Reply", icon: CornerDownRight, color: "text-blue-700", bg: "bg-blue-50", border: "border-blue-200" };
-};
-
 export const AutomationView = ({
   automations,
   webhooks,
@@ -157,8 +136,6 @@ export const AutomationView = ({
   const [sortBy, setSortBy] = useState<"name" | "modified" | "runs" | "status">("modified");
   const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
   const [showFilters, setShowFilters] = useState(false);
-  const [currentPage, setCurrentPage] = useState(1);
-  const [pageSize, setPageSize] = useState(25);
 
   const handleCreateFolder = () => {
     if (!newFolderName.trim()) return;
@@ -356,338 +333,422 @@ export const AutomationView = ({
     );
   }
 
-  // Pagination
-  const totalPages = Math.max(1, Math.ceil(filteredRules.length / pageSize));
-  const safeCurrentPage = Math.min(currentPage, totalPages);
-  const paginatedRules = filteredRules.slice((safeCurrentPage - 1) * pageSize, safeCurrentPage * pageSize);
-  const showingFrom = filteredRules.length === 0 ? 0 : (safeCurrentPage - 1) * pageSize + 1;
-  const showingTo = Math.min(safeCurrentPage * pageSize, filteredRules.length);
-
   return (
-    <div className="space-y-0 animate-in fade-in duration-500">
-      {/* Top bar — search + dropdown filters */}
-      <div className="flex items-center gap-3 px-6 py-4 border-b border-border bg-background">
-        <div className="relative flex-1 max-w-2xl">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-          <Input
-            placeholder="Search automations..."
-            value={searchQuery}
-            onChange={(e) => { setSearchQuery(e.target.value); setCurrentPage(1); }}
-            className="pl-9 h-10 text-sm border-border bg-background"
-          />
+    <div className="space-y-5 p-6 animate-in fade-in duration-500">
+      <header className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight text-foreground">Automations</h1>
+          <p className="text-muted-foreground text-sm mt-1">Manage your automation workflows</p>
         </div>
-        <select
-          value={filterType}
-          onChange={(e) => { setFilterType(e.target.value as any); setCurrentPage(1); }}
-          className="h-10 px-3 pr-8 rounded-lg border border-border bg-background text-sm text-foreground appearance-none cursor-pointer hover:border-muted-foreground/40 transition-colors"
-          style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%239ca3af' stroke-width='2'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E")`, backgroundRepeat: "no-repeat", backgroundPosition: "right 10px center" }}
-        >
-          <option value="all">All types</option>
-          <option value="basic">Basic</option>
-          <option value="sequence">Sequence</option>
-          <option value="flow">Journey</option>
-        </select>
-        <select
-          value={filterStatus}
-          onChange={(e) => { setFilterStatus(e.target.value as any); setCurrentPage(1); }}
-          className="h-10 px-3 pr-8 rounded-lg border border-border bg-background text-sm text-foreground appearance-none cursor-pointer hover:border-muted-foreground/40 transition-colors"
-          style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%239ca3af' stroke-width='2'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E")`, backgroundRepeat: "no-repeat", backgroundPosition: "right 10px center" }}
-        >
-          <option value="all">All statuses</option>
-          <option value="active">Active</option>
-          <option value="draft">Draft</option>
-          <option value="stopped">Stopped</option>
-        </select>
-      </div>
+        <div className="flex items-center gap-2">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+            <Input
+              placeholder="Search automations..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-9 h-9 text-sm w-[240px]"
+            />
+          </div>
+          <Button onClick={() => {
+            // Route the New button to the right full-page builder per folder.
+            if (activeFolder === "basic")    { setBuilderState({ kind: "basic",    mode: "new" }); return; }
+            if (activeFolder === "sequence") { setBuilderState({ kind: "sequence", mode: "new" }); return; }
+            if (activeFolder === "flow")     { setBuilderState({ kind: "flow",     mode: "new" }); return; }
+            // On "all", ask the user which type first.
+            setIsTypePickerOpen(true);
+          }}>
+            <Plus className="w-4 h-4 mr-1.5" />
+            {folderCopy.createLabel}
+          </Button>
+        </div>
+      </header>
 
-      {/* Mini dashboard */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 px-6 py-4 border-b border-border bg-background">
+      {/* Summary stats */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         {[
-          { label: "Total Automations", value: automations.length, icon: Zap, color: "text-blue-600", bg: "bg-blue-50" },
-          { label: "Active", value: activeAutomations, icon: Play, color: "text-emerald-600", bg: "bg-emerald-50" },
-          { label: "Total Runs", value: totalTriggers.toLocaleString(), icon: Activity, color: "text-violet-600", bg: "bg-violet-50" },
-          { label: "Draft", value: automations.filter(a => !a.enabled && a.triggerCount === 0).length, icon: Clock, color: "text-amber-600", bg: "bg-amber-50" },
+          { label: "Total", value: automations.length, icon: Zap, color: "text-primary" },
+          { label: "Active", value: activeAutomations, icon: Play, color: "text-emerald-600" },
+          { label: "Total Runs", value: totalTriggers.toLocaleString(), icon: Activity, color: "text-blue-600" },
+          { label: "Webhooks", value: webhooks.filter(w => w.enabled).length, icon: Globe, color: "text-violet-600" },
         ].map(stat => (
-          <div key={stat.label} className="flex items-center gap-3 px-4 py-3 rounded-xl border border-border bg-card">
-            <div className={cn("w-10 h-10 rounded-lg flex items-center justify-center shrink-0", stat.bg)}>
-              <stat.icon className={cn("w-4.5 h-4.5", stat.color)} />
+          <div key={stat.label} className="bg-card border border-border rounded-lg px-4 py-3 flex items-center gap-3">
+            <div className="w-9 h-9 rounded-lg bg-muted flex items-center justify-center shrink-0">
+              <stat.icon className={cn("w-4 h-4", stat.color)} />
             </div>
             <div>
-              <p className="text-xl font-bold text-foreground leading-none tabular-nums">{stat.value}</p>
-              <p className="text-xs text-muted-foreground mt-1">{stat.label}</p>
+              <p className="text-lg font-bold text-foreground leading-none">{stat.value}</p>
+              <p className="text-xs text-muted-foreground mt-0.5">{stat.label}</p>
             </div>
           </div>
         ))}
       </div>
 
-      {/* Content: sidebar + table */}
-      <div className="flex items-start">
-        {/* Folders sidebar */}
-        <aside className="w-[220px] shrink-0 border-r border-border bg-background px-4 py-5 min-h-[calc(100vh-200px)]">
-          <div className="flex items-center justify-between mb-3 px-1">
-            <p className="text-sm font-semibold text-foreground">Folders</p>
-            <button
-              onClick={() => setIsNewFolderOpen(true)}
-              className="p-1 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
-              title="New Folder"
-            >
-              <FolderPlus className="w-4 h-4" />
-            </button>
-          </div>
-          <div className="space-y-0.5" role="tablist" aria-label="Automation folders">
-            {/* All Automations — always shown */}
-            <button
-              role="tab"
-              aria-selected={activeFolder === "all"}
-              onClick={() => { setActiveFolder("all"); setCurrentPage(1); }}
-              className={cn(
-                "w-full flex items-center gap-2.5 px-2.5 py-2 text-sm rounded-lg transition-colors",
-                activeFolder === "all"
-                  ? "bg-primary/10 text-primary font-semibold"
-                  : "text-muted-foreground hover:bg-muted hover:text-foreground"
-              )}
-            >
-              <Inbox className="w-4 h-4 shrink-0" />
-              <span className="flex-1 text-left">All Automations</span>
-            </button>
+      {/* Content */}
+      <div className="flex flex-col md:flex-row gap-5 items-start animate-in fade-in duration-300">
+            {/* Folders sidebar — sticky, soft-tint active state */}
+            <aside className="bg-card border border-border rounded-xl p-4 md:sticky md:top-6 self-start w-full md:w-[260px] md:shrink-0">
+              <p className="text-sm font-semibold text-foreground px-2 pb-3">Folders</p>
+              <div className="space-y-1" role="tablist" aria-label="Automation folders">
+                {([
+                  ["all",      "All Automations", folderCounts.all,      Inbox],
+                  ["basic",    "Basic",           folderCounts.basic,    Zap],
+                  ["sequence", "Sequences",       folderCounts.sequence, ListOrdered],
+                  ["flow",     "Journey Builder", folderCounts.flow,     GitBranch],
+                ] as const).map(([k, label, count, Icon]) => {
+                  const isActive = activeFolder === k;
+                  return (
+                    <button
+                      key={k}
+                      role="tab"
+                      aria-selected={isActive}
+                      onClick={() => setActiveFolder(k as any)}
+                      className={cn(
+                        "w-full flex items-center gap-3 px-3 py-2 text-sm rounded-md transition-colors",
+                        isActive
+                          ? "bg-primary/10 text-primary font-semibold"
+                          : "text-muted-foreground font-medium hover:bg-muted hover:text-foreground"
+                      )}
+                    >
+                      <Icon className="w-4 h-4" />
+                      <span className="flex-1 text-left">{label}</span>
+                      <span className={cn(
+                        "text-xs tabular-nums",
+                        isActive ? "text-primary" : "text-muted-foreground"
+                      )}>{count}</span>
+                    </button>
+                  );
+                })}
+                {/* Custom folders */}
+                {customFolders.length > 0 && (
+                  <div className="border-t border-border mt-2 pt-2">
+                    {customFolders.map(folder => {
+                      const isActive = activeFolder === folder.id;
+                      const count = folder.automationIds.length;
+                      return (
+                        <div key={folder.id} className="group/folder relative">
+                          <button
+                            role="tab"
+                            aria-selected={isActive}
+                            onClick={() => setActiveFolder(folder.id as any)}
+                            className={cn(
+                              "w-full flex items-center gap-3 px-3 py-2 text-sm rounded-md transition-colors",
+                              isActive
+                                ? "bg-primary/10 text-primary font-semibold"
+                                : "text-muted-foreground font-medium hover:bg-muted hover:text-foreground"
+                            )}
+                          >
+                            {isActive ? <FolderOpen className="w-4 h-4" /> : <Folder className="w-4 h-4" />}
+                            <span className="flex-1 text-left truncate">{folder.name}</span>
+                            <span className={cn(
+                              "text-xs tabular-nums",
+                              isActive ? "text-primary" : "text-muted-foreground"
+                            )}>{count}</span>
+                          </button>
+                          {/* Delete on hover */}
+                          <button
+                            onClick={(e) => { e.stopPropagation(); handleDeleteFolder(folder.id); }}
+                            className="absolute right-1 top-1/2 -translate-y-1/2 opacity-0 group-hover/folder:opacity-100 p-1 rounded hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-all"
+                            title="Delete folder"
+                          >
+                            <Trash2 className="w-3 h-3" />
+                          </button>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
 
-            {/* Custom folders */}
-            {customFolders.map(folder => {
-              const isActive = activeFolder === folder.id;
-              const count = folder.automationIds.length;
-              return (
-                <div key={folder.id} className="group/folder relative">
+                <button
+                  onClick={() => setIsNewFolderOpen(true)}
+                  className="w-full flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-md text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
+                >
+                  <FolderPlus className="w-4 h-4" />
+                  <span className="flex-1 text-left">New Folder</span>
+                </button>
+              </div>
+            </aside>
+
+            {/* Right panel — content of the selected folder */}
+            <div className="bg-card border border-border rounded-xl overflow-hidden flex-1 min-w-0 w-full">
+              {/* Folder header — makes it clear which folder's content is shown */}
+              <div className="flex items-center justify-between gap-3 px-5 py-3 border-b border-border">
+                <div className="flex items-center gap-2.5">
+                  {(() => {
+                    const customFolder = customFolders.find(f => f.id === activeFolder);
+                    const Icon = customFolder ? FolderOpen
+                      : activeFolder === "all" ? Inbox
+                      : activeFolder === "basic" ? Zap
+                      : activeFolder === "sequence" ? ListOrdered : GitBranch;
+                    const label = customFolder ? customFolder.name
+                      : activeFolder === "all" ? "All Automations"
+                      : activeFolder === "basic" ? "Basic"
+                      : activeFolder === "sequence" ? "Sequences" : "Journey Builder";
+                    return (
+                      <>
+                        <Icon className="w-4 h-4 text-primary" />
+                        <h3 className="text-sm font-semibold text-foreground">{label}</h3>
+                        <Badge variant="secondary" className="text-xs">{filteredRules.length}</Badge>
+                      </>
+                    );
+                  })()}
+                </div>
+                <div className="flex items-center gap-2">
+                  {searchQuery && (
+                    <span className="text-xs text-muted-foreground">Filtered by "{searchQuery}"</span>
+                  )}
                   <button
-                    role="tab"
-                    aria-selected={isActive}
-                    onClick={() => { setActiveFolder(folder.id as any); setCurrentPage(1); }}
+                    onClick={() => setShowFilters(!showFilters)}
                     className={cn(
-                      "w-full flex items-center gap-2.5 px-2.5 py-2 text-sm rounded-lg transition-colors",
-                      isActive
-                        ? "bg-primary/10 text-primary font-semibold"
-                        : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                      "inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium rounded-md border transition-colors",
+                      showFilters || filterStatus !== "all" || filterType !== "all"
+                        ? "border-primary/40 bg-primary/5 text-primary"
+                        : "border-border text-muted-foreground hover:text-foreground hover:bg-muted"
                     )}
                   >
-                    {isActive ? <FolderOpen className="w-4 h-4 shrink-0" /> : <Folder className="w-4 h-4 shrink-0" />}
-                    <span className="flex-1 text-left truncate">{folder.name}</span>
-                    <span className={cn(
-                      "text-xs tabular-nums",
-                      isActive ? "text-primary" : "text-muted-foreground"
-                    )}>{count}</span>
-                  </button>
-                  <button
-                    onClick={(e) => { e.stopPropagation(); handleDeleteFolder(folder.id); }}
-                    className="absolute right-1 top-1/2 -translate-y-1/2 opacity-0 group-hover/folder:opacity-100 p-1 rounded hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-all"
-                    title="Delete folder"
-                  >
-                    <Trash2 className="w-3 h-3" />
+                    <SlidersHorizontal className="w-3 h-3" />
+                    Filters
+                    {(filterStatus !== "all" || filterType !== "all") && (
+                      <span className="w-4 h-4 rounded-full bg-primary text-[10px] text-primary-foreground flex items-center justify-center font-bold">
+                        {(filterStatus !== "all" ? 1 : 0) + (filterType !== "all" ? 1 : 0)}
+                      </span>
+                    )}
                   </button>
                 </div>
-              );
-            })}
-
-            {/* New Folder button */}
-            <button
-              onClick={() => setIsNewFolderOpen(true)}
-              className="w-full flex items-center gap-2.5 px-2.5 py-2 text-sm rounded-lg text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
-            >
-              <Plus className="w-4 h-4 shrink-0" />
-              <span className="flex-1 text-left">New Folder</span>
-            </button>
-          </div>
-        </aside>
-
-        {/* Main content area */}
-        <div className="flex-1 min-w-0">
-          {/* Folder header bar */}
-          <div className="flex items-center justify-between px-6 py-3 border-b border-border bg-background">
-            <div className="flex items-center gap-2">
-              {(() => {
-                const customFolder = customFolders.find(f => f.id === activeFolder);
-                const Icon = customFolder ? FolderOpen : Inbox;
-                const label = customFolder ? customFolder.name : "All Automations";
-                return (
-                  <>
-                    <Icon className="w-4 h-4 text-muted-foreground" />
-                    <h3 className="text-sm font-semibold text-foreground">{label}</h3>
-                    <span className="text-xs text-muted-foreground bg-muted px-2 py-0.5 rounded-full tabular-nums">{filteredRules.length}</span>
-                  </>
-                );
-              })()}
-            </div>
-            <Button size="sm" onClick={() => setIsTypePickerOpen(true)}>
-              <Plus className="w-3.5 h-3.5 mr-1" />
-              New Automation
-            </Button>
-          </div>
-
-          {/* Table */}
-          {filteredRules.length === 0 ? (
-            <div className="px-6 py-20 text-center max-w-md mx-auto">
-              <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center mx-auto mb-4">
-                <Inbox className="w-5 h-5 text-muted-foreground" />
               </div>
-              <h3 className="text-base font-semibold text-foreground">
-                {searchQuery || filterStatus !== "all" || filterType !== "all"
-                  ? "No automations match your filters"
-                  : folderCopy.emptyTitle}
-              </h3>
-              <p className="text-sm text-muted-foreground mt-1.5 leading-relaxed">
-                {searchQuery || filterStatus !== "all" || filterType !== "all"
-                  ? "Try adjusting your search or filter criteria."
-                  : folderCopy.emptyBody}
-              </p>
-              {!searchQuery && filterStatus === "all" && filterType === "all" && (
-                customFolderMatch ? (
-                  <Button variant="outline" className="mt-5" onClick={() => setActiveFolder("all")}>
-                    Browse All Automations
-                  </Button>
-                ) : (
-                  <Button className="mt-5" onClick={() => setIsTypePickerOpen(true)}>
-                    <Plus className="w-4 h-4 mr-1.5" />
-                    Create Automation
-                  </Button>
-                )
-              )}
-            </div>
-          ) : (
-            <>
-              <table className="w-full">
-                <thead>
-                  <tr className="border-b border-border">
-                    <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground tracking-wide">Name</th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground tracking-wide">Type</th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground tracking-wide">Status</th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground tracking-wide">Version</th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground tracking-wide">Modified</th>
-                    <th className="px-4 py-3 w-10"></th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {paginatedRules.map((rule) => {
-                    const status = getAutoStatus(rule);
-                    const badge = getTypeBadge(rule);
-                    const BadgeIcon = badge.icon;
-                    const modified = rule.lastTriggeredAt || rule.createdAt;
-                    return (
-                      <tr key={rule.id} className="border-b border-border last:border-0 hover:bg-muted/40 transition-colors group">
-                        <td className="px-6 py-4">
-                          <button
-                            onClick={() => setBuilderState({ kind: rule._type, mode: "edit", rule })}
-                            className="text-sm font-medium text-foreground hover:text-primary transition-colors text-left"
-                          >
-                            {rule.name}
-                          </button>
-                        </td>
-                        <td className="px-4 py-4">
-                          <span className={cn(
-                            "inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded-full border",
-                            badge.bg, badge.color, badge.border
-                          )}>
-                            <BadgeIcon className="w-3 h-3" />
-                            {badge.label}
-                          </span>
-                        </td>
-                        <td className="px-4 py-4">
-                          <button
-                            onClick={() => onToggleAutomation(rule.id)}
-                            title={rule.enabled ? "Click to stop" : "Click to activate"}
-                            className="cursor-pointer"
-                          >
-                            <span className={cn(
-                              "inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded-full border transition-all hover:ring-2 hover:ring-offset-1",
-                              statusBadge(status),
-                              status === "active" ? "hover:ring-emerald-300" : status === "draft" ? "hover:ring-amber-300" : "hover:ring-rose-300"
-                            )}>
-                              <span className={cn(
-                                "w-1.5 h-1.5 rounded-full",
-                                status === "active" ? "bg-emerald-500" : status === "draft" ? "bg-amber-500" : "bg-rose-500"
-                              )} />
-                              {status === "active" ? "Active" : status === "draft" ? "Draft" : "Stopped"}
-                            </span>
-                          </button>
-                        </td>
-                        <td className="px-4 py-4 text-sm text-muted-foreground">v1</td>
-                        <td className="px-4 py-4 text-sm text-muted-foreground">{formatTimeAgo(modified)}</td>
-                        <td className="px-4 py-4 text-right">
-                          <DropdownMenu>
-                            <DropdownMenuTrigger
-                              className="inline-flex items-center justify-center h-8 w-8 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted transition-colors outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                              aria-label={`Actions for ${rule.name}`}
-                            >
-                              <MoreVertical className="w-4 h-4" />
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end" className="w-44">
-                              <DropdownMenuItem onSelect={() => setBuilderState({ kind: rule._type, mode: "edit", rule })}>
-                                <Edit2 className="w-3.5 h-3.5" /> Edit
-                              </DropdownMenuItem>
-                              <DropdownMenuItem onSelect={() => handleDuplicateRule(rule)}>
-                                <Copy className="w-3.5 h-3.5" /> Duplicate
-                              </DropdownMenuItem>
-                              <DropdownMenuItem onSelect={() => onToggleAutomation(rule.id)}>
-                                {rule.enabled ? <><Pause className="w-3.5 h-3.5" />Stop</> : <><Play className="w-3.5 h-3.5" />Activate</>}
-                              </DropdownMenuItem>
-                              <DropdownMenuItem onSelect={() => setMovingRule(rule)}>
-                                <FolderPlus className="w-3.5 h-3.5" /> Move to Folder
-                              </DropdownMenuItem>
-                              {(() => {
-                                const parentFolder = customFolders.find(f => f.automationIds.includes(rule.id));
-                                if (!parentFolder) return null;
-                                return (
-                                  <DropdownMenuItem onSelect={() => handleRemoveFromFolder(rule.id, parentFolder.id)}>
-                                    <X className="w-3.5 h-3.5" /> Remove from "{parentFolder.name}"
-                                  </DropdownMenuItem>
-                                );
-                              })()}
-                              <DropdownMenuSeparator />
-                              <DropdownMenuItem variant="destructive" onSelect={() => setRuleToDelete(rule)}>
-                                <Trash2 className="w-3.5 h-3.5" /> Delete
-                              </DropdownMenuItem>
-                            </DropdownMenuContent>
-                          </DropdownMenu>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-              {/* Pagination footer */}
-              <div className="flex items-center justify-between px-6 py-3 border-t border-border bg-background text-sm">
-                <span className="text-muted-foreground">
-                  Showing {showingFrom}–{showingTo} of {filteredRules.length}
-                </span>
-                <div className="flex items-center gap-3">
-                  <select
-                    value={pageSize}
-                    onChange={(e) => { setPageSize(Number(e.target.value)); setCurrentPage(1); }}
-                    className="h-8 px-2 pr-7 rounded-md border border-border bg-background text-sm text-foreground appearance-none cursor-pointer"
-                    style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 24 24' fill='none' stroke='%239ca3af' stroke-width='2'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E")`, backgroundRepeat: "no-repeat", backgroundPosition: "right 6px center" }}
-                  >
-                    <option value={10}>10 / page</option>
-                    <option value={25}>25 / page</option>
-                    <option value={50}>50 / page</option>
-                  </select>
-                  <div className="flex items-center gap-1">
-                    <button
-                      onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
-                      disabled={safeCurrentPage <= 1}
-                      className="h-8 w-8 rounded-md border border-border flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted disabled:opacity-30 disabled:pointer-events-none transition-colors"
+              {/* Filter bar */}
+              {showFilters && (
+                <div className="flex flex-wrap items-center gap-3 px-5 py-3 border-b border-border bg-muted/20 animate-in slide-in-from-top-1 duration-200">
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-semibold text-muted-foreground">Status:</span>
+                    {(["all", "active", "draft", "stopped"] as const).map(s => (
+                      <button
+                        key={s}
+                        onClick={() => setFilterStatus(s)}
+                        className={cn(
+                          "px-2.5 py-1 text-xs font-medium rounded-full border transition-colors capitalize",
+                          filterStatus === s
+                            ? s === "active" ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                              : s === "draft" ? "bg-amber-50 text-amber-700 border-amber-200"
+                              : s === "stopped" ? "bg-rose-50 text-rose-700 border-rose-200"
+                              : "bg-primary/10 text-primary border-primary/30"
+                            : "border-border text-muted-foreground hover:bg-muted hover:text-foreground"
+                        )}
+                      >
+                        {s}
+                      </button>
+                    ))}
+                  </div>
+                  <Separator orientation="vertical" className="h-6" />
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-semibold text-muted-foreground">Type:</span>
+                    {([["all", "All"], ["basic", "Basic"], ["sequence", "Sequence"], ["flow", "Journey"]] as const).map(([k, label]) => (
+                      <button
+                        key={k}
+                        onClick={() => setFilterType(k as any)}
+                        className={cn(
+                          "px-2.5 py-1 text-xs font-medium rounded-full border transition-colors",
+                          filterType === k
+                            ? "bg-primary/10 text-primary border-primary/30"
+                            : "border-border text-muted-foreground hover:bg-muted hover:text-foreground"
+                        )}
+                      >
+                        {label}
+                      </button>
+                    ))}
+                  </div>
+                  <Separator orientation="vertical" className="h-6" />
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-semibold text-muted-foreground">Sort:</span>
+                    <select
+                      value={sortBy}
+                      onChange={(e) => setSortBy(e.target.value as any)}
+                      className="h-7 px-2 rounded-md border border-input bg-background text-xs"
                     >
-                      <ChevronLeft className="w-4 h-4" />
-                    </button>
+                      <option value="modified">Last Modified</option>
+                      <option value="name">Name</option>
+                      <option value="runs">Runs</option>
+                      <option value="status">Status</option>
+                    </select>
                     <button
-                      onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
-                      disabled={safeCurrentPage >= totalPages}
-                      className="h-8 w-8 rounded-md border border-border flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted disabled:opacity-30 disabled:pointer-events-none transition-colors"
+                      onClick={() => setSortDir(d => d === "asc" ? "desc" : "asc")}
+                      className="p-1 rounded-md border border-input hover:bg-muted transition-colors"
+                      title={sortDir === "asc" ? "Ascending" : "Descending"}
                     >
-                      <ChevronRight className="w-4 h-4" />
+                      <ArrowUpDown className="w-3 h-3 text-muted-foreground" />
                     </button>
                   </div>
+                  {(filterStatus !== "all" || filterType !== "all") && (
+                    <>
+                      <Separator orientation="vertical" className="h-6" />
+                      <button
+                        onClick={() => { setFilterStatus("all"); setFilterType("all"); }}
+                        className="text-xs text-muted-foreground hover:text-foreground underline"
+                      >
+                        Clear all
+                      </button>
+                    </>
+                  )}
                 </div>
-              </div>
-            </>
-          )}
-        </div>
+              )}
+              {filteredRules.length === 0 ? (
+                <div className="px-6 py-16 text-center max-w-md mx-auto">
+                  <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">
+                    {(() => {
+                      const EmptyIcon = customFolderMatch ? FolderOpen
+                        : activeFolder === "sequence" ? ListOrdered
+                        : activeFolder === "flow" ? GitBranch
+                        : activeFolder === "basic" ? Zap : Inbox;
+                      return <EmptyIcon className="w-5 h-5 text-primary" />;
+                    })()}
+                  </div>
+                  <h3 className="text-base font-semibold text-foreground">
+                    {searchQuery ? "No automations match your search" : folderCopy.emptyTitle}
+                  </h3>
+                  <p className="text-sm text-muted-foreground mt-1.5 leading-relaxed">
+                    {searchQuery ? "Try a different keyword or clear your search." : folderCopy.emptyBody}
+                  </p>
+                  {!searchQuery && (
+                    customFolderMatch ? (
+                      <Button variant="outline" className="mt-5" onClick={() => setActiveFolder("all")}>
+                        <Inbox className="w-4 h-4 mr-1.5" />
+                        Browse All Automations
+                      </Button>
+                    ) : (
+                      <Button className="mt-5" onClick={() => {
+                        if (activeFolder === "basic")    setBuilderState({ kind: "basic",    mode: "new" });
+                        else if (activeFolder === "sequence") setBuilderState({ kind: "sequence", mode: "new" });
+                        else if (activeFolder === "flow")     setBuilderState({ kind: "flow",     mode: "new" });
+                        else setIsTypePickerOpen(true);
+                      }}>
+                        <Plus className="w-4 h-4 mr-1.5" />
+                        {folderCopy.createLabel}
+                      </Button>
+                    )
+                  )}
+                </div>
+              ) : (
+                <table className="w-full">
+                  <thead>
+                    <tr className="border-b border-border text-xs font-medium text-muted-foreground bg-muted/30">
+                      <th className="px-5 py-3 text-left">Name</th>
+                      <th className="px-5 py-3 text-left">Status</th>
+                      <th className="px-5 py-3 text-left">Type</th>
+                      <th className="px-5 py-3 text-left">Runs</th>
+                      <th className="px-5 py-3 text-left">CTR</th>
+                      <th className="px-5 py-3 text-left">Modified</th>
+                      <th className="px-5 py-3 text-right w-10"></th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filteredRules.map((rule) => {
+                      const status = getAutoStatus(rule);
+                      const ctr = getAutoCtr(rule);
+                      const modified = rule.lastTriggeredAt || rule.createdAt;
+                      return (
+                        <tr key={rule.id} className="border-b border-border last:border-0 hover:bg-muted/30 transition-colors group">
+                          <td className="px-5 py-4">
+                            <button
+                              onClick={() => setBuilderState({ kind: rule._type, mode: "edit", rule })}
+                              className="flex flex-col gap-0.5 text-left group/name"
+                            >
+                              <div className="flex items-center gap-2">
+                                <span className="text-sm font-semibold text-foreground group-hover/name:text-primary transition-colors">{rule.name}</span>
+                                {(() => {
+                                  const f = customFolders.find(f => f.automationIds.includes(rule.id));
+                                  if (!f) return null;
+                                  return (
+                                    <span className="inline-flex items-center gap-1 px-1.5 py-0.5 text-[10px] font-medium bg-muted text-muted-foreground rounded">
+                                      <Folder className="w-2.5 h-2.5" />{f.name}
+                                    </span>
+                                  );
+                                })()}
+                              </div>
+                              {rule.description && (
+                                <span className="text-xs text-muted-foreground truncate max-w-[420px]">{rule.description}</span>
+                              )}
+                            </button>
+                          </td>
+                          <td className="px-5 py-4">
+                            <button
+                              onClick={() => onToggleAutomation(rule.id)}
+                              title={rule.enabled ? "Click to stop" : "Click to activate"}
+                              className="cursor-pointer"
+                            >
+                              <span className={cn(
+                                "inline-flex items-center px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider border rounded-full transition-all hover:ring-2 hover:ring-offset-1",
+                                statusBadge(status),
+                                status === "active" ? "hover:ring-emerald-300" : status === "draft" ? "hover:ring-amber-300" : "hover:ring-rose-300"
+                              )}>
+                                {status}
+                              </span>
+                            </button>
+                          </td>
+                          <td className="px-5 py-4 text-sm text-foreground">{typeLabel(rule._type)}</td>
+                          <td className="px-5 py-4 text-sm font-medium text-foreground tabular-nums">{rule.triggerCount.toLocaleString()}</td>
+                          <td className="px-5 py-4 text-sm text-foreground tabular-nums">{ctr !== null ? `${ctr}%` : <span className="text-muted-foreground">—</span>}</td>
+                          <td className="px-5 py-4 text-sm text-muted-foreground">{formatTimeAgo(modified)}</td>
+                          <td className="px-5 py-4 text-right">
+                            <DropdownMenu>
+                              <DropdownMenuTrigger
+                                className={cn(
+                                  "inline-flex items-center justify-center h-8 w-8 rounded-md",
+                                  "text-muted-foreground hover:text-foreground hover:bg-muted",
+                                  "transition-colors outline-none",
+                                  "focus-visible:ring-2 focus-visible:ring-ring"
+                                )}
+                                aria-label={`Actions for ${rule.name}`}
+                              >
+                                <MoreVertical className="w-4 h-4" />
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end" className="w-44">
+                                <DropdownMenuItem onSelect={() => {
+                                  setBuilderState({ kind: rule._type, mode: "edit", rule });
+                                }}>
+                                  <Edit2 className="w-3.5 h-3.5" />
+                                  Edit
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onSelect={() => handleDuplicateRule(rule)}>
+                                  <Copy className="w-3.5 h-3.5" />
+                                  Duplicate
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onSelect={() => onToggleAutomation(rule.id)}>
+                                  {rule.enabled
+                                    ? <><Pause className="w-3.5 h-3.5" />Stop</>
+                                    : <><Play className="w-3.5 h-3.5" />Activate</>}
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onSelect={() => setMovingRule(rule)}>
+                                  <FolderPlus className="w-3.5 h-3.5" />
+                                  Move to Folder
+                                </DropdownMenuItem>
+                                {(() => {
+                                  const parentFolder = customFolders.find(f => f.automationIds.includes(rule.id));
+                                  if (!parentFolder) return null;
+                                  return (
+                                    <DropdownMenuItem onSelect={() => handleRemoveFromFolder(rule.id, parentFolder.id)}>
+                                      <X className="w-3.5 h-3.5" />
+                                      Remove from "{parentFolder.name}"
+                                    </DropdownMenuItem>
+                                  );
+                                })()}
+                                <DropdownMenuSeparator />
+                                <DropdownMenuItem
+                                  variant="destructive"
+                                  onSelect={() => setRuleToDelete(rule)}
+                                >
+                                  <Trash2 className="w-3.5 h-3.5" />
+                                  Delete
+                                </DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              )}
+            </div>
       </div>
 
       {/* Type picker — shown when the user clicks New from the All folder */}
