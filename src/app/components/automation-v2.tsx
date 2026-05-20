@@ -349,18 +349,24 @@ const ConnectionLines = ({ nodes, connections }: { nodes: FlowNode[]; connection
 // CANVAS NODE
 // ============================================================================
 
-const CanvasNode = ({ node, isSelected, onClick, onDoubleClick, onDelete, onAddAfter }: {
+const CanvasNode = ({ node, isSelected, onClick, onDoubleClick, onDelete, onAddAfter, onDragStart }: {
   node: FlowNode; isSelected: boolean; onClick: () => void; onDoubleClick?: () => void; onDelete: () => void; onAddAfter?: () => void;
+  onDragStart?: (nodeId: string, e: React.MouseEvent) => void;
 }) => {
   const Icon = node.icon;
   const colors = getNodeTypeColor(node.type);
   const pos = gridToPixel(node.position.x, node.position.y);
   return (
     <div className="absolute group" style={{ left: pos.px, top: pos.py, width: NODE_WIDTH, height: NODE_HEIGHT }}>
-      <div onClick={onClick} onDoubleClick={onDoubleClick} className={cn(
-        "w-full h-full rounded-xl border-2 cursor-pointer transition-all duration-200 bg-card hover:shadow-lg hover:shadow-primary/5",
-        isSelected ? `border-primary shadow-lg shadow-primary/10 ring-2 ${colors.ring}` : "border-border hover:border-primary/40"
-      )}>
+      <div
+        onClick={onClick}
+        onDoubleClick={onDoubleClick}
+        onMouseDown={(e) => { if (e.button === 0 && onDragStart) { e.stopPropagation(); onDragStart(node.id, e); } }}
+        className={cn(
+          "w-full h-full rounded-xl border-2 cursor-grab active:cursor-grabbing transition-all duration-200 bg-card hover:shadow-lg hover:shadow-primary/5",
+          isSelected ? `border-primary shadow-lg shadow-primary/10 ring-2 ${colors.ring}` : "border-border hover:border-primary/40"
+        )}
+      >
         <div className={cn("h-1 rounded-t-[10px]", colors.bar)} />
         <div className="px-3.5 py-2.5 flex items-start gap-3">
           <div className={cn("w-9 h-9 rounded-lg flex items-center justify-center shrink-0 mt-0.5", node.iconBg)}>
@@ -824,6 +830,12 @@ const AutomationCanvas = ({ automation, onBack, onSave, onUpdate }: {
   const [isEditingName, setIsEditingName] = useState(false);
   const [zoom, setZoom] = useState(1);
   const [configNodeId, setConfigNodeId] = useState<string | null>(null);
+  const [pan, setPan] = useState({ x: 0, y: 0 });
+  const [isPanning, setIsPanning] = useState(false);
+  const [panStart, setPanStart] = useState({ x: 0, y: 0 });
+  const [draggingNodeId, setDraggingNodeId] = useState<string | null>(null);
+  const [dragStart, setDragStart] = useState({ mouseX: 0, mouseY: 0, nodeX: 0, nodeY: 0 });
+  const canvasRef = useRef<HTMLDivElement>(null);
 
   const selectedNode = automation.nodes.find(n => n.id === selectedNodeId) || null;
   const modeInfo = getModeInfo(automation.mode);
@@ -836,7 +848,7 @@ const AutomationCanvas = ({ automation, onBack, onSave, onUpdate }: {
       maxX = Math.max(maxX, pos.px + NODE_WIDTH);
       maxY = Math.max(maxY, pos.py + NODE_HEIGHT);
     });
-    return { width: maxX + CANVAS_PADDING * 2 + 200, height: maxY + CANVAS_PADDING * 2 + 100 };
+    return { width: maxX + CANVAS_PADDING * 2 + 400, height: maxY + CANVAS_PADDING * 2 + 300 };
   }, [automation.nodes]);
 
   const addNode = useCallback((item: NodeCatalogItem, preConfig?: Record<string, any>, customLabel?: string) => {
@@ -942,6 +954,54 @@ const AutomationCanvas = ({ automation, onBack, onSave, onUpdate }: {
     }
   }, []);
 
+  // --- Canvas panning (middle-click or space+drag or just drag on background) ---
+  const handleCanvasMouseDown = useCallback((e: React.MouseEvent) => {
+    // Only pan on left-click on the background (not on a node)
+    if (e.button === 0) {
+      setIsPanning(true);
+      setPanStart({ x: e.clientX - pan.x, y: e.clientY - pan.y });
+    }
+  }, [pan]);
+
+  // --- Node dragging ---
+  const handleNodeDragStart = useCallback((nodeId: string, e: React.MouseEvent) => {
+    const node = automation.nodes.find(n => n.id === nodeId);
+    if (!node) return;
+    setDraggingNodeId(nodeId);
+    setDragStart({ mouseX: e.clientX, mouseY: e.clientY, nodeX: node.position.x, nodeY: node.position.y });
+  }, [automation.nodes]);
+
+  // Global mouse move / up for both panning and dragging
+  useEffect(() => {
+    const handleMouseMove = (e: MouseEvent) => {
+      if (draggingNodeId) {
+        e.preventDefault();
+        const dx = (e.clientX - dragStart.mouseX) / zoom;
+        const dy = (e.clientY - dragStart.mouseY) / zoom;
+        // Convert pixel delta back to grid units
+        const gridDx = dx / (NODE_WIDTH + HORIZONTAL_GAP);
+        const gridDy = dy / (NODE_HEIGHT + VERTICAL_GAP);
+        const newX = Math.round((dragStart.nodeX + gridDx) * 4) / 4; // snap to 0.25 grid
+        const newY = Math.round((dragStart.nodeY + gridDy) * 4) / 4;
+        onUpdate({
+          ...automation,
+          nodes: automation.nodes.map(n => n.id === draggingNodeId ? { ...n, position: { x: Math.max(0, newX), y: Math.max(0, newY) } } : n),
+        });
+      } else if (isPanning) {
+        setPan({ x: e.clientX - panStart.x, y: e.clientY - panStart.y });
+      }
+    };
+    const handleMouseUp = () => {
+      if (draggingNodeId) setDraggingNodeId(null);
+      if (isPanning) setIsPanning(false);
+    };
+    if (draggingNodeId || isPanning) {
+      window.addEventListener("mousemove", handleMouseMove);
+      window.addEventListener("mouseup", handleMouseUp);
+      return () => { window.removeEventListener("mousemove", handleMouseMove); window.removeEventListener("mouseup", handleMouseUp); };
+    }
+  }, [draggingNodeId, isPanning, dragStart, panStart, zoom, automation, onUpdate]);
+
   return (
     <div className="h-[calc(100vh-64px)] flex flex-col bg-background">
       {/* Toolbar */}
@@ -977,14 +1037,20 @@ const AutomationCanvas = ({ automation, onBack, onSave, onUpdate }: {
 
       <div className="flex-1 flex overflow-hidden">
         {/* Canvas */}
-        <div className="flex-1 overflow-auto relative bg-[radial-gradient(circle,_hsl(var(--muted-foreground)/0.08)_1px,_transparent_1px)] bg-[length:24px_24px]"
+        <div ref={canvasRef}
+          className={cn("flex-1 overflow-hidden relative", isPanning ? "cursor-grabbing" : "cursor-grab")}
+          style={{ backgroundImage: "radial-gradient(circle, hsl(var(--muted-foreground) / 0.08) 1px, transparent 1px)", backgroundSize: `${24 * zoom}px ${24 * zoom}px`, backgroundPosition: `${pan.x}px ${pan.y}px` }}
           onWheel={handleWheel}
-          onClick={() => { setSelectedNodeId(null); setIsNodePickerOpen(false); }}>
+          onMouseDown={handleCanvasMouseDown}
+          onClick={() => { if (!draggingNodeId) { setSelectedNodeId(null); setIsNodePickerOpen(false); } }}>
+          {/* Zoom controls */}
           <div className="absolute bottom-4 left-4 flex items-center gap-1 bg-card border border-border rounded-lg p-1 z-20 shadow-sm">
-            <button onClick={() => setZoom(1)} className="p-1.5 rounded-md hover:bg-muted text-muted-foreground text-xs font-mono w-10 text-center">{Math.round(zoom * 100)}%</button>
+            <button onClick={(e) => { e.stopPropagation(); setPan({ x: 0, y: 0 }); setZoom(1); }} className="p-1.5 rounded-md hover:bg-muted text-muted-foreground text-xs font-mono w-10 text-center">{Math.round(zoom * 100)}%</button>
             <div className="w-px h-5 bg-border" />
-            <button onClick={() => setZoom(z => Math.min(z + 0.1, 2))} className="p-1.5 rounded-md hover:bg-muted text-muted-foreground"><ZoomIn className="w-3.5 h-3.5" /></button>
-            <button onClick={() => setZoom(z => Math.max(z - 0.1, 0.3))} className="p-1.5 rounded-md hover:bg-muted text-muted-foreground"><ZoomOut className="w-3.5 h-3.5" /></button>
+            <button onClick={(e) => { e.stopPropagation(); setZoom(z => Math.min(z + 0.1, 2)); }} className="p-1.5 rounded-md hover:bg-muted text-muted-foreground"><ZoomIn className="w-3.5 h-3.5" /></button>
+            <button onClick={(e) => { e.stopPropagation(); setZoom(z => Math.max(z - 0.1, 0.3)); }} className="p-1.5 rounded-md hover:bg-muted text-muted-foreground"><ZoomOut className="w-3.5 h-3.5" /></button>
+            <div className="w-px h-5 bg-border" />
+            <button onClick={(e) => { e.stopPropagation(); setPan({ x: 0, y: 0 }); setZoom(1); }} className="p-1.5 rounded-md hover:bg-muted text-muted-foreground" title="Reset view"><Maximize2 className="w-3.5 h-3.5" /></button>
           </div>
           {automation.mode === "journey" && automation.nodes.length === 0 && (
             <div className="absolute top-4 left-1/2 -translate-x-1/2 bg-card border border-border rounded-xl px-6 py-3 shadow-sm z-20 flex items-center gap-3">
@@ -995,7 +1061,9 @@ const AutomationCanvas = ({ automation, onBack, onSave, onUpdate }: {
               </div>
             </div>
           )}
-          <div className="relative" style={{ width: canvasBounds.width * zoom, height: canvasBounds.height * zoom, transform: `scale(${zoom})`, transformOrigin: "top left", minWidth: "100%", minHeight: "100%" }} onClick={(e) => e.stopPropagation()}>
+          {/* Transformed canvas layer */}
+          <div className="absolute" style={{ transform: `translate(${pan.x}px, ${pan.y}px) scale(${zoom})`, transformOrigin: "0 0", width: canvasBounds.width, height: canvasBounds.height }}
+            onClick={(e) => e.stopPropagation()} onMouseDown={(e) => e.stopPropagation()}>
             <ConnectionLines nodes={automation.nodes} connections={automation.connections} />
             {automation.nodes.length === 0 && (
               <div className="absolute inset-0 flex items-center justify-center">
@@ -1007,18 +1075,20 @@ const AutomationCanvas = ({ automation, onBack, onSave, onUpdate }: {
             )}
             {automation.nodes.map(node => (
               <CanvasNode key={node.id} node={node} isSelected={selectedNodeId === node.id}
-                onClick={() => { setSelectedNodeId(node.id); setIsNodePickerOpen(false); }}
+                onClick={() => { if (!draggingNodeId) { setSelectedNodeId(node.id); setIsNodePickerOpen(false); } }}
                 onDoubleClick={() => { setConfigNodeId(node.id); }}
-                onDelete={() => deleteNode(node.id)} onAddAfter={() => handleOpenPicker(node.id)} />
+                onDelete={() => deleteNode(node.id)} onAddAfter={() => handleOpenPicker(node.id)}
+                onDragStart={handleNodeDragStart} />
             ))}
-            {automation.nodes.length > 0 && !isNodePickerOpen && !selectedNode && (
-              <div className="absolute bottom-6 right-6 z-10">
-                <button onClick={() => handleOpenPicker()} className="w-12 h-12 rounded-full bg-primary text-primary-foreground shadow-lg hover:shadow-xl hover:scale-105 transition-all flex items-center justify-center">
-                  <Plus className="w-5 h-5" />
-                </button>
-              </div>
-            )}
           </div>
+          {/* FAB for adding nodes */}
+          {automation.nodes.length > 0 && !isNodePickerOpen && !selectedNode && (
+            <div className="absolute bottom-6 right-6 z-10">
+              <button onClick={() => handleOpenPicker()} className="w-12 h-12 rounded-full bg-primary text-primary-foreground shadow-lg hover:shadow-xl hover:scale-105 transition-all flex items-center justify-center">
+                <Plus className="w-5 h-5" />
+              </button>
+            </div>
+          )}
         </div>
         {isNodePickerOpen && (
           <NodePickerPanel isOpen={isNodePickerOpen} onClose={() => { setIsNodePickerOpen(false); setInsertAfterNodeId(null); }}
