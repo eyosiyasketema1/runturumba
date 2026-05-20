@@ -146,11 +146,8 @@ const CANVAS_PADDING = 80;
 // ============================================================================
 
 const DEFAULT_FOLDERS: AutomationFolder[] = [
-  { id: "onboarding", name: "Onboarding", color: "text-emerald-600" },
-  { id: "follow-ups", name: "Follow-ups", color: "text-blue-600" },
-  { id: "discipleship", name: "Discipleship", color: "text-purple-600" },
-  { id: "re-engagement", name: "Re-engagement", color: "text-amber-600" },
-  { id: "notifications", name: "Notifications", color: "text-rose-600" },
+  { id: "onboarding", name: "Onboarding" },
+  { id: "follow-ups", name: "Follow-ups" },
 ];
 
 // ============================================================================
@@ -179,7 +176,7 @@ const SAMPLE_AUTOMATIONS: AutomationDraft[] = [
   },
   {
     id: "wf-3", name: "Foundations of Faith Drip", description: "7-day drip sequence for new believers",
-    mode: "sequence", enabled: true, createdAt: "2025-04-20T14:00:00Z", runs: 89, folderId: "discipleship",
+    mode: "sequence", enabled: true, createdAt: "2025-04-20T14:00:00Z", runs: 89, folderId: null,
     nodes: [
       { id: "n1", type: "trigger", category: "tag_added", label: "Tag: new-believer", description: "When tag applied", icon: Tag, iconColor: "text-amber-400", iconBg: "bg-amber-500/20", config: { tag: "new-believer" }, position: { x: 0, y: 0 } },
       { id: "n2", type: "action", category: "send_message", label: "Day 1 — Welcome", description: "Introduction to faith", icon: Send, iconColor: "text-blue-400", iconBg: "bg-blue-500/20", config: { message: "Day 1: What it means to believe..." }, position: { x: 1, y: 0 } },
@@ -197,7 +194,7 @@ const SAMPLE_AUTOMATIONS: AutomationDraft[] = [
   },
   {
     id: "wf-4", name: "Seeker Discipleship Journey", description: "Multi-path journey based on seeker engagement",
-    mode: "journey", enabled: true, createdAt: "2025-04-15T09:00:00Z", runs: 213, folderId: "discipleship",
+    mode: "journey", enabled: true, createdAt: "2025-04-15T09:00:00Z", runs: 213, folderId: null,
     nodes: [
       { id: "j1", type: "trigger", category: "contact_added", label: "New Seeker", description: "Contact created", icon: Users, iconColor: "text-emerald-400", iconBg: "bg-emerald-500/20", config: {}, position: { x: 0, y: 1 } },
       { id: "j2", type: "action", category: "send_message", label: "Welcome Message", description: "Send intro", icon: Send, iconColor: "text-blue-400", iconBg: "bg-blue-500/20", config: { message: "Welcome! Tell us about yourself." }, position: { x: 1, y: 1 } },
@@ -238,7 +235,7 @@ const SAMPLE_AUTOMATIONS: AutomationDraft[] = [
   },
   {
     id: "wf-6", name: "Re-engagement Nudge", description: "Nudge contacts who haven't responded in 7 days",
-    mode: "sequence", enabled: false, createdAt: "2025-05-01T09:00:00Z", runs: 0, folderId: "re-engagement",
+    mode: "sequence", enabled: false, createdAt: "2025-05-01T09:00:00Z", runs: 0, folderId: "follow-ups",
     nodes: [
       { id: "n1", type: "trigger", category: "schedule", label: "Daily at 9am", description: "Every day at 9am", icon: Clock, iconColor: "text-cyan-400", iconBg: "bg-cyan-500/20", config: { cron: "0 9 * * *" }, position: { x: 0, y: 0 } },
       { id: "n2", type: "condition", category: "filter", label: "Last msg > 7 days", description: "Filter inactive", icon: Filter, iconColor: "text-sky-400", iconBg: "bg-sky-500/20", config: {}, position: { x: 1, y: 0 } },
@@ -904,11 +901,8 @@ const FolderSidebar = ({ folders, selectedFolderId, automations, onSelectFolder,
   return (
     <div className="w-[220px] shrink-0 border-r border-border bg-card/50 h-full overflow-y-auto">
       <div className="p-4 pb-2">
-        <div className="flex items-center justify-between mb-3">
+        <div className="mb-3">
           <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Folders</p>
-          <button onClick={() => setIsCreating(true)} className="p-1 rounded-md hover:bg-muted text-muted-foreground hover:text-foreground transition-colors" title="New folder">
-            <FolderPlus className="w-3.5 h-3.5" />
-          </button>
         </div>
 
         {/* All */}
@@ -952,36 +946,44 @@ const FolderSidebar = ({ folders, selectedFolderId, automations, onSelectFolder,
           }
 
           return (
-            <div key={folder.id} className="group relative mb-0.5">
+            <div key={folder.id} className="group mb-0.5">
               <button onClick={() => onSelectFolder(folder.id)} className={cn(
                 "w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-left transition-colors",
                 isSelected ? "bg-primary/10 text-primary font-semibold" : "hover:bg-muted/70 text-foreground"
               )}>
-                {isSelected ? <FolderOpen className={cn("w-4 h-4 shrink-0", folder.color || "")} /> : <Folder className={cn("w-4 h-4 shrink-0", folder.color || "text-muted-foreground")} />}
+                {isSelected ? <FolderOpen className="w-4 h-4 shrink-0" /> : <Folder className="w-4 h-4 shrink-0 text-muted-foreground" />}
                 <span className="text-sm flex-1 truncate">{folder.name}</span>
-                <span className={cn("text-[11px] tabular-nums", isSelected ? "text-primary" : "text-muted-foreground")}>{count}</span>
+                {/* Count hides on hover, edit/delete show instead */}
+                <span className={cn("text-[11px] tabular-nums group-hover:hidden", isSelected ? "text-primary" : "text-muted-foreground")}>{count}</span>
+                <span className="hidden group-hover:flex items-center gap-0.5">
+                  <span role="button" onClick={(e) => { e.stopPropagation(); setEditingId(folder.id); setEditName(folder.name); }}
+                    className="p-1 rounded hover:bg-muted text-muted-foreground hover:text-foreground"><Pencil className="w-3 h-3" /></span>
+                  <span role="button" onClick={(e) => { e.stopPropagation(); onDeleteFolder(folder.id); }}
+                    className="p-1 rounded hover:bg-destructive/10 text-muted-foreground hover:text-destructive"><Trash2 className="w-3 h-3" /></span>
+                </span>
               </button>
-              {/* Edit/Delete on hover */}
-              <div className="absolute right-1 top-1/2 -translate-y-1/2 hidden group-hover:flex items-center gap-0.5">
-                <button onClick={(e) => { e.stopPropagation(); setEditingId(folder.id); setEditName(folder.name); }}
-                  className="p-1 rounded hover:bg-muted text-muted-foreground hover:text-foreground"><Pencil className="w-3 h-3" /></button>
-                <button onClick={(e) => { e.stopPropagation(); onDeleteFolder(folder.id); }}
-                  className="p-1 rounded hover:bg-destructive/10 text-muted-foreground hover:text-destructive"><Trash2 className="w-3 h-3" /></button>
-              </div>
             </div>
           );
         })}
 
-        {/* Create new folder inline */}
+        {/* Create new folder inline input */}
         {isCreating && (
           <div className="flex items-center gap-1 px-2 py-1 mb-0.5">
-            <FolderPlus className="w-4 h-4 shrink-0 text-primary" />
+            <FolderPlus className="w-4 h-4 shrink-0 text-muted-foreground" />
             <input ref={inputRef} value={newFolderName} onChange={(e) => setNewFolderName(e.target.value)}
               onBlur={handleCreateSubmit}
               onKeyDown={(e) => { if (e.key === "Enter") handleCreateSubmit(); if (e.key === "Escape") { setIsCreating(false); setNewFolderName(""); } }}
               placeholder="Folder name..."
               className="flex-1 text-sm bg-transparent border-b border-primary outline-none px-1 py-0.5 placeholder:text-muted-foreground/50" />
           </div>
+        )}
+
+        {/* New Folder button */}
+        {!isCreating && (
+          <button onClick={() => setIsCreating(true)} className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-left text-muted-foreground hover:text-foreground hover:bg-muted/70 transition-colors mt-1">
+            <Plus className="w-4 h-4 shrink-0" />
+            <span className="text-sm">New Folder</span>
+          </button>
         )}
       </div>
     </div>
@@ -1228,7 +1230,7 @@ export const AutomationV2View = () => {
               {folders.map(f => (
                 <button key={f.id} onClick={() => handleMoveToFolder(movingAutomationId, f.id)}
                   className="w-full flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-muted/70 transition-colors text-left">
-                  <Folder className={cn("w-4 h-4", f.color || "text-muted-foreground")} />
+                  <Folder className="w-4 h-4 text-muted-foreground" />
                   <span className="text-sm font-medium">{f.name}</span>
                   <span className="text-[11px] text-muted-foreground ml-auto">{automations.filter(a => a.folderId === f.id).length}</span>
                 </button>
