@@ -375,7 +375,7 @@ const NodePickerPanel = ({ isOpen, onClose, onSelectNode, title, mode }: {
   isOpen: boolean; onClose: () => void; onSelectNode: (item: NodeCatalogItem) => void; title: string; mode: AutomationMode;
 }) => {
   const [search, setSearch] = useState("");
-  const [expandedSection, setExpandedSection] = useState<string | null>("Triggers");
+  const [collapsedSections, setCollapsedSections] = useState<Set<string>>(new Set());
   const filteredCatalog = useMemo(() => {
     let catalog = NODE_CATALOG;
     if (mode === "basic") {
@@ -403,10 +403,18 @@ const NodePickerPanel = ({ isOpen, onClose, onSelectNode, title, mode }: {
       <div className="py-2">
         {filteredCatalog.map(section => {
           const SectionIcon = section.icon;
-          const isExpanded = expandedSection === section.section || search.trim().length > 0;
+          const isExpanded = !collapsedSections.has(section.section) || search.trim().length > 0;
           return (
             <div key={section.section}>
-              <button onClick={() => setExpandedSection(isExpanded && !search ? null : section.section)} className="w-full flex items-center gap-3 px-5 py-3 hover:bg-muted/50 transition-colors">
+              <button onClick={() => {
+                if (search) return;
+                setCollapsedSections(prev => {
+                  const next = new Set(prev);
+                  if (next.has(section.section)) next.delete(section.section);
+                  else next.add(section.section);
+                  return next;
+                });
+              }} className="w-full flex items-center gap-3 px-5 py-3 hover:bg-muted/50 transition-colors">
                 <div className="w-8 h-8 rounded-lg bg-muted flex items-center justify-center shrink-0"><SectionIcon className="w-4 h-4 text-muted-foreground" /></div>
                 <div className="flex-1 text-left">
                   <p className="text-sm font-semibold text-foreground">{section.section}</p>

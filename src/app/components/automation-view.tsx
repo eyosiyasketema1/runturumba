@@ -114,6 +114,34 @@ const getTypeBadge = (a: AutomationRule): TypeBadgeInfo => {
   return { label: "Auto-Reply", icon: CornerDownRight, color: "text-blue-700", bg: "bg-blue-50", border: "border-blue-200" };
 };
 
+// Wrapper that manages journey draft state so nodes persist across renders
+const JourneyCanvasWrapper = ({ rule, onBack, onPersist }: {
+  rule?: AutomationRule;
+  onBack: () => void;
+  onPersist: (data: Partial<AutomationRule>) => void;
+}) => {
+  const [draft, setDraft] = useState<AutomationDraft>(() => ({
+    id: rule?.id ?? `auto-${Date.now()}`,
+    name: rule?.name ?? "New Journey",
+    description: rule?.description ?? "Journey",
+    nodes: [],
+    connections: [],
+    enabled: rule?.enabled ?? false,
+    createdAt: rule?.createdAt ?? new Date().toISOString(),
+    runs: rule?.triggerCount ?? 0,
+    mode: "journey",
+    folderId: null,
+  }));
+  return (
+    <AutomationCanvas
+      automation={draft}
+      onBack={onBack}
+      onSave={(a) => { setDraft(a); onPersist({ name: a.name, description: "Journey", trigger: "webhook_received", action: "webhook_call", enabled: false }); }}
+      onUpdate={(a) => { setDraft(a); onPersist({ name: a.name, description: "Journey", trigger: "webhook_received", action: "webhook_call", enabled: a.enabled }); }}
+    />
+  );
+};
+
 export const AutomationView = ({
   automations,
   webhooks,
@@ -336,25 +364,8 @@ export const AutomationView = ({
       );
     }
     // kind === "flow" → Journey Builder (v2 React Flow canvas)
-    const journeyDraft: AutomationDraft = {
-      id: rule?.id ?? `auto-${Date.now()}`,
-      name: rule?.name ?? "New Journey",
-      description: rule?.description ?? "Journey",
-      nodes: [],
-      connections: [],
-      enabled: rule?.enabled ?? false,
-      createdAt: rule?.createdAt ?? new Date().toISOString(),
-      runs: rule?.triggerCount ?? 0,
-      mode: "journey",
-      folderId: null,
-    };
     return (
-      <AutomationCanvas
-        automation={journeyDraft}
-        onBack={close}
-        onSave={(a) => persist({ name: a.name, description: "Journey", trigger: "webhook_received", action: "webhook_call", enabled: false })}
-        onUpdate={(a) => persist({ name: a.name, description: "Journey", trigger: "webhook_received", action: "webhook_call", enabled: a.enabled })}
-      />
+      <JourneyCanvasWrapper rule={rule} onBack={() => { close(); }} onPersist={persist} />
     );
   }
 
