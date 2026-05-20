@@ -1480,7 +1480,7 @@ export const AutomationV2View = () => {
                           <DropdownMenuTrigger onClick={(e) => e.stopPropagation()} className="p-2 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted transition-colors outline-none">
                             <MoreVertical className="w-4 h-4" />
                           </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end" className="w-48">
+                          <DropdownMenuContent align="end" className="w-48" onClick={(e) => e.stopPropagation()} onPointerDown={(e) => e.stopPropagation()}>
                             <DropdownMenuItem onSelect={() => setEditingAutomation(a)}><Edit2 className="w-3.5 h-3.5" /> Edit</DropdownMenuItem>
                             <DropdownMenuItem onSelect={() => handleDuplicate(a)}><Copy className="w-3.5 h-3.5" /> Duplicate</DropdownMenuItem>
                             <DropdownMenuItem onSelect={() => handleToggle(a.id)}>
