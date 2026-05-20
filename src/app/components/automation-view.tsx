@@ -553,12 +553,10 @@ export const AutomationView = ({
                                     ? <><Pause className="w-3.5 h-3.5" />Stop</>
                                     : <><Play className="w-3.5 h-3.5" />Activate</>}
                                 </DropdownMenuItem>
-                                {customFolders.length > 0 && (
-                                  <DropdownMenuItem onSelect={() => setMovingRule(rule)}>
-                                    <FolderPlus className="w-3.5 h-3.5" />
-                                    Move to Folder
-                                  </DropdownMenuItem>
-                                )}
+                                <DropdownMenuItem onSelect={() => setMovingRule(rule)}>
+                                  <FolderPlus className="w-3.5 h-3.5" />
+                                  Move to Folder
+                                </DropdownMenuItem>
                                 {(() => {
                                   const parentFolder = customFolders.find(f => f.automationIds.includes(rule.id));
                                   if (!parentFolder) return null;
@@ -672,43 +670,111 @@ export const AutomationView = ({
       </Modal>
 
       {/* Move to Folder modal */}
-      <Modal
-        isOpen={movingRule !== null}
+      <MoveToFolderModal
+        rule={movingRule}
+        customFolders={customFolders}
         onClose={() => setMovingRule(null)}
-        title={`Move "${movingRule?.name}" to Folder`}
-        size="sm"
-      >
-        <div className="space-y-2">
-          {customFolders.length === 0 ? (
-            <p className="text-sm text-muted-foreground py-4 text-center">No custom folders yet. Create one first.</p>
-          ) : (
-            customFolders.map(folder => {
-              const alreadyIn = movingRule ? folder.automationIds.includes(movingRule.id) : false;
-              return (
-                <button
-                  key={folder.id}
-                  disabled={alreadyIn}
-                  onClick={() => movingRule && handleMoveToFolder(movingRule.id, folder.id)}
-                  className={cn(
-                    "w-full flex items-center gap-3 px-4 py-3 text-sm rounded-lg border transition-colors text-left",
-                    alreadyIn
-                      ? "bg-muted/50 text-muted-foreground border-border cursor-not-allowed"
-                      : "hover:bg-primary/5 hover:border-primary/30 border-border"
-                  )}
-                >
-                  <Folder className="w-4 h-4 shrink-0" />
-                  <span className="flex-1 font-medium">{folder.name}</span>
-                  {alreadyIn && <span className="text-xs text-muted-foreground">Already here</span>}
-                  <span className="text-xs text-muted-foreground">{folder.automationIds.length} items</span>
-                </button>
-              );
-            })
-          )}
-        </div>
-      </Modal>
+        onMove={handleMoveToFolder}
+        onCreateAndMove={(folderName, ruleId) => {
+          const id = `folder-${Date.now()}`;
+          setCustomFolders(prev => [...prev, { id, name: folderName, automationIds: [ruleId] }]);
+          setMovingRule(null);
+          toast.success(`Created "${folderName}" and moved automation`);
+        }}
+      />
 
       {/* Webhooks are now managed inside the Journey Builder */}
     </div>
+  );
+};
+
+// --- Move to Folder Modal ---
+const MoveToFolderModal = ({
+  rule, customFolders, onClose, onMove, onCreateAndMove,
+}: {
+  rule: AutomationRule | null;
+  customFolders: { id: string; name: string; automationIds: string[] }[];
+  onClose: () => void;
+  onMove: (ruleId: string, folderId: string) => void;
+  onCreateAndMove: (folderName: string, ruleId: string) => void;
+}) => {
+  const [showNewFolder, setShowNewFolder] = useState(false);
+  const [newName, setNewName] = useState("");
+
+  const handleCreateAndMove = () => {
+    if (!newName.trim() || !rule) return;
+    onCreateAndMove(newName.trim(), rule.id);
+    setNewName("");
+    setShowNewFolder(false);
+  };
+
+  // Reset when modal opens/closes
+  React.useEffect(() => {
+    if (!rule) { setShowNewFolder(false); setNewName(""); }
+  }, [rule]);
+
+  return (
+    <Modal
+      isOpen={rule !== null}
+      onClose={onClose}
+      title={`Move "${rule?.name}" to Folder`}
+      size="sm"
+    >
+      <div className="space-y-3">
+        {/* Existing folders */}
+        {customFolders.map(folder => {
+          const alreadyIn = rule ? folder.automationIds.includes(rule.id) : false;
+          return (
+            <button
+              key={folder.id}
+              disabled={alreadyIn}
+              onClick={() => rule && onMove(rule.id, folder.id)}
+              className={cn(
+                "w-full flex items-center gap-3 px-4 py-3 text-sm rounded-lg border transition-colors text-left",
+                alreadyIn
+                  ? "bg-muted/50 text-muted-foreground border-border cursor-not-allowed"
+                  : "hover:bg-primary/5 hover:border-primary/30 border-border"
+              )}
+            >
+              <Folder className="w-4 h-4 shrink-0" />
+              <span className="flex-1 font-medium">{folder.name}</span>
+              {alreadyIn && (
+                <Badge variant="secondary" className="text-[10px]">Current</Badge>
+              )}
+              <span className="text-xs text-muted-foreground">{folder.automationIds.length} item{folder.automationIds.length !== 1 ? "s" : ""}</span>
+            </button>
+          );
+        })}
+
+        {/* Create new folder inline */}
+        {showNewFolder ? (
+          <div className="flex items-center gap-2 px-1">
+            <Input
+              placeholder="Folder name..."
+              value={newName}
+              onChange={(e) => setNewName(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && handleCreateAndMove()}
+              className="h-9 text-sm flex-1"
+              autoFocus
+            />
+            <Button size="sm" disabled={!newName.trim()} onClick={handleCreateAndMove}>
+              Create & Move
+            </Button>
+            <Button variant="ghost" size="sm" onClick={() => { setShowNewFolder(false); setNewName(""); }}>
+              <X className="w-3.5 h-3.5" />
+            </Button>
+          </div>
+        ) : (
+          <button
+            onClick={() => setShowNewFolder(true)}
+            className="w-full flex items-center gap-3 px-4 py-3 text-sm rounded-lg border border-dashed border-border hover:border-primary/40 hover:bg-primary/5 transition-colors text-left text-muted-foreground hover:text-foreground"
+          >
+            <FolderPlus className="w-4 h-4 shrink-0" />
+            <span className="font-medium">Create New Folder</span>
+          </button>
+        )}
+      </div>
+    </Modal>
   );
 };
 
