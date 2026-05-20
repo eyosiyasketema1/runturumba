@@ -1,5 +1,14 @@
 import React, { useState, useCallback, useRef, useEffect, useMemo } from "react";
 import {
+  ReactFlow, Background, Controls, MiniMap, Panel,
+  useNodesState, useEdgesState, addEdge,
+  Handle, Position, MarkerType, BackgroundVariant,
+  type Node as RFNode, type Edge as RFEdge, type Connection as RFConnection,
+  type NodeTypes, type EdgeTypes, type NodeProps,
+  ReactFlowProvider,
+} from "@xyflow/react";
+import "@xyflow/react/dist/style.css";
+import {
   Plus, Search, Play, Pause, Trash2, Edit2, MoreVertical, Clock,
   AlertCircle, X, Globe, Copy, Zap, ChevronRight, ChevronLeft,
   Inbox, FolderPlus, Folder, FolderOpen, Tag, Users, MessageSquare,
@@ -290,83 +299,26 @@ const gridToPixel = (gx: number, gy: number): { px: number; py: number } => ({
 });
 
 // ============================================================================
-// SVG CONNECTION LINES
+// REACT FLOW CUSTOM NODE
 // ============================================================================
 
-const ConnectionLines = ({ nodes, connections }: { nodes: FlowNode[]; connections: FlowConnection[] }) => {
-  const nodeMap = useMemo(() => {
-    const map = new Map<string, { px: number; py: number }>();
-    nodes.forEach(n => map.set(n.id, gridToPixel(n.position.x, n.position.y)));
-    return map;
-  }, [nodes]);
-
-  return (
-    <svg className="absolute inset-0 pointer-events-none" style={{ overflow: "visible" }}>
-      <defs>
-        <marker id="arrow-default" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto">
-          <path d="M1,1 L7,4 L1,7" fill="none" stroke="#94a3b8" strokeWidth="1.5" />
-        </marker>
-        <marker id="arrow-true" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto">
-          <path d="M1,1 L7,4 L1,7" fill="none" stroke="#22c55e" strokeWidth="1.5" />
-        </marker>
-        <marker id="arrow-false" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto">
-          <path d="M1,1 L7,4 L1,7" fill="none" stroke="#ef4444" strokeWidth="1.5" />
-        </marker>
-      </defs>
-      {connections.map(conn => {
-        const fromPos = nodeMap.get(conn.from);
-        const toPos = nodeMap.get(conn.to);
-        if (!fromPos || !toPos) return null;
-        const x1 = fromPos.px + NODE_WIDTH;
-        const y1 = fromPos.py + NODE_HEIGHT / 2;
-        const x2 = toPos.px;
-        const y2 = toPos.py + NODE_HEIGHT / 2;
-        const dx = Math.abs(x2 - x1) * 0.5;
-        const strokeColor = conn.type === "true" ? "#22c55e" : conn.type === "false" ? "#ef4444" : "#94a3b8";
-        const markerId = conn.type === "true" ? "arrow-true" : conn.type === "false" ? "arrow-false" : "arrow-default";
-        return (
-          <g key={conn.id}>
-            <path
-              d={`M${x1},${y1} C${x1 + dx},${y1} ${x2 - dx},${y2} ${x2},${y2}`}
-              fill="none" stroke={strokeColor} strokeWidth="2"
-              strokeDasharray={conn.type === "false" ? "6,4" : "none"}
-              markerEnd={`url(#${markerId})`} opacity="0.7"
-            />
-            {conn.label && (
-              <text x={(x1 + x2) / 2} y={(y1 + y2) / 2 - 10} textAnchor="middle"
-                className="text-[10px] font-semibold fill-current" style={{ fill: strokeColor }}>
-                {conn.label}
-              </text>
-            )}
-          </g>
-        );
-      })}
-    </svg>
-  );
-};
-
-// ============================================================================
-// CANVAS NODE
-// ============================================================================
-
-const CanvasNode = ({ node, isSelected, onClick, onDoubleClick, onDelete, onAddAfter, onDragStart }: {
-  node: FlowNode; isSelected: boolean; onClick: () => void; onDoubleClick?: () => void; onDelete: () => void; onAddAfter?: () => void;
-  onDragStart?: (nodeId: string, e: React.MouseEvent) => void;
-}) => {
+const AutomationNodeComponent = ({ data, selected }: NodeProps) => {
+  const node = data.flowNode as FlowNode;
   const Icon = node.icon;
   const colors = getNodeTypeColor(node.type);
-  const pos = gridToPixel(node.position.x, node.position.y);
+  const onDelete = data.onDelete as () => void;
+  const onAddAfter = data.onAddAfter as (() => void) | undefined;
+  const onDoubleClick = data.onDoubleClick as (() => void) | undefined;
+
   return (
-    <div className="absolute group" style={{ left: pos.px, top: pos.py, width: NODE_WIDTH, height: NODE_HEIGHT }}>
-      <div
-        onClick={onClick}
-        onDoubleClick={onDoubleClick}
-        onMouseDown={(e) => { if (e.button === 0 && onDragStart) { e.stopPropagation(); onDragStart(node.id, e); } }}
-        className={cn(
-          "w-full h-full rounded-xl border-2 cursor-grab active:cursor-grabbing transition-all duration-200 bg-card hover:shadow-lg hover:shadow-primary/5",
-          isSelected ? `border-primary shadow-lg shadow-primary/10 ring-2 ${colors.ring}` : "border-border hover:border-primary/40"
-        )}
-      >
+    <div className="group" style={{ width: NODE_WIDTH }} onDoubleClick={onDoubleClick}>
+      {/* Input handle */}
+      <Handle type="target" position={Position.Left} className="!w-2.5 !h-2.5 !bg-muted-foreground/40 !border-2 !border-background !-left-1.5" />
+
+      <div className={cn(
+        "rounded-xl border-2 transition-all duration-150 bg-card hover:shadow-lg hover:shadow-primary/5",
+        selected ? `border-primary shadow-lg shadow-primary/10 ring-2 ${colors.ring}` : "border-border hover:border-primary/40"
+      )}>
         <div className={cn("h-1 rounded-t-[10px]", colors.bar)} />
         <div className="px-3.5 py-2.5 flex items-start gap-3">
           <div className={cn("w-9 h-9 rounded-lg flex items-center justify-center shrink-0 mt-0.5", node.iconBg)}>
@@ -377,31 +329,43 @@ const CanvasNode = ({ node, isSelected, onClick, onDoubleClick, onDelete, onAddA
             <p className="text-[11px] text-muted-foreground mt-0.5 truncate">{node.description}</p>
           </div>
         </div>
-        <div className="absolute -top-1.5 -right-1.5 w-3.5 h-3.5 rounded-full bg-emerald-500 border-2 border-background opacity-0 group-hover:opacity-100 transition-opacity" />
       </div>
+
+      {/* Output handle */}
+      <Handle type="source" position={Position.Right} className="!w-2.5 !h-2.5 !bg-muted-foreground/40 !border-2 !border-background !-right-1.5" />
+
+      {/* Condition TRUE/FALSE handles */}
+      {node.type === "condition" && (
+        <>
+          <Handle type="source" position={Position.Right} id="true" className="!w-2.5 !h-2.5 !bg-emerald-500 !border-2 !border-background !-right-1.5 !top-[30%]" />
+          <Handle type="source" position={Position.Right} id="false" className="!w-2.5 !h-2.5 !bg-red-500 !border-2 !border-background !-right-1.5 !top-[70%]" />
+          <div className="absolute -bottom-6 left-1/3">
+            <span className="text-[9px] font-bold text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200">TRUE</span>
+          </div>
+          <div className="absolute -bottom-6 right-1/3">
+            <span className="text-[9px] font-bold text-red-600 bg-red-50 px-1.5 py-0.5 rounded border border-red-200">FALSE</span>
+          </div>
+        </>
+      )}
+
+      {/* Delete button */}
       <button onClick={(e) => { e.stopPropagation(); onDelete(); }}
         className="absolute -top-2 -right-2 w-5 h-5 rounded-full bg-destructive text-destructive-foreground flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity text-xs hover:scale-110 z-10">
         <X className="w-3 h-3" />
       </button>
+
+      {/* Add after button */}
       {onAddAfter && (
         <button onClick={(e) => { e.stopPropagation(); onAddAfter(); }}
           className="absolute -right-5 top-1/2 -translate-y-1/2 translate-x-full w-7 h-7 rounded-full border-2 border-dashed border-border bg-background flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all hover:border-primary hover:bg-primary/5 z-10">
           <Plus className="w-3.5 h-3.5 text-muted-foreground group-hover:text-primary" />
         </button>
       )}
-      {node.type === "condition" && (
-        <>
-          <div className="absolute -bottom-7 left-1/3 flex items-center gap-1">
-            <span className="text-[9px] font-bold text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200">TRUE</span>
-          </div>
-          <div className="absolute -bottom-7 right-1/3 flex items-center gap-1">
-            <span className="text-[9px] font-bold text-red-600 bg-red-50 px-1.5 py-0.5 rounded border border-red-200">FALSE</span>
-          </div>
-        </>
-      )}
     </div>
   );
 };
+
+const rfNodeTypes: NodeTypes = { automationNode: AutomationNodeComponent } as any;
 
 // ============================================================================
 // NODE PICKER PANEL
@@ -802,6 +766,48 @@ const NodeConfigModal = ({ node, onSave, onCancel, onDelete, isJourney }: {
 // AUTOMATION CANVAS
 // ============================================================================
 
+// Convert our FlowNode[] to React Flow nodes
+const toRFNodes = (nodes: FlowNode[], callbacks: { onDelete: (id: string) => void; onAddAfter: (id: string) => void; onDoubleClick: (id: string) => void }): RFNode[] => {
+  return nodes.map(node => {
+    const pos = gridToPixel(node.position.x, node.position.y);
+    return {
+      id: node.id,
+      type: "automationNode",
+      position: { x: pos.px, y: pos.py },
+      data: {
+        flowNode: node,
+        onDelete: () => callbacks.onDelete(node.id),
+        onAddAfter: () => callbacks.onAddAfter(node.id),
+        onDoubleClick: () => callbacks.onDoubleClick(node.id),
+      },
+    };
+  });
+};
+
+// Convert our FlowConnection[] to React Flow edges
+const toRFEdges = (connections: FlowConnection[]): RFEdge[] => {
+  return connections.map(conn => ({
+    id: conn.id,
+    source: conn.from,
+    target: conn.to,
+    sourceHandle: conn.type === "true" ? "true" : conn.type === "false" ? "false" : undefined,
+    type: "smoothstep",
+    animated: conn.type === "false",
+    style: { stroke: conn.type === "true" ? "#22c55e" : conn.type === "false" ? "#ef4444" : "#94a3b8", strokeWidth: 2 },
+    label: conn.label,
+    labelStyle: { fill: conn.type === "true" ? "#22c55e" : conn.type === "false" ? "#ef4444" : "#94a3b8", fontWeight: 600, fontSize: 11 },
+    labelBgStyle: { fill: "hsl(var(--card))", fillOpacity: 0.9 },
+    labelBgPadding: [6, 3] as [number, number],
+    markerEnd: { type: MarkerType.ArrowClosed, color: conn.type === "true" ? "#22c55e" : conn.type === "false" ? "#ef4444" : "#94a3b8", width: 16, height: 16 },
+  }));
+};
+
+// Convert React Flow pixel position back to grid position
+const pixelToGrid = (px: number, py: number): { x: number; y: number } => ({
+  x: (px - CANVAS_PADDING) / (NODE_WIDTH + HORIZONTAL_GAP),
+  y: (py - CANVAS_PADDING) / (NODE_HEIGHT + VERTICAL_GAP),
+});
+
 const AutomationCanvas = ({ automation, onBack, onSave, onUpdate }: {
   automation: AutomationDraft; onBack: () => void; onSave: (a: AutomationDraft) => void; onUpdate: (a: AutomationDraft) => void;
 }) => {
@@ -810,28 +816,10 @@ const AutomationCanvas = ({ automation, onBack, onSave, onUpdate }: {
   const [insertAfterNodeId, setInsertAfterNodeId] = useState<string | null>(null);
   const [autoName, setAutoName] = useState(automation.name);
   const [isEditingName, setIsEditingName] = useState(false);
-  const [zoom, setZoom] = useState(1);
   const [configNodeId, setConfigNodeId] = useState<string | null>(null);
-  const [pan, setPan] = useState({ x: 0, y: 0 });
-  const [isPanning, setIsPanning] = useState(false);
-  const [panStart, setPanStart] = useState({ x: 0, y: 0 });
-  const [draggingNodeId, setDraggingNodeId] = useState<string | null>(null);
-  const [dragStart, setDragStart] = useState({ mouseX: 0, mouseY: 0, nodeX: 0, nodeY: 0 });
-  const canvasRef = useRef<HTMLDivElement>(null);
 
   const selectedNode = automation.nodes.find(n => n.id === selectedNodeId) || null;
   const modeInfo = getModeInfo(automation.mode);
-
-  const canvasBounds = useMemo(() => {
-    if (automation.nodes.length === 0) return { width: 800, height: 400 };
-    let maxX = 0, maxY = 0;
-    automation.nodes.forEach(n => {
-      const pos = gridToPixel(n.position.x, n.position.y);
-      maxX = Math.max(maxX, pos.px + NODE_WIDTH);
-      maxY = Math.max(maxY, pos.py + NODE_HEIGHT);
-    });
-    return { width: maxX + CANVAS_PADDING * 2 + 400, height: maxY + CANVAS_PADDING * 2 + 300 };
-  }, [automation.nodes]);
 
   const addNode = useCallback((item: NodeCatalogItem, preConfig?: Record<string, any>, customLabel?: string) => {
     const isJourney = automation.mode === "journey";
@@ -929,59 +917,44 @@ const AutomationCanvas = ({ automation, onBack, onSave, onUpdate }: {
     setInsertAfterNodeId(afterNodeId || null); setIsNodePickerOpen(true); setSelectedNodeId(null);
   };
 
-  const handleWheel = useCallback((e: React.WheelEvent) => {
-    if (e.ctrlKey || e.metaKey) {
-      e.preventDefault();
-      setZoom(z => Math.min(Math.max(z + (e.deltaY > 0 ? -0.05 : 0.05), 0.3), 2));
+  // React Flow nodes/edges derived from our data model
+  const rfNodes = useMemo(() => toRFNodes(automation.nodes, {
+    onDelete: (id) => deleteNode(id),
+    onAddAfter: (id) => handleOpenPicker(id),
+    onDoubleClick: (id) => setConfigNodeId(id),
+  }), [automation.nodes, deleteNode, handleOpenPicker]);
+
+  const rfEdges = useMemo(() => toRFEdges(automation.connections), [automation.connections]);
+
+  // Sync React Flow node drag positions back to our data model
+  const onNodesChange = useCallback((changes: any[]) => {
+    const posChanges = changes.filter((c: any) => c.type === "position" && c.position);
+    if (posChanges.length > 0) {
+      const updatedNodes = automation.nodes.map(n => {
+        const change = posChanges.find((c: any) => c.id === n.id);
+        if (change) {
+          const grid = pixelToGrid(change.position.x, change.position.y);
+          return { ...n, position: { x: grid.x, y: grid.y } };
+        }
+        return n;
+      });
+      onUpdate({ ...automation, nodes: updatedNodes });
     }
+  }, [automation, onUpdate]);
+
+  const onNodeClick = useCallback((_: any, node: RFNode) => {
+    setSelectedNodeId(node.id);
+    setIsNodePickerOpen(false);
   }, []);
 
-  // --- Canvas panning (middle-click or space+drag or just drag on background) ---
-  const handleCanvasMouseDown = useCallback((e: React.MouseEvent) => {
-    // Only pan on left-click on the background (not on a node)
-    if (e.button === 0) {
-      setIsPanning(true);
-      setPanStart({ x: e.clientX - pan.x, y: e.clientY - pan.y });
-    }
-  }, [pan]);
+  const onNodeDoubleClick = useCallback((_: any, node: RFNode) => {
+    setConfigNodeId(node.id);
+  }, []);
 
-  // --- Node dragging ---
-  const handleNodeDragStart = useCallback((nodeId: string, e: React.MouseEvent) => {
-    const node = automation.nodes.find(n => n.id === nodeId);
-    if (!node) return;
-    setDraggingNodeId(nodeId);
-    setDragStart({ mouseX: e.clientX, mouseY: e.clientY, nodeX: node.position.x, nodeY: node.position.y });
-  }, [automation.nodes]);
-
-  // Global mouse move / up for both panning and dragging
-  useEffect(() => {
-    const handleMouseMove = (e: MouseEvent) => {
-      if (draggingNodeId) {
-        e.preventDefault();
-        const dx = (e.clientX - dragStart.mouseX) / zoom;
-        const dy = (e.clientY - dragStart.mouseY) / zoom;
-        const gridDx = dx / (NODE_WIDTH + HORIZONTAL_GAP);
-        const gridDy = dy / (NODE_HEIGHT + VERTICAL_GAP);
-        const newX = dragStart.nodeX + gridDx;
-        const newY = dragStart.nodeY + gridDy;
-        onUpdate({
-          ...automation,
-          nodes: automation.nodes.map(n => n.id === draggingNodeId ? { ...n, position: { x: Math.max(0, newX), y: Math.max(0, newY) } } : n),
-        });
-      } else if (isPanning) {
-        setPan({ x: e.clientX - panStart.x, y: e.clientY - panStart.y });
-      }
-    };
-    const handleMouseUp = () => {
-      if (draggingNodeId) setDraggingNodeId(null);
-      if (isPanning) setIsPanning(false);
-    };
-    if (draggingNodeId || isPanning) {
-      window.addEventListener("mousemove", handleMouseMove);
-      window.addEventListener("mouseup", handleMouseUp);
-      return () => { window.removeEventListener("mousemove", handleMouseMove); window.removeEventListener("mouseup", handleMouseUp); };
-    }
-  }, [draggingNodeId, isPanning, dragStart, panStart, zoom, automation, onUpdate]);
+  const onPaneClick = useCallback(() => {
+    setSelectedNodeId(null);
+    setIsNodePickerOpen(false);
+  }, []);
 
   return (
     <div className="h-[calc(100vh-64px)] flex flex-col bg-background">
@@ -1017,51 +990,67 @@ const AutomationCanvas = ({ automation, onBack, onSave, onUpdate }: {
       </div>
 
       <div className="flex-1 flex overflow-hidden">
-        {/* Canvas */}
-        <div ref={canvasRef}
-          className={cn("flex-1 overflow-hidden relative", isPanning ? "cursor-grabbing" : "cursor-grab")}
-          style={{ backgroundImage: "radial-gradient(circle, hsl(var(--muted-foreground) / 0.08) 1px, transparent 1px)", backgroundSize: `${24 * zoom}px ${24 * zoom}px`, backgroundPosition: `${pan.x}px ${pan.y}px` }}
-          onWheel={handleWheel}
-          onMouseDown={handleCanvasMouseDown}
-          onClick={() => { if (!draggingNodeId) { setSelectedNodeId(null); setIsNodePickerOpen(false); } }}>
-          {/* Zoom controls */}
-          <div className="absolute bottom-4 left-4 flex items-center gap-1 bg-card border border-border rounded-lg p-1 z-20 shadow-sm">
-            <button onClick={(e) => { e.stopPropagation(); setPan({ x: 0, y: 0 }); setZoom(1); }} className="p-1.5 rounded-md hover:bg-muted text-muted-foreground text-xs font-mono w-10 text-center">{Math.round(zoom * 100)}%</button>
-            <div className="w-px h-5 bg-border" />
-            <button onClick={(e) => { e.stopPropagation(); setZoom(z => Math.min(z + 0.1, 2)); }} className="p-1.5 rounded-md hover:bg-muted text-muted-foreground"><ZoomIn className="w-3.5 h-3.5" /></button>
-            <button onClick={(e) => { e.stopPropagation(); setZoom(z => Math.max(z - 0.1, 0.3)); }} className="p-1.5 rounded-md hover:bg-muted text-muted-foreground"><ZoomOut className="w-3.5 h-3.5" /></button>
-            <div className="w-px h-5 bg-border" />
-            <button onClick={(e) => { e.stopPropagation(); setPan({ x: 0, y: 0 }); setZoom(1); }} className="p-1.5 rounded-md hover:bg-muted text-muted-foreground" title="Reset view"><Maximize2 className="w-3.5 h-3.5" /></button>
-          </div>
-          {automation.mode === "journey" && automation.nodes.length === 0 && (
-            <div className="absolute top-4 left-1/2 -translate-x-1/2 bg-card border border-border rounded-xl px-6 py-3 shadow-sm z-20 flex items-center gap-3">
-              <Route className="w-5 h-5 text-purple-500" />
-              <div>
-                <p className="text-sm font-semibold text-foreground">Journey Builder</p>
-                <p className="text-xs text-muted-foreground">Add a trigger to start, then build branching discipleship paths with conditions</p>
-              </div>
-            </div>
-          )}
-          {/* Transformed canvas layer */}
-          <div className="absolute" style={{ transform: `translate(${pan.x}px, ${pan.y}px) scale(${zoom})`, transformOrigin: "0 0", width: canvasBounds.width, height: canvasBounds.height }}
-            onClick={(e) => e.stopPropagation()} onMouseDown={(e) => e.stopPropagation()}>
-            <ConnectionLines nodes={automation.nodes} connections={automation.connections} />
-            {automation.nodes.length === 0 && (
-              <div className="absolute inset-0 flex items-center justify-center">
-                <button onClick={() => handleOpenPicker()} className="w-[180px] h-[180px] border-2 border-dashed border-border rounded-2xl flex flex-col items-center justify-center gap-3 hover:border-primary/50 hover:bg-primary/5 transition-all group">
-                  <Plus className="w-8 h-8 text-muted-foreground group-hover:text-primary transition-colors" />
-                  <span className="text-sm font-medium text-muted-foreground group-hover:text-foreground">Add first step</span>
-                </button>
-              </div>
-            )}
-            {automation.nodes.map(node => (
-              <CanvasNode key={node.id} node={node} isSelected={selectedNodeId === node.id}
-                onClick={() => { if (!draggingNodeId) { setSelectedNodeId(node.id); setIsNodePickerOpen(false); } }}
-                onDoubleClick={() => { setConfigNodeId(node.id); }}
-                onDelete={() => deleteNode(node.id)} onAddAfter={() => handleOpenPicker(node.id)}
-                onDragStart={handleNodeDragStart} />
-            ))}
-          </div>
+        {/* React Flow Canvas */}
+        <div className="flex-1 relative">
+          <ReactFlowProvider>
+            <ReactFlow
+              nodes={rfNodes}
+              edges={rfEdges}
+              onNodesChange={onNodesChange}
+              onNodeClick={onNodeClick}
+              onNodeDoubleClick={onNodeDoubleClick}
+              onPaneClick={onPaneClick}
+              nodeTypes={rfNodeTypes}
+              fitView
+              fitViewOptions={{ padding: 0.3 }}
+              minZoom={0.2}
+              maxZoom={2}
+              defaultEdgeOptions={{ type: "smoothstep", animated: false }}
+              proOptions={{ hideAttribution: true }}
+              className="bg-background"
+            >
+              <Background variant={BackgroundVariant.Dots} gap={24} size={1} color="hsl(var(--muted-foreground) / 0.15)" />
+              <Controls showInteractive={false} className="!bg-card !border-border !shadow-sm !rounded-lg [&>button]:!bg-card [&>button]:!border-border [&>button]:!text-muted-foreground [&>button:hover]:!bg-muted" />
+              <MiniMap
+                nodeColor={(n) => {
+                  const flowNode = n.data?.flowNode as FlowNode | undefined;
+                  if (!flowNode) return "#94a3b8";
+                  switch (flowNode.type) {
+                    case "trigger": return "#3b82f6";
+                    case "action": return "#8b5cf6";
+                    case "condition": return "#f59e0b";
+                    case "delay": return "#06b6d4";
+                    case "loop": return "#10b981";
+                    case "end": return "#6b7280";
+                    default: return "#94a3b8";
+                  }
+                }}
+                maskColor="hsl(var(--background) / 0.7)"
+                className="!bg-card !border-border !shadow-sm !rounded-lg"
+              />
+              {/* Journey empty state overlay */}
+              {automation.mode === "journey" && automation.nodes.length === 0 && (
+                <Panel position="top-center">
+                  <div className="bg-card border border-border rounded-xl px-6 py-3 shadow-sm flex items-center gap-3">
+                    <Route className="w-5 h-5 text-purple-500" />
+                    <div>
+                      <p className="text-sm font-semibold text-foreground">Journey Builder</p>
+                      <p className="text-xs text-muted-foreground">Add a trigger to start, then build branching discipleship paths with conditions</p>
+                    </div>
+                  </div>
+                </Panel>
+              )}
+              {/* Empty canvas placeholder */}
+              {automation.nodes.length === 0 && (
+                <Panel position="top-center" className="!top-1/2 !-translate-y-1/2">
+                  <button onClick={() => handleOpenPicker()} className="w-[180px] h-[180px] border-2 border-dashed border-border rounded-2xl flex flex-col items-center justify-center gap-3 hover:border-primary/50 hover:bg-primary/5 transition-all group bg-card/50">
+                    <Plus className="w-8 h-8 text-muted-foreground group-hover:text-primary transition-colors" />
+                    <span className="text-sm font-medium text-muted-foreground group-hover:text-foreground">Add first step</span>
+                  </button>
+                </Panel>
+              )}
+            </ReactFlow>
+          </ReactFlowProvider>
           {/* FAB for adding nodes */}
           {automation.nodes.length > 0 && !isNodePickerOpen && !selectedNode && (
             <div className="absolute bottom-6 right-6 z-10">
