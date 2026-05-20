@@ -375,7 +375,7 @@ const NodePickerPanel = ({ isOpen, onClose, onSelectNode, title, mode }: {
   isOpen: boolean; onClose: () => void; onSelectNode: (item: NodeCatalogItem) => void; title: string; mode: AutomationMode;
 }) => {
   const [search, setSearch] = useState("");
-  const [collapsedSections, setCollapsedSections] = useState<Set<string>>(new Set());
+  const [collapsedSections, setCollapsedSections] = useState<Set<string>>(new Set(["Actions", "Flow Control"]));
   const filteredCatalog = useMemo(() => {
     let catalog = NODE_CATALOG;
     if (mode === "basic") {
