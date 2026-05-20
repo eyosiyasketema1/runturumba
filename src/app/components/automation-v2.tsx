@@ -811,16 +811,6 @@ const AutomationCanvas = ({ automation, onBack, onSave, onUpdate }: {
     return { width: maxX + CANVAS_PADDING * 2 + 200, height: maxY + CANVAS_PADDING * 2 + 100 };
   }, [automation.nodes]);
 
-  const handleNodeSelected = useCallback((item: NodeCatalogItem) => {
-    // Open config modal instead of directly adding
-    setConfigModalItem(item);
-  }, []);
-
-  const handleConfigConfirm = useCallback((item: NodeCatalogItem & { label?: string }, config: Record<string, any>) => {
-    setConfigModalItem(null);
-    addNode(item, config, item.label);
-  }, [addNode]);
-
   const addNode = useCallback((item: NodeCatalogItem, preConfig?: Record<string, any>, customLabel?: string) => {
     const isJourney = automation.mode === "journey";
     let posX = 0, posY = isJourney ? 1 : 0;
@@ -895,6 +885,15 @@ const AutomationCanvas = ({ automation, onBack, onSave, onUpdate }: {
     setIsNodePickerOpen(false); setInsertAfterNodeId(null); setSelectedNodeId(newId);
     toast.success(`Added "${item.label}"`);
   }, [automation, insertAfterNodeId, onUpdate]);
+
+  const handleNodeSelected = useCallback((item: NodeCatalogItem) => {
+    setConfigModalItem(item);
+  }, []);
+
+  const handleConfigConfirm = useCallback((item: NodeCatalogItem & { label?: string }, config: Record<string, any>) => {
+    setConfigModalItem(null);
+    addNode(item, config, item.label);
+  }, [addNode]);
 
   const deleteNode = (nodeId: string) => {
     const newNodes = automation.nodes.filter(n => n.id !== nodeId);
