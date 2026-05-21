@@ -666,35 +666,34 @@ export function SequenceBuilder({
               <div className="space-y-0">
                 {steps.map((step, i) => {
                   const isSelected = selectedId === step.id;
-                  const delayText = step.delay.amount === 0
-                    ? "Send right away"
-                    : `Then wait ${step.delay.amount} ${step.delay.amount === 1 ? step.delay.unit.replace(/s$/, "") : step.delay.unit}`;
+                  const unitSingular = step.delay.unit.replace(/s$/, "");
+                  const unitLabel = step.delay.amount === 1 ? unitSingular : step.delay.unit;
                   return (
                     <div key={step.id}>
                       {/* Delay connector between steps */}
                       {i > 0 && (
-                        <div className="flex items-center gap-3 py-4 pl-5">
-                          <div className="w-px h-5 bg-border ml-2.5" />
-                          <div className="flex items-center gap-2 ml-3 flex-wrap">
-                            <Clock className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
-                            <span className="text-xs text-muted-foreground font-medium whitespace-nowrap">
+                        <div className="py-5 pl-7">
+                          <div className="w-px h-3 bg-border ml-0.5 mb-3" />
+                          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                            <Clock className="w-4 h-4 shrink-0" />
+                            <span className="font-medium">
                               {step.delay.amount === 0 ? "Send right away" : "Then wait"}
                             </span>
                             {step.delay.amount > 0 && (
-                              <span className="inline-flex items-center gap-1">
+                              <span className="inline-flex items-center gap-2">
                                 <input
                                   type="number"
                                   min={1}
                                   value={step.delay.amount}
                                   onClick={(e) => e.stopPropagation()}
                                   onChange={(e) => { e.stopPropagation(); updateStep(step.id, { delay: { ...step.delay, amount: Math.max(1, parseInt(e.target.value || "1", 10)) } }); }}
-                                  className="w-11 h-6 text-center text-xs font-medium text-foreground bg-background border border-input rounded-md focus:outline-none focus:ring-1 focus:ring-ring"
+                                  className="w-16 h-9 text-center text-sm font-medium text-foreground bg-background border border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-ring"
                                 />
                                 <select
                                   value={step.delay.unit}
                                   onClick={(e) => e.stopPropagation()}
                                   onChange={(e) => { e.stopPropagation(); updateStep(step.id, { delay: { ...step.delay, unit: e.target.value as SequenceStep["delay"]["unit"] } }); }}
-                                  className="h-6 text-xs font-medium text-foreground bg-background border border-input rounded-md px-1 focus:outline-none focus:ring-1 focus:ring-ring"
+                                  className="h-9 text-sm font-medium text-foreground bg-background border border-input rounded-lg px-3 focus:outline-none focus:ring-2 focus:ring-ring"
                                 >
                                   <option value="minutes">minutes</option>
                                   <option value="hours">hours</option>
@@ -702,101 +701,79 @@ export function SequenceBuilder({
                                 </select>
                               </span>
                             )}
-                            <div className="flex items-center gap-1.5 ml-1">
-                              {[
-                                { label: "Now", amount: 0, unit: "minutes" as const },
-                                { label: "1h", amount: 1, unit: "hours" as const },
-                                { label: "1d", amount: 1, unit: "days" as const },
-                                { label: "3d", amount: 3, unit: "days" as const },
-                                { label: "1w", amount: 7, unit: "days" as const },
-                              ].map(preset => {
-                                const isActive = step.delay.amount === preset.amount && step.delay.unit === preset.unit;
-                                return (
-                                  <button
-                                    key={preset.label}
-                                    onClick={(e) => { e.stopPropagation(); updateStep(step.id, { delay: { amount: preset.amount, unit: preset.unit } }); }}
-                                    className={cn(
-                                      "px-2 py-0.5 rounded-md text-[11px] font-medium transition-all",
-                                      isActive
-                                        ? "bg-foreground/10 text-foreground border border-border"
-                                        : "text-muted-foreground hover:bg-muted hover:text-foreground border border-transparent"
-                                    )}
-                                  >
-                                    {preset.label}
-                                  </button>
-                                );
-                              })}
-                            </div>
                           </div>
+                          <div className="w-px h-3 bg-border ml-0.5 mt-3" />
                         </div>
                       )}
 
                       {/* Step card */}
                       <div
                         className={cn(
-                          "relative bg-card border rounded-xl transition-all",
+                          "relative bg-card border rounded-xl transition-all group",
                           isSelected ? "border-primary ring-1 ring-primary shadow-sm" : "border-border hover:border-foreground/20"
                         )}
                       >
+                        {/* Delete button — top right */}
+                        <button
+                          onClick={(e) => { e.stopPropagation(); removeStep(step.id); toast.success("Step removed"); }}
+                          className="absolute top-3 right-3 w-7 h-7 rounded-md flex items-center justify-center text-muted-foreground hover:text-destructive hover:bg-destructive/10 opacity-0 group-hover:opacity-100 transition-all z-10"
+                          aria-label="Delete step"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+
                         <button
                           onClick={() => setSelectedId(step.id)}
-                          className="w-full flex items-start gap-3 p-4 text-left"
+                          className="w-full flex items-start gap-4 p-5 text-left"
                         >
-                          <div className="w-9 h-9 rounded-full bg-primary/10 text-primary flex items-center justify-center shrink-0 font-bold">
-                            {i + 1}
+                          {/* Drag handle on left */}
+                          <div className="flex flex-col items-center gap-1 shrink-0 pt-0.5">
+                            <div className="cursor-grab text-muted-foreground/40 hover:text-muted-foreground transition-colors">
+                              <GripVertical className="w-4 h-4" />
+                            </div>
+                            <div className="w-8 h-8 rounded-full bg-primary/10 text-primary flex items-center justify-center font-bold text-sm">
+                              {i + 1}
+                            </div>
                           </div>
+
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center gap-2 flex-wrap">
                               <Badge variant="outline" className="bg-muted/50 text-muted-foreground border-border font-medium">
                                 <Clock className="w-3 h-3" />
-                                {i === 0 ? (step.delay.amount === 0 ? "Sends right away" : delayText) : (step.delay.amount === 0 ? "No wait" : delayText.replace("Then wait", "Waits"))}
+                                {i === 0
+                                  ? (step.delay.amount === 0 ? "Sends right away" : `Waits ${step.delay.amount} ${unitLabel}`)
+                                  : (step.delay.amount === 0 ? "No wait" : `Waits ${step.delay.amount} ${unitLabel}`)}
                               </Badge>
-                              <Badge variant="outline" className="bg-muted border-transparent text-foreground font-semibold">
+                              <Badge variant="outline" className="bg-muted border-transparent text-foreground font-medium">
                                 {channels.length === ALL_CHANNELS.length ? "All channels" : channels.map(c => CHANNELS.find(ch => ch.id === c)?.label ?? c).join(", ")}
                               </Badge>
                               {step.aiPersonalize && (
-                                <Badge variant="outline" className="bg-pink-50 text-pink-700 border-pink-200 font-semibold">
+                                <Badge variant="outline" className="bg-muted/50 text-muted-foreground border-border font-medium">
                                   <Sparkles className="w-3 h-3" />
                                   AI Personalize
                                 </Badge>
                               )}
                             </div>
                             <p className={cn(
-                              "text-sm mt-2 leading-relaxed line-clamp-2",
+                              "text-sm mt-3 leading-relaxed line-clamp-2",
                               step.message.trim() ? "text-foreground" : "text-muted-foreground italic"
                             )}>
                               {step.message.trim() || "Empty message — click to add content."}
                             </p>
-                          </div>
-                          <div className="flex flex-col gap-0.5 opacity-70 group-hover:opacity-100">
-                            <button
-                              onClick={(e) => { e.stopPropagation(); moveStep(step.id, -1); }}
-                              disabled={i === 0}
-                              className="w-6 h-6 rounded hover:bg-muted disabled:opacity-30 disabled:cursor-not-allowed flex items-center justify-center"
-                              aria-label="Move step up"
-                            >
-                              <ChevronUp className="w-3.5 h-3.5 text-muted-foreground" />
-                            </button>
-                            <button
-                              onClick={(e) => { e.stopPropagation(); moveStep(step.id, 1); }}
-                              disabled={i === steps.length - 1}
-                              className="w-6 h-6 rounded hover:bg-muted disabled:opacity-30 disabled:cursor-not-allowed flex items-center justify-center"
-                              aria-label="Move step down"
-                            >
-                              <ChevronDown className="w-3.5 h-3.5 text-muted-foreground" />
-                            </button>
                           </div>
                         </button>
                       </div>
                     </div>
                   );
                 })}
-                <button
-                  onClick={addStep}
-                  className="w-full flex items-center justify-center gap-2 py-4 rounded-xl border-2 border-dashed border-border text-sm font-semibold text-muted-foreground hover:border-primary hover:text-primary hover:bg-primary/5 transition-all"
-                >
-                  <Plus className="w-4 h-4" /> Add step
-                </button>
+                <div className="pt-4">
+                  <button
+                    onClick={addStep}
+                    className="w-full flex items-center justify-center gap-2 py-5 rounded-xl border-2 border-dashed border-border text-sm font-medium text-muted-foreground hover:border-primary hover:text-primary hover:bg-primary/5 transition-all"
+                  >
+                    <Plus className="w-4 h-4" /> Add step
+                  </button>
+                </div>
               </div>
             </Section>
           </div>
