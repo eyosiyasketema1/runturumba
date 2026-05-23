@@ -105,8 +105,8 @@ const ROLE_OPTIONS: { id: ViewRole; label: string; description: string; icon: an
 // Which views each role can access. Views omitted from a role's list are
 // hidden from the sidebar and blocked from being navigated to.
 const ROLE_VIEW_ACCESS: Record<ViewRole, string[]> = {
-  super_admin:     ["dashboard", "contacts", "messages", "conversations", "seekers", "mentors", "matches", "faith_journeys", "milestones", "channels", "automations", "automations_v2", "skill_sets", "content_library", "gamification", "growth_metrics", "vital_analytics", "reporting", "validations", "team", "settings"],
-  admin:           ["dashboard", "contacts", "messages", "conversations", "seekers", "mentors", "matches", "faith_journeys", "milestones", "channels", "automations", "automations_v2", "skill_sets", "content_library", "gamification", "growth_metrics", "vital_analytics", "reporting", "validations", "team", "settings"],
+  super_admin:     ["dashboard", "contacts", "messages", "conversations", "seekers", "mentors", "matches", "faith_journeys", "milestones", "channels", "automations", "skill_sets", "content_library", "gamification", "growth_metrics", "vital_analytics", "reporting", "validations", "team", "settings"],
+  admin:           ["dashboard", "contacts", "messages", "conversations", "seekers", "mentors", "matches", "faith_journeys", "milestones", "channels", "automations", "skill_sets", "content_library", "gamification", "growth_metrics", "vital_analytics", "reporting", "validations", "team", "settings"],
   mentor_coach:    ["dashboard", "messages", "conversations", "seekers", "mentors", "matches", "faith_journeys", "milestones", "skill_sets", "content_library", "growth_metrics", "vital_analytics", "reporting", "validations"],
   content_creator: ["dashboard", "content_library"],
   mentor:          ["dashboard", "contacts", "messages", "conversations", "seekers", "matches", "faith_journeys", "milestones", "content_library"],
@@ -255,8 +255,7 @@ export default function App() {
       label: "Engage",
       items: [
         { id: "channels",        name: "Channels",        icon: Radio },
-        { id: "automations",     name: "Automations",     icon: Zap },
-        { id: "automations_v2",  name: "Automations v2",  icon: GitBranch },
+        { id: "automations",     name: "Automations",     icon: GitBranch },
         { id: "skill_sets",      name: "Skill Sets",      icon: Brain },
         { id: "content_library", name: "Content Library", icon: Library },
         { id: "gamification",    name: "Gamification",    icon: Sparkles },
@@ -1208,7 +1207,7 @@ export default function App() {
             )}
             {currentView === "automations" && (
               <motion.div key="automations" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.2 }}>
-                <AutomationView 
+                <AutomationView
                   automations={automations}
                   webhooks={webhooks}
                   onAddAutomation={(data) => {
@@ -1254,11 +1253,6 @@ export default function App() {
                     setWebhooks(prev => prev.map(w => w.id === id ? { ...w, ...data } : w));
                   }}
                 />
-              </motion.div>
-            )}
-            {currentView === "automations_v2" && (
-              <motion.div key="automations_v2" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.2 }}>
-                <AutomationV2View />
               </motion.div>
             )}
             {currentView === "skill_sets" && (

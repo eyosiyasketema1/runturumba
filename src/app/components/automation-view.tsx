@@ -28,7 +28,7 @@ import {
   DropdownMenu, DropdownMenuTrigger, DropdownMenuContent,
   DropdownMenuItem, DropdownMenuSeparator
 } from "./ui/dropdown-menu";
-import { FlowBuilder } from "./flow-builder";
+import { AutomationCanvas, type AutomationDraft } from "./automation-v2";
 import {
   BasicAutomationBuilder, SequenceBuilder, AutomationTypePicker,
   type BasicAutomationDraft, type SequenceDraft,
@@ -335,23 +335,25 @@ export const AutomationView = ({
         />
       );
     }
-    // kind === "flow" → Journey Builder
+    // kind === "flow" → Journey Builder (v2 React Flow canvas)
+    const journeyDraft: AutomationDraft = {
+      id: rule?.id ?? `auto-${Date.now()}`,
+      name: rule?.name ?? "New Journey",
+      description: rule?.description ?? "Journey",
+      nodes: [],
+      connections: [],
+      enabled: rule?.enabled ?? false,
+      createdAt: rule?.createdAt ?? new Date().toISOString(),
+      runs: rule?.triggerCount ?? 0,
+      mode: "journey",
+      folderId: null,
+    };
     return (
-      <FlowBuilder
-        flowName={rule?.name ?? "New Journey"}
-        status={statusFor(rule)}
-        stats={{
-          totalRuns: rule?.triggerCount ?? 0,
-          avgCtr: rule ? (getAutoCtr(rule) ?? 0) : 0,
-          completionRate: 68, dropoutRate: 7, aiBoost: 18,
-        }}
+      <AutomationCanvas
+        automation={journeyDraft}
         onBack={close}
-        onSave={({ name }) => persist({ name, description: "Journey", trigger: "webhook_received", action: "webhook_call", enabled: false })}
-        onPublish={({ name }) => { persist({ name, description: "Journey", trigger: "webhook_received", action: "webhook_call", enabled: true }); close(); }}
-        webhooks={webhooks}
-        onToggleWebhook={onToggleWebhook}
-        onDeleteWebhook={onDeleteWebhook}
-        onAddWebhook={onAddWebhook}
+        onSave={(a) => persist({ name: a.name, description: "Journey", trigger: "webhook_received", action: "webhook_call", enabled: false })}
+        onUpdate={(a) => persist({ name: a.name, description: "Journey", trigger: "webhook_received", action: "webhook_call", enabled: a.enabled })}
       />
     );
   }

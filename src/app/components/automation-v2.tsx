@@ -68,7 +68,7 @@ interface AutomationFolder {
   color?: string;
 }
 
-interface AutomationDraft {
+export interface AutomationDraft {
   id: string;
   name: string;
   description: string;
@@ -808,7 +808,7 @@ const pixelToGrid = (px: number, py: number): { x: number; y: number } => ({
   y: (py - CANVAS_PADDING) / (NODE_HEIGHT + VERTICAL_GAP),
 });
 
-const AutomationCanvas = ({ automation, onBack, onSave, onUpdate }: {
+export const AutomationCanvas = ({ automation, onBack, onSave, onUpdate }: {
   automation: AutomationDraft; onBack: () => void; onSave: (a: AutomationDraft) => void; onUpdate: (a: AutomationDraft) => void;
 }) => {
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
