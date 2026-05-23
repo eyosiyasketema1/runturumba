@@ -1464,76 +1464,89 @@ export const AutomationCanvas = ({ automation, onBack, onSave, onUpdate }: {
       </div>
 
       <div className="flex-1 flex overflow-hidden">
-        {/* React Flow Canvas */}
-        <div className="flex-1 relative">
-          <ReactFlowProvider>
-            <ReactFlow
-              nodes={rfNodes}
-              edges={rfEdges}
-              onNodesChange={onNodesChange}
-              onNodeClick={onNodeClick}
-              onNodeDoubleClick={onNodeDoubleClick}
-              onPaneClick={onPaneClick}
-              nodeTypes={rfNodeTypes}
-              fitView
-              fitViewOptions={{ padding: 0.3 }}
-              minZoom={0.2}
-              maxZoom={2}
-              defaultEdgeOptions={{ type: "smoothstep", animated: false }}
-              proOptions={{ hideAttribution: true }}
-              className="bg-background"
-            >
-              <Background variant={BackgroundVariant.Dots} gap={24} size={1} color="hsl(var(--muted-foreground) / 0.15)" />
-              <Controls showInteractive={false} className="!bg-card !border-border !shadow-sm !rounded-lg [&>button]:!bg-card [&>button]:!border-border [&>button]:!text-muted-foreground [&>button:hover]:!bg-muted" />
-              <MiniMap
-                nodeColor={(n) => {
-                  const flowNode = n.data?.flowNode as FlowNode | undefined;
-                  if (!flowNode) return "#94a3b8";
-                  switch (flowNode.type) {
-                    case "trigger": return "#3b82f6";
-                    case "action": return "#8b5cf6";
-                    case "condition": return "#f59e0b";
-                    case "delay": return "#06b6d4";
-                    case "loop": return "#10b981";
-                    case "end": return "#6b7280";
-                    default: return "#94a3b8";
-                  }
-                }}
-                maskColor="hsl(var(--background) / 0.7)"
-                className="!bg-card !border-border !shadow-sm !rounded-lg"
-              />
-              {/* Journey empty state overlay */}
-              {automation.mode === "journey" && automation.nodes.length === 0 && (
-                <Panel position="top-center">
-                  <div className="bg-card border border-border rounded-xl px-6 py-3 shadow-sm flex items-center gap-3">
-                    <Route className="w-5 h-5 text-purple-500" />
-                    <div>
-                      <p className="text-sm font-semibold text-foreground">Journey Builder</p>
-                      <p className="text-xs text-muted-foreground">Add a trigger to start, then build branching discipleship paths with conditions</p>
+        {/* Canvas column: canvas + log drawer stacked vertically */}
+        <div className="flex-1 flex flex-col min-w-0">
+          <div className="flex-1 relative">
+            <ReactFlowProvider>
+              <ReactFlow
+                nodes={rfNodes}
+                edges={rfEdges}
+                onNodesChange={onNodesChange}
+                onNodeClick={onNodeClick}
+                onNodeDoubleClick={onNodeDoubleClick}
+                onPaneClick={onPaneClick}
+                nodeTypes={rfNodeTypes}
+                fitView
+                fitViewOptions={{ padding: 0.3 }}
+                minZoom={0.2}
+                maxZoom={2}
+                defaultEdgeOptions={{ type: "smoothstep", animated: false }}
+                proOptions={{ hideAttribution: true }}
+                className="bg-background"
+              >
+                <Background variant={BackgroundVariant.Dots} gap={24} size={1} color="hsl(var(--muted-foreground) / 0.15)" />
+                <Controls showInteractive={false} className="!bg-card !border-border !shadow-sm !rounded-lg [&>button]:!bg-card [&>button]:!border-border [&>button]:!text-muted-foreground [&>button:hover]:!bg-muted" />
+                <MiniMap
+                  nodeColor={(n) => {
+                    const flowNode = n.data?.flowNode as FlowNode | undefined;
+                    if (!flowNode) return "#94a3b8";
+                    switch (flowNode.type) {
+                      case "trigger": return "#3b82f6";
+                      case "action": return "#8b5cf6";
+                      case "condition": return "#f59e0b";
+                      case "delay": return "#06b6d4";
+                      case "loop": return "#10b981";
+                      case "end": return "#6b7280";
+                      default: return "#94a3b8";
+                    }
+                  }}
+                  maskColor="hsl(var(--background) / 0.7)"
+                  className="!bg-card !border-border !shadow-sm !rounded-lg"
+                />
+                {/* Journey empty state overlay */}
+                {automation.mode === "journey" && automation.nodes.length === 0 && (
+                  <Panel position="top-center">
+                    <div className="bg-card border border-border rounded-xl px-6 py-3 shadow-sm flex items-center gap-3">
+                      <Route className="w-5 h-5 text-purple-500" />
+                      <div>
+                        <p className="text-sm font-semibold text-foreground">Journey Builder</p>
+                        <p className="text-xs text-muted-foreground">Add a trigger to start, then build branching discipleship paths with conditions</p>
+                      </div>
                     </div>
-                  </div>
-                </Panel>
-              )}
-              {/* Empty canvas placeholder */}
-              {automation.nodes.length === 0 && (
-                <Panel position="top-center" className="!top-1/2 !-translate-y-1/2">
-                  <button onClick={() => handleOpenPicker()} className="w-[180px] h-[180px] border-2 border-dashed border-border rounded-2xl flex flex-col items-center justify-center gap-3 hover:border-primary/50 hover:bg-primary/5 transition-all group bg-card/50">
-                    <Plus className="w-8 h-8 text-muted-foreground group-hover:text-primary transition-colors" />
-                    <span className="text-sm font-medium text-muted-foreground group-hover:text-foreground">Add first step</span>
-                  </button>
-                </Panel>
-              )}
-            </ReactFlow>
-          </ReactFlowProvider>
-          {/* FAB for adding nodes */}
-          {automation.nodes.length > 0 && !isNodePickerOpen && !selectedNode && (
-            <div className="absolute bottom-6 right-6 z-10">
-              <button onClick={() => handleOpenPicker()} className="w-12 h-12 rounded-full bg-primary text-primary-foreground shadow-lg hover:shadow-xl hover:scale-105 transition-all flex items-center justify-center">
-                <Plus className="w-5 h-5" />
-              </button>
-            </div>
+                  </Panel>
+                )}
+                {/* Empty canvas placeholder */}
+                {automation.nodes.length === 0 && (
+                  <Panel position="top-center" className="!top-1/2 !-translate-y-1/2">
+                    <button onClick={() => handleOpenPicker()} className="w-[180px] h-[180px] border-2 border-dashed border-border rounded-2xl flex flex-col items-center justify-center gap-3 hover:border-primary/50 hover:bg-primary/5 transition-all group bg-card/50">
+                      <Plus className="w-8 h-8 text-muted-foreground group-hover:text-primary transition-colors" />
+                      <span className="text-sm font-medium text-muted-foreground group-hover:text-foreground">Add first step</span>
+                    </button>
+                  </Panel>
+                )}
+              </ReactFlow>
+            </ReactFlowProvider>
+            {/* FAB for adding nodes */}
+            {automation.nodes.length > 0 && !isNodePickerOpen && !selectedNode && (
+              <div className="absolute bottom-6 right-6 z-10">
+                <button onClick={() => handleOpenPicker()} className="w-12 h-12 rounded-full bg-primary text-primary-foreground shadow-lg hover:shadow-xl hover:scale-105 transition-all flex items-center justify-center">
+                  <Plus className="w-5 h-5" />
+                </button>
+              </div>
+            )}
+          </div>
+          {/* Execution Log Drawer — sits below canvas, spans canvas width only */}
+          {isExecMode && (
+            <LogDrawer
+              logs={testRun?.logs || []}
+              isOpen={isLogDrawerOpen}
+              onToggle={() => setIsLogDrawerOpen(prev => !prev)}
+              onClear={() => setTestRun(prev => prev ? { ...prev, logs: [] } : prev)}
+              onClickLog={(nodeId) => { setSelectedNodeId(nodeId); }}
+            />
           )}
         </div>
+        {/* Right sidebars */}
         {isNodePickerOpen && (
           <NodePickerPanel isOpen={isNodePickerOpen} onClose={() => { setIsNodePickerOpen(false); setInsertAfterNodeId(null); }}
             onSelectNode={addNode} title={insertAfterNodeId ? "Add next step" : "What happens first?"} mode={automation.mode} />
@@ -1557,16 +1570,6 @@ export const AutomationCanvas = ({ automation, onBack, onSave, onUpdate }: {
           );
         })()}
       </div>
-      {/* Execution Log Drawer — inline flex child, not overlapping */}
-      {isExecMode && (
-        <LogDrawer
-          logs={testRun?.logs || []}
-          isOpen={isLogDrawerOpen}
-          onToggle={() => setIsLogDrawerOpen(prev => !prev)}
-          onClear={() => setTestRun(prev => prev ? { ...prev, logs: [] } : prev)}
-          onClickLog={(nodeId) => { setSelectedNodeId(nodeId); }}
-        />
-      )}
     </div>
   );
 };
