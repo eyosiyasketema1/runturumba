@@ -662,73 +662,107 @@ export function SequenceBuilder({
             </Section>
 
             {/* Steps timeline */}
-            <Section title="Timeline" description="Drip messages in order. Each step waits for its delay before sending.">
-              <div className="space-y-3">
+            <Section title="Timeline" description="Each message sends in order. Adjust the wait time between steps.">
+              <div className="space-y-0">
                 {steps.map((step, i) => {
                   const isSelected = selectedId === step.id;
+                  const delayText = step.delay.amount === 0
+                    ? "Send right away"
+                    : `Then wait ${step.delay.amount} ${step.delay.amount === 1 ? step.delay.unit.replace(/s$/, "") : step.delay.unit}`;
                   return (
-                    <div
-                      key={step.id}
-                      className={cn(
-                        "relative bg-card border rounded-xl transition-all",
-                        isSelected ? "border-primary ring-1 ring-primary shadow-sm" : "border-border hover:border-foreground/20"
-                      )}
-                    >
-                      {/* Connector line from previous step */}
+                    <div key={step.id}>
+                      {/* Delay connector between steps */}
                       {i > 0 && (
-                        <div className="absolute -top-3 left-7 w-px h-3 bg-border" aria-hidden />
-                      )}
-                      <button
-                        onClick={() => setSelectedId(step.id)}
-                        className="w-full flex items-start gap-3 p-4 text-left"
-                      >
-                        <div className="w-9 h-9 rounded-full bg-primary/10 text-primary flex items-center justify-center shrink-0 font-bold">
-                          {i + 1}
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2 flex-wrap">
-                            <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-200 font-semibold">
-                              <Clock className="w-3 h-3" />
-                              {step.delay.amount === 0
-                                ? "Immediately"
-                                : `After ${step.delay.amount} ${step.delay.unit}`}
-                            </Badge>
-                            <Badge variant="outline" className="bg-muted border-transparent text-foreground font-semibold">
-                              {channels.length === ALL_CHANNELS.length ? "All channels" : channels.map(c => CHANNELS.find(ch => ch.id === c)?.label ?? c).join(", ")}
-                            </Badge>
-                            {step.aiPersonalize && (
-                              <Badge variant="outline" className="bg-pink-50 text-pink-700 border-pink-200 font-semibold">
-                                <Sparkles className="w-3 h-3" />
-                                AI Personalize
-                              </Badge>
-                            )}
+                        <div className="flex items-center gap-2 py-2 pl-5">
+                          <div className="w-px h-4 bg-amber-300 ml-2.5" />
+                          <div className="flex items-center gap-1.5 ml-3">
+                            <Clock className="w-3 h-3 text-amber-500 shrink-0" />
+                            <span className="text-xs text-amber-700 font-medium">{delayText}</span>
+                            <div className="flex items-center gap-1 ml-1">
+                              {[
+                                { label: "1h", amount: 1, unit: "hours" as const },
+                                { label: "1d", amount: 1, unit: "days" as const },
+                                { label: "3d", amount: 3, unit: "days" as const },
+                                { label: "1w", amount: 7, unit: "days" as const },
+                              ].map(preset => {
+                                const isActive = step.delay.amount === preset.amount && step.delay.unit === preset.unit;
+                                return (
+                                  <button
+                                    key={preset.label}
+                                    onClick={(e) => { e.stopPropagation(); updateStep(step.id, { delay: { amount: preset.amount, unit: preset.unit } }); }}
+                                    className={cn(
+                                      "px-1.5 py-0.5 rounded text-[10px] font-semibold transition-all",
+                                      isActive
+                                        ? "bg-amber-100 text-amber-800 border border-amber-300"
+                                        : "bg-muted/60 text-muted-foreground hover:bg-amber-50 hover:text-amber-700 border border-transparent"
+                                    )}
+                                  >
+                                    {preset.label}
+                                  </button>
+                                );
+                              })}
+                            </div>
                           </div>
-                          <p className={cn(
-                            "text-sm mt-2 leading-relaxed line-clamp-2",
-                            step.message.trim() ? "text-foreground" : "text-muted-foreground italic"
-                          )}>
-                            {step.message.trim() || "Empty message — click to add content."}
-                          </p>
                         </div>
-                        <div className="flex flex-col gap-0.5 opacity-70 group-hover:opacity-100">
-                          <button
-                            onClick={(e) => { e.stopPropagation(); moveStep(step.id, -1); }}
-                            disabled={i === 0}
-                            className="w-6 h-6 rounded hover:bg-muted disabled:opacity-30 disabled:cursor-not-allowed flex items-center justify-center"
-                            aria-label="Move step up"
-                          >
-                            <ChevronUp className="w-3.5 h-3.5 text-muted-foreground" />
-                          </button>
-                          <button
-                            onClick={(e) => { e.stopPropagation(); moveStep(step.id, 1); }}
-                            disabled={i === steps.length - 1}
-                            className="w-6 h-6 rounded hover:bg-muted disabled:opacity-30 disabled:cursor-not-allowed flex items-center justify-center"
-                            aria-label="Move step down"
-                          >
-                            <ChevronDown className="w-3.5 h-3.5 text-muted-foreground" />
-                          </button>
-                        </div>
-                      </button>
+                      )}
+
+                      {/* Step card */}
+                      <div
+                        className={cn(
+                          "relative bg-card border rounded-xl transition-all",
+                          isSelected ? "border-primary ring-1 ring-primary shadow-sm" : "border-border hover:border-foreground/20"
+                        )}
+                      >
+                        <button
+                          onClick={() => setSelectedId(step.id)}
+                          className="w-full flex items-start gap-3 p-4 text-left"
+                        >
+                          <div className="w-9 h-9 rounded-full bg-primary/10 text-primary flex items-center justify-center shrink-0 font-bold">
+                            {i + 1}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-200 font-semibold">
+                                <Clock className="w-3 h-3" />
+                                {i === 0 ? (step.delay.amount === 0 ? "Sends right away" : delayText) : (step.delay.amount === 0 ? "No wait" : delayText.replace("Then wait", "Waits"))}
+                              </Badge>
+                              <Badge variant="outline" className="bg-muted border-transparent text-foreground font-semibold">
+                                {channels.length === ALL_CHANNELS.length ? "All channels" : channels.map(c => CHANNELS.find(ch => ch.id === c)?.label ?? c).join(", ")}
+                              </Badge>
+                              {step.aiPersonalize && (
+                                <Badge variant="outline" className="bg-pink-50 text-pink-700 border-pink-200 font-semibold">
+                                  <Sparkles className="w-3 h-3" />
+                                  AI Personalize
+                                </Badge>
+                              )}
+                            </div>
+                            <p className={cn(
+                              "text-sm mt-2 leading-relaxed line-clamp-2",
+                              step.message.trim() ? "text-foreground" : "text-muted-foreground italic"
+                            )}>
+                              {step.message.trim() || "Empty message — click to add content."}
+                            </p>
+                          </div>
+                          <div className="flex flex-col gap-0.5 opacity-70 group-hover:opacity-100">
+                            <button
+                              onClick={(e) => { e.stopPropagation(); moveStep(step.id, -1); }}
+                              disabled={i === 0}
+                              className="w-6 h-6 rounded hover:bg-muted disabled:opacity-30 disabled:cursor-not-allowed flex items-center justify-center"
+                              aria-label="Move step up"
+                            >
+                              <ChevronUp className="w-3.5 h-3.5 text-muted-foreground" />
+                            </button>
+                            <button
+                              onClick={(e) => { e.stopPropagation(); moveStep(step.id, 1); }}
+                              disabled={i === steps.length - 1}
+                              className="w-6 h-6 rounded hover:bg-muted disabled:opacity-30 disabled:cursor-not-allowed flex items-center justify-center"
+                              aria-label="Move step down"
+                            >
+                              <ChevronDown className="w-3.5 h-3.5 text-muted-foreground" />
+                            </button>
+                          </div>
+                        </button>
+                      </div>
                     </div>
                   );
                 })}
@@ -777,29 +811,55 @@ function StepInspector({
     <div className="divide-y divide-border">
       <div className="p-5">
         <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Step {index + 1}</p>
-        <p className="text-sm font-bold text-foreground mt-0.5">Delay</p>
+        <p className="text-sm font-bold text-foreground mt-0.5">When to send</p>
 
-        <div className="grid grid-cols-[1fr,auto] gap-2 mt-3">
-          <Input
-            type="number"
-            min={0}
-            value={step.delay.amount}
-            onChange={(e) => onUpdate({ delay: { ...step.delay, amount: Math.max(0, parseInt(e.target.value || "0", 10)) } })}
-            className="h-9"
-          />
-          <select
-            value={step.delay.unit}
-            onChange={(e) => onUpdate({ delay: { ...step.delay, unit: e.target.value as SequenceStep["delay"]["unit"] } })}
-            className="h-9 px-3 rounded-md border border-input bg-background text-sm"
-          >
-            <option value="minutes">Minutes</option>
-            <option value="hours">Hours</option>
-            <option value="days">Days</option>
-          </select>
+        {/* Natural language delay sentence */}
+        <div className="mt-3 p-3 rounded-lg bg-amber-50/50 border border-amber-100">
+          <p className="text-sm text-foreground leading-relaxed">
+            {index === 0 ? (
+              step.delay.amount === 0 ? (
+                <span>Send this message <span className="font-semibold text-amber-700">right away</span> when the sequence starts.</span>
+              ) : (
+                <span>Wait <span className="inline-flex items-baseline gap-1"><input type="number" min={0} value={step.delay.amount} onChange={(e) => onUpdate({ delay: { ...step.delay, amount: Math.max(0, parseInt(e.target.value || "0", 10)) } })} className="w-12 h-6 text-center text-sm font-semibold text-amber-700 bg-white border border-amber-200 rounded px-1 focus:outline-none focus:ring-1 focus:ring-amber-400" /><select value={step.delay.unit} onChange={(e) => onUpdate({ delay: { ...step.delay, unit: e.target.value as SequenceStep["delay"]["unit"] } })} className="h-6 text-sm font-semibold text-amber-700 bg-white border border-amber-200 rounded px-1 focus:outline-none focus:ring-1 focus:ring-amber-400">{["minutes","hours","days"].map(u => <option key={u} value={u}>{u}</option>)}</select></span> before sending.</span>
+              )
+            ) : (
+              step.delay.amount === 0 ? (
+                <span>Send <span className="font-semibold text-amber-700">immediately</span> after the previous step.</span>
+              ) : (
+                <span>Then wait <span className="inline-flex items-baseline gap-1"><input type="number" min={0} value={step.delay.amount} onChange={(e) => onUpdate({ delay: { ...step.delay, amount: Math.max(0, parseInt(e.target.value || "0", 10)) } })} className="w-12 h-6 text-center text-sm font-semibold text-amber-700 bg-white border border-amber-200 rounded px-1 focus:outline-none focus:ring-1 focus:ring-amber-400" /><select value={step.delay.unit} onChange={(e) => onUpdate({ delay: { ...step.delay, unit: e.target.value as SequenceStep["delay"]["unit"] } })} className="h-6 text-sm font-semibold text-amber-700 bg-white border border-amber-200 rounded px-1 focus:outline-none focus:ring-1 focus:ring-amber-400">{["minutes","hours","days"].map(u => <option key={u} value={u}>{u}</option>)}</select></span> before sending.</span>
+              )
+            )}
+          </p>
         </div>
-        <p className="text-xs text-muted-foreground mt-2">
-          {step.delay.amount === 0 ? "Sends immediately" : `Waits ${step.delay.amount} ${step.delay.unit} before sending.`}
-        </p>
+
+        {/* Quick presets */}
+        <div className="flex flex-wrap gap-1.5 mt-3">
+          {[
+            { label: "Right away", amount: 0, unit: "minutes" as const },
+            { label: "30 min", amount: 30, unit: "minutes" as const },
+            { label: "1 hour", amount: 1, unit: "hours" as const },
+            { label: "6 hours", amount: 6, unit: "hours" as const },
+            { label: "1 day", amount: 1, unit: "days" as const },
+            { label: "3 days", amount: 3, unit: "days" as const },
+            { label: "1 week", amount: 7, unit: "days" as const },
+          ].map(preset => {
+            const isActive = step.delay.amount === preset.amount && step.delay.unit === preset.unit;
+            return (
+              <button
+                key={preset.label}
+                onClick={() => onUpdate({ delay: { amount: preset.amount, unit: preset.unit } })}
+                className={cn(
+                  "px-2.5 py-1 rounded-full text-xs font-medium transition-all",
+                  isActive
+                    ? "bg-amber-100 text-amber-800 border border-amber-300 shadow-sm"
+                    : "bg-muted/60 text-muted-foreground hover:bg-amber-50 hover:text-amber-700 border border-transparent hover:border-amber-200"
+                )}
+              >
+                {preset.label}
+              </button>
+            );
+          })}
+        </div>
 
         <div className="mt-4 p-3 rounded-lg bg-muted/50 border border-border">
           <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1.5">Channel</p>
