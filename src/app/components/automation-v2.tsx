@@ -1127,6 +1127,7 @@ export const AutomationCanvas = ({ automation, onBack, onSave, onUpdate }: {
   const [isExecMode, setIsExecMode] = useState(false);
   const [isLogDrawerOpen, setIsLogDrawerOpen] = useState(false);
   const execTimerRef = useRef<number | null>(null);
+  const runCountRef = useRef(0); // first run = errors, re-runs = clean
 
   const selectedNode = automation.nodes.find(n => n.id === selectedNodeId) || null;
   const modeInfo = getModeInfo(automation.mode);
@@ -1134,12 +1135,16 @@ export const AutomationCanvas = ({ automation, onBack, onSave, onUpdate }: {
   // === Test Runner — simulates data flowing through nodes ===
   const runTest = useCallback(() => {
     if (automation.nodes.length === 0) { toast.error("Add nodes before testing"); return; }
+    runCountRef.current += 1;
+    const currentRunCount = runCountRef.current;
     const run = createMockTestRun(automation.nodes, automation.connections);
     run.status = "running";
     setTestRun(run);
     setIsExecMode(true);
     setIsLogDrawerOpen(true);
-    toast.success(`Test started for "${run.seekerName}"`);
+    toast.success(currentRunCount === 1
+      ? `Test started for "${run.seekerName}"`
+      : `Re-running test for "${run.seekerName}" (attempt ${currentRunCount})`);
 
     // Build execution order from connections (BFS from triggers)
     const triggers = automation.nodes.filter(n => n.type === "trigger");
@@ -1191,7 +1196,10 @@ export const AutomationCanvas = ({ automation, onBack, onSave, onUpdate }: {
       // After a random delay, complete the node
       const delay = 600 + Math.random() * 1200;
       execTimerRef.current = window.setTimeout(() => {
-        const isError = Math.random() < 0.12 && node.type !== "trigger"; // 12% chance of error on non-triggers
+        // First run: guaranteed errors on ~3rd-4th non-trigger node. Re-runs: all succeed.
+        const isFirstRun = currentRunCount === 1;
+        const nonTriggerIndex = ordered.slice(0, stepIdx + 1).filter(n => n.type !== "trigger").length;
+        const isError = isFirstRun && node.type !== "trigger" && (nonTriggerIndex === 3 || (nonTriggerIndex > 3 && Math.random() < 0.4));
         const duration = Math.floor(delay + Math.random() * 300);
         const stats = generateMockNodeStats(stepIdx);
 
@@ -1256,6 +1264,7 @@ export const AutomationCanvas = ({ automation, onBack, onSave, onUpdate }: {
     setTestRun(null);
     setIsExecMode(false);
     setIsLogDrawerOpen(false);
+    runCountRef.current = 0;
   }, []);
 
   // Cleanup on unmount
