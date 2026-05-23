@@ -1196,10 +1196,9 @@ export const AutomationCanvas = ({ automation, onBack, onSave, onUpdate }: {
       // After a random delay, complete the node
       const delay = 600 + Math.random() * 1200;
       execTimerRef.current = window.setTimeout(() => {
-        // First run: guaranteed error on 2nd non-trigger node. Re-runs: all succeed.
+        // First run: guaranteed error on 3rd node (index 2). Re-runs: all succeed.
         const isFirstRun = currentRunCount === 1;
-        const nonTriggerIndex = ordered.slice(0, stepIdx + 1).filter(n => n.type !== "trigger").length;
-        const isError = isFirstRun && node.type !== "trigger" && nonTriggerIndex >= 2;
+        const isError = isFirstRun && stepIdx >= 2;
         const duration = Math.floor(delay + Math.random() * 300);
         const stats = generateMockNodeStats(stepIdx);
 
