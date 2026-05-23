@@ -673,13 +673,38 @@ export function SequenceBuilder({
                     <div key={step.id}>
                       {/* Delay connector between steps */}
                       {i > 0 && (
-                        <div className="flex items-center gap-2 py-2 pl-5">
+                        <div className="flex items-center gap-2 py-2.5 pl-5">
                           <div className="w-px h-4 bg-amber-300 ml-2.5" />
-                          <div className="flex items-center gap-1.5 ml-3">
+                          <div className="flex items-center gap-1.5 ml-3 flex-wrap">
                             <Clock className="w-3 h-3 text-amber-500 shrink-0" />
-                            <span className="text-xs text-amber-700 font-medium">{delayText}</span>
-                            <div className="flex items-center gap-1 ml-1">
+                            <span className="text-xs text-amber-700 font-medium whitespace-nowrap">
+                              {step.delay.amount === 0 ? "Send right away" : "Then wait"}
+                            </span>
+                            {step.delay.amount > 0 && (
+                              <span className="inline-flex items-center gap-0.5">
+                                <input
+                                  type="number"
+                                  min={1}
+                                  value={step.delay.amount}
+                                  onClick={(e) => e.stopPropagation()}
+                                  onChange={(e) => { e.stopPropagation(); updateStep(step.id, { delay: { ...step.delay, amount: Math.max(1, parseInt(e.target.value || "1", 10)) } }); }}
+                                  className="w-10 h-5 text-center text-[11px] font-semibold text-amber-700 bg-white border border-amber-200 rounded focus:outline-none focus:ring-1 focus:ring-amber-400"
+                                />
+                                <select
+                                  value={step.delay.unit}
+                                  onClick={(e) => e.stopPropagation()}
+                                  onChange={(e) => { e.stopPropagation(); updateStep(step.id, { delay: { ...step.delay, unit: e.target.value as SequenceStep["delay"]["unit"] } }); }}
+                                  className="h-5 text-[11px] font-semibold text-amber-700 bg-white border border-amber-200 rounded px-0.5 focus:outline-none focus:ring-1 focus:ring-amber-400"
+                                >
+                                  <option value="minutes">min</option>
+                                  <option value="hours">hr</option>
+                                  <option value="days">days</option>
+                                </select>
+                              </span>
+                            )}
+                            <div className="flex items-center gap-1 ml-0.5">
                               {[
+                                { label: "Now", amount: 0, unit: "minutes" as const },
                                 { label: "1h", amount: 1, unit: "hours" as const },
                                 { label: "1d", amount: 1, unit: "days" as const },
                                 { label: "3d", amount: 3, unit: "days" as const },
