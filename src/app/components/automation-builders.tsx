@@ -815,28 +815,14 @@ function StepInspector({
         {/* Natural language delay sentence */}
         <div className="mt-4 p-4 rounded-lg bg-muted/30 border border-border">
           <p className="text-sm text-foreground leading-relaxed">
-            {index === 0 ? (
-              <span>Wait <span className="inline-flex items-baseline gap-1"><input type="number" min={0} value={step.delay.amount} onChange={(e) => onUpdate({ delay: { ...step.delay, amount: Math.max(0, parseInt(e.target.value || "0", 10)) } })} className="w-16 h-8 text-center text-sm font-medium text-foreground bg-background border border-input rounded-lg px-1 focus:outline-none focus:ring-2 focus:ring-ring" /><select value={step.delay.unit} onChange={(e) => onUpdate({ delay: { ...step.delay, unit: e.target.value as SequenceStep["delay"]["unit"] } })} className="h-8 text-sm font-medium text-foreground bg-background border border-input rounded-lg px-2 focus:outline-none focus:ring-2 focus:ring-ring">{["minutes","hours","days"].map(u => <option key={u} value={u}>{u}</option>)}</select></span> before sending.</span>
-            ) : (
-              <span>Then wait <span className="inline-flex items-baseline gap-1"><input type="number" min={0} value={step.delay.amount} onChange={(e) => onUpdate({ delay: { ...step.delay, amount: Math.max(0, parseInt(e.target.value || "0", 10)) } })} className="w-16 h-8 text-center text-sm font-medium text-foreground bg-background border border-input rounded-lg px-1 focus:outline-none focus:ring-2 focus:ring-ring" /><select value={step.delay.unit} onChange={(e) => onUpdate({ delay: { ...step.delay, unit: e.target.value as SequenceStep["delay"]["unit"] } })} className="h-8 text-sm font-medium text-foreground bg-background border border-input rounded-lg px-2 focus:outline-none focus:ring-2 focus:ring-ring">{["minutes","hours","days"].map(u => <option key={u} value={u}>{u}</option>)}</select></span> before sending.</span>
-            )}
-            {step.delay.amount === 0 && <span className="block text-xs text-muted-foreground mt-1 italic">Set to 0 to send right away</span>}
+            {index === 0 ? "Wait" : "Then wait"}{" "}
+            <span className="inline-flex items-baseline gap-1">
+              <input type="number" min={0} value={step.delay.amount} onChange={(e) => onUpdate({ delay: { ...step.delay, amount: Math.max(0, parseInt(e.target.value || "0", 10)) } })} className="w-16 h-8 text-center text-sm font-medium text-foreground bg-background border border-input rounded-lg px-1 focus:outline-none focus:ring-2 focus:ring-ring" />
+              <select value={step.delay.unit} onChange={(e) => onUpdate({ delay: { ...step.delay, unit: e.target.value as SequenceStep["delay"]["unit"] } })} className="h-8 text-sm font-medium text-foreground bg-background border border-input rounded-lg px-2 focus:outline-none focus:ring-2 focus:ring-ring">{["minutes","hours","days"].map(u => <option key={u} value={u}>{u}</option>)}</select>
+            </span>{" "}
+            before sending.
+            {step.delay.amount === 0 && <span className="block text-xs text-muted-foreground mt-1.5">Sends right away — increase to add a delay.</span>}
           </p>
-        </div>
-
-        <div className="mt-5 p-4 rounded-lg bg-muted/30 border border-border">
-          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Channel</p>
-          <div className="flex flex-wrap gap-1.5">
-            {channels.map(c => {
-              const ch = CHANNELS.find(ch => ch.id === c);
-              return ch ? (
-                <Badge key={c} variant="outline" className="bg-background text-foreground border-border font-medium text-xs">
-                  {ch.label}
-                </Badge>
-              ) : null;
-            })}
-          </div>
-          <p className="text-[11px] text-muted-foreground mt-1.5">Set in Start trigger options</p>
         </div>
       </div>
 
