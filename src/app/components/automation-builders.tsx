@@ -917,20 +917,6 @@ function StepInspector({
     <div className="divide-y divide-border">
       <div className="p-6">
         <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Step {index + 1}</p>
-        <p className="text-sm font-bold text-foreground mt-1">When to send</p>
-
-        {/* Natural language delay sentence */}
-        <div className="mt-4 p-4 rounded-lg bg-muted/30 border border-border">
-          <p className="text-sm text-foreground leading-relaxed">
-            {index === 0 ? "Wait" : "Then wait"}{" "}
-            <span className="inline-flex items-baseline gap-1">
-              <input type="number" min={0} value={step.delay.amount} onChange={(e) => onUpdate({ delay: { ...step.delay, amount: Math.max(0, parseInt(e.target.value || "0", 10)) } })} className="w-16 h-8 text-center text-sm font-medium text-foreground bg-background border border-input rounded-lg px-1 focus:outline-none focus:ring-2 focus:ring-ring" />
-              <select value={step.delay.unit} onChange={(e) => onUpdate({ delay: { ...step.delay, unit: e.target.value as SequenceStep["delay"]["unit"] } })} className="h-8 text-sm font-medium text-foreground bg-background border border-input rounded-lg px-2 focus:outline-none focus:ring-2 focus:ring-ring">{["minutes","hours","days"].map(u => <option key={u} value={u}>{u}</option>)}</select>
-            </span>{" "}
-            before sending.
-            {step.delay.amount === 0 && <span className="block text-xs text-muted-foreground mt-1.5">Sends right away — increase to add a delay.</span>}
-          </p>
-        </div>
       </div>
 
       <div className="p-6 space-y-4">
