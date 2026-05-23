@@ -18,7 +18,10 @@ import {
   ChevronDown, Save, Eye, LayoutGrid, ArrowLeft, PlusCircle,
   Maximize2, ZoomIn, ZoomOut, Hand, Flag, Milestone, Route,
   LayoutTemplate, Layers, ArrowDownRight, ArrowUpRight, Hash,
-  FolderInput, FolderClosed, Pencil
+  FolderInput, FolderClosed, Pencil,
+  Activity, Bug, ChevronUp, Terminal, RotateCcw, StopCircle,
+  TrendingDown, MousePointerClick, BarChart3, Loader2, XCircle,
+  CheckCircle, SkipForward
 } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "./types";
@@ -149,6 +152,64 @@ const NODE_HEIGHT = 80;
 const HORIZONTAL_GAP = 100;
 const VERTICAL_GAP = 140;
 const CANVAS_PADDING = 80;
+
+// ============================================================================
+// EXECUTION / DEBUG TYPES
+// ============================================================================
+
+type NodeExecStatus = "idle" | "running" | "success" | "error" | "skipped" | "waiting";
+type TestRunStatus = "idle" | "running" | "completed" | "failed";
+
+interface NodeExecData {
+  status: NodeExecStatus;
+  startedAt?: string;
+  completedAt?: string;
+  durationMs?: number;
+  inputData?: Record<string, any>;
+  outputData?: Record<string, any>;
+  error?: string;
+  stats?: { reached: number; sent: number; delivered: number; seen: number; clicked: number; droppedOff: number };
+}
+
+interface ExecutionLog {
+  id: string;
+  timestamp: string;
+  nodeId: string;
+  nodeLabel: string;
+  status: "info" | "success" | "error" | "warning";
+  message: string;
+}
+
+interface TestRun {
+  id: string;
+  status: TestRunStatus;
+  startedAt: string;
+  completedAt?: string;
+  seekerName: string;
+  nodeStates: Record<string, NodeExecData>;
+  logs: ExecutionLog[];
+  currentNodeId?: string;
+}
+
+const MOCK_SEEKERS = ["Abebe Kebede", "Sara Mohammed", "Daniel Tadesse", "Hana Girma", "Yonas Alemu"];
+
+function generateMockNodeStats(nodeIndex: number): NodeExecData["stats"] {
+  const base = Math.max(30, 480 - nodeIndex * 75 + Math.floor(Math.random() * 40));
+  const sent = Math.floor(base * (0.9 + Math.random() * 0.08));
+  const delivered = Math.floor(sent * (0.85 + Math.random() * 0.1));
+  const seen = Math.floor(delivered * (0.5 + Math.random() * 0.3));
+  const clicked = Math.floor(seen * (0.1 + Math.random() * 0.25));
+  const droppedOff = base - Math.floor(base * (0.7 + Math.random() * 0.2));
+  return { reached: base, sent, delivered, seen, clicked, droppedOff };
+}
+
+function createMockTestRun(nodes: FlowNode[], connections: FlowConnection[]): TestRun {
+  const seeker = MOCK_SEEKERS[Math.floor(Math.random() * MOCK_SEEKERS.length)];
+  const runId = `run-${Date.now()}`;
+  const nodeStates: Record<string, NodeExecData> = {};
+  nodes.forEach(n => { nodeStates[n.id] = { status: "idle" }; });
+  return { id: runId, status: "idle", startedAt: new Date().toISOString(), seekerName: seeker, nodeStates, logs: [] };
+}
 
 // ============================================================================
 // DEFAULT FOLDERS
@@ -302,6 +363,28 @@ const gridToPixel = (gx: number, gy: number): { px: number; py: number } => ({
 // REACT FLOW CUSTOM NODE
 // ============================================================================
 
+const ExecStatusIcon = ({ status }: { status: NodeExecStatus }) => {
+  switch (status) {
+    case "running": return <Loader2 className="w-3.5 h-3.5 text-blue-500 animate-spin" />;
+    case "success": return <CheckCircle className="w-3.5 h-3.5 text-emerald-500" />;
+    case "error": return <XCircle className="w-3.5 h-3.5 text-red-500" />;
+    case "skipped": return <SkipForward className="w-3.5 h-3.5 text-gray-400" />;
+    case "waiting": return <Clock className="w-3.5 h-3.5 text-amber-500" />;
+    default: return null;
+  }
+};
+
+const execBorderColor = (status: NodeExecStatus) => {
+  switch (status) {
+    case "running": return "border-blue-400 shadow-blue-500/20 shadow-lg ring-2 ring-blue-400/30";
+    case "success": return "border-emerald-400 shadow-emerald-500/10";
+    case "error": return "border-red-400 shadow-red-500/20 shadow-lg ring-2 ring-red-400/30";
+    case "skipped": return "border-gray-300 opacity-60";
+    case "waiting": return "border-amber-400";
+    default: return "";
+  }
+};
+
 const AutomationNodeComponent = ({ data, selected }: NodeProps) => {
   const node = data.flowNode as FlowNode;
   const Icon = node.icon;
@@ -309,6 +392,9 @@ const AutomationNodeComponent = ({ data, selected }: NodeProps) => {
   const onDelete = data.onDelete as () => void;
   const onAddAfter = data.onAddAfter as (() => void) | undefined;
   const onDoubleClick = data.onDoubleClick as (() => void) | undefined;
+  const execData = data.execData as NodeExecData | undefined;
+  const execStatus = execData?.status ?? "idle";
+  const isExecMode = data.isExecMode as boolean | undefined;
 
   return (
     <div className="group" style={{ width: NODE_WIDTH }} onDoubleClick={onDoubleClick}>
@@ -316,8 +402,10 @@ const AutomationNodeComponent = ({ data, selected }: NodeProps) => {
       <Handle type="target" position={Position.Left} className="!w-2.5 !h-2.5 !bg-muted-foreground/40 !border-2 !border-background !-left-1.5" />
 
       <div className={cn(
-        "rounded-xl border-2 transition-all duration-150 bg-card hover:shadow-lg hover:shadow-primary/5",
-        selected ? `border-primary shadow-lg shadow-primary/10 ring-2 ${colors.ring}` : "border-border hover:border-primary/40"
+        "rounded-xl border-2 transition-all duration-300 bg-card hover:shadow-lg hover:shadow-primary/5",
+        isExecMode && execStatus !== "idle" ? execBorderColor(execStatus)
+          : selected ? `border-primary shadow-lg shadow-primary/10 ring-2 ${colors.ring}` : "border-border hover:border-primary/40",
+        execStatus === "running" && "animate-pulse"
       )}>
         <div className={cn("h-1 rounded-t-[10px]", colors.bar)} />
         <div className="px-3.5 py-2.5 flex items-start gap-3">
@@ -325,10 +413,28 @@ const AutomationNodeComponent = ({ data, selected }: NodeProps) => {
             <Icon className={cn("w-4.5 h-4.5", node.iconColor)} />
           </div>
           <div className="min-w-0 flex-1">
-            <p className="text-[13px] font-semibold text-foreground leading-tight truncate">{node.label}</p>
+            <div className="flex items-center gap-1.5">
+              <p className="text-[13px] font-semibold text-foreground leading-tight truncate flex-1">{node.label}</p>
+              {isExecMode && execStatus !== "idle" && <ExecStatusIcon status={execStatus} />}
+            </div>
             <p className="text-[11px] text-muted-foreground mt-0.5 truncate">{node.description}</p>
+            {/* Exec duration */}
+            {isExecMode && execData?.durationMs != null && (
+              <p className="text-[10px] text-muted-foreground mt-1 flex items-center gap-1">
+                <Clock className="w-2.5 h-2.5" /> {execData.durationMs < 1000 ? `${execData.durationMs}ms` : `${(execData.durationMs / 1000).toFixed(1)}s`}
+              </p>
+            )}
           </div>
         </div>
+        {/* Stats row shown in exec mode */}
+        {isExecMode && execData?.stats && (
+          <div className="px-3.5 pb-2 flex items-center gap-2.5 text-[10px] text-muted-foreground border-t border-border/50 pt-1.5 mt-0.5">
+            <span className="flex items-center gap-0.5"><Users className="w-2.5 h-2.5 text-blue-500" />{execData.stats.reached}</span>
+            <span className="flex items-center gap-0.5"><Send className="w-2.5 h-2.5 text-emerald-500" />{execData.stats.sent}</span>
+            <span className="flex items-center gap-0.5"><Eye className="w-2.5 h-2.5 text-violet-500" />{execData.stats.delivered > 0 ? Math.round((execData.stats.seen / execData.stats.delivered) * 100) : 0}%</span>
+            {execData.error && <span className="flex items-center gap-0.5 text-red-500"><AlertCircle className="w-2.5 h-2.5" />err</span>}
+          </div>
+        )}
       </div>
 
       {/* Output handle */}
@@ -348,14 +454,25 @@ const AutomationNodeComponent = ({ data, selected }: NodeProps) => {
         </>
       )}
 
+      {/* Exec error badge */}
+      {isExecMode && execStatus === "error" && (
+        <div className="absolute -bottom-5 left-1/2 -translate-x-1/2 whitespace-nowrap">
+          <span className="text-[9px] font-bold text-red-600 bg-red-50 px-2 py-0.5 rounded-full border border-red-200 flex items-center gap-1">
+            <XCircle className="w-2.5 h-2.5" /> Error
+          </span>
+        </div>
+      )}
+
       {/* Delete button */}
-      <button onClick={(e) => { e.stopPropagation(); onDelete(); }}
-        className="absolute -top-2 -right-2 w-5 h-5 rounded-full bg-destructive text-destructive-foreground flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity text-xs hover:scale-110 z-10">
-        <X className="w-3 h-3" />
-      </button>
+      {!isExecMode && (
+        <button onClick={(e) => { e.stopPropagation(); onDelete(); }}
+          className="absolute -top-2 -right-2 w-5 h-5 rounded-full bg-destructive text-destructive-foreground flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity text-xs hover:scale-110 z-10">
+          <X className="w-3 h-3" />
+        </button>
+      )}
 
       {/* Add after button */}
-      {onAddAfter && (
+      {onAddAfter && !isExecMode && (
         <button onClick={(e) => { e.stopPropagation(); onAddAfter(); }}
           className="absolute -right-5 top-1/2 -translate-y-1/2 translate-x-full w-7 h-7 rounded-full border-2 border-dashed border-border bg-background flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all hover:border-primary hover:bg-primary/5 z-10">
           <Plus className="w-3.5 h-3.5 text-muted-foreground group-hover:text-primary" />
@@ -451,8 +568,9 @@ const NodePickerPanel = ({ isOpen, onClose, onSelectNode, title, mode }: {
 // NODE INSPECTOR
 // ============================================================================
 
-const NodeInspector = ({ node, onUpdate, onClose, onDelete, isJourney }: {
+const NodeInspector = ({ node, onUpdate, onClose, onDelete, isJourney, execData, isExecMode }: {
   node: FlowNode; onUpdate: (updates: Partial<FlowNode>) => void; onClose: () => void; onDelete: () => void; isJourney?: boolean;
+  execData?: NodeExecData; isExecMode?: boolean;
 }) => {
   const Icon = node.icon;
   const colors = getNodeTypeColor(node.type);
@@ -558,6 +676,11 @@ const NodeInspector = ({ node, onUpdate, onClose, onDelete, isJourney }: {
             </select>
           </div>
         )}
+        {/* Execution details when in test mode */}
+        {isExecMode && execData && execData.status !== "idle" && (
+          <NodeExecDetail node={node} execData={execData} />
+        )}
+
         <div className="pt-4 border-t border-border">
           <Button variant="outline" size="sm" className="w-full text-destructive hover:text-destructive hover:bg-destructive/5" onClick={onDelete}><Trash2 className="w-3.5 h-3.5" /> Remove Node</Button>
         </div>
@@ -775,7 +898,7 @@ const NodeConfigModal = ({ node, onSave, onCancel, onDelete, isJourney }: {
 // ============================================================================
 
 // Convert our FlowNode[] to React Flow nodes
-const toRFNodes = (nodes: FlowNode[], callbacks: { onDelete: (id: string) => void; onAddAfter: (id: string) => void; onDoubleClick: (id: string) => void }): RFNode[] => {
+const toRFNodes = (nodes: FlowNode[], callbacks: { onDelete: (id: string) => void; onAddAfter: (id: string) => void; onDoubleClick: (id: string) => void }, execStates?: Record<string, NodeExecData>, isExecMode?: boolean): RFNode[] => {
   return nodes.map(node => {
     const pos = gridToPixel(node.position.x, node.position.y);
     return {
@@ -787,27 +910,36 @@ const toRFNodes = (nodes: FlowNode[], callbacks: { onDelete: (id: string) => voi
         onDelete: () => callbacks.onDelete(node.id),
         onAddAfter: () => callbacks.onAddAfter(node.id),
         onDoubleClick: () => callbacks.onDoubleClick(node.id),
+        execData: execStates?.[node.id],
+        isExecMode: isExecMode,
       },
     };
   });
 };
 
 // Convert our FlowConnection[] to React Flow edges
-const toRFEdges = (connections: FlowConnection[]): RFEdge[] => {
-  return connections.map(conn => ({
-    id: conn.id,
-    source: conn.from,
-    target: conn.to,
-    sourceHandle: conn.type === "true" ? "true" : conn.type === "false" ? "false" : undefined,
-    type: "smoothstep",
-    animated: conn.type === "false",
-    style: { stroke: conn.type === "true" ? "#22c55e" : conn.type === "false" ? "#ef4444" : "#94a3b8", strokeWidth: 2 },
-    label: conn.label,
-    labelStyle: { fill: conn.type === "true" ? "#22c55e" : conn.type === "false" ? "#ef4444" : "#94a3b8", fontWeight: 600, fontSize: 11 },
-    labelBgStyle: { fill: "hsl(var(--card))", fillOpacity: 0.9 },
-    labelBgPadding: [6, 3] as [number, number],
-    markerEnd: { type: MarkerType.ArrowClosed, color: conn.type === "true" ? "#22c55e" : conn.type === "false" ? "#ef4444" : "#94a3b8", width: 16, height: 16 },
-  }));
+const toRFEdges = (connections: FlowConnection[], execStates?: Record<string, NodeExecData>, isExecMode?: boolean): RFEdge[] => {
+  return connections.map(conn => {
+    const targetExec = execStates?.[conn.to];
+    const sourceExec = execStates?.[conn.from];
+    const isActiveEdge = isExecMode && sourceExec?.status === "success" && (targetExec?.status === "success" || targetExec?.status === "running");
+    const isErrorEdge = isExecMode && targetExec?.status === "error";
+    const edgeColor = isErrorEdge ? "#ef4444" : isActiveEdge ? "#22c55e" : conn.type === "true" ? "#22c55e" : conn.type === "false" ? "#ef4444" : "#94a3b8";
+    return {
+      id: conn.id,
+      source: conn.from,
+      target: conn.to,
+      sourceHandle: conn.type === "true" ? "true" : conn.type === "false" ? "false" : undefined,
+      type: "smoothstep",
+      animated: isExecMode ? (isActiveEdge || targetExec?.status === "running") : conn.type === "false",
+      style: { stroke: edgeColor, strokeWidth: isActiveEdge ? 3 : 2 },
+      label: conn.label,
+      labelStyle: { fill: edgeColor, fontWeight: 600, fontSize: 11 },
+      labelBgStyle: { fill: "hsl(var(--card))", fillOpacity: 0.9 },
+      labelBgPadding: [6, 3] as [number, number],
+      markerEnd: { type: MarkerType.ArrowClosed, color: edgeColor, width: 16, height: 16 },
+    };
+  });
 };
 
 // Convert React Flow pixel position back to grid position
@@ -815,6 +947,179 @@ const pixelToGrid = (px: number, py: number): { x: number; y: number } => ({
   x: (px - CANVAS_PADDING) / (NODE_WIDTH + HORIZONTAL_GAP),
   y: (py - CANVAS_PADDING) / (NODE_HEIGHT + VERTICAL_GAP),
 });
+
+// ============================================================================
+// EXECUTION LOG DRAWER
+// ============================================================================
+
+const LogDrawer = ({ logs, isOpen, onToggle, onClear, onClickLog }: {
+  logs: ExecutionLog[]; isOpen: boolean; onToggle: () => void; onClear: () => void; onClickLog: (nodeId: string) => void;
+}) => {
+  const [filter, setFilter] = useState<"all" | "error" | "success" | "warning">("all");
+  const [search, setSearch] = useState("");
+  const filtered = logs.filter(l => {
+    if (filter !== "all" && l.status !== filter) return false;
+    if (search && !l.message.toLowerCase().includes(search.toLowerCase()) && !l.nodeLabel.toLowerCase().includes(search.toLowerCase())) return false;
+    return true;
+  });
+  const errorCount = logs.filter(l => l.status === "error").length;
+
+  if (!isOpen) {
+    return (
+      <button onClick={onToggle}
+        className="fixed bottom-0 left-0 right-0 z-20 h-9 bg-card border-t border-border flex items-center justify-center gap-2 text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-muted transition-colors">
+        <Terminal className="w-3.5 h-3.5" />
+        Execution Logs ({logs.length})
+        {errorCount > 0 && <span className="px-1.5 py-0.5 rounded-full bg-red-100 text-red-600 text-[10px] font-bold">{errorCount} error{errorCount > 1 ? "s" : ""}</span>}
+        <ChevronUp className="w-3.5 h-3.5" />
+      </button>
+    );
+  }
+
+  return (
+    <div className="fixed bottom-0 left-0 right-0 z-20 h-[260px] bg-card border-t border-border flex flex-col animate-in slide-in-from-bottom-5 duration-200">
+      {/* Header */}
+      <div className="flex items-center justify-between px-4 py-2 border-b border-border shrink-0">
+        <div className="flex items-center gap-3">
+          <Terminal className="w-4 h-4 text-muted-foreground" />
+          <span className="text-sm font-bold text-foreground">Execution Logs</span>
+          <Badge variant="secondary" className="text-[10px]">{filtered.length}</Badge>
+          {errorCount > 0 && <Badge variant="destructive" className="text-[10px]">{errorCount} error{errorCount > 1 ? "s" : ""}</Badge>}
+        </div>
+        <div className="flex items-center gap-2">
+          {/* Filter tabs */}
+          {(["all", "success", "error", "warning"] as const).map(f => (
+            <button key={f} onClick={() => setFilter(f)}
+              className={cn("px-2.5 py-1 rounded-md text-[10px] font-medium transition-colors",
+                filter === f ? "bg-foreground/10 text-foreground" : "text-muted-foreground hover:text-foreground")}>
+              {f === "all" ? "All" : f.charAt(0).toUpperCase() + f.slice(1)}
+            </button>
+          ))}
+          <div className="w-px h-4 bg-border" />
+          <Input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search logs..." className="h-7 text-xs w-[160px]" />
+          <button onClick={onClear} className="p-1 rounded hover:bg-muted text-muted-foreground hover:text-foreground" title="Clear logs"><Trash2 className="w-3.5 h-3.5" /></button>
+          <button onClick={onToggle} className="p-1 rounded hover:bg-muted text-muted-foreground hover:text-foreground"><ChevronDown className="w-3.5 h-3.5" /></button>
+        </div>
+      </div>
+      {/* Log entries */}
+      <div className="flex-1 overflow-y-auto font-mono text-xs">
+        {filtered.length === 0 ? (
+          <div className="flex items-center justify-center h-full text-muted-foreground">No logs to show</div>
+        ) : (
+          filtered.map(log => (
+            <button key={log.id} onClick={() => onClickLog(log.nodeId)}
+              className="w-full flex items-center gap-3 px-4 py-1.5 hover:bg-muted/50 transition-colors text-left border-b border-border/30">
+              <span className="text-[10px] text-muted-foreground w-[70px] shrink-0">{new Date(log.timestamp).toLocaleTimeString()}</span>
+              <span className={cn("w-1.5 h-1.5 rounded-full shrink-0",
+                log.status === "success" ? "bg-emerald-500" : log.status === "error" ? "bg-red-500" : log.status === "warning" ? "bg-amber-500" : "bg-blue-500"
+              )} />
+              <span className="text-foreground font-semibold w-[130px] shrink-0 truncate">{log.nodeLabel}</span>
+              <span className={cn("flex-1 truncate",
+                log.status === "error" ? "text-red-500" : log.status === "warning" ? "text-amber-600" : "text-muted-foreground"
+              )}>{log.message}</span>
+            </button>
+          ))
+        )}
+      </div>
+    </div>
+  );
+};
+
+// ============================================================================
+// NODE EXECUTION DETAIL — shown in inspector during exec mode
+// ============================================================================
+
+const NodeExecDetail = ({ node, execData }: { node: FlowNode; execData?: NodeExecData }) => {
+  if (!execData || execData.status === "idle") return null;
+
+  return (
+    <div className="border-t border-border">
+      <div className="p-5 space-y-4">
+        <div className="flex items-center gap-2">
+          <BarChart3 className="w-4 h-4 text-muted-foreground" />
+          <p className="text-sm font-bold text-foreground">Execution Details</p>
+        </div>
+
+        {/* Status + Duration */}
+        <div className="flex items-center gap-3">
+          <div className={cn("flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold",
+            execData.status === "success" ? "bg-emerald-50 text-emerald-700" :
+            execData.status === "error" ? "bg-red-50 text-red-700" :
+            execData.status === "running" ? "bg-blue-50 text-blue-700" :
+            execData.status === "skipped" ? "bg-gray-50 text-gray-600" :
+            "bg-amber-50 text-amber-700"
+          )}>
+            <ExecStatusIcon status={execData.status} />
+            {execData.status.charAt(0).toUpperCase() + execData.status.slice(1)}
+          </div>
+          {execData.durationMs != null && (
+            <span className="text-xs text-muted-foreground flex items-center gap-1">
+              <Clock className="w-3 h-3" />
+              {execData.durationMs < 1000 ? `${execData.durationMs}ms` : `${(execData.durationMs / 1000).toFixed(1)}s`}
+            </span>
+          )}
+        </div>
+
+        {/* Error message */}
+        {execData.error && (
+          <div className="p-3 rounded-lg bg-red-50 border border-red-200 text-xs text-red-700">
+            <div className="flex items-start gap-2">
+              <XCircle className="w-3.5 h-3.5 mt-0.5 shrink-0" />
+              <div>
+                <p className="font-semibold">Error</p>
+                <p className="mt-0.5 font-mono text-[11px]">{execData.error}</p>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Stats grid */}
+        {execData.stats && (
+          <div className="grid grid-cols-3 gap-2">
+            {[
+              { label: "Reached", value: execData.stats.reached, color: "text-blue-600", bg: "bg-blue-50", icon: Users },
+              { label: "Sent", value: execData.stats.sent, color: "text-emerald-600", bg: "bg-emerald-50", icon: Send },
+              { label: "Delivered", value: execData.stats.delivered, color: "text-emerald-600", bg: "bg-emerald-50", icon: CheckCircle },
+              { label: "Seen", value: execData.stats.seen, color: "text-violet-600", bg: "bg-violet-50", icon: Eye },
+              { label: "Clicked", value: execData.stats.clicked, color: "text-orange-600", bg: "bg-orange-50", icon: MousePointerClick },
+              { label: "Dropped", value: execData.stats.droppedOff, color: "text-rose-500", bg: "bg-rose-50", icon: TrendingDown },
+            ].map(m => (
+              <div key={m.label} className="flex flex-col items-center gap-0.5 p-2 rounded-lg bg-muted/30 border border-border">
+                <div className={cn("w-6 h-6 rounded-full flex items-center justify-center", m.bg)}>
+                  <m.icon className={cn("w-3 h-3", m.color)} />
+                </div>
+                <span className="text-sm font-bold text-foreground">{m.value.toLocaleString()}</span>
+                <span className="text-[9px] text-muted-foreground uppercase tracking-wider">{m.label}</span>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Input / Output data */}
+        {execData.inputData && (
+          <div>
+            <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mb-1.5">Input Data</p>
+            <pre className="text-[11px] bg-muted/50 rounded-lg p-3 border border-border overflow-x-auto max-h-[120px] overflow-y-auto font-mono text-foreground">
+              {JSON.stringify(execData.inputData, null, 2)}
+            </pre>
+          </div>
+        )}
+        {execData.outputData && (
+          <div>
+            <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mb-1.5">Output Data</p>
+            <pre className="text-[11px] bg-muted/50 rounded-lg p-3 border border-border overflow-x-auto max-h-[120px] overflow-y-auto font-mono text-foreground">
+              {JSON.stringify(execData.outputData, null, 2)}
+            </pre>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
+// ============================================================================
+// CANVAS — main Journey builder
+// ============================================================================
 
 export const AutomationCanvas = ({ automation, onBack, onSave, onUpdate }: {
   automation: AutomationDraft; onBack: () => void; onSave: (a: AutomationDraft) => void; onUpdate: (a: AutomationDraft) => void;
@@ -826,8 +1131,146 @@ export const AutomationCanvas = ({ automation, onBack, onSave, onUpdate }: {
   const [isEditingName, setIsEditingName] = useState(false);
   const [configNodeId, setConfigNodeId] = useState<string | null>(null);
 
+  // Execution / Debug state
+  const [testRun, setTestRun] = useState<TestRun | null>(null);
+  const [isExecMode, setIsExecMode] = useState(false);
+  const [isLogDrawerOpen, setIsLogDrawerOpen] = useState(false);
+  const execTimerRef = useRef<number | null>(null);
+
   const selectedNode = automation.nodes.find(n => n.id === selectedNodeId) || null;
   const modeInfo = getModeInfo(automation.mode);
+
+  // === Test Runner — simulates data flowing through nodes ===
+  const runTest = useCallback(() => {
+    if (automation.nodes.length === 0) { toast.error("Add nodes before testing"); return; }
+    const run = createMockTestRun(automation.nodes, automation.connections);
+    run.status = "running";
+    setTestRun(run);
+    setIsExecMode(true);
+    setIsLogDrawerOpen(true);
+    toast.success(`Test started for "${run.seekerName}"`);
+
+    // Build execution order from connections (BFS from triggers)
+    const triggers = automation.nodes.filter(n => n.type === "trigger");
+    const ordered: FlowNode[] = [];
+    const visited = new Set<string>();
+    const queue = triggers.length > 0 ? [...triggers] : [automation.nodes[0]];
+    while (queue.length > 0) {
+      const node = queue.shift()!;
+      if (visited.has(node.id)) continue;
+      visited.add(node.id);
+      ordered.push(node);
+      const outgoing = automation.connections.filter(c => c.from === node.id);
+      for (const conn of outgoing) {
+        const target = automation.nodes.find(n => n.id === conn.to);
+        if (target && !visited.has(target.id)) queue.push(target);
+      }
+    }
+    // Add any unvisited nodes
+    automation.nodes.forEach(n => { if (!visited.has(n.id)) ordered.push(n); });
+
+    // Simulate sequential execution with delays
+    let stepIdx = 0;
+    const runStep = () => {
+      if (stepIdx >= ordered.length) {
+        setTestRun(prev => {
+          if (!prev) return prev;
+          return { ...prev, status: "completed", completedAt: new Date().toISOString() };
+        });
+        toast.success("Test run completed!");
+        return;
+      }
+      const node = ordered[stepIdx];
+      // Set node to running
+      setTestRun(prev => {
+        if (!prev) return prev;
+        const newStates = { ...prev.nodeStates };
+        newStates[node.id] = { ...newStates[node.id], status: "running", startedAt: new Date().toISOString() };
+        const newLogs = [...prev.logs, {
+          id: `log-${Date.now()}-${stepIdx}`,
+          timestamp: new Date().toISOString(),
+          nodeId: node.id,
+          nodeLabel: node.label,
+          status: "info" as const,
+          message: `Processing "${node.label}"...`,
+        }];
+        return { ...prev, nodeStates: newStates, logs: newLogs, currentNodeId: node.id };
+      });
+
+      // After a random delay, complete the node
+      const delay = 600 + Math.random() * 1200;
+      execTimerRef.current = window.setTimeout(() => {
+        const isError = Math.random() < 0.12 && node.type !== "trigger"; // 12% chance of error on non-triggers
+        const duration = Math.floor(delay + Math.random() * 300);
+        const stats = generateMockNodeStats(stepIdx);
+
+        const mockInput = node.type === "trigger"
+          ? { seeker: run.seekerName, channel: "telegram", timestamp: new Date().toISOString() }
+          : { seeker: run.seekerName, fromNode: stepIdx > 0 ? ordered[stepIdx - 1].label : "start" };
+
+        const mockOutput = isError ? undefined : (
+          node.type === "action" ? { messageId: `msg-${Date.now()}`, status: "sent", channel: "telegram" } :
+          node.type === "condition" ? { result: Math.random() > 0.4, condition: node.config.condition || "has_replied" } :
+          { status: "ok" }
+        );
+
+        setTestRun(prev => {
+          if (!prev) return prev;
+          const newStates = { ...prev.nodeStates };
+          newStates[node.id] = {
+            status: isError ? "error" : "success",
+            startedAt: newStates[node.id]?.startedAt,
+            completedAt: new Date().toISOString(),
+            durationMs: duration,
+            stats,
+            inputData: mockInput,
+            outputData: mockOutput,
+            error: isError ? `${["Timeout: upstream API took too long", "Invalid response from webhook", "Rate limit exceeded (429)", "Connection refused to messaging service", "Seeker phone number not found"][Math.floor(Math.random() * 5)]}` : undefined,
+          };
+          const newLogs = [...prev.logs, {
+            id: `log-${Date.now()}-${stepIdx}-done`,
+            timestamp: new Date().toISOString(),
+            nodeId: node.id,
+            nodeLabel: node.label,
+            status: isError ? "error" as const : "success" as const,
+            message: isError
+              ? `Failed: ${newStates[node.id].error}`
+              : `Completed in ${duration}ms — ${stats.reached} reached, ${stats.sent} sent`,
+          }];
+          return { ...prev, nodeStates: newStates, logs: newLogs };
+        });
+
+        if (isError) {
+          // Stop run on error
+          setTestRun(prev => prev ? { ...prev, status: "failed", completedAt: new Date().toISOString() } : prev);
+          toast.error(`Test failed at "${node.label}"`);
+          return;
+        }
+        stepIdx++;
+        runStep();
+      }, delay);
+    };
+
+    runStep();
+  }, [automation]);
+
+  const stopTest = useCallback(() => {
+    if (execTimerRef.current) { clearTimeout(execTimerRef.current); execTimerRef.current = null; }
+    setTestRun(prev => prev ? { ...prev, status: "failed", completedAt: new Date().toISOString() } : prev);
+    toast("Test stopped");
+  }, []);
+
+  const resetTest = useCallback(() => {
+    if (execTimerRef.current) { clearTimeout(execTimerRef.current); execTimerRef.current = null; }
+    setTestRun(null);
+    setIsExecMode(false);
+    setIsLogDrawerOpen(false);
+  }, []);
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => { if (execTimerRef.current) clearTimeout(execTimerRef.current); };
+  }, []);
 
   const addNode = useCallback((item: NodeCatalogItem, preConfig?: Record<string, any>, customLabel?: string) => {
     const isJourney = automation.mode === "journey";
@@ -930,9 +1373,9 @@ export const AutomationCanvas = ({ automation, onBack, onSave, onUpdate }: {
     onDelete: (id) => deleteNode(id),
     onAddAfter: (id) => handleOpenPicker(id),
     onDoubleClick: (id) => setConfigNodeId(id),
-  }), [automation.nodes, deleteNode, handleOpenPicker]);
+  }, testRun?.nodeStates, isExecMode), [automation.nodes, deleteNode, handleOpenPicker, testRun?.nodeStates, isExecMode]);
 
-  const rfEdges = useMemo(() => toRFEdges(automation.connections), [automation.connections]);
+  const rfEdges = useMemo(() => toRFEdges(automation.connections, testRun?.nodeStates, isExecMode), [automation.connections, testRun?.nodeStates, isExecMode]);
 
   // Sync React Flow node drag positions back to our data model
   const onNodesChange = useCallback((changes: any[]) => {
@@ -988,10 +1431,42 @@ export const AutomationCanvas = ({ automation, onBack, onSave, onUpdate }: {
           <Badge variant="secondary" className="text-[10px]">{automation.nodes.length} node{automation.nodes.length !== 1 ? "s" : ""}</Badge>
         </div>
         <div className="flex items-center gap-2">
+          {/* Test controls */}
+          {isExecMode ? (
+            <>
+              <Badge variant="outline" className={cn("text-[10px] font-semibold",
+                testRun?.status === "running" ? "bg-blue-50 text-blue-700 border-blue-200" :
+                testRun?.status === "completed" ? "bg-emerald-50 text-emerald-700 border-emerald-200" :
+                testRun?.status === "failed" ? "bg-red-50 text-red-700 border-red-200" :
+                "bg-muted text-muted-foreground"
+              )}>
+                {testRun?.status === "running" && <Loader2 className="w-3 h-3 animate-spin mr-1" />}
+                {testRun?.status === "running" ? "Running..." : testRun?.status === "completed" ? "Completed" : testRun?.status === "failed" ? "Failed" : "Idle"}
+                {testRun?.seekerName && ` · ${testRun.seekerName}`}
+              </Badge>
+              {testRun?.status === "running" && (
+                <Button variant="outline" size="sm" onClick={stopTest} className="text-red-600 border-red-200 hover:bg-red-50">
+                  <StopCircle className="w-3.5 h-3.5" /> Stop
+                </Button>
+              )}
+              {testRun?.status !== "running" && (
+                <Button variant="outline" size="sm" onClick={runTest}>
+                  <RotateCcw className="w-3.5 h-3.5" /> Re-run
+                </Button>
+              )}
+              <Button variant="ghost" size="sm" onClick={resetTest}>
+                <X className="w-3.5 h-3.5" /> Exit Test
+              </Button>
+            </>
+          ) : (
+            <Button variant="outline" size="sm" onClick={runTest} className="border-blue-200 text-blue-700 hover:bg-blue-50">
+              <Bug className="w-3.5 h-3.5" /> Test Run
+            </Button>
+          )}
+          <div className="w-px h-6 bg-border" />
           <Badge variant={automation.enabled ? "default" : "secondary"} className={cn("text-xs", automation.enabled && "bg-emerald-100 text-emerald-700 border-emerald-200")}>
             {automation.enabled ? "Active" : "Draft"}
           </Badge>
-          <div className="w-px h-6 bg-border" />
           <Button variant="outline" size="sm" onClick={() => { onSave(automation); toast.success("Saved!"); }}><Save className="w-3.5 h-3.5" /> Save</Button>
           <Button size="sm" onClick={() => { onSave({ ...automation, enabled: true }); toast.success("Published!"); onBack(); }}><Play className="w-3.5 h-3.5" /> Publish</Button>
         </div>
@@ -1074,7 +1549,8 @@ export const AutomationCanvas = ({ automation, onBack, onSave, onUpdate }: {
         )}
         {selectedNode && !isNodePickerOpen && (
           <NodeInspector node={selectedNode} onUpdate={(updates) => updateNode(selectedNode.id, updates)}
-            onClose={() => setSelectedNodeId(null)} onDelete={() => deleteNode(selectedNode.id)} isJourney={automation.mode === "journey"} />
+            onClose={() => setSelectedNodeId(null)} onDelete={() => deleteNode(selectedNode.id)} isJourney={automation.mode === "journey"}
+            execData={isExecMode ? testRun?.nodeStates[selectedNode.id] : undefined} isExecMode={isExecMode} />
         )}
         {configNodeId && (() => {
           const configNode = automation.nodes.find(n => n.id === configNodeId);
@@ -1090,6 +1566,16 @@ export const AutomationCanvas = ({ automation, onBack, onSave, onUpdate }: {
           );
         })()}
       </div>
+      {/* Execution Log Drawer */}
+      {isExecMode && (
+        <LogDrawer
+          logs={testRun?.logs || []}
+          isOpen={isLogDrawerOpen}
+          onToggle={() => setIsLogDrawerOpen(prev => !prev)}
+          onClear={() => setTestRun(prev => prev ? { ...prev, logs: [] } : prev)}
+          onClickLog={(nodeId) => { setSelectedNodeId(nodeId); }}
+        />
+      )}
     </div>
   );
 };
