@@ -45,7 +45,6 @@ export interface SequenceStep {
   id: string;
   delay: { amount: number; unit: "minutes" | "hours" | "days" };
   message: string;
-  channels: ChannelId[];     // multiple channels selected
   aiPersonalize: boolean;
   quickReplies: string[];
 }
@@ -54,6 +53,7 @@ export interface SequenceDraft {
   id?: string;
   name: string;
   trigger: "intake_complete" | "match_accepted" | "tag_added" | "manual";
+  channels: ChannelId[];     // channel selected at sequence level via start trigger
   steps: SequenceStep[];
 }
 
@@ -560,15 +560,14 @@ const emptyStep = (index: number): SequenceStep => ({
   id: `step-${Date.now()}-${index}`,
   delay: { amount: index === 0 ? 0 : 1, unit: "days" },
   message: "",
-  channels: ALL_CHANNELS,
   aiPersonalize: false,
   quickReplies: [],
 });
 
 const DEFAULT_SEQUENCE_STEPS: SequenceStep[] = [
-  { id: "s1", delay: { amount: 0, unit: "days" }, message: "Welcome to the Foundations of Faith journey. Over the next week we'll walk through a few foundational ideas together.", channels: ["telegram", "whatsapp"], aiPersonalize: false, quickReplies: ["Let's start", "Tell me more"] },
-  { id: "s2", delay: { amount: 1, unit: "days" }, message: "Day 2: Prayer is simply talking with God. Try a 2-minute prayer today — there's no wrong way to do it.", channels: ALL_CHANNELS, aiPersonalize: false, quickReplies: ["Done", "Need help"] },
-  { id: "s3", delay: { amount: 3, unit: "days" }, message: "Day 3: Scripture reading. Try John 3 today — it's a great starting point.", channels: ["telegram", "whatsapp", "web"], aiPersonalize: true, quickReplies: ["I read it", "Remind me later"] },
+  { id: "s1", delay: { amount: 0, unit: "days" }, message: "Welcome to the Foundations of Faith journey. Over the next week we'll walk through a few foundational ideas together.", aiPersonalize: false, quickReplies: ["Let's start", "Tell me more"] },
+  { id: "s2", delay: { amount: 1, unit: "days" }, message: "Day 2: Prayer is simply talking with God. Try a 2-minute prayer today — there's no wrong way to do it.", aiPersonalize: false, quickReplies: ["Done", "Need help"] },
+  { id: "s3", delay: { amount: 3, unit: "days" }, message: "Day 3: Scripture reading. Try John 3 today — it's a great starting point.", aiPersonalize: true, quickReplies: ["I read it", "Remind me later"] },
 ];
 
 export function SequenceBuilder({
@@ -576,12 +575,13 @@ export function SequenceBuilder({
 }: SequenceBuilderProps) {
   const [name, setName]       = useState(initial?.name ?? "New Sequence");
   const [trigger, setTrigger] = useState<SequenceDraft["trigger"]>(initial?.trigger ?? "intake_complete");
+  const [channels, setChannels] = useState<ChannelId[]>(initial?.channels ?? ALL_CHANNELS);
   const [steps, setSteps]     = useState<SequenceStep[]>(initial?.steps ?? DEFAULT_SEQUENCE_STEPS);
   const [selectedId, setSelectedId] = useState<string | null>(steps[0]?.id ?? null);
 
   const selected = useMemo(() => steps.find(s => s.id === selectedId) ?? null, [steps, selectedId]);
 
-  const draft: SequenceDraft = { id: initial?.id, name, trigger, steps };
+  const draft: SequenceDraft = { id: initial?.id, name, trigger, channels, steps };
   const isValid = name.trim().length > 0 && steps.length > 0 && steps.every(s => s.message.trim().length > 0);
 
   const updateStep = (id: string, patch: Partial<SequenceStep>) => {
@@ -648,6 +648,17 @@ export function SequenceBuilder({
                   );
                 })}
               </div>
+
+              <div className="mt-4 pt-4 border-t border-border">
+                <p className="text-sm font-bold text-foreground mb-1">Channel</p>
+                <p className="text-xs text-muted-foreground mb-3">Select the channels this sequence will send messages on. Applies to all steps.</p>
+                <MultiChannelSelector selected={channels} onChange={setChannels} />
+                <p className="text-xs text-muted-foreground mt-2">
+                  {channels.length === ALL_CHANNELS.length
+                    ? "Sending on all channels"
+                    : `Sending on ${channels.map(c => CHANNELS.find(ch => ch.id === c)?.label).join(", ")}`}
+                </p>
+              </div>
             </Section>
 
             {/* Steps timeline */}
@@ -683,7 +694,7 @@ export function SequenceBuilder({
                                 : `After ${step.delay.amount} ${step.delay.unit}`}
                             </Badge>
                             <Badge variant="outline" className="bg-muted border-transparent text-foreground font-semibold">
-                              {step.channels.length === ALL_CHANNELS.length ? "All channels" : step.channels.join(", ")}
+                              {channels.length === ALL_CHANNELS.length ? "All channels" : channels.map(c => CHANNELS.find(ch => ch.id === c)?.label ?? c).join(", ")}
                             </Badge>
                             {step.aiPersonalize && (
                               <Badge variant="outline" className="bg-pink-50 text-pink-700 border-pink-200 font-semibold">
@@ -738,6 +749,7 @@ export function SequenceBuilder({
             <StepInspector
               step={selected}
               index={steps.findIndex(s => s.id === selected.id)}
+              channels={channels}
               onUpdate={(patch) => updateStep(selected.id, patch)}
               onDelete={() => { removeStep(selected.id); toast.success("Step removed"); }}
             />
@@ -753,10 +765,11 @@ export function SequenceBuilder({
 }
 
 function StepInspector({
-  step, index, onUpdate, onDelete,
+  step, index, channels, onUpdate, onDelete,
 }: {
   step: SequenceStep;
   index: number;
+  channels: ChannelId[];
   onUpdate: (patch: Partial<SequenceStep>) => void;
   onDelete: () => void;
 }) {
@@ -764,7 +777,7 @@ function StepInspector({
     <div className="divide-y divide-border">
       <div className="p-5">
         <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Step {index + 1}</p>
-        <p className="text-sm font-bold text-foreground mt-0.5">Delay & Channel</p>
+        <p className="text-sm font-bold text-foreground mt-0.5">Delay</p>
 
         <div className="grid grid-cols-[1fr,auto] gap-2 mt-3">
           <Input
@@ -788,8 +801,19 @@ function StepInspector({
           {step.delay.amount === 0 ? "Sends immediately" : `Waits ${step.delay.amount} ${step.delay.unit} before sending.`}
         </p>
 
-        <div className="mt-4">
-          <MultiChannelSelector selected={step.channels} onChange={(next) => onUpdate({ channels: next })} />
+        <div className="mt-4 p-3 rounded-lg bg-muted/50 border border-border">
+          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1.5">Channel</p>
+          <div className="flex flex-wrap gap-1.5">
+            {channels.map(c => {
+              const ch = CHANNELS.find(ch => ch.id === c);
+              return ch ? (
+                <Badge key={c} variant="outline" className="bg-background text-foreground border-border font-medium text-xs">
+                  {ch.label}
+                </Badge>
+              ) : null;
+            })}
+          </div>
+          <p className="text-[11px] text-muted-foreground mt-1.5">Set in Start trigger options</p>
         </div>
       </div>
 
@@ -821,7 +845,7 @@ function StepInspector({
       <div className="p-5">
         <p className="text-sm font-bold text-foreground mb-3">Preview</p>
         <ChannelPreview
-          channels={step.channels}
+          channels={channels}
           message={step.message}
           quickReplies={step.quickReplies}
         />
