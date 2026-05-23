@@ -676,31 +676,28 @@ export function SequenceBuilder({
                           <div className="w-px h-3 bg-border ml-0.5 mb-3" />
                           <div className="flex items-center gap-2 text-sm text-muted-foreground">
                             <Clock className="w-4 h-4 shrink-0" />
-                            <span className="font-medium">
-                              {step.delay.amount === 0 ? "Send right away" : "Then wait"}
+                            <span className="font-medium">Then wait</span>
+                            <span className="inline-flex items-center gap-2">
+                              <input
+                                type="number"
+                                min={0}
+                                value={step.delay.amount}
+                                onClick={(e) => e.stopPropagation()}
+                                onChange={(e) => { e.stopPropagation(); updateStep(step.id, { delay: { ...step.delay, amount: Math.max(0, parseInt(e.target.value || "0", 10)) } }); }}
+                                className="w-16 h-9 text-center text-sm font-medium text-foreground bg-background border border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-ring"
+                              />
+                              <select
+                                value={step.delay.unit}
+                                onClick={(e) => e.stopPropagation()}
+                                onChange={(e) => { e.stopPropagation(); updateStep(step.id, { delay: { ...step.delay, unit: e.target.value as SequenceStep["delay"]["unit"] } }); }}
+                                className="h-9 text-sm font-medium text-foreground bg-background border border-input rounded-lg px-3 focus:outline-none focus:ring-2 focus:ring-ring"
+                              >
+                                <option value="minutes">minutes</option>
+                                <option value="hours">hours</option>
+                                <option value="days">days</option>
+                              </select>
                             </span>
-                            {step.delay.amount > 0 && (
-                              <span className="inline-flex items-center gap-2">
-                                <input
-                                  type="number"
-                                  min={1}
-                                  value={step.delay.amount}
-                                  onClick={(e) => e.stopPropagation()}
-                                  onChange={(e) => { e.stopPropagation(); updateStep(step.id, { delay: { ...step.delay, amount: Math.max(1, parseInt(e.target.value || "1", 10)) } }); }}
-                                  className="w-16 h-9 text-center text-sm font-medium text-foreground bg-background border border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-ring"
-                                />
-                                <select
-                                  value={step.delay.unit}
-                                  onClick={(e) => e.stopPropagation()}
-                                  onChange={(e) => { e.stopPropagation(); updateStep(step.id, { delay: { ...step.delay, unit: e.target.value as SequenceStep["delay"]["unit"] } }); }}
-                                  className="h-9 text-sm font-medium text-foreground bg-background border border-input rounded-lg px-3 focus:outline-none focus:ring-2 focus:ring-ring"
-                                >
-                                  <option value="minutes">minutes</option>
-                                  <option value="hours">hours</option>
-                                  <option value="days">days</option>
-                                </select>
-                              </span>
-                            )}
+                            {step.delay.amount === 0 && <span className="text-xs text-muted-foreground/70 italic">sends right away</span>}
                           </div>
                           <div className="w-px h-3 bg-border ml-0.5 mt-3" />
                         </div>
@@ -819,48 +816,12 @@ function StepInspector({
         <div className="mt-4 p-4 rounded-lg bg-muted/30 border border-border">
           <p className="text-sm text-foreground leading-relaxed">
             {index === 0 ? (
-              step.delay.amount === 0 ? (
-                <span>Send this message <span className="font-semibold">right away</span> when the sequence starts.</span>
-              ) : (
-                <span>Wait <span className="inline-flex items-baseline gap-1"><input type="number" min={0} value={step.delay.amount} onChange={(e) => onUpdate({ delay: { ...step.delay, amount: Math.max(0, parseInt(e.target.value || "0", 10)) } })} className="w-14 h-7 text-center text-sm font-medium text-foreground bg-background border border-input rounded-md px-1 focus:outline-none focus:ring-1 focus:ring-ring" /><select value={step.delay.unit} onChange={(e) => onUpdate({ delay: { ...step.delay, unit: e.target.value as SequenceStep["delay"]["unit"] } })} className="h-7 text-sm font-medium text-foreground bg-background border border-input rounded-md px-1.5 focus:outline-none focus:ring-1 focus:ring-ring">{["minutes","hours","days"].map(u => <option key={u} value={u}>{u}</option>)}</select></span> before sending.</span>
-              )
+              <span>Wait <span className="inline-flex items-baseline gap-1"><input type="number" min={0} value={step.delay.amount} onChange={(e) => onUpdate({ delay: { ...step.delay, amount: Math.max(0, parseInt(e.target.value || "0", 10)) } })} className="w-16 h-8 text-center text-sm font-medium text-foreground bg-background border border-input rounded-lg px-1 focus:outline-none focus:ring-2 focus:ring-ring" /><select value={step.delay.unit} onChange={(e) => onUpdate({ delay: { ...step.delay, unit: e.target.value as SequenceStep["delay"]["unit"] } })} className="h-8 text-sm font-medium text-foreground bg-background border border-input rounded-lg px-2 focus:outline-none focus:ring-2 focus:ring-ring">{["minutes","hours","days"].map(u => <option key={u} value={u}>{u}</option>)}</select></span> before sending.</span>
             ) : (
-              step.delay.amount === 0 ? (
-                <span>Send <span className="font-semibold">immediately</span> after the previous step.</span>
-              ) : (
-                <span>Then wait <span className="inline-flex items-baseline gap-1"><input type="number" min={0} value={step.delay.amount} onChange={(e) => onUpdate({ delay: { ...step.delay, amount: Math.max(0, parseInt(e.target.value || "0", 10)) } })} className="w-14 h-7 text-center text-sm font-medium text-foreground bg-background border border-input rounded-md px-1 focus:outline-none focus:ring-1 focus:ring-ring" /><select value={step.delay.unit} onChange={(e) => onUpdate({ delay: { ...step.delay, unit: e.target.value as SequenceStep["delay"]["unit"] } })} className="h-7 text-sm font-medium text-foreground bg-background border border-input rounded-md px-1.5 focus:outline-none focus:ring-1 focus:ring-ring">{["minutes","hours","days"].map(u => <option key={u} value={u}>{u}</option>)}</select></span> before sending.</span>
-              )
+              <span>Then wait <span className="inline-flex items-baseline gap-1"><input type="number" min={0} value={step.delay.amount} onChange={(e) => onUpdate({ delay: { ...step.delay, amount: Math.max(0, parseInt(e.target.value || "0", 10)) } })} className="w-16 h-8 text-center text-sm font-medium text-foreground bg-background border border-input rounded-lg px-1 focus:outline-none focus:ring-2 focus:ring-ring" /><select value={step.delay.unit} onChange={(e) => onUpdate({ delay: { ...step.delay, unit: e.target.value as SequenceStep["delay"]["unit"] } })} className="h-8 text-sm font-medium text-foreground bg-background border border-input rounded-lg px-2 focus:outline-none focus:ring-2 focus:ring-ring">{["minutes","hours","days"].map(u => <option key={u} value={u}>{u}</option>)}</select></span> before sending.</span>
             )}
+            {step.delay.amount === 0 && <span className="block text-xs text-muted-foreground mt-1 italic">Set to 0 to send right away</span>}
           </p>
-        </div>
-
-        {/* Quick presets */}
-        <div className="flex flex-wrap gap-2 mt-4">
-          {[
-            { label: "Right away", amount: 0, unit: "minutes" as const },
-            { label: "30 min", amount: 30, unit: "minutes" as const },
-            { label: "1 hour", amount: 1, unit: "hours" as const },
-            { label: "6 hours", amount: 6, unit: "hours" as const },
-            { label: "1 day", amount: 1, unit: "days" as const },
-            { label: "3 days", amount: 3, unit: "days" as const },
-            { label: "1 week", amount: 7, unit: "days" as const },
-          ].map(preset => {
-            const isActive = step.delay.amount === preset.amount && step.delay.unit === preset.unit;
-            return (
-              <button
-                key={preset.label}
-                onClick={() => onUpdate({ delay: { amount: preset.amount, unit: preset.unit } })}
-                className={cn(
-                  "px-3 py-1.5 rounded-md text-xs font-medium transition-all",
-                  isActive
-                    ? "bg-foreground/10 text-foreground border border-border shadow-sm"
-                    : "text-muted-foreground hover:bg-muted hover:text-foreground border border-transparent"
-                )}
-              >
-                {preset.label}
-              </button>
-            );
-          })}
         </div>
 
         <div className="mt-5 p-4 rounded-lg bg-muted/30 border border-border">
