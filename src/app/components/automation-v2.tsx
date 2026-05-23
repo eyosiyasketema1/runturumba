@@ -1073,33 +1073,11 @@ const NodeExecDetail = ({ node, execData }: { node: FlowNode; execData?: NodeExe
           </div>
         )}
 
-        {/* Stats grid */}
-        {execData.stats && (
-          <div className="grid grid-cols-3 gap-2">
-            {[
-              { label: "Reached", value: execData.stats.reached, color: "text-blue-600", bg: "bg-blue-50", icon: Users },
-              { label: "Sent", value: execData.stats.sent, color: "text-emerald-600", bg: "bg-emerald-50", icon: Send },
-              { label: "Delivered", value: execData.stats.delivered, color: "text-emerald-600", bg: "bg-emerald-50", icon: CheckCircle },
-              { label: "Seen", value: execData.stats.seen, color: "text-violet-600", bg: "bg-violet-50", icon: Eye },
-              { label: "Clicked", value: execData.stats.clicked, color: "text-orange-600", bg: "bg-orange-50", icon: MousePointerClick },
-              { label: "Dropped", value: execData.stats.droppedOff, color: "text-rose-500", bg: "bg-rose-50", icon: TrendingDown },
-            ].map(m => (
-              <div key={m.label} className="flex flex-col items-center gap-0.5 p-2 rounded-lg bg-muted/30 border border-border">
-                <div className={cn("w-6 h-6 rounded-full flex items-center justify-center", m.bg)}>
-                  <m.icon className={cn("w-3 h-3", m.color)} />
-                </div>
-                <span className="text-sm font-bold text-foreground">{m.value.toLocaleString()}</span>
-                <span className="text-[9px] text-muted-foreground uppercase tracking-wider">{m.label}</span>
-              </div>
-            ))}
-          </div>
-        )}
-
-        {/* Input / Output data */}
+        {/* Input / Output data — primary focus for debugging */}
         {execData.inputData && (
           <div>
             <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mb-1.5">Input Data</p>
-            <pre className="text-[11px] bg-muted/50 rounded-lg p-3 border border-border overflow-x-auto max-h-[120px] overflow-y-auto font-mono text-foreground">
+            <pre className="text-[11px] bg-muted/50 rounded-lg p-3 border border-border overflow-x-auto max-h-[140px] overflow-y-auto font-mono text-foreground">
               {JSON.stringify(execData.inputData, null, 2)}
             </pre>
           </div>
@@ -1107,9 +1085,22 @@ const NodeExecDetail = ({ node, execData }: { node: FlowNode; execData?: NodeExe
         {execData.outputData && (
           <div>
             <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mb-1.5">Output Data</p>
-            <pre className="text-[11px] bg-muted/50 rounded-lg p-3 border border-border overflow-x-auto max-h-[120px] overflow-y-auto font-mono text-foreground">
+            <pre className="text-[11px] bg-muted/50 rounded-lg p-3 border border-border overflow-x-auto max-h-[140px] overflow-y-auto font-mono text-foreground">
               {JSON.stringify(execData.outputData, null, 2)}
             </pre>
+          </div>
+        )}
+
+        {/* Stats — compact summary row */}
+        {execData.stats && (
+          <div>
+            <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mb-1.5">Throughput</p>
+            <div className="flex items-center gap-3 text-xs text-muted-foreground">
+              <span className="flex items-center gap-1"><Users className="w-3 h-3 text-blue-500" /> {execData.stats.reached}</span>
+              <span className="flex items-center gap-1"><Send className="w-3 h-3 text-emerald-500" /> {execData.stats.sent}</span>
+              <span className="flex items-center gap-1"><Eye className="w-3 h-3 text-violet-500" /> {execData.stats.delivered > 0 ? Math.round((execData.stats.seen / execData.stats.delivered) * 100) : 0}%</span>
+              <span className="flex items-center gap-1"><TrendingDown className="w-3 h-3 text-rose-500" /> {execData.stats.droppedOff}</span>
+            </div>
           </div>
         )}
       </div>
