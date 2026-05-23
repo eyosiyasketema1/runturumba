@@ -967,7 +967,7 @@ const LogDrawer = ({ logs, isOpen, onToggle, onClear, onClickLog }: {
   if (!isOpen) {
     return (
       <button onClick={onToggle}
-        className="absolute bottom-0 left-0 right-0 z-20 h-9 bg-card border-t border-border flex items-center justify-center gap-2 text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-muted transition-colors">
+        className="w-full shrink-0 h-9 bg-card border-t border-border flex items-center justify-center gap-2 text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-muted transition-colors">
         <Terminal className="w-3.5 h-3.5" />
         Execution Logs ({logs.length})
         {errorCount > 0 && <span className="px-1.5 py-0.5 rounded-full bg-red-100 text-red-600 text-[10px] font-bold">{errorCount} error{errorCount > 1 ? "s" : ""}</span>}
@@ -977,7 +977,7 @@ const LogDrawer = ({ logs, isOpen, onToggle, onClear, onClickLog }: {
   }
 
   return (
-    <div className="absolute bottom-0 left-0 right-0 z-20 h-[260px] bg-card border-t border-border flex flex-col animate-in slide-in-from-bottom-5 duration-200">
+    <div className="shrink-0 h-[260px] bg-card border-t border-border flex flex-col">
       {/* Header */}
       <div className="flex items-center justify-between px-4 py-2 border-b border-border shrink-0">
         <div className="flex items-center gap-3">
@@ -1399,7 +1399,7 @@ export const AutomationCanvas = ({ automation, onBack, onSave, onUpdate }: {
   }, []);
 
   return (
-    <div className="h-[calc(100vh-64px)] flex flex-col bg-background relative">
+    <div className="h-[calc(100vh-64px)] flex flex-col bg-background">
       {/* Toolbar */}
       <div className="flex items-center justify-between px-4 py-2.5 border-b border-border bg-card shrink-0">
         <div className="flex items-center gap-3">
@@ -1557,7 +1557,7 @@ export const AutomationCanvas = ({ automation, onBack, onSave, onUpdate }: {
           );
         })()}
       </div>
-      {/* Execution Log Drawer */}
+      {/* Execution Log Drawer — inline flex child, not overlapping */}
       {isExecMode && (
         <LogDrawer
           logs={testRun?.logs || []}
