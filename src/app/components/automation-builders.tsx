@@ -11,7 +11,8 @@ import React, { useMemo, useState } from "react";
 import {
   ArrowLeft, Save, MessageSquare, Check, Plus, Trash2, ChevronUp,
   ChevronDown, Hash, Zap, Bell, AlertCircle, Clock, Sparkles,
-  Send, Smartphone, Globe, MessageCircle, GripVertical
+  Send, Smartphone, Globe, MessageCircle, GripVertical,
+  Eye, MousePointerClick, Users, TrendingDown, BarChart3, Activity
 } from "lucide-react";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
@@ -757,6 +758,8 @@ export function SequenceBuilder({
                             )}>
                               {step.message.trim() || "Empty message — click to add content."}
                             </p>
+                            {/* Compact step stats */}
+                            <StepStatsBar stepIndex={i} />
                           </div>
                         </button>
                       </div>
@@ -793,6 +796,110 @@ export function SequenceBuilder({
           )}
         </aside>
       </div>
+    </div>
+  );
+}
+
+// ============================================================================
+// Step Analytics — per-step engagement stats
+// ============================================================================
+
+function generateMockStats(stepIndex: number) {
+  // Simulate realistic funnel drop-off: earlier steps have more reach
+  const baseReached = Math.max(40, 520 - stepIndex * 95 + Math.floor(Math.random() * 30));
+  const sent = Math.floor(baseReached * (0.92 + Math.random() * 0.06));
+  const delivered = Math.floor(sent * (0.88 + Math.random() * 0.08));
+  const seen = Math.floor(delivered * (0.55 + Math.random() * 0.25));
+  const clicked = Math.floor(seen * (0.15 + Math.random() * 0.2));
+  const droppedOff = baseReached - Math.floor(baseReached * (0.75 + Math.random() * 0.15));
+  const avgTimeMinutes = stepIndex === 0 ? 0 : Math.floor(10 + Math.random() * 300);
+  const activeNow = Math.floor(Math.random() * 15);
+  return { reached: baseReached, sent, delivered, seen, clicked, droppedOff, avgTimeMinutes, activeNow };
+}
+
+function formatDuration(mins: number): string {
+  if (mins === 0) return "Instant";
+  if (mins < 60) return `${mins}m`;
+  if (mins < 1440) { const h = Math.floor(mins / 60); const m = mins % 60; return m > 0 ? `${h}h ${m}m` : `${h}h`; }
+  const d = Math.floor(mins / 1440); const h = Math.floor((mins % 1440) / 60); return h > 0 ? `${d}d ${h}h` : `${d}d`;
+}
+
+function StepAnalytics({ stepIndex }: { stepIndex: number }) {
+  const stats = useMemo(() => generateMockStats(stepIndex), [stepIndex]);
+  const seenRate = stats.delivered > 0 ? Math.round((stats.seen / stats.delivered) * 100) : 0;
+  const clickRate = stats.seen > 0 ? Math.round((stats.clicked / stats.seen) * 100) : 0;
+
+  const metrics = [
+    { label: "Reached", value: stats.reached, icon: Users, color: "text-blue-600", bg: "bg-blue-50" },
+    { label: "Sent", value: stats.sent, icon: Send, color: "text-emerald-600", bg: "bg-emerald-50" },
+    { label: "Delivered", value: stats.delivered, icon: Check, color: "text-emerald-600", bg: "bg-emerald-50" },
+    { label: "Seen", value: stats.seen, icon: Eye, color: "text-violet-600", bg: "bg-violet-50", sub: `${seenRate}%` },
+    { label: "Clicked", value: stats.clicked, icon: MousePointerClick, color: "text-orange-600", bg: "bg-orange-50", sub: `${clickRate}%` },
+    { label: "Dropped off", value: stats.droppedOff, icon: TrendingDown, color: "text-rose-500", bg: "bg-rose-50" },
+  ];
+
+  return (
+    <div className="p-6">
+      <div className="flex items-center justify-between mb-4">
+        <p className="text-sm font-bold text-foreground flex items-center gap-1.5">
+          <BarChart3 className="w-4 h-4 text-muted-foreground" />
+          Step Analytics
+        </p>
+        {stats.activeNow > 0 && (
+          <span className="inline-flex items-center gap-1 text-xs font-medium text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full">
+            <Activity className="w-3 h-3" />
+            {stats.activeNow} active now
+          </span>
+        )}
+      </div>
+
+      {/* Metric grid */}
+      <div className="grid grid-cols-3 gap-2.5">
+        {metrics.map(m => (
+          <div key={m.label} className="flex flex-col items-center gap-1 p-3 rounded-lg bg-muted/30 border border-border">
+            <div className={cn("w-7 h-7 rounded-full flex items-center justify-center", m.bg)}>
+              <m.icon className={cn("w-3.5 h-3.5", m.color)} />
+            </div>
+            <span className="text-lg font-bold text-foreground leading-none">{m.value.toLocaleString()}</span>
+            <span className="text-[10px] text-muted-foreground uppercase tracking-wider font-medium">{m.label}</span>
+            {m.sub && <span className={cn("text-xs font-semibold", m.color)}>{m.sub}</span>}
+          </div>
+        ))}
+      </div>
+
+      {/* Funnel bar */}
+      <div className="mt-4 space-y-1.5">
+        <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-medium">Delivery funnel</p>
+        <div className="h-2.5 rounded-full bg-muted overflow-hidden flex">
+          <div className="bg-emerald-400 h-full transition-all" style={{ width: `${stats.delivered > 0 ? Math.round((stats.delivered / stats.reached) * 100) : 0}%` }} />
+          <div className="bg-violet-400 h-full transition-all" style={{ width: `${stats.reached > 0 ? Math.round((stats.seen / stats.reached) * 100) : 0}%` }} />
+          <div className="bg-orange-400 h-full transition-all" style={{ width: `${stats.reached > 0 ? Math.round((stats.clicked / stats.reached) * 100) : 0}%` }} />
+        </div>
+        <div className="flex items-center gap-3 text-[10px] text-muted-foreground">
+          <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-emerald-400" /> Delivered</span>
+          <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-violet-400" /> Seen</span>
+          <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-orange-400" /> Clicked</span>
+        </div>
+      </div>
+
+      {/* Avg time at step */}
+      <div className="mt-4 flex items-center gap-2 text-xs text-muted-foreground">
+        <Clock className="w-3.5 h-3.5" />
+        <span>Avg. time at step: <span className="font-semibold text-foreground">{formatDuration(stats.avgTimeMinutes)}</span></span>
+      </div>
+    </div>
+  );
+}
+
+function StepStatsBar({ stepIndex }: { stepIndex: number }) {
+  const stats = useMemo(() => generateMockStats(stepIndex), [stepIndex]);
+  const seenRate = stats.delivered > 0 ? Math.round((stats.seen / stats.delivered) * 100) : 0;
+  return (
+    <div className="flex items-center gap-3 mt-3 text-[11px] text-muted-foreground">
+      <span className="flex items-center gap-1"><Users className="w-3 h-3 text-blue-500" />{stats.reached}</span>
+      <span className="flex items-center gap-1"><Send className="w-3 h-3 text-emerald-500" />{stats.sent}</span>
+      <span className="flex items-center gap-1"><Eye className="w-3 h-3 text-violet-500" />{seenRate}%</span>
+      <span className="flex items-center gap-1"><MousePointerClick className="w-3 h-3 text-orange-500" />{stats.clicked}</span>
     </div>
   );
 }
@@ -850,6 +957,9 @@ function StepInspector({
           <QuickRepliesEditor values={step.quickReplies} onChange={(next) => onUpdate({ quickReplies: next })} />
         </div>
       </div>
+
+      {/* Step Analytics */}
+      <StepAnalytics stepIndex={index} />
 
       <div className="p-6">
         <p className="text-sm font-bold text-foreground mb-4">Preview</p>
