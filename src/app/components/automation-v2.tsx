@@ -218,105 +218,268 @@ function createMockTestRun(nodes: FlowNode[], connections: FlowConnection[]): Te
 const DEFAULT_FOLDERS: AutomationFolder[] = [
   { id: "onboarding", name: "Onboarding" },
   { id: "follow-ups", name: "Follow-ups" },
+  { id: "discipleship", name: "Discipleship" },
+  { id: "re-engagement", name: "Re-engagement" },
+  { id: "mentor-ops", name: "Mentor Operations" },
+  { id: "events", name: "Events & Campaigns" },
 ];
 
 // ============================================================================
-// SAMPLE AUTOMATIONS
+// SAMPLE AUTOMATIONS — rich, working templates per folder
 // ============================================================================
 
 const SAMPLE_AUTOMATIONS: AutomationDraft[] = [
+  // ── ONBOARDING ──────────────────────────────────────────────────────────
   {
-    id: "wf-1", name: "Welcome New Contacts", description: "Send a welcome message when a contact is created",
+    id: "ob-1", name: "Welcome New Contacts", description: "Send a welcome message when a contact is created",
     mode: "basic", enabled: true, createdAt: "2025-05-10T08:00:00Z", runs: 342, folderId: "onboarding",
     nodes: [
       { id: "n1", type: "trigger", category: "contact_added", label: "Contact Created", description: "When a new contact is added", icon: Users, iconColor: "text-emerald-400", iconBg: "bg-emerald-500/20", config: {}, position: { x: 0, y: 0 } },
-      { id: "n2", type: "action", category: "send_message", label: "Send Welcome", description: "Welcome message", icon: Send, iconColor: "text-blue-400", iconBg: "bg-blue-500/20", config: { message: "Welcome to our community!" }, position: { x: 1, y: 0 } },
-    ],
-    connections: [{ id: "c1", from: "n1", to: "n2" }]
-  },
-  {
-    id: "wf-2", name: "Keyword Auto-Reply", description: "Reply when a specific keyword is received",
-    mode: "basic", enabled: true, createdAt: "2025-05-08T10:30:00Z", runs: 1205, folderId: null,
-    nodes: [
-      { id: "n1", type: "trigger", category: "message_received", label: "Message Received", description: "Keyword: 'help'", icon: MessageSquare, iconColor: "text-blue-400", iconBg: "bg-blue-500/20", config: { keyword: "help" }, position: { x: 0, y: 0 } },
-      { id: "n2", type: "condition", category: "filter", label: "Contains 'help'", description: "Check keyword", icon: Filter, iconColor: "text-sky-400", iconBg: "bg-sky-500/20", config: {}, position: { x: 1, y: 0 } },
-      { id: "n3", type: "action", category: "ai_respond", label: "AI Response", description: "Smart reply", icon: Bot, iconColor: "text-pink-400", iconBg: "bg-pink-500/20", config: {}, position: { x: 2, y: 0 } },
+      { id: "n2", type: "action", category: "send_message", label: "Send Welcome", description: "Welcome message", icon: Send, iconColor: "text-blue-400", iconBg: "bg-blue-500/20", config: { message: "Welcome to 153 Collective! We're so glad you're here. Reply START to begin your journey." }, position: { x: 1, y: 0 } },
+      { id: "n3", type: "action", category: "add_tag", label: "Tag: New", description: "Apply new-contact tag", icon: Tag, iconColor: "text-amber-400", iconBg: "bg-amber-500/20", config: { tag: "new-contact" }, position: { x: 2, y: 0 } },
     ],
     connections: [{ id: "c1", from: "n1", to: "n2" }, { id: "c2", from: "n2", to: "n3" }]
   },
   {
-    id: "wf-3", name: "Foundations of Faith Drip", description: "7-day drip sequence for new believers",
-    mode: "sequence", enabled: true, createdAt: "2025-04-20T14:00:00Z", runs: 89, folderId: null,
+    id: "ob-2", name: "7-Day Onboarding Sequence", description: "Drip welcome series over the first week",
+    mode: "sequence", enabled: true, createdAt: "2025-04-28T09:00:00Z", runs: 178, folderId: "onboarding",
     nodes: [
-      { id: "n1", type: "trigger", category: "tag_added", label: "Tag: new-believer", description: "When tag applied", icon: Tag, iconColor: "text-amber-400", iconBg: "bg-amber-500/20", config: { tag: "new-believer" }, position: { x: 0, y: 0 } },
-      { id: "n2", type: "action", category: "send_message", label: "Day 1 — Welcome", description: "Introduction to faith", icon: Send, iconColor: "text-blue-400", iconBg: "bg-blue-500/20", config: { message: "Day 1: What it means to believe..." }, position: { x: 1, y: 0 } },
+      { id: "n1", type: "trigger", category: "tag_added", label: "Tag: new-contact", description: "When tag applied", icon: Tag, iconColor: "text-amber-400", iconBg: "bg-amber-500/20", config: { tag: "new-contact" }, position: { x: 0, y: 0 } },
+      { id: "n2", type: "action", category: "send_message", label: "Day 1 — Welcome", description: "Introduction", icon: Send, iconColor: "text-blue-400", iconBg: "bg-blue-500/20", config: { message: "Day 1: Welcome! Here's what to expect this week. We'll share short daily messages to help you get started on your faith journey." }, position: { x: 1, y: 0 } },
       { id: "n3", type: "delay", category: "wait", label: "Wait 1 day", description: "24 hours", icon: Timer, iconColor: "text-teal-400", iconBg: "bg-teal-500/20", config: { hours: 24 }, position: { x: 2, y: 0 } },
-      { id: "n4", type: "action", category: "send_message", label: "Day 2 — Prayer", description: "Understanding prayer", icon: Send, iconColor: "text-blue-400", iconBg: "bg-blue-500/20", config: { message: "Day 2: The power of prayer..." }, position: { x: 3, y: 0 } },
+      { id: "n4", type: "action", category: "send_message", label: "Day 2 — Who We Are", description: "About us", icon: Send, iconColor: "text-blue-400", iconBg: "bg-blue-500/20", config: { message: "Day 2: We are a community of seekers and mentors walking together. You are not alone on this path." }, position: { x: 3, y: 0 } },
       { id: "n5", type: "delay", category: "wait", label: "Wait 1 day", description: "24 hours", icon: Timer, iconColor: "text-teal-400", iconBg: "bg-teal-500/20", config: { hours: 24 }, position: { x: 4, y: 0 } },
-      { id: "n6", type: "action", category: "send_message", label: "Day 3 — Bible", description: "Reading the Bible", icon: Send, iconColor: "text-blue-400", iconBg: "bg-blue-500/20", config: { message: "Day 3: How to read the Bible..." }, position: { x: 5, y: 0 } },
-      { id: "n7", type: "action", category: "add_tag", label: "Complete Tag", description: "Tag: foundations-complete", icon: Tag, iconColor: "text-amber-400", iconBg: "bg-amber-500/20", config: { tag: "foundations-complete" }, position: { x: 6, y: 0 } },
+      { id: "n6", type: "action", category: "send_message", label: "Day 3 — Your Mentor", description: "Mentor intro", icon: Send, iconColor: "text-blue-400", iconBg: "bg-blue-500/20", config: { message: "Day 3: Soon you'll be connected with a personal mentor who will guide you. Reply READY when you'd like to be matched." }, position: { x: 5, y: 0 } },
+      { id: "n7", type: "delay", category: "wait", label: "Wait 2 days", description: "48 hours", icon: Timer, iconColor: "text-teal-400", iconBg: "bg-teal-500/20", config: { hours: 48 }, position: { x: 6, y: 0 } },
+      { id: "n8", type: "action", category: "send_message", label: "Day 5 — First Lesson", description: "Content starts", icon: Send, iconColor: "text-blue-400", iconBg: "bg-blue-500/20", config: { message: "Day 5: Here's your first mini-lesson — 'What is Faith?' Read this short passage and share your thoughts with us." }, position: { x: 7, y: 0 } },
+      { id: "n9", type: "delay", category: "wait", label: "Wait 2 days", description: "48 hours", icon: Timer, iconColor: "text-teal-400", iconBg: "bg-teal-500/20", config: { hours: 48 }, position: { x: 8, y: 0 } },
+      { id: "n10", type: "action", category: "send_message", label: "Day 7 — What's Next", description: "Wrap up", icon: Send, iconColor: "text-blue-400", iconBg: "bg-blue-500/20", config: { message: "Day 7: You've completed your first week! Ready for the next step? Reply YES to start the Foundations course." }, position: { x: 9, y: 0 } },
+      { id: "n11", type: "action", category: "add_tag", label: "Tag: Onboarded", description: "Mark complete", icon: Tag, iconColor: "text-amber-400", iconBg: "bg-amber-500/20", config: { tag: "onboarded" }, position: { x: 10, y: 0 } },
     ],
     connections: [
-      { id: "c1", from: "n1", to: "n2" }, { id: "c2", from: "n2", to: "n3" },
-      { id: "c3", from: "n3", to: "n4" }, { id: "c4", from: "n4", to: "n5" },
-      { id: "c5", from: "n5", to: "n6" }, { id: "c6", from: "n6", to: "n7" },
+      { id: "c1", from: "n1", to: "n2" }, { id: "c2", from: "n2", to: "n3" }, { id: "c3", from: "n3", to: "n4" },
+      { id: "c4", from: "n4", to: "n5" }, { id: "c5", from: "n5", to: "n6" }, { id: "c6", from: "n6", to: "n7" },
+      { id: "c7", from: "n7", to: "n8" }, { id: "c8", from: "n8", to: "n9" }, { id: "c9", from: "n9", to: "n10" },
+      { id: "c10", from: "n10", to: "n11" },
     ]
   },
   {
-    id: "wf-4", name: "Seeker Discipleship Journey", description: "Multi-path journey based on seeker engagement",
-    mode: "journey", enabled: true, createdAt: "2025-04-15T09:00:00Z", runs: 213, folderId: null,
+    id: "ob-3", name: "Onboarding Journey — Adaptive", description: "Branch onboarding based on seeker responses",
+    mode: "journey", enabled: true, createdAt: "2025-04-15T09:00:00Z", runs: 213, folderId: "onboarding",
     nodes: [
       { id: "j1", type: "trigger", category: "contact_added", label: "New Seeker", description: "Contact created", icon: Users, iconColor: "text-emerald-400", iconBg: "bg-emerald-500/20", config: {}, position: { x: 0, y: 1 } },
-      { id: "j2", type: "action", category: "send_message", label: "Welcome Message", description: "Send intro", icon: Send, iconColor: "text-blue-400", iconBg: "bg-blue-500/20", config: { message: "Welcome! Tell us about yourself." }, position: { x: 1, y: 1 } },
+      { id: "j2", type: "action", category: "send_message", label: "Welcome Message", description: "Send intro", icon: Send, iconColor: "text-blue-400", iconBg: "bg-blue-500/20", config: { message: "Welcome! Tell us a bit about yourself — are you exploring faith for the first time, or returning after time away?" }, position: { x: 1, y: 1 } },
       { id: "j3", type: "delay", category: "wait", label: "Wait 2 days", description: "48 hours", icon: Timer, iconColor: "text-teal-400", iconBg: "bg-teal-500/20", config: { hours: 48 }, position: { x: 2, y: 1 } },
-      { id: "j4", type: "condition", category: "if_else", label: "Replied?", description: "Check if they responded", icon: Split, iconColor: "text-orange-400", iconBg: "bg-orange-500/20", config: { condition: "has_replied" }, position: { x: 3, y: 1 } },
-      { id: "j5", type: "action", category: "add_tag", label: "Tag: Engaged", description: "Mark as engaged", icon: Tag, iconColor: "text-amber-400", iconBg: "bg-amber-500/20", config: { tag: "engaged" }, position: { x: 4, y: 0 } },
+      { id: "j4", type: "condition", category: "if_else", label: "Replied?", description: "Check if responded", icon: Split, iconColor: "text-orange-400", iconBg: "bg-orange-500/20", config: { condition: "has_replied" }, position: { x: 3, y: 1 } },
+      { id: "j5", type: "action", category: "add_tag", label: "Tag: Engaged", description: "Mark engaged", icon: Tag, iconColor: "text-amber-400", iconBg: "bg-amber-500/20", config: { tag: "engaged" }, position: { x: 4, y: 0 } },
       { id: "j6", type: "action", category: "assign_mentor", label: "Assign Mentor", description: "Auto-match mentor", icon: Users, iconColor: "text-indigo-400", iconBg: "bg-indigo-500/20", config: {}, position: { x: 5, y: 0 } },
-      { id: "j7", type: "action", category: "send_message", label: "Start Lesson 1", description: "Send first study", icon: Send, iconColor: "text-blue-400", iconBg: "bg-blue-500/20", config: {}, position: { x: 6, y: 0 } },
-      { id: "j8", type: "action", category: "send_message", label: "Follow-up Nudge", description: "Gentle reminder", icon: Send, iconColor: "text-blue-400", iconBg: "bg-blue-500/20", config: { message: "Hey, just checking in!" }, position: { x: 4, y: 2 } },
+      { id: "j7", type: "action", category: "send_message", label: "Start Lesson 1", description: "Send first study", icon: Send, iconColor: "text-blue-400", iconBg: "bg-blue-500/20", config: { message: "Great! Here's your first lesson: 'Understanding Grace'. Your mentor will follow up with you soon." }, position: { x: 6, y: 0 } },
+      { id: "j8", type: "action", category: "send_message", label: "Follow-up Nudge", description: "Gentle reminder", icon: Send, iconColor: "text-blue-400", iconBg: "bg-blue-500/20", config: { message: "Hey, just checking in! No pressure — we're here whenever you're ready. Reply anytime." }, position: { x: 4, y: 2 } },
       { id: "j9", type: "delay", category: "wait", label: "Wait 3 days", description: "72 hours", icon: Timer, iconColor: "text-teal-400", iconBg: "bg-teal-500/20", config: { hours: 72 }, position: { x: 5, y: 2 } },
       { id: "j10", type: "condition", category: "if_else", label: "Replied now?", description: "Second check", icon: Split, iconColor: "text-orange-400", iconBg: "bg-orange-500/20", config: { condition: "has_replied" }, position: { x: 6, y: 2 } },
       { id: "j11", type: "action", category: "add_tag", label: "Tag: Re-engaged", description: "Came back", icon: Tag, iconColor: "text-amber-400", iconBg: "bg-amber-500/20", config: { tag: "re-engaged" }, position: { x: 7, y: 1.5 } },
       { id: "j12", type: "action", category: "add_tag", label: "Tag: Dormant", description: "No response", icon: Tag, iconColor: "text-red-400", iconBg: "bg-red-500/20", config: { tag: "dormant" }, position: { x: 7, y: 2.5 } },
     ],
     connections: [
-      { id: "c1", from: "j1", to: "j2" },
-      { id: "c2", from: "j2", to: "j3" },
-      { id: "c3", from: "j3", to: "j4" },
-      { id: "c4", from: "j4", to: "j5", label: "Yes", type: "true" },
-      { id: "c5", from: "j4", to: "j8", label: "No", type: "false" },
-      { id: "c6", from: "j5", to: "j6" },
-      { id: "c7", from: "j6", to: "j7" },
-      { id: "c8", from: "j8", to: "j9" },
-      { id: "c9", from: "j9", to: "j10" },
-      { id: "c10", from: "j10", to: "j11", label: "Yes", type: "true" },
-      { id: "c11", from: "j10", to: "j12", label: "No", type: "false" },
+      { id: "c1", from: "j1", to: "j2" }, { id: "c2", from: "j2", to: "j3" }, { id: "c3", from: "j3", to: "j4" },
+      { id: "c4", from: "j4", to: "j5", label: "Yes", type: "true" }, { id: "c5", from: "j4", to: "j8", label: "No", type: "false" },
+      { id: "c6", from: "j5", to: "j6" }, { id: "c7", from: "j6", to: "j7" },
+      { id: "c8", from: "j8", to: "j9" }, { id: "c9", from: "j9", to: "j10" },
+      { id: "c10", from: "j10", to: "j11", label: "Yes", type: "true" }, { id: "c11", from: "j10", to: "j12", label: "No", type: "false" },
+    ]
+  },
+
+  // ── DISCIPLESHIP ────────────────────────────────────────────────────────
+  {
+    id: "ds-1", name: "Foundations of Faith", description: "5-part core teaching series for new believers",
+    mode: "sequence", enabled: true, createdAt: "2025-04-20T14:00:00Z", runs: 89, folderId: "discipleship",
+    nodes: [
+      { id: "n1", type: "trigger", category: "tag_added", label: "Tag: new-believer", description: "When tag applied", icon: Tag, iconColor: "text-amber-400", iconBg: "bg-amber-500/20", config: { tag: "new-believer" }, position: { x: 0, y: 0 } },
+      { id: "n2", type: "action", category: "send_message", label: "Lesson 1 — Faith", description: "What is faith?", icon: Send, iconColor: "text-blue-400", iconBg: "bg-blue-500/20", config: { message: "Lesson 1: What is Faith?\n\nFaith is trusting in what you cannot see. Today, read Hebrews 11:1 and reflect: what does faith mean to you?" }, position: { x: 1, y: 0 } },
+      { id: "n3", type: "delay", category: "wait", label: "Wait 2 days", description: "48 hours", icon: Timer, iconColor: "text-teal-400", iconBg: "bg-teal-500/20", config: { hours: 48 }, position: { x: 2, y: 0 } },
+      { id: "n4", type: "action", category: "send_message", label: "Lesson 2 — Prayer", description: "How to pray", icon: Send, iconColor: "text-blue-400", iconBg: "bg-blue-500/20", config: { message: "Lesson 2: The Power of Prayer\n\nPrayer is a conversation with God. Try this: spend 5 quiet minutes today just talking to Him about your day." }, position: { x: 3, y: 0 } },
+      { id: "n5", type: "delay", category: "wait", label: "Wait 2 days", description: "48 hours", icon: Timer, iconColor: "text-teal-400", iconBg: "bg-teal-500/20", config: { hours: 48 }, position: { x: 4, y: 0 } },
+      { id: "n6", type: "action", category: "send_message", label: "Lesson 3 — Bible", description: "Reading scripture", icon: Send, iconColor: "text-blue-400", iconBg: "bg-blue-500/20", config: { message: "Lesson 3: Reading the Bible\n\nStart with the Gospel of John. Read one chapter a day. What stands out to you?" }, position: { x: 5, y: 0 } },
+      { id: "n7", type: "delay", category: "wait", label: "Wait 2 days", description: "48 hours", icon: Timer, iconColor: "text-teal-400", iconBg: "bg-teal-500/20", config: { hours: 48 }, position: { x: 6, y: 0 } },
+      { id: "n8", type: "action", category: "send_message", label: "Lesson 4 — Community", description: "Fellowship", icon: Send, iconColor: "text-blue-400", iconBg: "bg-blue-500/20", config: { message: "Lesson 4: Community & Fellowship\n\nFaith grows in community. Your mentor is here for you — reach out anytime!" }, position: { x: 7, y: 0 } },
+      { id: "n9", type: "delay", category: "wait", label: "Wait 2 days", description: "48 hours", icon: Timer, iconColor: "text-teal-400", iconBg: "bg-teal-500/20", config: { hours: 48 }, position: { x: 8, y: 0 } },
+      { id: "n10", type: "action", category: "send_message", label: "Lesson 5 — Next Steps", description: "What's next", icon: Send, iconColor: "text-blue-400", iconBg: "bg-blue-500/20", config: { message: "Lesson 5: Your Next Steps\n\nYou've completed Foundations! Reply CONTINUE to start the next course, or talk to your mentor about what's next." }, position: { x: 9, y: 0 } },
+      { id: "n11", type: "action", category: "add_tag", label: "Tag: Foundations Done", description: "Mark complete", icon: Tag, iconColor: "text-amber-400", iconBg: "bg-amber-500/20", config: { tag: "foundations-complete" }, position: { x: 10, y: 0 } },
+    ],
+    connections: [
+      { id: "c1", from: "n1", to: "n2" }, { id: "c2", from: "n2", to: "n3" }, { id: "c3", from: "n3", to: "n4" },
+      { id: "c4", from: "n4", to: "n5" }, { id: "c5", from: "n5", to: "n6" }, { id: "c6", from: "n6", to: "n7" },
+      { id: "c7", from: "n7", to: "n8" }, { id: "c8", from: "n8", to: "n9" }, { id: "c9", from: "n9", to: "n10" },
+      { id: "c10", from: "n10", to: "n11" },
     ]
   },
   {
-    id: "wf-5", name: "VIP Auto-Tag", description: "Auto-tag contacts who complete 5+ milestones",
-    mode: "basic", enabled: true, createdAt: "2025-05-15T11:00:00Z", runs: 56, folderId: null,
+    id: "ds-2", name: "Discipleship Path Journey", description: "Branching journey based on seeker progress and readiness",
+    mode: "journey", enabled: true, createdAt: "2025-04-10T09:00:00Z", runs: 156, folderId: "discipleship",
     nodes: [
-      { id: "n1", type: "trigger", category: "milestone_reached", label: "Milestone Completed", description: "Event received", icon: Milestone, iconColor: "text-violet-400", iconBg: "bg-violet-500/20", config: {}, position: { x: 0, y: 0 } },
-      { id: "n2", type: "condition", category: "if_else", label: "Milestones >= 5", description: "Check count", icon: Split, iconColor: "text-orange-400", iconBg: "bg-orange-500/20", config: {}, position: { x: 1, y: 0 } },
-      { id: "n3", type: "action", category: "add_tag", label: "Tag: VIP", description: "Apply VIP tag", icon: Tag, iconColor: "text-amber-400", iconBg: "bg-amber-500/20", config: { tag: "vip" }, position: { x: 2, y: 0 } },
+      { id: "d1", type: "trigger", category: "tag_added", label: "Tag: Foundations Done", description: "Completed foundations", icon: Tag, iconColor: "text-amber-400", iconBg: "bg-amber-500/20", config: { tag: "foundations-complete" }, position: { x: 0, y: 1 } },
+      { id: "d2", type: "action", category: "send_message", label: "Course Selection", description: "Choose path", icon: Send, iconColor: "text-blue-400", iconBg: "bg-blue-500/20", config: { message: "You've completed Foundations! Choose your next path:\n\nA — Deeper Bible Study\nB — Sharing Your Faith\nC — Christian Living\n\nReply A, B, or C" }, position: { x: 1, y: 1 } },
+      { id: "d3", type: "delay", category: "wait", label: "Wait 3 days", description: "72 hours", icon: Timer, iconColor: "text-teal-400", iconBg: "bg-teal-500/20", config: { hours: 72 }, position: { x: 2, y: 1 } },
+      { id: "d4", type: "condition", category: "if_else", label: "Chose path?", description: "Did they reply?", icon: Split, iconColor: "text-orange-400", iconBg: "bg-orange-500/20", config: { condition: "has_replied" }, position: { x: 3, y: 1 } },
+      { id: "d5", type: "action", category: "send_message", label: "Start Course", description: "Begin chosen track", icon: Send, iconColor: "text-blue-400", iconBg: "bg-blue-500/20", config: { message: "Great choice! Starting your course now. Your first lesson arrives tomorrow." }, position: { x: 4, y: 0 } },
+      { id: "d6", type: "action", category: "update_stage", label: "Move to Active", description: "Update stage", icon: ArrowRight, iconColor: "text-sky-400", iconBg: "bg-sky-500/20", config: { stage: "active-discipleship" }, position: { x: 5, y: 0 } },
+      { id: "d7", type: "action", category: "assign_mentor", label: "Match Specialist", description: "Course-specific mentor", icon: Users, iconColor: "text-indigo-400", iconBg: "bg-indigo-500/20", config: {}, position: { x: 6, y: 0 } },
+      { id: "d8", type: "action", category: "ai_respond", label: "AI Encouragement", description: "Personalized nudge", icon: Bot, iconColor: "text-pink-400", iconBg: "bg-pink-500/20", config: { message: "We noticed you haven't chosen a path yet. No rush! Here's a quick overview of each option..." }, position: { x: 4, y: 2 } },
+      { id: "d9", type: "delay", category: "wait", label: "Wait 5 days", description: "120 hours", icon: Timer, iconColor: "text-teal-400", iconBg: "bg-teal-500/20", config: { hours: 120 }, position: { x: 5, y: 2 } },
+      { id: "d10", type: "action", category: "add_tag", label: "Tag: Needs Attention", description: "Flag for mentor", icon: Tag, iconColor: "text-red-400", iconBg: "bg-red-500/20", config: { tag: "needs-attention" }, position: { x: 6, y: 2 } },
+    ],
+    connections: [
+      { id: "c1", from: "d1", to: "d2" }, { id: "c2", from: "d2", to: "d3" }, { id: "c3", from: "d3", to: "d4" },
+      { id: "c4", from: "d4", to: "d5", label: "Yes", type: "true" }, { id: "c5", from: "d4", to: "d8", label: "No", type: "false" },
+      { id: "c6", from: "d5", to: "d6" }, { id: "c7", from: "d6", to: "d7" },
+      { id: "c8", from: "d8", to: "d9" }, { id: "c9", from: "d9", to: "d10" },
+    ]
+  },
+
+  // ── FOLLOW-UPS ──────────────────────────────────────────────────────────
+  {
+    id: "fu-1", name: "Post-Lesson Check-in", description: "Follow up after each completed lesson",
+    mode: "basic", enabled: true, createdAt: "2025-05-08T10:30:00Z", runs: 1205, folderId: "follow-ups",
+    nodes: [
+      { id: "n1", type: "trigger", category: "milestone_reached", label: "Lesson Completed", description: "When a lesson is done", icon: Milestone, iconColor: "text-violet-400", iconBg: "bg-violet-500/20", config: {}, position: { x: 0, y: 0 } },
+      { id: "n2", type: "delay", category: "wait", label: "Wait 4 hours", description: "Let it settle", icon: Timer, iconColor: "text-teal-400", iconBg: "bg-teal-500/20", config: { hours: 4 }, position: { x: 1, y: 0 } },
+      { id: "n3", type: "action", category: "ai_respond", label: "AI Check-in", description: "Personalized follow-up", icon: Bot, iconColor: "text-pink-400", iconBg: "bg-pink-500/20", config: { message: "Generate a warm, personalized check-in based on the lesson they just completed." }, position: { x: 2, y: 0 } },
     ],
     connections: [{ id: "c1", from: "n1", to: "n2" }, { id: "c2", from: "n2", to: "n3" }]
   },
   {
-    id: "wf-6", name: "Re-engagement Nudge", description: "Nudge contacts who haven't responded in 7 days",
-    mode: "sequence", enabled: false, createdAt: "2025-05-01T09:00:00Z", runs: 0, folderId: "follow-ups",
+    id: "fu-2", name: "Weekly Digest", description: "Send a weekly summary to active seekers",
+    mode: "basic", enabled: true, createdAt: "2025-05-12T07:00:00Z", runs: 67, folderId: "follow-ups",
     nodes: [
-      { id: "n1", type: "trigger", category: "schedule", label: "Daily at 9am", description: "Every day at 9am", icon: Clock, iconColor: "text-cyan-400", iconBg: "bg-cyan-500/20", config: { cron: "0 9 * * *" }, position: { x: 0, y: 0 } },
-      { id: "n2", type: "condition", category: "filter", label: "Last msg > 7 days", description: "Filter inactive", icon: Filter, iconColor: "text-sky-400", iconBg: "bg-sky-500/20", config: {}, position: { x: 1, y: 0 } },
-      { id: "n3", type: "action", category: "send_message", label: "Send Nudge", description: "Friendly check-in", icon: Send, iconColor: "text-blue-400", iconBg: "bg-blue-500/20", config: {}, position: { x: 2, y: 0 } },
+      { id: "n1", type: "trigger", category: "schedule", label: "Every Sunday 8am", description: "Weekly schedule", icon: Clock, iconColor: "text-cyan-400", iconBg: "bg-cyan-500/20", config: { interval: "weekly" }, position: { x: 0, y: 0 } },
+      { id: "n2", type: "condition", category: "filter", label: "Active Seekers", description: "Has tag: active", icon: Filter, iconColor: "text-sky-400", iconBg: "bg-sky-500/20", config: {}, position: { x: 1, y: 0 } },
+      { id: "n3", type: "action", category: "send_message", label: "Weekly Summary", description: "Progress recap", icon: Send, iconColor: "text-blue-400", iconBg: "bg-blue-500/20", config: { message: "Happy Sunday! Here's your week in review:\n\n📖 Lessons completed: {count}\n💬 Messages exchanged: {messages}\n🎯 Next milestone: {next}\n\nKeep going — you're doing great!" }, position: { x: 2, y: 0 } },
+    ],
+    connections: [{ id: "c1", from: "n1", to: "n2" }, { id: "c2", from: "n2", to: "n3" }]
+  },
+
+  // ── RE-ENGAGEMENT ───────────────────────────────────────────────────────
+  {
+    id: "re-1", name: "7-Day Inactive Nudge", description: "Nudge contacts who haven't responded in 7 days",
+    mode: "sequence", enabled: true, createdAt: "2025-05-01T09:00:00Z", runs: 234, folderId: "re-engagement",
+    nodes: [
+      { id: "n1", type: "trigger", category: "schedule", label: "Daily at 9am", description: "Every day check", icon: Clock, iconColor: "text-cyan-400", iconBg: "bg-cyan-500/20", config: { interval: "daily" }, position: { x: 0, y: 0 } },
+      { id: "n2", type: "condition", category: "filter", label: "Inactive > 7 days", description: "Filter inactive", icon: Filter, iconColor: "text-sky-400", iconBg: "bg-sky-500/20", config: {}, position: { x: 1, y: 0 } },
+      { id: "n3", type: "action", category: "send_message", label: "Gentle Nudge", description: "First check-in", icon: Send, iconColor: "text-blue-400", iconBg: "bg-blue-500/20", config: { message: "Hey! We haven't heard from you in a while. Just wanted you to know we're here whenever you're ready. No pressure at all." }, position: { x: 2, y: 0 } },
       { id: "n4", type: "delay", category: "wait", label: "Wait 3 days", description: "72 hours", icon: Timer, iconColor: "text-teal-400", iconBg: "bg-teal-500/20", config: { hours: 72 }, position: { x: 3, y: 0 } },
-      { id: "n5", type: "action", category: "send_message", label: "Final Nudge", description: "One last try", icon: Send, iconColor: "text-blue-400", iconBg: "bg-blue-500/20", config: {}, position: { x: 4, y: 0 } },
+      { id: "n5", type: "action", category: "send_message", label: "Share Resource", description: "Helpful content", icon: Send, iconColor: "text-blue-400", iconBg: "bg-blue-500/20", config: { message: "Thought you might enjoy this short devotional: 'Finding Peace in Busy Times'. It's a 3-minute read. 🕊️" }, position: { x: 4, y: 0 } },
+      { id: "n6", type: "delay", category: "wait", label: "Wait 4 days", description: "96 hours", icon: Timer, iconColor: "text-teal-400", iconBg: "bg-teal-500/20", config: { hours: 96 }, position: { x: 5, y: 0 } },
+      { id: "n7", type: "action", category: "send_message", label: "Final Reach-out", description: "Last attempt", icon: Send, iconColor: "text-blue-400", iconBg: "bg-blue-500/20", config: { message: "Just checking in one last time. Reply PAUSE if you need a break, or HI if you'd like to continue. Either way, we respect your choice." }, position: { x: 6, y: 0 } },
     ],
     connections: [
-      { id: "c1", from: "n1", to: "n2" }, { id: "c2", from: "n2", to: "n3" },
-      { id: "c3", from: "n3", to: "n4" }, { id: "c4", from: "n4", to: "n5" },
+      { id: "c1", from: "n1", to: "n2" }, { id: "c2", from: "n2", to: "n3" }, { id: "c3", from: "n3", to: "n4" },
+      { id: "c4", from: "n4", to: "n5" }, { id: "c5", from: "n5", to: "n6" }, { id: "c6", from: "n6", to: "n7" },
     ]
+  },
+  {
+    id: "re-2", name: "Win-back Journey", description: "Multi-step journey to re-engage dormant seekers",
+    mode: "journey", enabled: true, createdAt: "2025-04-25T11:00:00Z", runs: 98, folderId: "re-engagement",
+    nodes: [
+      { id: "r1", type: "trigger", category: "tag_added", label: "Tag: Dormant", description: "Marked as dormant", icon: Tag, iconColor: "text-amber-400", iconBg: "bg-amber-500/20", config: { tag: "dormant" }, position: { x: 0, y: 1 } },
+      { id: "r2", type: "delay", category: "wait", label: "Wait 7 days", description: "Cool down period", icon: Timer, iconColor: "text-teal-400", iconBg: "bg-teal-500/20", config: { hours: 168 }, position: { x: 1, y: 1 } },
+      { id: "r3", type: "action", category: "ai_respond", label: "AI Personal Note", description: "Personalized message", icon: Bot, iconColor: "text-pink-400", iconBg: "bg-pink-500/20", config: { message: "Write a warm, personal re-engagement message based on their history." }, position: { x: 2, y: 1 } },
+      { id: "r4", type: "delay", category: "wait", label: "Wait 5 days", description: "120 hours", icon: Timer, iconColor: "text-teal-400", iconBg: "bg-teal-500/20", config: { hours: 120 }, position: { x: 3, y: 1 } },
+      { id: "r5", type: "condition", category: "if_else", label: "Re-engaged?", description: "Did they respond?", icon: Split, iconColor: "text-orange-400", iconBg: "bg-orange-500/20", config: { condition: "has_replied" }, position: { x: 4, y: 1 } },
+      { id: "r6", type: "action", category: "remove_tag", label: "Remove: Dormant", description: "Clear dormant tag", icon: X, iconColor: "text-red-400", iconBg: "bg-red-500/20", config: { tag: "dormant" }, position: { x: 5, y: 0 } },
+      { id: "r7", type: "action", category: "add_tag", label: "Tag: Re-engaged", description: "Mark re-engaged", icon: Tag, iconColor: "text-emerald-400", iconBg: "bg-emerald-500/20", config: { tag: "re-engaged" }, position: { x: 6, y: 0 } },
+      { id: "r8", type: "action", category: "send_email", label: "Notify Mentor", description: "Alert their mentor", icon: Mail, iconColor: "text-rose-400", iconBg: "bg-rose-500/20", config: {}, position: { x: 5, y: 2 } },
+      { id: "r9", type: "action", category: "add_tag", label: "Tag: Unresponsive", description: "Long-term inactive", icon: Tag, iconColor: "text-red-400", iconBg: "bg-red-500/20", config: { tag: "unresponsive" }, position: { x: 6, y: 2 } },
+    ],
+    connections: [
+      { id: "c1", from: "r1", to: "r2" }, { id: "c2", from: "r2", to: "r3" }, { id: "c3", from: "r3", to: "r4" },
+      { id: "c4", from: "r4", to: "r5" },
+      { id: "c5", from: "r5", to: "r6", label: "Yes", type: "true" }, { id: "c6", from: "r5", to: "r8", label: "No", type: "false" },
+      { id: "c7", from: "r6", to: "r7" }, { id: "c8", from: "r8", to: "r9" },
+    ]
+  },
+
+  // ── MENTOR OPERATIONS ───────────────────────────────────────────────────
+  {
+    id: "mo-1", name: "Auto-Assign New Seekers", description: "Match new seekers with available mentors",
+    mode: "basic", enabled: true, createdAt: "2025-05-15T11:00:00Z", runs: 156, folderId: "mentor-ops",
+    nodes: [
+      { id: "n1", type: "trigger", category: "tag_added", label: "Tag: Engaged", description: "Seeker marked engaged", icon: Tag, iconColor: "text-amber-400", iconBg: "bg-amber-500/20", config: { tag: "engaged" }, position: { x: 0, y: 0 } },
+      { id: "n2", type: "action", category: "assign_mentor", label: "Match Mentor", description: "Find best match", icon: Users, iconColor: "text-indigo-400", iconBg: "bg-indigo-500/20", config: {}, position: { x: 1, y: 0 } },
+      { id: "n3", type: "action", category: "send_email", label: "Notify Mentor", description: "Send assignment email", icon: Mail, iconColor: "text-rose-400", iconBg: "bg-rose-500/20", config: {}, position: { x: 2, y: 0 } },
+      { id: "n4", type: "action", category: "send_message", label: "Intro to Seeker", description: "Tell seeker about mentor", icon: Send, iconColor: "text-blue-400", iconBg: "bg-blue-500/20", config: { message: "Great news! You've been matched with a mentor. They'll reach out to you within 24 hours." }, position: { x: 3, y: 0 } },
+    ],
+    connections: [{ id: "c1", from: "n1", to: "n2" }, { id: "c2", from: "n2", to: "n3" }, { id: "c3", from: "n3", to: "n4" }]
+  },
+  {
+    id: "mo-2", name: "Mentor Activity Monitor", description: "Alert when a mentor hasn't engaged in 5 days",
+    mode: "basic", enabled: true, createdAt: "2025-05-18T08:00:00Z", runs: 45, folderId: "mentor-ops",
+    nodes: [
+      { id: "n1", type: "trigger", category: "schedule", label: "Daily at 8am", description: "Daily check", icon: Clock, iconColor: "text-cyan-400", iconBg: "bg-cyan-500/20", config: { interval: "daily" }, position: { x: 0, y: 0 } },
+      { id: "n2", type: "condition", category: "filter", label: "Mentor Idle > 5d", description: "Check inactivity", icon: Filter, iconColor: "text-sky-400", iconBg: "bg-sky-500/20", config: {}, position: { x: 1, y: 0 } },
+      { id: "n3", type: "action", category: "send_email", label: "Remind Mentor", description: "Gentle reminder", icon: Mail, iconColor: "text-rose-400", iconBg: "bg-rose-500/20", config: {}, position: { x: 2, y: 0 } },
+      { id: "n4", type: "action", category: "webhook_call", label: "Alert Admin", description: "Notify admin dashboard", icon: Globe, iconColor: "text-violet-400", iconBg: "bg-violet-500/20", config: { url: "https://api.turumba.app/alerts/mentor-idle", method: "POST" }, position: { x: 3, y: 0 } },
+    ],
+    connections: [{ id: "c1", from: "n1", to: "n2" }, { id: "c2", from: "n2", to: "n3" }, { id: "c3", from: "n3", to: "n4" }]
+  },
+  {
+    id: "mo-3", name: "VIP Seeker Escalation", description: "Auto-tag and escalate high-engagement seekers to senior mentors",
+    mode: "basic", enabled: true, createdAt: "2025-05-20T11:00:00Z", runs: 34, folderId: "mentor-ops",
+    nodes: [
+      { id: "n1", type: "trigger", category: "milestone_reached", label: "Milestone Completed", description: "5+ milestones", icon: Milestone, iconColor: "text-violet-400", iconBg: "bg-violet-500/20", config: {}, position: { x: 0, y: 0 } },
+      { id: "n2", type: "condition", category: "if_else", label: "Milestones >= 5", description: "Check count", icon: Split, iconColor: "text-orange-400", iconBg: "bg-orange-500/20", config: { condition: "milestone_count" }, position: { x: 1, y: 0 } },
+      { id: "n3", type: "action", category: "add_tag", label: "Tag: VIP", description: "Apply VIP tag", icon: Tag, iconColor: "text-amber-400", iconBg: "bg-amber-500/20", config: { tag: "vip" }, position: { x: 2, y: 0 } },
+      { id: "n4", type: "action", category: "assign_mentor", label: "Senior Mentor", description: "Assign senior mentor", icon: Users, iconColor: "text-indigo-400", iconBg: "bg-indigo-500/20", config: {}, position: { x: 3, y: 0 } },
+    ],
+    connections: [{ id: "c1", from: "n1", to: "n2" }, { id: "c2", from: "n2", to: "n3" }, { id: "c3", from: "n3", to: "n4" }]
+  },
+
+  // ── EVENTS & CAMPAIGNS ──────────────────────────────────────────────────
+  {
+    id: "ev-1", name: "Event Reminder Sequence", description: "3-step reminder before an upcoming event",
+    mode: "sequence", enabled: true, createdAt: "2025-05-22T10:00:00Z", runs: 312, folderId: "events",
+    nodes: [
+      { id: "n1", type: "trigger", category: "tag_added", label: "Tag: event-registered", description: "Event signup", icon: Tag, iconColor: "text-amber-400", iconBg: "bg-amber-500/20", config: { tag: "event-registered" }, position: { x: 0, y: 0 } },
+      { id: "n2", type: "action", category: "send_message", label: "Registration Confirmed", description: "Confirm signup", icon: Send, iconColor: "text-blue-400", iconBg: "bg-blue-500/20", config: { message: "You're registered! 🎉 We'll send you reminders before the event. Mark your calendar!" }, position: { x: 1, y: 0 } },
+      { id: "n3", type: "delay", category: "wait", label: "Wait 5 days", description: "5 days before", icon: Timer, iconColor: "text-teal-400", iconBg: "bg-teal-500/20", config: { hours: 120 }, position: { x: 2, y: 0 } },
+      { id: "n4", type: "action", category: "send_message", label: "5 Days Before", description: "First reminder", icon: Send, iconColor: "text-blue-400", iconBg: "bg-blue-500/20", config: { message: "Reminder: The event is in 5 days! Here's what to expect and how to prepare." }, position: { x: 3, y: 0 } },
+      { id: "n5", type: "delay", category: "wait", label: "Wait 4 days", description: "Day before", icon: Timer, iconColor: "text-teal-400", iconBg: "bg-teal-500/20", config: { hours: 96 }, position: { x: 4, y: 0 } },
+      { id: "n6", type: "action", category: "send_message", label: "Tomorrow!", description: "Final reminder", icon: Send, iconColor: "text-blue-400", iconBg: "bg-blue-500/20", config: { message: "The event is TOMORROW! 🔥 Here's the link to join: [link]. See you there!" }, position: { x: 5, y: 0 } },
+    ],
+    connections: [
+      { id: "c1", from: "n1", to: "n2" }, { id: "c2", from: "n2", to: "n3" }, { id: "c3", from: "n3", to: "n4" },
+      { id: "c4", from: "n4", to: "n5" }, { id: "c5", from: "n5", to: "n6" },
+    ]
+  },
+  {
+    id: "ev-2", name: "Post-Event Follow-up Journey", description: "Engage attendees after an event with next steps",
+    mode: "journey", enabled: false, createdAt: "2025-05-25T14:00:00Z", runs: 0, folderId: "events",
+    nodes: [
+      { id: "e1", type: "trigger", category: "tag_added", label: "Tag: event-attended", description: "Attended event", icon: Tag, iconColor: "text-amber-400", iconBg: "bg-amber-500/20", config: { tag: "event-attended" }, position: { x: 0, y: 1 } },
+      { id: "e2", type: "action", category: "send_message", label: "Thank You", description: "Post-event thanks", icon: Send, iconColor: "text-blue-400", iconBg: "bg-blue-500/20", config: { message: "Thank you for attending! We'd love to hear your thoughts. What was the most impactful moment for you?" }, position: { x: 1, y: 1 } },
+      { id: "e3", type: "delay", category: "wait", label: "Wait 1 day", description: "24 hours", icon: Timer, iconColor: "text-teal-400", iconBg: "bg-teal-500/20", config: { hours: 24 }, position: { x: 2, y: 1 } },
+      { id: "e4", type: "condition", category: "if_else", label: "Shared feedback?", description: "Check reply", icon: Split, iconColor: "text-orange-400", iconBg: "bg-orange-500/20", config: { condition: "has_replied" }, position: { x: 3, y: 1 } },
+      { id: "e5", type: "action", category: "send_message", label: "Share Recording", description: "Send replay", icon: Send, iconColor: "text-blue-400", iconBg: "bg-blue-500/20", config: { message: "Here's the event recording in case you want to revisit anything. Share it with a friend!" }, position: { x: 4, y: 0 } },
+      { id: "e6", type: "action", category: "add_to_group", label: "Add to Alumni", description: "Event alumni group", icon: Users, iconColor: "text-emerald-400", iconBg: "bg-emerald-500/20", config: {}, position: { x: 5, y: 0 } },
+      { id: "e7", type: "action", category: "send_message", label: "Nudge for Feedback", description: "Ask again", icon: Send, iconColor: "text-blue-400", iconBg: "bg-blue-500/20", config: { message: "No worries if you didn't get a chance to share! Here's the recording anyway. We'd still love your feedback when you have a moment." }, position: { x: 4, y: 2 } },
+      { id: "e8", type: "action", category: "add_to_group", label: "Add to Alumni", description: "Add to group anyway", icon: Users, iconColor: "text-emerald-400", iconBg: "bg-emerald-500/20", config: {}, position: { x: 5, y: 2 } },
+    ],
+    connections: [
+      { id: "c1", from: "e1", to: "e2" }, { id: "c2", from: "e2", to: "e3" }, { id: "c3", from: "e3", to: "e4" },
+      { id: "c4", from: "e4", to: "e5", label: "Yes", type: "true" }, { id: "c5", from: "e4", to: "e7", label: "No", type: "false" },
+      { id: "c6", from: "e5", to: "e6" }, { id: "c7", from: "e7", to: "e8" },
+    ]
+  },
+
+  // ── UNFILED (General) ───────────────────────────────────────────────────
+  {
+    id: "gen-1", name: "Keyword Auto-Reply", description: "AI-powered reply when help keyword is received",
+    mode: "basic", enabled: true, createdAt: "2025-05-08T10:30:00Z", runs: 1205, folderId: null,
+    nodes: [
+      { id: "n1", type: "trigger", category: "message_received", label: "Message Received", description: "Keyword: 'help'", icon: MessageSquare, iconColor: "text-blue-400", iconBg: "bg-blue-500/20", config: { keyword: "help" }, position: { x: 0, y: 0 } },
+      { id: "n2", type: "condition", category: "filter", label: "Contains 'help'", description: "Check keyword", icon: Filter, iconColor: "text-sky-400", iconBg: "bg-sky-500/20", config: {}, position: { x: 1, y: 0 } },
+      { id: "n3", type: "action", category: "ai_respond", label: "AI Response", description: "Smart reply", icon: Bot, iconColor: "text-pink-400", iconBg: "bg-pink-500/20", config: { message: "Generate a helpful response based on the seeker's question." }, position: { x: 2, y: 0 } },
+    ],
+    connections: [{ id: "c1", from: "n1", to: "n2" }, { id: "c2", from: "n2", to: "n3" }]
   },
 ];
 
