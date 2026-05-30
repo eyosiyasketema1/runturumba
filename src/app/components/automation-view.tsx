@@ -484,29 +484,28 @@ export const AutomationView = ({
                       const isActive = activeFolder === folder.id;
                       const count = folder.automationIds.length;
                       return (
-                        <div key={folder.id} className="group/folder relative">
+                        <div key={folder.id} className="group/folder flex items-center gap-1">
                           <button
                             role="tab"
                             aria-selected={isActive}
                             onClick={() => setActiveFolder(folder.id as any)}
                             className={cn(
-                              "w-full flex items-center gap-3 px-3 py-2 text-sm rounded-md transition-colors",
+                              "flex-1 min-w-0 flex items-center gap-3 px-3 py-2 text-sm rounded-md transition-colors",
                               isActive
                                 ? "bg-primary/10 text-primary font-semibold"
                                 : "text-muted-foreground font-medium hover:bg-muted hover:text-foreground"
                             )}
                           >
-                            {isActive ? <FolderOpen className="w-4 h-4" /> : <Folder className="w-4 h-4" />}
+                            {isActive ? <FolderOpen className="w-4 h-4 shrink-0" /> : <Folder className="w-4 h-4 shrink-0" />}
                             <span className="flex-1 text-left truncate">{folder.name}</span>
                             <span className={cn(
-                              "text-xs tabular-nums",
+                              "text-xs tabular-nums shrink-0",
                               isActive ? "text-primary" : "text-muted-foreground"
                             )}>{count}</span>
                           </button>
-                          {/* Delete on hover */}
                           <button
                             onClick={(e) => { e.stopPropagation(); handleDeleteFolder(folder.id); }}
-                            className="absolute right-1 top-1/2 -translate-y-1/2 opacity-0 group-hover/folder:opacity-100 p-1 rounded hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-all"
+                            className="shrink-0 opacity-0 group-hover/folder:opacity-100 p-1 rounded hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-all"
                             title="Delete folder"
                           >
                             <Trash2 className="w-3 h-3" />
