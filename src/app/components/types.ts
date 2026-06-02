@@ -788,6 +788,73 @@ export const INITIAL_AUTOMATIONS: AutomationRule[] = [
     enabled: true, lastTriggeredAt: "2026-04-10T15:00:00Z", triggerCount: 53,
     createdAt: "2025-04-01T10:00:00Z"
   },
+  // ── Re-engagement ────────────────────────────────────────────────────
+  {
+    id: "auto-16", tenantId: "tenant-1", name: "7-Day Inactive Nudge",
+    description: "Sequence · 3-step re-engagement for inactive seekers",
+    trigger: "scheduled", triggerConfig: { event: "inactivity_7d" },
+    action: "send_message", actionConfig: { steps: 3 },
+    enabled: true, lastTriggeredAt: "2026-04-12T09:00:00Z", triggerCount: 234,
+    createdAt: "2025-03-20T10:00:00Z"
+  },
+  {
+    id: "auto-17", tenantId: "tenant-1", name: "Win-back Journey",
+    description: "Journey · Multi-step journey to re-engage dormant seekers",
+    trigger: "webhook_received", triggerConfig: { event: "dormant_tagged" },
+    action: "webhook_call", actionConfig: { template: "win-back" },
+    enabled: true, lastTriggeredAt: "2026-04-08T11:00:00Z", triggerCount: 98,
+    createdAt: "2025-03-25T10:00:00Z"
+  },
+  // ── Mentor Operations ────────────────────────────────────────────────
+  {
+    id: "auto-18", tenantId: "tenant-1", name: "Auto-Assign New Seekers",
+    description: "Basic · Match new seekers with available mentors",
+    trigger: "tag_added", triggerConfig: { tag: "engaged" },
+    action: "add_to_group", actionConfig: { groupId: "mentors" },
+    enabled: true, lastTriggeredAt: "2026-04-15T08:00:00Z", triggerCount: 156,
+    createdAt: "2025-04-05T10:00:00Z"
+  },
+  {
+    id: "auto-19", tenantId: "tenant-1", name: "Mentor Activity Monitor",
+    description: "Basic · Alert when a mentor is idle for 5+ days",
+    trigger: "contact_added", triggerConfig: { condition: "mentor_idle" },
+    action: "send_message", actionConfig: { template: "mentor-reminder" },
+    enabled: true, lastTriggeredAt: "2026-04-18T08:00:00Z", triggerCount: 45,
+    createdAt: "2025-04-08T10:00:00Z"
+  },
+  {
+    id: "auto-20", tenantId: "tenant-1", name: "VIP Seeker Escalation",
+    description: "Basic · Escalate high-engagement seekers to senior mentors",
+    trigger: "tag_added", triggerConfig: { tag: "milestone-5" },
+    action: "add_to_group", actionConfig: { groupId: "senior-mentors" },
+    enabled: true, lastTriggeredAt: "2026-04-20T11:00:00Z", triggerCount: 34,
+    createdAt: "2025-04-12T10:00:00Z"
+  },
+  // ── Events & Campaigns ───────────────────────────────────────────────
+  {
+    id: "auto-21", tenantId: "tenant-1", name: "Event Reminder Sequence",
+    description: "Sequence · 3-step reminder before an upcoming event",
+    trigger: "scheduled", triggerConfig: { event: "event_registered" },
+    action: "send_message", actionConfig: { steps: 3 },
+    enabled: true, lastTriggeredAt: "2026-04-22T10:00:00Z", triggerCount: 312,
+    createdAt: "2025-04-15T10:00:00Z"
+  },
+  {
+    id: "auto-22", tenantId: "tenant-1", name: "Post-Event Follow-up Journey",
+    description: "Journey · Engage attendees after event with next steps",
+    trigger: "webhook_received", triggerConfig: { event: "event_attended" },
+    action: "webhook_call", actionConfig: { template: "post-event" },
+    enabled: false, triggerCount: 0,
+    createdAt: "2025-04-18T10:00:00Z"
+  },
+  {
+    id: "auto-23", tenantId: "tenant-1", name: "Campaign Broadcast Follow-up",
+    description: "Basic · Auto-reply to those who engage with broadcast campaigns",
+    trigger: "broadcast_completed", triggerConfig: {},
+    action: "send_message", actionConfig: { template: "campaign-followup" },
+    enabled: true, lastTriggeredAt: "2026-04-25T14:00:00Z", triggerCount: 178,
+    createdAt: "2025-04-20T10:00:00Z"
+  },
 ];
 
 export const INITIAL_WEBHOOKS: Webhook[] = [
