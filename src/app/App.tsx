@@ -1207,52 +1207,7 @@ export default function App() {
             )}
             {currentView === "automations" && (
               <motion.div key="automations" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.2 }}>
-                <AutomationView
-                  automations={automations}
-                  webhooks={webhooks}
-                  onAddAutomation={(data) => {
-                    const newRule: AutomationRule = {
-                      id: `auto-${Date.now()}`,
-                      createdAt: new Date().toISOString(),
-                      triggerCount: 0,
-                      enabled: false,
-                      ...data as any,
-                    };
-                    setAutomations(prev => [...prev, newRule]);
-                  }}
-                  onToggleAutomation={(id) => {
-                    setAutomations(prev => prev.map(a => a.id === id ? { ...a, enabled: !a.enabled } : a));
-                    toast.success("Automation updated");
-                  }}
-                  onDeleteAutomation={(id) => {
-                    setAutomations(prev => prev.filter(a => a.id !== id));
-                    toast.success("Automation deleted");
-                  }}
-                  onUpdateAutomation={(id, data) => {
-                    setAutomations(prev => prev.map(a => a.id === id ? { ...a, ...data } : a));
-                  }}
-                  onAddWebhook={(data) => {
-                    const newWh: WebhookType = {
-                      ...data as any,
-                      id: `wh-${Date.now()}`,
-                      createdAt: new Date().toISOString(),
-                      failureCount: 0,
-                      enabled: false,
-                    };
-                    setWebhooks(prev => [...prev, newWh]);
-                  }}
-                  onToggleWebhook={(id) => {
-                    setWebhooks(prev => prev.map(w => w.id === id ? { ...w, enabled: !w.enabled } : w));
-                    toast.success("Webhook updated");
-                  }}
-                  onDeleteWebhook={(id) => {
-                    setWebhooks(prev => prev.filter(w => w.id !== id));
-                    toast.success("Webhook deleted");
-                  }}
-                  onUpdateWebhook={(id, data) => {
-                    setWebhooks(prev => prev.map(w => w.id === id ? { ...w, ...data } : w));
-                  }}
-                />
+                <AutomationV2View />
               </motion.div>
             )}
             {currentView === "skill_sets" && (
