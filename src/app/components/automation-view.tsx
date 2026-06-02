@@ -7,7 +7,7 @@ import {
   RefreshCw, ExternalLink, ChevronRight, ChevronLeft, Shield,
   Inbox, ListOrdered, GitBranch, FolderPlus, Folder, FolderOpen,
   ArrowUpDown, SlidersHorizontal, ChevronDown,
-  CornerDownRight, FileText, Sparkles, Mail
+  CornerDownRight, FileText
 } from "lucide-react";
 // motion/AnimatePresence removed — webhooks tab eliminated.
 import { toast } from "sonner";
@@ -114,187 +114,18 @@ const getTypeBadge = (a: AutomationRule): TypeBadgeInfo => {
   return { label: "Auto-Reply", icon: CornerDownRight, color: "text-blue-700", bg: "bg-blue-50", border: "border-blue-200" };
 };
 
-// ============================================================================
-// RICH TEMPLATE DATA — per-automation initial content for each builder
-// ============================================================================
-
-const BASIC_TEMPLATES: Record<string, Partial<BasicAutomationDraft>> = {
-  "auto-1": { name: "Welcome Message", triggerKind: "welcome", channels: ["whatsapp", "telegram"], message: "Welcome to 153 Collective! We're so glad you're here. Reply START to begin your journey of faith. We'll connect you with a mentor and guide you every step of the way.", quickReplies: ["Start", "Tell me more", "Prayer request"] },
-  "auto-2": { name: "VIP Tag Auto-Group", triggerKind: "event", eventName: "tag_added_vip", channels: ["whatsapp"], message: "You've been recognized as a VIP member! Thank you for your dedication. You now have access to exclusive resources and a senior mentor.", quickReplies: ["Thank you", "What's next?"] },
-  "auto-5": { name: "Keyword Auto-Reply", triggerKind: "keyword", keyword: "prayer", channels: ["whatsapp", "telegram", "sms"], message: "Thank you for reaching out about prayer. We'd love to pray with you. Share your prayer request and we'll have a prayer partner respond within 24 hours.", quickReplies: ["Submit request", "Pray for me", "Join prayer group"] },
-  "auto-6": { name: "New Contact Tag", triggerKind: "welcome", channels: ["whatsapp", "telegram", "sms", "web"], message: "Hello and welcome! You've been tagged as a new seeker. Over the next few days, we'll send you some helpful resources to get started on your faith journey.", quickReplies: ["Let's start", "Tell me more"] },
-  "auto-7": { name: "Default Reply", triggerKind: "default_reply", channels: ["whatsapp", "telegram"], message: "Thanks for your message! I'm not sure I understood — could you try one of these options? Reply HELP for assistance, PRAYER for prayer support, or STUDY to start a Bible study.", quickReplies: ["Help", "Prayer", "Bible Study"] },
-  "auto-18": { name: "Auto-Assign New Seekers", triggerKind: "event", eventName: "tag_added_engaged", channels: ["whatsapp"], message: "Great news! You've been matched with a personal mentor who will guide you on your faith journey. They'll reach out to you within 24 hours. Welcome aboard!", quickReplies: ["Thank you!", "Tell me more"] },
-  "auto-19": { name: "Mentor Activity Monitor", triggerKind: "event", eventName: "mentor_idle_5d", channels: ["whatsapp", "sms"], message: "Hey! We noticed your assigned seekers haven't heard from you in a few days. Your presence matters — even a quick check-in can make a big difference. Please reach out to your seekers today.", quickReplies: ["On it!", "Need help"] },
-  "auto-20": { name: "VIP Seeker Escalation", triggerKind: "event", eventName: "milestone_5_reached", channels: ["whatsapp"], message: "Congratulations! Your dedication has been incredible — you've reached 5 milestones! You're being connected with a senior mentor who can take you deeper. Expect a message from them soon.", quickReplies: ["Excited!", "What's next?"] },
-  "auto-23": { name: "Campaign Broadcast Follow-up", triggerKind: "event", eventName: "broadcast_engaged", channels: ["whatsapp", "telegram"], message: "Thanks for engaging with our recent message! We'd love to continue the conversation. Would you like to learn more about any of these topics?", quickReplies: ["Bible Study", "Mentorship", "Community Events"] },
-};
-
-const SEQUENCE_TEMPLATES: Record<string, Partial<SequenceDraft>> = {
-  "auto-3": { name: "Failed Delivery Re-route", trigger: "manual", channels: ["sms"], steps: [
-    { id: "s1", delay: { amount: 0, unit: "minutes" }, message: "We tried to reach you on WhatsApp but it didn't go through. Here's the message via SMS instead:", aiPersonalize: false, quickReplies: ["Got it", "Update my number"] },
-    { id: "s2", delay: { amount: 1, unit: "days" }, message: "Just checking — did you receive our SMS yesterday? Reply YES if all good, or UPDATE to change your preferred contact method.", aiPersonalize: false, quickReplies: ["Yes", "Update"] },
-  ] },
-  "auto-8": { name: "Foundations of Faith Drip", trigger: "intake_complete", channels: ["whatsapp", "telegram"], steps: [
-    { id: "s1", delay: { amount: 0, unit: "days" }, message: "Welcome to Foundations of Faith! Over the next week we'll walk through a few foundational ideas together. Today's topic: What is Faith?\n\nRead Hebrews 11:1 and reflect — what does faith mean to you?", aiPersonalize: false, quickReplies: ["Let's start", "Tell me more"] },
-    { id: "s2", delay: { amount: 1, unit: "days" }, message: "Day 2: The Power of Prayer\n\nPrayer is simply talking with God. There's no wrong way to do it. Try this: spend 5 quiet minutes today just talking to Him about your day.", aiPersonalize: false, quickReplies: ["Done", "Need help"] },
-    { id: "s3", delay: { amount: 2, unit: "days" }, message: "Day 3: Reading the Bible\n\nStart with the Gospel of John. Read chapter 1 today — it's a great starting point. What stands out to you?", aiPersonalize: true, quickReplies: ["I read it", "Remind me later"] },
-    { id: "s4", delay: { amount: 2, unit: "days" }, message: "Day 5: Community & Fellowship\n\nFaith grows stronger in community. Your mentor is here for you — reach out anytime. Together we grow!", aiPersonalize: false, quickReplies: ["Connect me", "I have questions"] },
-    { id: "s5", delay: { amount: 2, unit: "days" }, message: "Day 7: Your Next Steps\n\nYou've completed Foundations! Ready for the next course? Reply CONTINUE to start Deeper Study, or talk to your mentor about what's next.", aiPersonalize: true, quickReplies: ["Continue", "Talk to mentor"] },
-  ] },
-  "auto-9": { name: "Weekly Check-in Sequence", trigger: "match_accepted", channels: ["whatsapp"], steps: [
-    { id: "s1", delay: { amount: 0, unit: "days" }, message: "Week 1: Welcome to your accountability journey! Each week we'll check in with you. How are you doing today? What's one thing you'd like prayer for this week?", aiPersonalize: false, quickReplies: ["Doing great", "Need prayer", "Let's talk"] },
-    { id: "s2", delay: { amount: 7, unit: "days" }, message: "Week 2: How was your week? Did you get a chance to read the passages we discussed? Remember: progress, not perfection.", aiPersonalize: true, quickReplies: ["Yes!", "Not yet", "Questions"] },
-    { id: "s3", delay: { amount: 7, unit: "days" }, message: "Week 3: You're halfway through! This week, try sharing what you've learned with someone you trust. It's a great way to deepen your understanding.", aiPersonalize: false, quickReplies: ["Will do", "Need ideas"] },
-    { id: "s4", delay: { amount: 7, unit: "days" }, message: "Week 4: Final check-in! You've completed the accountability series. How has this journey been for you? Would you like to continue with another series?", aiPersonalize: true, quickReplies: ["Continue", "Take a break", "Talk to mentor"] },
-  ] },
-  "auto-10": { name: "Re-engagement Nudge", trigger: "manual", channels: ["whatsapp", "sms"], steps: [
-    { id: "s1", delay: { amount: 3, unit: "days" }, message: "Hey! We haven't heard from you in a while. Just wanted you to know we're here whenever you're ready. No pressure at all.", aiPersonalize: false, quickReplies: ["I'm here", "Need a break"] },
-    { id: "s2", delay: { amount: 4, unit: "days" }, message: "Thought you might enjoy this short devotional: 'Finding Peace in Busy Times'. It's a 3-minute read.", aiPersonalize: true, quickReplies: ["Send it", "Not now"] },
-    { id: "s3", delay: { amount: 7, unit: "days" }, message: "Just checking in one last time. Reply PAUSE if you need a break, or HI if you'd like to continue. Either way, we respect your choice.", aiPersonalize: false, quickReplies: ["Hi!", "Pause", "Unsubscribe"] },
-  ] },
-  "auto-14": { name: "Post-Baptism Follow-up", trigger: "tag_added", channels: ["whatsapp", "telegram"], steps: [
-    { id: "s1", delay: { amount: 0, unit: "days" }, message: "Congratulations on your baptism! This is a beautiful step in your faith journey. Today we celebrate with you!", aiPersonalize: false, quickReplies: ["Thank you!", "So happy"] },
-    { id: "s2", delay: { amount: 2, unit: "days" }, message: "How are you feeling after your baptism? Many people experience a mix of joy and new questions. That's completely normal!", aiPersonalize: true, quickReplies: ["Joyful", "Have questions", "Both"] },
-    { id: "s3", delay: { amount: 3, unit: "days" }, message: "Now that you've been baptized, here are some next steps to continue growing: join a small group, start a reading plan, or volunteer with us.", aiPersonalize: false, quickReplies: ["Small group", "Reading plan", "Volunteer"] },
-    { id: "s4", delay: { amount: 4, unit: "days" }, message: "Your mentor would love to hear about your baptism experience. Would you like us to schedule a call?", aiPersonalize: false, quickReplies: ["Yes please", "I'll reach out"] },
-    { id: "s5", delay: { amount: 5, unit: "days" }, message: "You've completed the post-baptism series! Your faith journey is just beginning. Remember — we're always here for you.", aiPersonalize: true, quickReplies: ["Thank you", "What's next?"] },
-  ] },
-  "auto-16": { name: "7-Day Inactive Nudge", trigger: "manual", channels: ["whatsapp", "sms"], steps: [
-    { id: "s1", delay: { amount: 0, unit: "days" }, message: "Hey! We noticed you've been quiet lately. Just want you to know — we're thinking of you and you're not alone on this journey.", aiPersonalize: false, quickReplies: ["I'm here", "Been busy"] },
-    { id: "s2", delay: { amount: 3, unit: "days" }, message: "Here's a quick encouragement for you today: 'Be still, and know that I am God.' — Psalm 46:10. Take a moment to breathe and reflect.", aiPersonalize: true, quickReplies: ["Thank you", "More please"] },
-    { id: "s3", delay: { amount: 4, unit: "days" }, message: "Last check-in: would you like to reconnect with your mentor, or would you prefer to take a break? Either way, you're welcome back anytime.", aiPersonalize: false, quickReplies: ["Reconnect", "Take a break"] },
-  ] },
-  "auto-21": { name: "Event Reminder Sequence", trigger: "tag_added", channels: ["whatsapp", "telegram", "sms"], steps: [
-    { id: "s1", delay: { amount: 0, unit: "days" }, message: "You're registered! We're excited to see you at the event. We'll send reminders as the date approaches. Mark your calendar!", aiPersonalize: false, quickReplies: ["Can't wait!", "Add to calendar"] },
-    { id: "s2", delay: { amount: 5, unit: "days" }, message: "Reminder: The event is in 5 days! Here's what to expect and how to prepare. Invite a friend — the more the merrier!", aiPersonalize: false, quickReplies: ["Share link", "I'll be there"] },
-    { id: "s3", delay: { amount: 4, unit: "days" }, message: "The event is TOMORROW! Here's the link to join: [event-link]. See you there!", aiPersonalize: false, quickReplies: ["See you!", "Running late"] },
-  ] },
-};
-
-// Journey templates — pre-built node/connection data for flow automations
-const JOURNEY_TEMPLATES: Record<string, { nodes: AutomationDraft["nodes"]; connections: AutomationDraft["connections"] }> = {
-  "auto-4": {
-    nodes: [
-      { id: "j1", type: "trigger", category: "message_received", label: "Message Received", description: "Any inbound message", icon: MessageSquare, iconColor: "text-blue-400", iconBg: "bg-blue-500/20", config: {}, position: { x: 0, y: 1 } },
-      { id: "j2", type: "action", category: "webhook_call", label: "Sync to CRM", description: "POST contact data", icon: Globe, iconColor: "text-violet-400", iconBg: "bg-violet-500/20", config: { url: "https://crm.acme.com/api/sync" }, position: { x: 1, y: 1 } },
-      { id: "j3", type: "action", category: "add_tag", label: "Tag: Synced", description: "Mark as synced", icon: Tag, iconColor: "text-amber-400", iconBg: "bg-amber-500/20", config: { tag: "crm-synced" }, position: { x: 2, y: 1 } },
-    ],
-    connections: [{ id: "c1", from: "j1", to: "j2" }, { id: "c2", from: "j2", to: "j3" }]
-  },
-  "auto-11": {
-    nodes: [
-      { id: "j1", type: "trigger", category: "contact_added", label: "New Seeker", description: "Contact created", icon: Users, iconColor: "text-emerald-400", iconBg: "bg-emerald-500/20", config: {}, position: { x: 0, y: 1 } },
-      { id: "j2", type: "action", category: "send_message", label: "Welcome", description: "Send welcome message", icon: Send, iconColor: "text-blue-400", iconBg: "bg-blue-500/20", config: { message: "Welcome! Are you exploring faith for the first time, or returning?" }, position: { x: 1, y: 1 } },
-      { id: "j3", type: "delay", category: "wait", label: "Wait 2 days", description: "48h", icon: Clock, iconColor: "text-teal-400", iconBg: "bg-teal-500/20", config: { hours: 48 }, position: { x: 2, y: 1 } },
-      { id: "j4", type: "condition", category: "if_else", label: "Replied?", description: "Check response", icon: GitBranch, iconColor: "text-orange-400", iconBg: "bg-orange-500/20", config: { condition: "has_replied" }, position: { x: 3, y: 1 } },
-      { id: "j5", type: "action", category: "assign_mentor", label: "Assign Mentor", description: "Auto-match", icon: Users, iconColor: "text-indigo-400", iconBg: "bg-indigo-500/20", config: {}, position: { x: 4, y: 0 } },
-      { id: "j6", type: "action", category: "send_message", label: "Start Lesson 1", description: "Begin course", icon: Send, iconColor: "text-blue-400", iconBg: "bg-blue-500/20", config: { message: "Great! Here's your first lesson: Understanding Grace." }, position: { x: 5, y: 0 } },
-      { id: "j7", type: "action", category: "send_message", label: "Nudge", description: "Gentle reminder", icon: Send, iconColor: "text-blue-400", iconBg: "bg-blue-500/20", config: { message: "Hey, just checking in! No pressure — reply anytime." }, position: { x: 4, y: 2 } },
-      { id: "j8", type: "action", category: "add_tag", label: "Tag: Dormant", description: "Mark inactive", icon: Tag, iconColor: "text-red-400", iconBg: "bg-red-500/20", config: { tag: "dormant" }, position: { x: 5, y: 2 } },
-    ],
-    connections: [
-      { id: "c1", from: "j1", to: "j2" }, { id: "c2", from: "j2", to: "j3" }, { id: "c3", from: "j3", to: "j4" },
-      { id: "c4", from: "j4", to: "j5", label: "Yes", type: "true" }, { id: "c5", from: "j4", to: "j7", label: "No", type: "false" },
-      { id: "c6", from: "j5", to: "j6" }, { id: "c7", from: "j7", to: "j8" },
-    ]
-  },
-  "auto-12": {
-    nodes: [
-      { id: "j1", type: "trigger", category: "tag_added", label: "Baptism Interest", description: "Tag added", icon: Tag, iconColor: "text-amber-400", iconBg: "bg-amber-500/20", config: { tag: "baptism-interest" }, position: { x: 0, y: 1 } },
-      { id: "j2", type: "action", category: "send_message", label: "Welcome to Path", description: "Intro message", icon: Send, iconColor: "text-blue-400", iconBg: "bg-blue-500/20", config: { message: "Welcome to the Baptism Preparation Path! Over 4 weeks, we'll guide you through what baptism means." }, position: { x: 1, y: 1 } },
-      { id: "j3", type: "delay", category: "wait", label: "Wait 7 days", description: "1 week", icon: Clock, iconColor: "text-teal-400", iconBg: "bg-teal-500/20", config: { hours: 168 }, position: { x: 2, y: 1 } },
-      { id: "j4", type: "action", category: "send_message", label: "Week 2 Lesson", description: "Why baptism?", icon: Send, iconColor: "text-blue-400", iconBg: "bg-blue-500/20", config: { message: "Week 2: Why Baptism? It's a public declaration of your faith." }, position: { x: 3, y: 1 } },
-      { id: "j5", type: "delay", category: "wait", label: "Wait 7 days", description: "1 week", icon: Clock, iconColor: "text-teal-400", iconBg: "bg-teal-500/20", config: { hours: 168 }, position: { x: 4, y: 1 } },
-      { id: "j6", type: "condition", category: "if_else", label: "Ready?", description: "Check readiness", icon: GitBranch, iconColor: "text-orange-400", iconBg: "bg-orange-500/20", config: { condition: "replied_ready" }, position: { x: 5, y: 1 } },
-      { id: "j7", type: "action", category: "add_tag", label: "Tag: Baptism Ready", description: "Schedule baptism", icon: Tag, iconColor: "text-emerald-400", iconBg: "bg-emerald-500/20", config: { tag: "baptism-ready" }, position: { x: 6, y: 0 } },
-      { id: "j8", type: "action", category: "send_message", label: "More Time", description: "No rush", icon: Send, iconColor: "text-blue-400", iconBg: "bg-blue-500/20", config: { message: "No rush! Take all the time you need. Your mentor is here whenever you're ready." }, position: { x: 6, y: 2 } },
-    ],
-    connections: [
-      { id: "c1", from: "j1", to: "j2" }, { id: "c2", from: "j2", to: "j3" }, { id: "c3", from: "j3", to: "j4" },
-      { id: "c4", from: "j4", to: "j5" }, { id: "c5", from: "j5", to: "j6" },
-      { id: "c6", from: "j6", to: "j7", label: "Yes", type: "true" }, { id: "c7", from: "j6", to: "j8", label: "No", type: "false" },
-    ]
-  },
-  "auto-13": {
-    nodes: [
-      { id: "j1", type: "trigger", category: "tag_added", label: "Partner Request", description: "Prayer partner requested", icon: Tag, iconColor: "text-amber-400", iconBg: "bg-amber-500/20", config: { tag: "partner-request" }, position: { x: 0, y: 1 } },
-      { id: "j2", type: "action", category: "ai_respond", label: "AI Match", description: "Find best match", icon: Sparkles, iconColor: "text-pink-400", iconBg: "bg-pink-500/20", config: {}, position: { x: 1, y: 1 } },
-      { id: "j3", type: "action", category: "send_message", label: "Intro Both", description: "Send intro to both partners", icon: Send, iconColor: "text-blue-400", iconBg: "bg-blue-500/20", config: { message: "You've been matched with a prayer partner! Reach out and introduce yourself." }, position: { x: 2, y: 1 } },
-      { id: "j4", type: "delay", category: "wait", label: "Wait 7 days", description: "1 week", icon: Clock, iconColor: "text-teal-400", iconBg: "bg-teal-500/20", config: { hours: 168 }, position: { x: 3, y: 1 } },
-      { id: "j5", type: "action", category: "send_message", label: "Weekly Check-in", description: "How's the partnership?", icon: Send, iconColor: "text-blue-400", iconBg: "bg-blue-500/20", config: { message: "How's your prayer partnership going? Share a praise or prayer request!" }, position: { x: 4, y: 1 } },
-    ],
-    connections: [
-      { id: "c1", from: "j1", to: "j2" }, { id: "c2", from: "j2", to: "j3" }, { id: "c3", from: "j3", to: "j4" }, { id: "c4", from: "j4", to: "j5" },
-    ]
-  },
-  "auto-15": {
-    nodes: [
-      { id: "j1", type: "trigger", category: "tag_added", label: "Engagement Drop", description: "Disengaged seeker", icon: Tag, iconColor: "text-amber-400", iconBg: "bg-amber-500/20", config: { tag: "engagement-drop" }, position: { x: 0, y: 1 } },
-      { id: "j2", type: "action", category: "send_message", label: "Gentle Nudge", description: "First outreach", icon: Send, iconColor: "text-blue-400", iconBg: "bg-blue-500/20", config: { message: "We've missed you! Just checking in to see how you're doing." }, position: { x: 1, y: 1 } },
-      { id: "j3", type: "delay", category: "wait", label: "Wait 5 days", description: "120h", icon: Clock, iconColor: "text-teal-400", iconBg: "bg-teal-500/20", config: { hours: 120 }, position: { x: 2, y: 1 } },
-      { id: "j4", type: "condition", category: "if_else", label: "Responded?", description: "Check reply", icon: GitBranch, iconColor: "text-orange-400", iconBg: "bg-orange-500/20", config: { condition: "has_replied" }, position: { x: 3, y: 1 } },
-      { id: "j5", type: "action", category: "assign_mentor", label: "Reassign Mentor", description: "Try different mentor", icon: Users, iconColor: "text-indigo-400", iconBg: "bg-indigo-500/20", config: {}, position: { x: 4, y: 0 } },
-      { id: "j6", type: "action", category: "ai_respond", label: "AI Personal Note", description: "Personalized message", icon: Sparkles, iconColor: "text-pink-400", iconBg: "bg-pink-500/20", config: {}, position: { x: 4, y: 2 } },
-      { id: "j7", type: "delay", category: "wait", label: "Wait 7 days", description: "168h", icon: Clock, iconColor: "text-teal-400", iconBg: "bg-teal-500/20", config: { hours: 168 }, position: { x: 5, y: 2 } },
-      { id: "j8", type: "action", category: "add_tag", label: "Tag: Unresponsive", description: "Final tag", icon: Tag, iconColor: "text-red-400", iconBg: "bg-red-500/20", config: { tag: "unresponsive" }, position: { x: 6, y: 2 } },
-    ],
-    connections: [
-      { id: "c1", from: "j1", to: "j2" }, { id: "c2", from: "j2", to: "j3" }, { id: "c3", from: "j3", to: "j4" },
-      { id: "c4", from: "j4", to: "j5", label: "Yes", type: "true" }, { id: "c5", from: "j4", to: "j6", label: "No", type: "false" },
-      { id: "c6", from: "j6", to: "j7" }, { id: "c7", from: "j7", to: "j8" },
-    ]
-  },
-  "auto-17": {
-    nodes: [
-      { id: "j1", type: "trigger", category: "tag_added", label: "Tag: Dormant", description: "Marked dormant", icon: Tag, iconColor: "text-amber-400", iconBg: "bg-amber-500/20", config: { tag: "dormant" }, position: { x: 0, y: 1 } },
-      { id: "j2", type: "delay", category: "wait", label: "Wait 7 days", description: "Cool down", icon: Clock, iconColor: "text-teal-400", iconBg: "bg-teal-500/20", config: { hours: 168 }, position: { x: 1, y: 1 } },
-      { id: "j3", type: "action", category: "ai_respond", label: "AI Personal Note", description: "Personalized re-engagement", icon: Sparkles, iconColor: "text-pink-400", iconBg: "bg-pink-500/20", config: {}, position: { x: 2, y: 1 } },
-      { id: "j4", type: "delay", category: "wait", label: "Wait 5 days", description: "120h", icon: Clock, iconColor: "text-teal-400", iconBg: "bg-teal-500/20", config: { hours: 120 }, position: { x: 3, y: 1 } },
-      { id: "j5", type: "condition", category: "if_else", label: "Re-engaged?", description: "Did they respond?", icon: GitBranch, iconColor: "text-orange-400", iconBg: "bg-orange-500/20", config: { condition: "has_replied" }, position: { x: 4, y: 1 } },
-      { id: "j6", type: "action", category: "remove_tag", label: "Remove Dormant", description: "Clear tag", icon: X, iconColor: "text-red-400", iconBg: "bg-red-500/20", config: { tag: "dormant" }, position: { x: 5, y: 0 } },
-      { id: "j7", type: "action", category: "add_tag", label: "Tag: Re-engaged", description: "Mark re-engaged", icon: Tag, iconColor: "text-emerald-400", iconBg: "bg-emerald-500/20", config: { tag: "re-engaged" }, position: { x: 6, y: 0 } },
-      { id: "j8", type: "action", category: "send_email", label: "Notify Mentor", description: "Alert mentor", icon: Mail, iconColor: "text-rose-400", iconBg: "bg-rose-500/20", config: {}, position: { x: 5, y: 2 } },
-      { id: "j9", type: "action", category: "add_tag", label: "Tag: Unresponsive", description: "Long-term inactive", icon: Tag, iconColor: "text-red-400", iconBg: "bg-red-500/20", config: { tag: "unresponsive" }, position: { x: 6, y: 2 } },
-    ],
-    connections: [
-      { id: "c1", from: "j1", to: "j2" }, { id: "c2", from: "j2", to: "j3" }, { id: "c3", from: "j3", to: "j4" }, { id: "c4", from: "j4", to: "j5" },
-      { id: "c5", from: "j5", to: "j6", label: "Yes", type: "true" }, { id: "c6", from: "j5", to: "j8", label: "No", type: "false" },
-      { id: "c7", from: "j6", to: "j7" }, { id: "c8", from: "j8", to: "j9" },
-    ]
-  },
-  "auto-22": {
-    nodes: [
-      { id: "j1", type: "trigger", category: "tag_added", label: "Event Attended", description: "Post-event trigger", icon: Tag, iconColor: "text-amber-400", iconBg: "bg-amber-500/20", config: { tag: "event-attended" }, position: { x: 0, y: 1 } },
-      { id: "j2", type: "action", category: "send_message", label: "Thank You", description: "Post-event thanks", icon: Send, iconColor: "text-blue-400", iconBg: "bg-blue-500/20", config: { message: "Thank you for attending! What was the most impactful moment for you?" }, position: { x: 1, y: 1 } },
-      { id: "j3", type: "delay", category: "wait", label: "Wait 1 day", description: "24h", icon: Clock, iconColor: "text-teal-400", iconBg: "bg-teal-500/20", config: { hours: 24 }, position: { x: 2, y: 1 } },
-      { id: "j4", type: "condition", category: "if_else", label: "Shared feedback?", description: "Check reply", icon: GitBranch, iconColor: "text-orange-400", iconBg: "bg-orange-500/20", config: { condition: "has_replied" }, position: { x: 3, y: 1 } },
-      { id: "j5", type: "action", category: "send_message", label: "Share Recording", description: "Send replay", icon: Send, iconColor: "text-blue-400", iconBg: "bg-blue-500/20", config: { message: "Here's the event recording — share it with a friend!" }, position: { x: 4, y: 0 } },
-      { id: "j6", type: "action", category: "add_to_group", label: "Add to Alumni", description: "Event alumni group", icon: Users, iconColor: "text-emerald-400", iconBg: "bg-emerald-500/20", config: {}, position: { x: 5, y: 0 } },
-      { id: "j7", type: "action", category: "send_message", label: "Nudge Feedback", description: "Ask again", icon: Send, iconColor: "text-blue-400", iconBg: "bg-blue-500/20", config: { message: "No worries! Here's the recording anyway. We'd still love your feedback." }, position: { x: 4, y: 2 } },
-      { id: "j8", type: "action", category: "add_to_group", label: "Add to Alumni", description: "Add anyway", icon: Users, iconColor: "text-emerald-400", iconBg: "bg-emerald-500/20", config: {}, position: { x: 5, y: 2 } },
-    ],
-    connections: [
-      { id: "c1", from: "j1", to: "j2" }, { id: "c2", from: "j2", to: "j3" }, { id: "c3", from: "j3", to: "j4" },
-      { id: "c4", from: "j4", to: "j5", label: "Yes", type: "true" }, { id: "c5", from: "j4", to: "j7", label: "No", type: "false" },
-      { id: "c6", from: "j5", to: "j6" }, { id: "c7", from: "j7", to: "j8" },
-    ]
-  },
-};
-
 // Wrapper that manages journey draft state so nodes persist across renders
 const JourneyCanvasWrapper = ({ rule, onBack, onPersist }: {
   rule?: AutomationRule;
   onBack: () => void;
   onPersist: (data: Partial<AutomationRule>) => void;
 }) => {
-  const tpl = rule ? JOURNEY_TEMPLATES[rule.id] : undefined;
   const [draft, setDraft] = useState<AutomationDraft>(() => ({
     id: rule?.id ?? `auto-${Date.now()}`,
     name: rule?.name ?? "New Journey",
     description: rule?.description ?? "Journey",
-    nodes: tpl?.nodes ?? [],
-    connections: tpl?.connections ?? [],
+    nodes: [],
+    connections: [],
     enabled: rule?.enabled ?? false,
     createdAt: rule?.createdAt ?? new Date().toISOString(),
     runs: rule?.triggerCount ?? 0,
@@ -343,12 +174,9 @@ export const AutomationView = ({
   const [isNewFolderOpen, setIsNewFolderOpen] = useState(false);
   const [newFolderName, setNewFolderName] = useState("");
   const [customFolders, setCustomFolders] = useState<{ id: string; name: string; automationIds: string[] }[]>([
-    { id: "folder-onboarding",   name: "Onboarding",          automationIds: ["auto-1", "auto-6", "auto-11"] },
-    { id: "folder-followups",    name: "Follow-ups",          automationIds: ["auto-10", "auto-15"] },
-    { id: "folder-discipleship", name: "Discipleship",        automationIds: ["auto-8", "auto-12", "auto-14"] },
-    { id: "folder-reengagement", name: "Re-engagement",       automationIds: ["auto-16", "auto-17"] },
-    { id: "folder-mentor-ops",   name: "Mentor Operations",   automationIds: ["auto-18", "auto-19", "auto-20"] },
-    { id: "folder-events",       name: "Events & Campaigns",  automationIds: ["auto-21", "auto-22", "auto-23"] },
+    { id: "folder-onboarding",   name: "Onboarding",    automationIds: ["auto-1", "auto-6", "auto-11"] },
+    { id: "folder-followups",    name: "Follow-ups",    automationIds: ["auto-10", "auto-15"] },
+    { id: "folder-discipleship", name: "Discipleship",  automationIds: ["auto-8", "auto-12", "auto-14"] },
   ]);
   const [movingRule, setMovingRule] = useState<AutomationRule | null>(null);
   // Filters
@@ -512,12 +340,11 @@ export const AutomationView = ({
     const statusFor = (r?: AutomationRule) => r ? (r.enabled ? "active" : r.triggerCount === 0 ? "draft" : "stopped") : "draft";
 
     if (kind === "basic") {
-      const tpl = rule ? BASIC_TEMPLATES[rule.id] : undefined;
       return (
         <BasicAutomationBuilder
           status={statusFor(rule)}
           runs={rule?.triggerCount}
-          initial={rule ? { id: rule.id, name: rule.name, ...tpl } : undefined}
+          initial={rule ? { id: rule.id, name: rule.name } : undefined}
           onBack={close}
           onSave={(draft) => persist({ name: draft.name, description: `Basic · ${draft.triggerKind}`, trigger: draft.triggerKind === "keyword" ? "message_received" : draft.triggerKind === "event" ? "webhook_received" : "message_received", action: "send_message", enabled: false })}
           onPublish={(draft) => { persist({ name: draft.name, description: `Basic · ${draft.triggerKind}`, trigger: draft.triggerKind === "keyword" ? "message_received" : draft.triggerKind === "event" ? "webhook_received" : "message_received", action: "send_message", enabled: true }); close(); }}
@@ -525,12 +352,11 @@ export const AutomationView = ({
       );
     }
     if (kind === "sequence") {
-      const tpl = rule ? SEQUENCE_TEMPLATES[rule.id] : undefined;
       return (
         <SequenceBuilder
           status={statusFor(rule)}
           runs={rule?.triggerCount}
-          initial={rule ? { id: rule.id, name: rule.name, ...tpl } : undefined}
+          initial={rule ? { id: rule.id, name: rule.name } : undefined}
           onBack={close}
           onSave={(draft) => persist({ name: draft.name, description: `Sequence · ${draft.steps.length} step${draft.steps.length === 1 ? "" : "s"}`, trigger: "scheduled", action: "send_message", enabled: false })}
           onPublish={(draft) => { persist({ name: draft.name, description: `Sequence · ${draft.steps.length} step${draft.steps.length === 1 ? "" : "s"}`, trigger: "scheduled", action: "send_message", enabled: true }); close(); }}
