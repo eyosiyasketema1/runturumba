@@ -880,7 +880,7 @@ export default function App() {
             {currentView === "dashboard" && (
               <motion.div key="dashboard" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.2 }}>
                 {/* Dashboard tab switcher — each tab is a separate dashboard view */}
-                <div className="px-6 pt-6 flex items-center justify-between gap-4">
+                <div className="px-6 pt-6 flex items-center gap-3">
                   <div
                     role="tablist"
                     aria-label="Dashboard views"
@@ -918,12 +918,12 @@ export default function App() {
                       <button
                         onClick={() => setIsOrgSwitcherOpen(v => !v)}
                         className={cn(
-                          "flex items-center gap-2 pl-3 pr-2.5 h-12 text-sm font-semibold rounded-full border transition-all",
+                          "flex items-center gap-2 pl-3 pr-2.5 h-12 text-sm font-semibold rounded-full border-2 transition-all",
                           viewingOrg
-                            ? "border-violet-300 bg-violet-50 text-violet-700 dark:border-violet-500/40 dark:bg-violet-500/10 dark:text-violet-300"
+                            ? "border-primary bg-primary/10 text-primary"
                             : isOrgSwitcherOpen
-                              ? "border-primary/40 bg-primary/5 text-foreground"
-                              : "border-border bg-muted/60 text-foreground hover:bg-muted"
+                              ? "border-primary bg-primary/5 text-foreground"
+                              : "border-primary/50 bg-muted/60 text-foreground hover:bg-primary/5 hover:border-primary"
                         )}
                       >
                         <Building2 className="w-4 h-4 shrink-0" />
