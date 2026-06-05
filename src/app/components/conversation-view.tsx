@@ -968,6 +968,17 @@ function ConversationContextPanel({
               ))}
             </div>
 
+            {/* AI Summary */}
+            <div className="px-6 py-4 border-b border-border">
+              <div className="flex items-center gap-2 mb-2">
+                <Sparkles className="w-3.5 h-3.5 text-violet-500" />
+                <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-wider">AI Summary</h3>
+              </div>
+              <p className="text-[13px] text-muted-foreground leading-relaxed">
+                {contact.name.split(" ")[0]} is {contact.maturity === "New Believer" ? "a recently converted new believer" : contact.maturity === "Growing" ? "a growing believer making steady progress" : contact.maturity === "Mature" ? "a mature believer with deep commitment" : contact.maturity === "Leader" ? "an emerging leader in the community" : contact.maturity === "Interested" ? "showing early interest in faith" : contact.maturity === "Pre-Seeker" ? "in the early exploration stage" : "an active seeker on a faith journey"}{contact.spiritualBackground ? ` with a ${contact.spiritualBackground.toLowerCase()} background` : ""}. {contact.engagement != null && contact.engagement >= 75 ? "Highly engaged and responsive to outreach." : contact.engagement != null && contact.engagement >= 50 ? "Moderately engaged with consistent participation." : contact.engagement != null ? "Engagement is low — consider a personalized check-in." : ""} {assignedMentor ? `Currently mentored by ${assignedMentor.name}.` : "Not yet assigned to a mentor."} {contact.preferredLanguage && contact.preferredLanguage !== "English" ? `Prefers communication in ${contact.preferredLanguage}.` : ""}
+              </p>
+            </div>
+
             {/* Contact details */}
             <div className="px-6 py-4 border-b border-border space-y-3">
               <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Details</h3>
