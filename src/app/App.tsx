@@ -138,6 +138,14 @@ export default function App() {
   const [viewingOrgId, setViewingOrgId] = useState<string | null>(null); // null = super org view
   const viewingOrg = viewingOrgId ? allTenants.find(t => t.id === viewingOrgId) ?? null : null;
 
+  // Deterministic seed per org for slicing mock data — gives each org a unique subset
+  const orgSeed = useMemo(() => {
+    if (!viewingOrgId) return 0;
+    let h = 0;
+    for (let i = 0; i < viewingOrgId.length; i++) h = (h * 31 + viewingOrgId.charCodeAt(i)) | 0;
+    return Math.abs(h);
+  }, [viewingOrgId]);
+
   // Data State
   const [contacts, setContacts] = useState<Contact[]>(INITIAL_CONTACTS);
   const [groups, setGroups] = useState<Group[]>(INITIAL_GROUPS);
@@ -163,6 +171,41 @@ export default function App() {
   const [gamificationStats, setGamificationStats] = useState<GamificationStats | null>(null);
   const [badgeDefinitions, setBadgeDefinitions] = useState<BadgeDefinition[]>([]);
   const [badgeAwards, setBadgeAwards] = useState<BadgeAward[]>([]);
+
+  // ─── Org-scoped stats: when viewing a child org, use its tenant stats + deterministic ratios ───
+  const orgStats = useMemo(() => {
+    if (!viewingOrgId || !viewingOrg) {
+      // Super org — use real array counts
+      return {
+        totalContacts: contacts.length,
+        activeSeekers: contacts.filter(c => c.discipleshipStatus === "Active").length,
+        messagesSent: messages.filter(m => m.status === "sent" || m.status === "delivered" || m.status === "read").length,
+        automationsLive: automations.filter(a => a.enabled).length,
+        mentors: users.filter(u => u.mentorProfile).length,
+        activeMatches: matches.filter(m => m.status === "Active" || m.status === "Accepted").length,
+        decisions: faithJourneys.filter(j => j.stage === "Decision").length,
+        activeJourneys: faithJourneys.filter(j => j.stage === "Active Journey" || j.stage === "Engaged").length,
+        leaders: contacts.filter(c => c.maturity === "Leader").length,
+      };
+    }
+    // Child org — derive from its tenant stats with deterministic ratios per org
+    const s = viewingOrg.stats;
+    const seed = orgSeed;
+    const ratio = (base: number, min: number, max: number) => {
+      const r = ((seed * 13 + base * 7) % 100) / 100;
+      return Math.round(min + r * (max - min));
+    };
+    const totalContacts = s.contacts;
+    const activeSeekers = ratio(1, Math.floor(totalContacts * 0.3), Math.floor(totalContacts * 0.7));
+    const messagesSent = s.messages;
+    const automationsLive = ratio(2, 3, Math.min(12, Math.floor(totalContacts / 50) + 3));
+    const mentors = Math.max(2, Math.floor(s.activeUsers * 0.6));
+    const activeMatches = ratio(3, Math.floor(mentors * 0.5), mentors * 2);
+    const decisions = ratio(4, Math.floor(activeSeekers * 0.05), Math.floor(activeSeekers * 0.15));
+    const activeJourneys = ratio(5, Math.floor(activeSeekers * 0.4), Math.floor(activeSeekers * 0.8));
+    const leaders = ratio(6, Math.floor(totalContacts * 0.02), Math.floor(totalContacts * 0.08));
+    return { totalContacts, activeSeekers, messagesSent, automationsLive, mentors, activeMatches, decisions, activeJourneys, leaders };
+  }, [viewingOrgId, viewingOrg, orgSeed, contacts, messages, automations, users, matches, faithJourneys]);
 
   // ─── Phase 1: Fetch real data from Supabase ────────────────────────────────
   useEffect(() => {
@@ -965,10 +1008,10 @@ export default function App() {
                   <MainDashboardView
                     onNavigate={handleNavigate}
                     stats={{
-                      totalContacts: contacts.length,
-                      activeSeekers: contacts.filter(c => c.discipleshipStatus === "Active").length,
-                      messagesSent: messages.filter(m => m.status === "sent" || m.status === "delivered" || m.status === "read").length,
-                      automationsLive: automations.filter(a => a.enabled).length,
+                      totalContacts: orgStats.totalContacts,
+                      activeSeekers: orgStats.activeSeekers,
+                      messagesSent: orgStats.messagesSent,
+                      automationsLive: orgStats.automationsLive,
                     }}
                   />
                 )}
@@ -976,10 +1019,10 @@ export default function App() {
                   <DiscipleshipDashboardView
                     onNavigate={handleNavigate}
                     stats={{
-                      activeSeekers: contacts.filter(c => c.discipleshipStatus === "Active").length,
-                      mentors: users.filter(u => u.mentorProfile).length,
-                      activeMatches: matches.filter(m => m.status === "Active" || m.status === "Accepted").length,
-                      decisions: faithJourneys.filter(j => j.stage === "Decision").length,
+                      activeSeekers: orgStats.activeSeekers,
+                      mentors: orgStats.mentors,
+                      activeMatches: orgStats.activeMatches,
+                      decisions: orgStats.decisions,
                     }}
                     gamificationStats={gamificationStats}
                   />
@@ -988,11 +1031,11 @@ export default function App() {
                   <VitalDashboardView
                     onNavigate={handleNavigate}
                     stats={{
-                      totalContacts: contacts.length,
-                      activeSeekers: contacts.filter(c => c.discipleshipStatus === "Active").length,
-                      activeJourneys: faithJourneys.filter(j => j.stage === "Active Journey" || j.stage === "Engaged").length,
-                      decisions: faithJourneys.filter(j => j.stage === "Decision").length,
-                      leaders: contacts.filter(c => c.maturity === "Leader").length,
+                      totalContacts: orgStats.totalContacts,
+                      activeSeekers: orgStats.activeSeekers,
+                      activeJourneys: orgStats.activeJourneys,
+                      decisions: orgStats.decisions,
+                      leaders: orgStats.leaders,
                     }}
                   />
                 )}
