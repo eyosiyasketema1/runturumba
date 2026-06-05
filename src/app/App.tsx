@@ -312,7 +312,7 @@ export default function App() {
       ]
     },
     {
-      label: "153 Collective",
+      label: "GCM Ethiopia",
       items: [
         { id: "growth_metrics",  name: "Growth Metrics",   icon: TrendingUp },
         { id: "vital_analytics", name: "VITAL Analytics",  icon: Activity },
@@ -660,8 +660,8 @@ export default function App() {
             </div>
             {(!isSidebarCollapsed || isMobileSidebarOpen) && (
               <div className="flex flex-col min-w-0">
-                <span className="text-sm font-bold text-sidebar-foreground tracking-tight truncate">{activeTenant.name}</span>
-                <span className="text-xs text-muted-foreground truncate">Workspace</span>
+                <span className="text-sm font-bold text-sidebar-foreground tracking-tight leading-tight">{activeTenant.name}</span>
+                <span className="text-[10px] text-muted-foreground">Workspace</span>
               </div>
             )}
           </div>
@@ -926,8 +926,8 @@ export default function App() {
                               : "border-border bg-muted/60 text-foreground hover:bg-muted"
                         )}
                       >
-                        <Building2 className="w-4 h-4" />
-                        <span className="max-w-[160px] truncate">{viewingOrg ? viewingOrg.name : activeTenant.name}</span>
+                        <Building2 className="w-4 h-4 shrink-0" />
+                        <span className="max-w-[200px] truncate">{viewingOrg ? viewingOrg.name : `${activeTenant.name} — Super Org`}</span>
                         <ChevronDown className={cn("w-3.5 h-3.5 text-muted-foreground transition-transform", isOrgSwitcherOpen && "rotate-180")} />
                       </button>
 
@@ -963,7 +963,7 @@ export default function App() {
                                       <span className={cn("text-sm font-semibold truncate", !viewingOrgId ? "text-primary" : "text-foreground")}>{activeTenant.name}</span>
                                       {!viewingOrgId && <Check className="w-4 h-4 text-primary shrink-0" />}
                                     </div>
-                                    <p className="text-xs text-muted-foreground">Headquarters · All data</p>
+                                    <p className="text-xs text-muted-foreground">Super Org · All data</p>
                                   </div>
                                 </button>
 

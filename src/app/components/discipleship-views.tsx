@@ -7113,7 +7113,7 @@ function ShareReportModal({
 }
 
 // ============================================================================
-// REPORTING (153 Collective)
+// REPORTING (GCM Ethiopia)
 // ============================================================================
 
 type ReportDim = "language" | "country" | "platform" | "gender" | "journey";
@@ -7195,7 +7195,7 @@ export function ReportingView() {
 
   const handleExportCsv = () => {
     const meta: (string | number)[][] = [
-      [`153 Collective Standard Report`],
+      [`GCM Ethiopia Standard Report`],
       [`Period: ${periodMeta.label}`],
       [`Generated: ${new Date().toISOString()}`],
       [],
@@ -7224,7 +7224,7 @@ export function ReportingView() {
   return (
     <div className="p-6 space-y-4">
       <PageHeader
-        title="153 Collective Reporting"
+        title="GCM Ethiopia Reporting"
         subtitle="Generate standardized reports for cross-ministry comparison"
         actions={(
           <>
@@ -7246,7 +7246,7 @@ export function ReportingView() {
       <div className="bg-slate-900 text-white rounded-xl p-6">
         <div className="flex items-center justify-between gap-4 flex-wrap mb-3">
           <div className="flex items-center gap-3 flex-wrap">
-            <Chip tone="blue" className="uppercase tracking-widest bg-blue-500/20 text-blue-200">153 Collective Standard</Chip>
+            <Chip tone="blue" className="uppercase tracking-widest bg-blue-500/20 text-blue-200">GCM Ethiopia Standard</Chip>
             <span className="text-xs text-slate-300 font-semibold uppercase tracking-wider">{periodMeta.label} Report</span>
           </div>
           <Button
@@ -7355,7 +7355,7 @@ export function ReportingView() {
       <ShareReportModal
         isOpen={isShareOpen}
         onClose={() => setIsShareOpen(false)}
-        reportName={`153 Collective ${periodMeta.label}`}
+        reportName={`GCM Ethiopia ${periodMeta.label}`}
         summary={`${totals.newJourneys.toLocaleString()} new journeys, ${totals.decisions.toLocaleString()} decisions, ${totals.active.toLocaleString()} active across ${totals.platforms} platforms.`}
       />
     </div>
@@ -7385,7 +7385,7 @@ function GenerateReportModal({
   };
 
   return (
-    <Modal isOpen={isOpen} onClose={close} title="Generate 153 Collective Report" size="lg">
+    <Modal isOpen={isOpen} onClose={close} title="Generate GCM Ethiopia Report" size="lg">
       {stage === "configure" && (
         <div className="space-y-4">
           <div className="flex items-start gap-3">
@@ -7393,7 +7393,7 @@ function GenerateReportModal({
               <Sparkles className="w-5 h-5" />
             </div>
             <div>
-              <p className="text-sm font-semibold text-foreground">Compile a 153 Collective standard report</p>
+              <p className="text-sm font-semibold text-foreground">Compile a GCM Ethiopia standard report</p>
               <p className="text-xs text-muted-foreground mt-0.5">
                 Period: <span className="font-semibold text-foreground">{period}</span>. Claude will pull metrics from your account, compose a narrative summary, and assemble the dimension breakdowns.
               </p>
@@ -7452,7 +7452,7 @@ function GenerateReportModal({
             </div>
           </div>
           <div className="rounded-md border border-border p-4">
-            <p className="text-sm font-bold text-foreground">153 Collective — {period}</p>
+            <p className="text-sm font-bold text-foreground">GCM Ethiopia — {period}</p>
             <p className="text-xs text-muted-foreground mt-0.5">Includes: {[includeNarrative && "narrative", includeCharts && "charts", includeRaw && "raw data"].filter(Boolean).join(" · ")}</p>
           </div>
           <div className="flex items-center justify-end gap-2 pt-3 border-t border-border">

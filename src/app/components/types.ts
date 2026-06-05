@@ -390,7 +390,7 @@ export const QUICK_TEMPLATES: QuickTemplate[] = [
 export const INITIAL_TENANTS: Tenant[] = [
   {
     id: "tenant-1",
-    name: "153 Collective",
+    name: "Great Commission Ministry Ethiopia",
     industry: "Ministry",
     plan: "enterprise",
     createdAt: "2024-06-01",
