@@ -940,12 +940,405 @@ const SecuritySection = () => {
   );
 };
 
-// --- Child Organizations Section ---
+// --- Child Organizations Section (Tabbed) ---
 
 const ORG_STATUS_CONFIG: Record<OrgStatus, { label: string; color: string; dot: string }> = {
   active: { label: "Active", color: "bg-emerald-50 text-emerald-700 border-emerald-200", dot: "bg-emerald-500" },
   suspended: { label: "Suspended", color: "bg-rose-50 text-rose-700 border-rose-200", dot: "bg-rose-500" },
   pending: { label: "Pending", color: "bg-amber-50 text-amber-700 border-amber-200", dot: "bg-amber-500" },
+};
+
+type OrgSettingsTab = "overview" | "rules" | "resources" | "activity";
+const ORG_TABS: { id: OrgSettingsTab; label: string; icon: any }[] = [
+  { id: "overview", label: "Overview", icon: Building2 },
+  { id: "rules", label: "Rules & Policies", icon: Shield },
+  { id: "resources", label: "Shared Resources", icon: Share2 },
+  { id: "activity", label: "Activity & Audit", icon: Eye },
+];
+
+// ── Rules & Policies Sub-tab ──
+const RulesPoliciesTab = () => {
+  const [contentRules, setContentRules] = useState({
+    requireDisclaimer: true, disclaimerText: "Message from GCM Ethiopia",
+    blockedKeywords: "spam, gambling, politics",
+    toneGuideline: "warm" as "formal" | "warm" | "casual",
+    enforceLanguage: false, requiredLanguages: "Amharic, English",
+  });
+  const [automationRules, setAutomationRules] = useState({
+    pushNewAutomations: true, lockEnforcedAutomations: true,
+    enforcedAutomations: ["Welcome Message", "7-Day Onboarding Sequence", "Post-Lesson Check-in"],
+  });
+  const [userRules, setUserRules] = useState({
+    maxUsersPerOrg: 25, requireAdmin: true, requireApprovalForInvites: false,
+    allowedRoles: ["admin", "agent", "viewer"] as string[],
+  });
+  const [dataRules, setDataRules] = useState({
+    retentionDays: 365, allowExport: true, allowBulkDelete: false,
+    auditLogRetention: 90, superOrgCanAccess: true,
+  });
+
+  return (
+    <div className="space-y-6">
+      {/* Content & Messaging */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-sm font-semibold flex items-center gap-2"><Mail className="w-4 h-4 text-blue-500" /> Content & Messaging Rules</CardTitle>
+          <CardDescription className="text-xs">Control messaging standards across all child organizations</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium text-foreground">Require Disclaimer</p>
+              <p className="text-xs text-muted-foreground">All outgoing messages must include a disclaimer footer</p>
+            </div>
+            <Switch checked={contentRules.requireDisclaimer} onCheckedChange={(v) => setContentRules(p => ({ ...p, requireDisclaimer: v }))} />
+          </div>
+          {contentRules.requireDisclaimer && (
+            <FormField label="Disclaimer Text">
+              <Input value={contentRules.disclaimerText} onChange={(e) => setContentRules(p => ({ ...p, disclaimerText: e.target.value }))} />
+            </FormField>
+          )}
+          <FormField label="Blocked Keywords" description="Comma-separated words that cannot appear in any outgoing message">
+            <Textarea value={contentRules.blockedKeywords} onChange={(e) => setContentRules(p => ({ ...p, blockedKeywords: e.target.value }))} rows={2} />
+          </FormField>
+          <FormField label="Tone Guideline">
+            <select value={contentRules.toneGuideline} onChange={(e) => setContentRules(p => ({ ...p, toneGuideline: e.target.value as any }))} className="h-10 w-full px-3 rounded-md border border-input bg-background text-sm">
+              <option value="formal">Formal</option>
+              <option value="warm">Warm & Friendly</option>
+              <option value="casual">Casual</option>
+            </select>
+          </FormField>
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium text-foreground">Enforce Language Requirements</p>
+              <p className="text-xs text-muted-foreground">Child orgs must support these languages</p>
+            </div>
+            <Switch checked={contentRules.enforceLanguage} onCheckedChange={(v) => setContentRules(p => ({ ...p, enforceLanguage: v }))} />
+          </div>
+          {contentRules.enforceLanguage && (
+            <FormField label="Required Languages">
+              <Input value={contentRules.requiredLanguages} onChange={(e) => setContentRules(p => ({ ...p, requiredLanguages: e.target.value }))} />
+            </FormField>
+          )}
+          <Button size="sm" onClick={() => toast.success("Content rules saved")}><Save className="w-3.5 h-3.5 mr-1.5" /> Save Rules</Button>
+        </CardContent>
+      </Card>
+
+      {/* Automation Rules */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-sm font-semibold flex items-center gap-2"><Zap className="w-4 h-4 text-amber-500" /> Automation Rules</CardTitle>
+          <CardDescription className="text-xs">Manage automations pushed to child organizations</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium text-foreground">Auto-Push New Automations</p>
+              <p className="text-xs text-muted-foreground">Newly created automations are automatically pushed to all child orgs</p>
+            </div>
+            <Switch checked={automationRules.pushNewAutomations} onCheckedChange={(v) => setAutomationRules(p => ({ ...p, pushNewAutomations: v }))} />
+          </div>
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium text-foreground">Lock Enforced Automations</p>
+              <p className="text-xs text-muted-foreground">Child orgs cannot edit or delete enforced automations (they can duplicate)</p>
+            </div>
+            <Switch checked={automationRules.lockEnforcedAutomations} onCheckedChange={(v) => setAutomationRules(p => ({ ...p, lockEnforcedAutomations: v }))} />
+          </div>
+          <div>
+            <p className="text-sm font-medium text-foreground mb-2">Enforced Automations</p>
+            <div className="space-y-2">
+              {automationRules.enforcedAutomations.map((name, i) => (
+                <div key={i} className="flex items-center justify-between px-3 py-2 bg-muted/30 border border-border rounded-md">
+                  <div className="flex items-center gap-2">
+                    <Zap className="w-3.5 h-3.5 text-amber-500" />
+                    <span className="text-sm font-medium text-foreground">{name}</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Badge variant="outline" className="text-[10px]">{automationRules.lockEnforcedAutomations ? "Locked" : "Customizable"}</Badge>
+                    <button onClick={() => { setAutomationRules(p => ({ ...p, enforcedAutomations: p.enforcedAutomations.filter((_, j) => j !== i) })); toast.success("Removed"); }} className="p-1 text-muted-foreground hover:text-destructive transition-colors"><X className="w-3 h-3" /></button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+          <Button size="sm" onClick={() => toast.success("Automation rules saved")}><Save className="w-3.5 h-3.5 mr-1.5" /> Save Rules</Button>
+        </CardContent>
+      </Card>
+
+      {/* User & Access Rules */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-sm font-semibold flex items-center gap-2"><Users className="w-4 h-4 text-indigo-500" /> User & Access Rules</CardTitle>
+          <CardDescription className="text-xs">Control team management in child organizations</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <FormField label="Max Team Members Per Org" description="Set to 0 for unlimited">
+            <Input type="number" min={0} value={userRules.maxUsersPerOrg} onChange={(e) => setUserRules(p => ({ ...p, maxUsersPerOrg: parseInt(e.target.value) || 0 }))} />
+          </FormField>
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium text-foreground">Require At Least 1 Admin</p>
+              <p className="text-xs text-muted-foreground">Every child org must have at least one admin user</p>
+            </div>
+            <Switch checked={userRules.requireAdmin} onCheckedChange={(v) => setUserRules(p => ({ ...p, requireAdmin: v }))} />
+          </div>
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium text-foreground">Require Approval for Invites</p>
+              <p className="text-xs text-muted-foreground">Child org invitations need super org approval before being sent</p>
+            </div>
+            <Switch checked={userRules.requireApprovalForInvites} onCheckedChange={(v) => setUserRules(p => ({ ...p, requireApprovalForInvites: v }))} />
+          </div>
+          <Button size="sm" onClick={() => toast.success("User rules saved")}><Save className="w-3.5 h-3.5 mr-1.5" /> Save Rules</Button>
+        </CardContent>
+      </Card>
+
+      {/* Data & Privacy */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-sm font-semibold flex items-center gap-2"><Lock className="w-4 h-4 text-rose-500" /> Data & Privacy Rules</CardTitle>
+          <CardDescription className="text-xs">Set data retention and access policies</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <FormField label="Data Retention Period (days)" description="How long contact and message data is kept">
+            <select value={dataRules.retentionDays} onChange={(e) => setDataRules(p => ({ ...p, retentionDays: parseInt(e.target.value) }))} className="h-10 w-full px-3 rounded-md border border-input bg-background text-sm">
+              <option value={30}>30 days</option><option value={60}>60 days</option><option value={90}>90 days</option>
+              <option value={180}>180 days</option><option value={365}>1 year</option><option value={730}>2 years</option>
+            </select>
+          </FormField>
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium text-foreground">Allow Data Export</p>
+              <p className="text-xs text-muted-foreground">Child orgs can export their contacts and message data</p>
+            </div>
+            <Switch checked={dataRules.allowExport} onCheckedChange={(v) => setDataRules(p => ({ ...p, allowExport: v }))} />
+          </div>
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium text-foreground">Allow Bulk Delete</p>
+              <p className="text-xs text-muted-foreground">Child orgs can bulk-delete contacts (dangerous)</p>
+            </div>
+            <Switch checked={dataRules.allowBulkDelete} onCheckedChange={(v) => setDataRules(p => ({ ...p, allowBulkDelete: v }))} />
+          </div>
+          <FormField label="Audit Log Retention (days)">
+            <select value={dataRules.auditLogRetention} onChange={(e) => setDataRules(p => ({ ...p, auditLogRetention: parseInt(e.target.value) }))} className="h-10 w-full px-3 rounded-md border border-input bg-background text-sm">
+              <option value={30}>30 days</option><option value={60}>60 days</option><option value={90}>90 days</option><option value={365}>1 year</option>
+            </select>
+          </FormField>
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium text-foreground">Super Org Full Access</p>
+              <p className="text-xs text-muted-foreground">Super org admins can view all child org data at any time</p>
+            </div>
+            <Switch checked={dataRules.superOrgCanAccess} onCheckedChange={(v) => setDataRules(p => ({ ...p, superOrgCanAccess: v }))} />
+          </div>
+          <Button size="sm" onClick={() => toast.success("Data rules saved")}><Save className="w-3.5 h-3.5 mr-1.5" /> Save Rules</Button>
+        </CardContent>
+      </Card>
+    </div>
+  );
+};
+
+// ── Shared Resources Sub-tab ──
+const MOCK_SHARED_RESOURCES = [
+  { id: "r1", name: "Welcome Message", type: "automation" as const, status: "pushed" as const, pushedTo: 5, lastPushed: "2026-05-20" },
+  { id: "r2", name: "7-Day Onboarding Sequence", type: "automation" as const, status: "pushed" as const, pushedTo: 5, lastPushed: "2026-05-18" },
+  { id: "r3", name: "Post-Lesson Check-in", type: "automation" as const, status: "pushed" as const, pushedTo: 3, lastPushed: "2026-05-15" },
+  { id: "r4", name: "Foundations of Faith Drip", type: "automation" as const, status: "not_shared" as const, pushedTo: 0, lastPushed: "" },
+  { id: "r5", name: "Weekly Digest Template", type: "template" as const, status: "pushed" as const, pushedTo: 5, lastPushed: "2026-05-22" },
+  { id: "r6", name: "Prayer Request Reply", type: "template" as const, status: "pushed" as const, pushedTo: 4, lastPushed: "2026-05-10" },
+  { id: "r7", name: "What is Faith?", type: "content" as const, status: "pushed" as const, pushedTo: 5, lastPushed: "2026-04-28" },
+  { id: "r8", name: "Understanding Grace", type: "content" as const, status: "not_shared" as const, pushedTo: 0, lastPushed: "" },
+  { id: "r9", name: "Baptism Preparation Guide", type: "content" as const, status: "pushed" as const, pushedTo: 3, lastPushed: "2026-05-05" },
+  { id: "r10", name: "Mentor Onboarding Checklist", type: "template" as const, status: "not_shared" as const, pushedTo: 0, lastPushed: "" },
+];
+
+const SharedResourcesTab = ({ childOrgCount }: { childOrgCount: number }) => {
+  const [resources, setResources] = useState(MOCK_SHARED_RESOURCES);
+  const [filterType, setFilterType] = useState<"all" | "automation" | "template" | "content">("all");
+
+  const filtered = filterType === "all" ? resources : resources.filter(r => r.type === filterType);
+  const typeIcon = (t: string) => t === "automation" ? Zap : t === "template" ? Mail : BookOpen;
+  const typeColor = (t: string) => t === "automation" ? "text-amber-500" : t === "template" ? "text-blue-500" : "text-emerald-500";
+
+  const handlePush = (id: string) => {
+    setResources(prev => prev.map(r => r.id === id ? { ...r, status: "pushed" as const, pushedTo: childOrgCount, lastPushed: new Date().toISOString().slice(0, 10) } : r));
+    toast.success("Resource pushed to all child organizations");
+  };
+  const handleUnpush = (id: string) => {
+    setResources(prev => prev.map(r => r.id === id ? { ...r, status: "not_shared" as const, pushedTo: 0, lastPushed: "" } : r));
+    toast.success("Resource unpushed");
+  };
+
+  return (
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <h3 className="text-base font-semibold text-foreground">Shared Resources</h3>
+          <p className="text-sm text-muted-foreground mt-0.5">Push automations, templates, and content to child organizations</p>
+        </div>
+        <select value={filterType} onChange={(e) => setFilterType(e.target.value as any)} className="h-9 px-3 rounded-md border border-input bg-background text-sm">
+          <option value="all">All types</option><option value="automation">Automations</option><option value="template">Templates</option><option value="content">Content</option>
+        </select>
+      </div>
+
+      <div className="grid grid-cols-3 gap-3">
+        {[
+          { label: "Pushed", value: resources.filter(r => r.status === "pushed").length, color: "text-emerald-600" },
+          { label: "Not Shared", value: resources.filter(r => r.status === "not_shared").length, color: "text-muted-foreground" },
+          { label: "Total Resources", value: resources.length, color: "text-primary" },
+        ].map(s => (
+          <div key={s.label} className="bg-muted/30 border border-border rounded-lg px-4 py-3 text-center">
+            <p className={cn("text-xl font-bold", s.color)}>{s.value}</p>
+            <p className="text-[11px] text-muted-foreground">{s.label}</p>
+          </div>
+        ))}
+      </div>
+
+      <Card>
+        <CardContent className="p-0">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b border-border bg-muted/30">
+                <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground">Resource</th>
+                <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground">Type</th>
+                <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground">Status</th>
+                <th className="px-4 py-3 text-right text-xs font-semibold text-muted-foreground">Pushed To</th>
+                <th className="px-4 py-3 text-right text-xs font-semibold text-muted-foreground">Last Pushed</th>
+                <th className="px-4 py-3 w-24"></th>
+              </tr>
+            </thead>
+            <tbody>
+              {filtered.map(res => {
+                const TIcon = typeIcon(res.type);
+                return (
+                  <tr key={res.id} className="border-b border-border last:border-0 hover:bg-muted/20 transition-colors">
+                    <td className="px-4 py-3">
+                      <div className="flex items-center gap-2.5">
+                        <TIcon className={cn("w-4 h-4 shrink-0", typeColor(res.type))} />
+                        <span className="font-medium text-foreground">{res.name}</span>
+                      </div>
+                    </td>
+                    <td className="px-4 py-3"><Badge variant="outline" className="text-[10px] capitalize">{res.type}</Badge></td>
+                    <td className="px-4 py-3">
+                      {res.status === "pushed"
+                        ? <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-emerald-700"><CheckCircle2 className="w-3 h-3" /> Pushed</span>
+                        : <span className="text-xs text-muted-foreground">Not shared</span>}
+                    </td>
+                    <td className="px-4 py-3 text-right font-medium text-foreground tabular-nums">{res.pushedTo > 0 ? `${res.pushedTo} orgs` : "—"}</td>
+                    <td className="px-4 py-3 text-right text-xs text-muted-foreground">{res.lastPushed || "—"}</td>
+                    <td className="px-4 py-3 text-right">
+                      {res.status === "pushed"
+                        ? <Button size="sm" variant="outline" className="h-7 text-xs" onClick={() => handleUnpush(res.id)}>Unpush</Button>
+                        : <Button size="sm" className="h-7 text-xs" onClick={() => handlePush(res.id)}>Push to All</Button>}
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </CardContent>
+      </Card>
+    </div>
+  );
+};
+
+// ── Activity & Audit Sub-tab ──
+const MOCK_AUDIT_LOG = [
+  { id: "a1", action: "org_created", description: "Created Dire Dawa Chapter", actor: "Admin", orgName: "Dire Dawa Chapter", timestamp: "2025-06-01T10:30:00Z" },
+  { id: "a2", action: "rule_changed", description: "Updated content disclaimer text", actor: "Admin", orgName: "All orgs", timestamp: "2026-05-28T14:15:00Z" },
+  { id: "a3", action: "automation_pushed", description: "Pushed 'Welcome Message' to all child orgs", actor: "Admin", orgName: "All orgs", timestamp: "2026-05-20T09:00:00Z" },
+  { id: "a4", action: "org_suspended", description: "Suspended Mekelle Chapter — restructuring", actor: "Admin", orgName: "Mekelle Chapter", timestamp: "2026-05-15T11:45:00Z" },
+  { id: "a5", action: "user_added", description: "Added mentor 'Desta Hailu' to Hawassa Chapter", actor: "Admin", orgName: "Hawassa Chapter", timestamp: "2026-05-12T08:20:00Z" },
+  { id: "a6", action: "template_pushed", description: "Pushed 'Weekly Digest Template' to all orgs", actor: "Admin", orgName: "All orgs", timestamp: "2026-05-10T16:30:00Z" },
+  { id: "a7", action: "org_activated", description: "Activated Bahir Dar Chapter", actor: "Admin", orgName: "Bahir Dar Chapter", timestamp: "2026-04-20T13:00:00Z" },
+  { id: "a8", action: "rule_changed", description: "Set data retention to 1 year for all orgs", actor: "Admin", orgName: "All orgs", timestamp: "2026-04-15T10:00:00Z" },
+  { id: "a9", action: "content_pushed", description: "Pushed 'What is Faith?' lesson to all orgs", actor: "Admin", orgName: "All orgs", timestamp: "2026-04-10T09:30:00Z" },
+  { id: "a10", action: "org_created", description: "Created Bahir Dar Chapter", actor: "Admin", orgName: "Bahir Dar Chapter", timestamp: "2025-03-20T10:00:00Z" },
+  { id: "a11", action: "org_created", description: "Created Hawassa Chapter", actor: "Admin", orgName: "Hawassa Chapter", timestamp: "2025-01-10T09:00:00Z" },
+  { id: "a12", action: "org_created", description: "Created Addis Ababa Chapter", actor: "Admin", orgName: "Addis Ababa Chapter", timestamp: "2024-09-15T10:00:00Z" },
+];
+
+const ACTION_ICONS: Record<string, { icon: any; color: string }> = {
+  org_created: { icon: Plus, color: "text-emerald-500" },
+  org_suspended: { icon: PauseCircle, color: "text-rose-500" },
+  org_activated: { icon: PlayCircle, color: "text-emerald-500" },
+  rule_changed: { icon: Shield, color: "text-amber-500" },
+  automation_pushed: { icon: Zap, color: "text-blue-500" },
+  template_pushed: { icon: Mail, color: "text-violet-500" },
+  content_pushed: { icon: BookOpen, color: "text-teal-500" },
+  user_added: { icon: User, color: "text-indigo-500" },
+};
+
+const ActivityAuditTab = () => {
+  const [filterAction, setFilterAction] = useState<string>("all");
+
+  const filtered = filterAction === "all" ? MOCK_AUDIT_LOG : MOCK_AUDIT_LOG.filter(a => a.action === filterAction);
+
+  return (
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <h3 className="text-base font-semibold text-foreground">Activity & Audit Log</h3>
+          <p className="text-sm text-muted-foreground mt-0.5">Track all super org actions across child organizations</p>
+        </div>
+        <select value={filterAction} onChange={(e) => setFilterAction(e.target.value)} className="h-9 px-3 rounded-md border border-input bg-background text-sm">
+          <option value="all">All actions</option>
+          <option value="org_created">Org created</option>
+          <option value="org_suspended">Org suspended</option>
+          <option value="org_activated">Org activated</option>
+          <option value="rule_changed">Rule changed</option>
+          <option value="automation_pushed">Automation pushed</option>
+          <option value="template_pushed">Template pushed</option>
+          <option value="content_pushed">Content pushed</option>
+          <option value="user_added">User added</option>
+        </select>
+      </div>
+
+      <Card>
+        <CardContent className="p-0">
+          <div className="divide-y divide-border">
+            {filtered.length === 0 ? (
+              <div className="px-4 py-12 text-center text-muted-foreground">No activity matching this filter.</div>
+            ) : filtered.map(entry => {
+              const cfg = ACTION_ICONS[entry.action] || { icon: AlertCircle, color: "text-muted-foreground" };
+              const AIcon = cfg.icon;
+              const date = new Date(entry.timestamp);
+              const timeAgo = (() => {
+                const diff = Date.now() - date.getTime();
+                const days = Math.floor(diff / 86400000);
+                if (days === 0) return "Today";
+                if (days === 1) return "Yesterday";
+                if (days < 30) return `${days}d ago`;
+                if (days < 365) return `${Math.floor(days / 30)}mo ago`;
+                return `${Math.floor(days / 365)}y ago`;
+              })();
+              return (
+                <div key={entry.id} className="flex items-start gap-3 px-4 py-3 hover:bg-muted/20 transition-colors">
+                  <div className={cn("w-8 h-8 rounded-lg flex items-center justify-center shrink-0 bg-muted/50 mt-0.5")}>
+                    <AIcon className={cn("w-4 h-4", cfg.color)} />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-foreground">{entry.description}</p>
+                    <div className="flex items-center gap-2 mt-0.5">
+                      <span className="text-xs text-muted-foreground">{entry.actor}</span>
+                      <span className="text-xs text-muted-foreground">·</span>
+                      <span className="text-xs text-muted-foreground">{entry.orgName}</span>
+                    </div>
+                  </div>
+                  <div className="text-right shrink-0">
+                    <p className="text-xs font-medium text-muted-foreground">{timeAgo}</p>
+                    <p className="text-[10px] text-muted-foreground/60">{date.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}</p>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
 };
 
 const ChildOrgsSection = ({
@@ -958,6 +1351,7 @@ const ChildOrgsSection = ({
   onDeleteChildOrg?: (id: string) => void;
   onViewChildOrg?: (id: string) => void;
 }) => {
+  const [activeOrgTab, setActiveOrgTab] = useState<OrgSettingsTab>("overview");
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [newOrg, setNewOrg] = useState({ name: "", region: "", description: "" });
   const [selectedOrg, setSelectedOrg] = useState<Tenant | null>(null);
@@ -1097,11 +1491,48 @@ const ChildOrgsSection = ({
     <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.25 }} className="space-y-6">
       <div className="flex items-center justify-between">
         <SectionHeader title="Organizations" description="Manage your sub-organizations and chapters." />
-        <Button size="sm" onClick={() => setIsCreateOpen(true)}>
-          <Plus className="w-3.5 h-3.5 mr-1.5" /> New Organization
-        </Button>
+        {activeOrgTab === "overview" && (
+          <Button size="sm" onClick={() => setIsCreateOpen(true)}>
+            <Plus className="w-3.5 h-3.5 mr-1.5" /> New Organization
+          </Button>
+        )}
       </div>
-      <Separator />
+
+      {/* Tab bar */}
+      <div className="flex items-center gap-1 border-b border-border">
+        {ORG_TABS.map(tab => {
+          const isActive = activeOrgTab === tab.id;
+          const TabIcon = tab.icon;
+          return (
+            <button
+              key={tab.id}
+              onClick={() => setActiveOrgTab(tab.id)}
+              className={cn(
+                "flex items-center gap-2 px-4 py-2.5 text-sm font-medium border-b-2 transition-all -mb-px",
+                isActive
+                  ? "border-primary text-primary"
+                  : "border-transparent text-muted-foreground hover:text-foreground hover:border-border"
+              )}
+            >
+              <TabIcon className="w-3.5 h-3.5" />
+              {tab.label}
+            </button>
+          );
+        })}
+      </div>
+
+      {/* Rules & Policies tab */}
+      {activeOrgTab === "rules" && <RulesPoliciesTab />}
+
+      {/* Shared Resources tab */}
+      {activeOrgTab === "resources" && <SharedResourcesTab childOrgCount={childOrgs.length} />}
+
+      {/* Activity & Audit tab */}
+      {activeOrgTab === "activity" && <ActivityAuditTab />}
+
+      {/* Overview tab — original content below */}
+      {activeOrgTab === "overview" && (<>
+
 
       {/* Summary stats */}
       <div className="grid grid-cols-4 gap-3">
@@ -1182,6 +1613,7 @@ const ChildOrgsSection = ({
           </table>
         </CardContent>
       </Card>
+      </>)}
 
       {/* Create org dialog */}
       {isCreateOpen && (
