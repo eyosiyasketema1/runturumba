@@ -601,28 +601,29 @@ const CampaignBuilder = ({ campaign, onBack, onSave }: {
         </div>
       </div>
 
-      {/* Builder tabs */}
-      <div className="px-6 border-b border-border bg-muted/20 shrink-0">
-        <div className="flex items-center justify-center gap-1">
-          {([
-            { id: "questions" as const, label: "Questions", icon: ClipboardList },
-            { id: "settings" as const, label: "Settings", icon: Settings2 },
-            { id: "outcomes" as const, label: "Outcomes", icon: Zap },
-            { id: "share" as const, label: "Share", icon: Link2 },
-          ]).map(tab => (
-            <button key={tab.id} onClick={() => setBuilderTab(tab.id)}
-              className={cn("flex items-center gap-2 px-4 py-2.5 text-sm font-medium border-b-2 transition-all -mb-px",
-                builderTab === tab.id ? "border-primary text-primary" : "border-transparent text-muted-foreground hover:text-foreground")}>
-              <tab.icon className="w-3.5 h-3.5" /> {tab.label}
-            </button>
-          ))}
-        </div>
-      </div>
-
       {/* Content */}
       <div className="flex-1 overflow-hidden flex">
         {/* Left: Editor */}
-        <div className="flex-1 overflow-y-auto p-6">
+        <div className="flex-1 overflow-y-auto flex flex-col">
+          {/* Builder tabs — inside editor column so they center with content */}
+          <div className="border-b border-border bg-muted/20 shrink-0">
+            <div className="flex items-center justify-center gap-1">
+              {([
+                { id: "questions" as const, label: "Questions", icon: ClipboardList },
+                { id: "settings" as const, label: "Settings", icon: Settings2 },
+                { id: "outcomes" as const, label: "Outcomes", icon: Zap },
+                { id: "share" as const, label: "Share", icon: Link2 },
+              ]).map(tab => (
+                <button key={tab.id} onClick={() => setBuilderTab(tab.id)}
+                  className={cn("flex items-center gap-2 px-4 py-2.5 text-sm font-medium border-b-2 transition-all -mb-px",
+                    builderTab === tab.id ? "border-primary text-primary" : "border-transparent text-muted-foreground hover:text-foreground")}>
+                  <tab.icon className="w-3.5 h-3.5" /> {tab.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="flex-1 overflow-y-auto p-6">
           {builderTab === "questions" && (
             <div className="space-y-4 max-w-2xl mx-auto">
               <h3 className="text-base font-semibold text-foreground">Questions ({draft.questions.length})</h3>
@@ -988,6 +989,7 @@ const CampaignBuilder = ({ campaign, onBack, onSave }: {
               </Card>
             </div>
           )}
+          </div>
         </div>
 
         {/* Right: Live Preview */}
