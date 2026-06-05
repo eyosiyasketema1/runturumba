@@ -371,24 +371,23 @@ const CampaignBuilder = ({ campaign, onBack, onSave }: {
             <div className="space-y-4 max-w-2xl">
               <div className="flex items-center justify-between">
                 <h3 className="text-base font-semibold text-foreground">Questions ({draft.questions.length})</h3>
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button size="sm"><Plus className="w-3.5 h-3.5 mr-1.5" /> Add Question</Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end" className="w-48">
-                    {(Object.entries(QUESTION_TYPE_CONFIG) as [QuestionType, typeof QUESTION_TYPE_CONFIG[QuestionType]][]).map(([type, cfg]) => (
-                      <DropdownMenuItem key={type} onSelect={() => addQuestion(type)}>
-                        <cfg.icon className={cn("w-3.5 h-3.5", cfg.color)} /> {cfg.label}
-                      </DropdownMenuItem>
-                    ))}
-                  </DropdownMenuContent>
-                </DropdownMenu>
+              </div>
+              {/* Add question type buttons */}
+              <div className="flex items-center gap-2 flex-wrap">
+                {(Object.entries(QUESTION_TYPE_CONFIG) as [QuestionType, typeof QUESTION_TYPE_CONFIG[QuestionType]][]).map(([type, cfg]) => {
+                  const BtnIcon = cfg.icon;
+                  return (
+                    <Button key={type} size="sm" variant="outline" onClick={() => addQuestion(type)} className="gap-1.5">
+                      <BtnIcon className={cn("w-3.5 h-3.5", cfg.color)} /> {cfg.label}
+                    </Button>
+                  );
+                })}
               </div>
               {draft.questions.length === 0 ? (
                 <div className="text-center py-16 border-2 border-dashed border-border rounded-xl">
                   <ClipboardList className="w-10 h-10 text-muted-foreground mx-auto mb-3" />
                   <p className="text-sm font-medium text-foreground">No questions yet</p>
-                  <p className="text-xs text-muted-foreground mt-1">Add your first question to build the campaign</p>
+                  <p className="text-xs text-muted-foreground mt-1">Click a question type above to add your first question</p>
                 </div>
               ) : (
                 <div className="space-y-2">
