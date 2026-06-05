@@ -126,6 +126,7 @@ export default function App() {
   const [isNewMessageFlowOpen, setIsNewMessageFlowOpen] = useState(false);
   const [viewMode, setViewMode] = useState<ViewRole>("super_admin");
   const [isRoleMenuOpen, setIsRoleMenuOpen] = useState(false);
+  const [isOrgSwitcherOpen, setIsOrgSwitcherOpen] = useState(false);
   const [isAllActivityOpen, setIsAllActivityOpen] = useState(false);
   const [isOnboarding, setIsOnboarding] = useState(() => {
     return localStorage.getItem("turumba_onboarding_complete") !== "true";
@@ -617,9 +618,7 @@ export default function App() {
             {(!isSidebarCollapsed || isMobileSidebarOpen) && (
               <div className="flex flex-col min-w-0">
                 <span className="text-sm font-bold text-sidebar-foreground tracking-tight truncate">{activeTenant.name}</span>
-                <span className="text-xs text-muted-foreground truncate">
-                  {viewingOrg ? `Viewing: ${viewingOrg.name}` : "Workspace"}
-                </span>
+                <span className="text-xs text-muted-foreground truncate">Workspace</span>
               </div>
             )}
           </div>
@@ -702,6 +701,99 @@ export default function App() {
           </div>
 
           <div className="flex items-center gap-2">
+            {/* Org Switcher — pill dropdown on far right */}
+            {activeTenant.orgRole === "super" && childOrgs.length > 0 && (
+              <div className="relative">
+                <button
+                  onClick={() => setIsOrgSwitcherOpen(v => !v)}
+                  className={cn(
+                    "flex items-center gap-2 pl-2.5 pr-2 py-1.5 text-xs font-semibold rounded-full border transition-all",
+                    viewingOrg
+                      ? "border-violet-300 bg-violet-50 text-violet-700 dark:border-violet-500/40 dark:bg-violet-500/10 dark:text-violet-300"
+                      : isOrgSwitcherOpen
+                        ? "border-primary/40 bg-primary/5 text-foreground"
+                        : "border-border bg-muted/40 text-foreground hover:bg-muted"
+                  )}
+                >
+                  <Building2 className="w-3.5 h-3.5" />
+                  <span className="max-w-[140px] truncate">{viewingOrg ? viewingOrg.name : activeTenant.name}</span>
+                  <ChevronDown className={cn("w-3 h-3 text-muted-foreground transition-transform", isOrgSwitcherOpen && "rotate-180")} />
+                </button>
+
+                <AnimatePresence>
+                  {isOrgSwitcherOpen && (
+                    <>
+                      <div className="fixed inset-0 z-30" onClick={() => setIsOrgSwitcherOpen(false)} />
+                      <motion.div
+                        initial={{ opacity: 0, y: -4 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -4 }}
+                        transition={{ duration: 0.15 }}
+                        className="absolute right-0 mt-2 w-72 bg-popover border border-border rounded-lg shadow-lg z-40 overflow-hidden"
+                      >
+                        <div className="px-3 py-2.5 border-b border-border bg-muted/30">
+                          <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Switch Organization</p>
+                          <p className="text-xs text-muted-foreground mt-0.5">View data as a specific organization</p>
+                        </div>
+                        <div className="py-1 max-h-[320px] overflow-y-auto">
+                          {/* Super org (HQ) */}
+                          <button
+                            onClick={() => { setViewingOrgId(null); setIsOrgSwitcherOpen(false); }}
+                            className={cn(
+                              "w-full flex items-center gap-3 px-3 py-2.5 text-left transition-colors",
+                              !viewingOrgId ? "bg-primary/5" : "hover:bg-muted/50"
+                            )}
+                          >
+                            <div className={cn("w-8 h-8 rounded-lg flex items-center justify-center shrink-0", !viewingOrgId ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground")}>
+                              <Building2 className="w-4 h-4" />
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center justify-between gap-2">
+                                <span className={cn("text-sm font-semibold truncate", !viewingOrgId ? "text-primary" : "text-foreground")}>{activeTenant.name}</span>
+                                {!viewingOrgId && <Check className="w-4 h-4 text-primary shrink-0" />}
+                              </div>
+                              <p className="text-xs text-muted-foreground">Headquarters · All data</p>
+                            </div>
+                          </button>
+
+                          {/* Divider */}
+                          <div className="mx-3 my-1 border-t border-border" />
+
+                          {/* Child orgs */}
+                          {childOrgs.map(org => {
+                            const isSelected = viewingOrgId === org.id;
+                            const statusDot = org.orgStatus === "active" ? "bg-emerald-500" : org.orgStatus === "suspended" ? "bg-rose-500" : "bg-amber-500";
+                            return (
+                              <button
+                                key={org.id}
+                                onClick={() => { setViewingOrgId(org.id); setIsOrgSwitcherOpen(false); }}
+                                className={cn(
+                                  "w-full flex items-center gap-3 px-3 py-2.5 text-left transition-colors",
+                                  isSelected ? "bg-primary/5" : "hover:bg-muted/50"
+                                )}
+                              >
+                                <div className={cn("w-8 h-8 rounded-lg flex items-center justify-center shrink-0 relative", isSelected ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground")}>
+                                  <Building2 className="w-4 h-4" />
+                                  <span className={cn("absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full border-2 border-popover", statusDot)} />
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                  <div className="flex items-center justify-between gap-2">
+                                    <span className={cn("text-sm font-semibold truncate", isSelected ? "text-primary" : "text-foreground")}>{org.name}</span>
+                                    {isSelected && <Check className="w-4 h-4 text-primary shrink-0" />}
+                                  </div>
+                                  <p className="text-xs text-muted-foreground">{org.region || "No region"} · {org.stats.contacts} contacts</p>
+                                </div>
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </motion.div>
+                    </>
+                  )}
+                </AnimatePresence>
+              </div>
+            )}
+
             {/* Role Switcher Dropdown — preview each role's effect on the sidebar */}
             <div className="relative">
               <button
