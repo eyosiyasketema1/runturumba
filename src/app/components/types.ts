@@ -114,6 +114,9 @@ export interface ContentRow {
   updatedAt: string;
 }
 
+export type OrgRole = "super" | "child";
+export type OrgStatus = "active" | "suspended" | "pending";
+
 export interface Tenant {
   id: string;
   name: string;
@@ -125,6 +128,13 @@ export interface Tenant {
     messages: number;
     activeUsers: number;
   };
+  // Org hierarchy
+  orgRole?: OrgRole;            // "super" = parent org, "child" = sub-org, undefined = standalone
+  parentOrgId?: string | null;  // null/undefined for super/standalone, parent tenant id for child
+  orgStatus?: OrgStatus;        // active, suspended, pending
+  region?: string;              // e.g. "Addis Ababa", "Hawassa"
+  description?: string;         // short description of the org
+  logo?: string;                // URL/path to org logo
 }
 
 export interface User {
@@ -380,20 +390,83 @@ export const QUICK_TEMPLATES: QuickTemplate[] = [
 export const INITIAL_TENANTS: Tenant[] = [
   {
     id: "tenant-1",
-    name: "Acme Corp",
-    industry: "E-commerce",
+    name: "153 Collective",
+    industry: "Ministry",
+    plan: "enterprise",
+    createdAt: "2024-06-01",
+    stats: { contacts: 4820, messages: 28400, activeUsers: 45 },
+    orgRole: "super",
+    parentOrgId: null,
+    orgStatus: "active",
+    region: "National",
+    description: "Headquarters — national discipleship and seeker engagement platform",
+  },
+  // ── Child Organizations ──────────────────────────────────────────────
+  {
+    id: "tenant-child-1",
+    name: "Addis Ababa Chapter",
+    industry: "Ministry",
     plan: "pro",
-    createdAt: "2025-01-12",
-    stats: { contacts: 1260, messages: 8420, activeUsers: 12 }
+    createdAt: "2024-09-15",
+    stats: { contacts: 1260, messages: 8420, activeUsers: 12 },
+    orgRole: "child",
+    parentOrgId: "tenant-1",
+    orgStatus: "active",
+    region: "Addis Ababa",
+    description: "Capital city chapter — largest seeker base, 12 active mentors",
   },
   {
-    id: "tenant-2",
-    name: "Global Health",
-    industry: "Healthcare",
-    plan: "enterprise",
-    createdAt: "2025-01-15",
-    stats: { contacts: 5400, messages: 12050, activeUsers: 25 }
-  }
+    id: "tenant-child-2",
+    name: "Hawassa Chapter",
+    industry: "Ministry",
+    plan: "pro",
+    createdAt: "2025-01-10",
+    stats: { contacts: 890, messages: 5200, activeUsers: 8 },
+    orgRole: "child",
+    parentOrgId: "tenant-1",
+    orgStatus: "active",
+    region: "Hawassa",
+    description: "Southern region chapter — fast-growing community with 8 mentors",
+  },
+  {
+    id: "tenant-child-3",
+    name: "Bahir Dar Chapter",
+    industry: "Ministry",
+    plan: "pro",
+    createdAt: "2025-03-20",
+    stats: { contacts: 640, messages: 3100, activeUsers: 6 },
+    orgRole: "child",
+    parentOrgId: "tenant-1",
+    orgStatus: "active",
+    region: "Bahir Dar",
+    description: "Northern region chapter — focused on university outreach",
+  },
+  {
+    id: "tenant-child-4",
+    name: "Dire Dawa Chapter",
+    industry: "Ministry",
+    plan: "free",
+    createdAt: "2025-06-01",
+    stats: { contacts: 210, messages: 780, activeUsers: 3 },
+    orgRole: "child",
+    parentOrgId: "tenant-1",
+    orgStatus: "pending",
+    region: "Dire Dawa",
+    description: "Eastern region chapter — newly established, onboarding in progress",
+  },
+  {
+    id: "tenant-child-5",
+    name: "Mekelle Chapter",
+    industry: "Ministry",
+    plan: "pro",
+    createdAt: "2025-04-10",
+    stats: { contacts: 420, messages: 1900, activeUsers: 5 },
+    orgRole: "child",
+    parentOrgId: "tenant-1",
+    orgStatus: "suspended",
+    region: "Mekelle",
+    description: "Tigray region chapter — temporarily suspended due to restructuring",
+  },
 ];
 
 export const INITIAL_TEAM_GROUPS: TeamGroup[] = [

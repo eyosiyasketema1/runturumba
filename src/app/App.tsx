@@ -131,6 +131,12 @@ export default function App() {
     return localStorage.getItem("turumba_onboarding_complete") !== "true";
   });
   
+  // Org hierarchy — super org can switch to view child org data
+  const [allTenants, setAllTenants] = useState<Tenant[]>(INITIAL_TENANTS);
+  const childOrgs = useMemo(() => allTenants.filter(t => t.parentOrgId === activeTenant.id), [allTenants, activeTenant.id]);
+  const [viewingOrgId, setViewingOrgId] = useState<string | null>(null); // null = super org view
+  const viewingOrg = viewingOrgId ? allTenants.find(t => t.id === viewingOrgId) ?? null : null;
+
   // Data State
   const [contacts, setContacts] = useState<Contact[]>(INITIAL_CONTACTS);
   const [groups, setGroups] = useState<Group[]>(INITIAL_GROUPS);
@@ -611,7 +617,9 @@ export default function App() {
             {(!isSidebarCollapsed || isMobileSidebarOpen) && (
               <div className="flex flex-col min-w-0">
                 <span className="text-sm font-bold text-sidebar-foreground tracking-tight truncate">{activeTenant.name}</span>
-                <span className="text-xs text-muted-foreground truncate">Workspace</span>
+                <span className="text-xs text-muted-foreground truncate">
+                  {viewingOrg ? `Viewing: ${viewingOrg.name}` : "Workspace"}
+                </span>
               </div>
             )}
           </div>
@@ -1040,12 +1048,32 @@ export default function App() {
             )}
             {currentView === "settings" && (
               <motion.div key="settings" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.2 }}>
-                <SettingsView 
-                  tenant={activeTenant} 
+                <SettingsView
+                  tenant={activeTenant}
                   user={currentUser}
-                  onUpgrade={(plan) => setActiveTenant(prev => ({ ...prev, plan }))} 
+                  onUpgrade={(plan) => setActiveTenant(prev => ({ ...prev, plan }))}
                   onUpdateTenant={(data) => setActiveTenant(prev => ({ ...prev, ...data }))}
                   onUpdateUser={(data) => setCurrentUser(prev => ({ ...prev, ...data }))}
+                  childOrgs={childOrgs}
+                  onCreateChildOrg={(data) => {
+                    const newOrg: Tenant = {
+                      id: `tenant-child-${Date.now()}`,
+                      name: data.name || "New Chapter",
+                      industry: activeTenant.industry,
+                      plan: "free",
+                      createdAt: new Date().toISOString().slice(0, 10),
+                      stats: { contacts: 0, messages: 0, activeUsers: 0 },
+                      orgRole: "child",
+                      parentOrgId: activeTenant.id,
+                      orgStatus: "pending",
+                      region: data.region || "",
+                      description: data.description || "",
+                    };
+                    setAllTenants(prev => [...prev, newOrg]);
+                  }}
+                  onUpdateChildOrg={(id, data) => setAllTenants(prev => prev.map(t => t.id === id ? { ...t, ...data } : t))}
+                  onDeleteChildOrg={(id) => setAllTenants(prev => prev.filter(t => t.id !== id))}
+                  onViewChildOrg={(id) => { setViewingOrgId(id); }}
                 />
               </motion.div>
             )}

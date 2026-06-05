@@ -4,12 +4,13 @@ import {
   Phone, Globe, Clock, MapPin, Camera, Save,
   Check, ChevronRight, Key, Smartphone, Lock, Eye,
   ArrowLeft, ArrowUpRight, Download, Sparkles, Pencil, Plus, Trash2, X,
-  Brain, Share2, AlertCircle, BookOpen, Loader2, CheckCircle2, XCircle, ExternalLink, Zap, ShieldCheck, RotateCcw
+  Brain, Share2, AlertCircle, BookOpen, Loader2, CheckCircle2, XCircle, ExternalLink, Zap, ShieldCheck, RotateCcw,
+  MapPin, Users, MessageSquare, MoreVertical, PauseCircle, PlayCircle
 } from "lucide-react";
 import { motion } from "motion/react";
 import { toast } from "sonner";
 
-import { cn, type Tenant, type User as UserType, type Plan, PLAN_LIMITS } from "./types";
+import { cn, type Tenant, type User as UserType, type Plan, type OrgStatus, PLAN_LIMITS } from "./types";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "./ui/card";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
@@ -24,6 +25,7 @@ import { Avatar, AvatarImage, AvatarFallback } from "./ui/avatar";
 const settingsNav = [
   { id: "profile", label: "Profile", icon: User, description: "Your personal information" },
   { id: "organization", label: "Organization", icon: Building2, description: "Workspace settings" },
+  { id: "child-orgs", label: "Organizations", icon: Building2, description: "Manage sub-organizations", superOnly: true },
   { id: "billing", label: "Billing & Plans", icon: CreditCard, description: "Subscription management" },
   { id: "notifications", label: "Notifications", icon: Bell, description: "Alert preferences" },
   { id: "security", label: "Security", icon: Shield, description: "Password & authentication" },
@@ -938,21 +940,306 @@ const SecuritySection = () => {
   );
 };
 
+// --- Child Organizations Section ---
+
+const ORG_STATUS_CONFIG: Record<OrgStatus, { label: string; color: string; dot: string }> = {
+  active: { label: "Active", color: "bg-emerald-50 text-emerald-700 border-emerald-200", dot: "bg-emerald-500" },
+  suspended: { label: "Suspended", color: "bg-rose-50 text-rose-700 border-rose-200", dot: "bg-rose-500" },
+  pending: { label: "Pending", color: "bg-amber-50 text-amber-700 border-amber-200", dot: "bg-amber-500" },
+};
+
+const ChildOrgsSection = ({
+  parentOrg, childOrgs, onCreateChildOrg, onUpdateChildOrg, onDeleteChildOrg, onViewChildOrg,
+}: {
+  parentOrg: Tenant;
+  childOrgs: Tenant[];
+  onCreateChildOrg?: (data: Partial<Tenant>) => void;
+  onUpdateChildOrg?: (id: string, data: Partial<Tenant>) => void;
+  onDeleteChildOrg?: (id: string) => void;
+  onViewChildOrg?: (id: string) => void;
+}) => {
+  const [isCreateOpen, setIsCreateOpen] = useState(false);
+  const [newOrg, setNewOrg] = useState({ name: "", region: "", description: "" });
+  const [selectedOrg, setSelectedOrg] = useState<Tenant | null>(null);
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
+
+  const totalContacts = childOrgs.reduce((s, o) => s + o.stats.contacts, 0);
+  const totalMessages = childOrgs.reduce((s, o) => s + o.stats.messages, 0);
+  const totalUsers = childOrgs.reduce((s, o) => s + o.stats.activeUsers, 0);
+  const activeCount = childOrgs.filter(o => o.orgStatus === "active").length;
+
+  const handleCreate = () => {
+    if (!newOrg.name.trim()) return;
+    onCreateChildOrg?.(newOrg);
+    setNewOrg({ name: "", region: "", description: "" });
+    setIsCreateOpen(false);
+    toast.success(`"${newOrg.name}" created`);
+  };
+
+  const handleStatusChange = (id: string, status: OrgStatus) => {
+    onUpdateChildOrg?.(id, { orgStatus: status });
+    const label = status === "active" ? "activated" : status === "suspended" ? "suspended" : "set to pending";
+    toast.success(`Organization ${label}`);
+  };
+
+  // Detail view for a selected child org
+  if (selectedOrg) {
+    const org = childOrgs.find(o => o.id === selectedOrg.id) || selectedOrg;
+    const statusCfg = ORG_STATUS_CONFIG[org.orgStatus || "active"];
+    return (
+      <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.25 }} className="space-y-6">
+        <div className="flex items-center gap-3">
+          <button onClick={() => setSelectedOrg(null)} className="p-1.5 rounded-md hover:bg-muted text-muted-foreground hover:text-foreground transition-colors">
+            <ArrowLeft className="w-4 h-4" />
+          </button>
+          <div className="flex-1 min-w-0">
+            <h2 className="text-lg font-semibold text-foreground">{org.name}</h2>
+            <p className="text-sm text-muted-foreground">{org.region} · Created {new Date(org.createdAt).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}</p>
+          </div>
+          <span className={cn("inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-semibold rounded-full border", statusCfg.color)}>
+            <span className={cn("w-1.5 h-1.5 rounded-full", statusCfg.dot)} />
+            {statusCfg.label}
+          </span>
+        </div>
+        <Separator />
+
+        {/* Stats */}
+        <div className="grid grid-cols-3 gap-4">
+          {[
+            { label: "Contacts", value: org.stats.contacts.toLocaleString(), icon: Users },
+            { label: "Messages", value: org.stats.messages.toLocaleString(), icon: MessageSquare },
+            { label: "Team Members", value: org.stats.activeUsers, icon: User },
+          ].map(s => (
+            <Card key={s.label}>
+              <CardContent className="p-4 flex items-center gap-3">
+                <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+                  <s.icon className="w-5 h-5 text-primary" />
+                </div>
+                <div>
+                  <p className="text-xl font-bold text-foreground">{s.value}</p>
+                  <p className="text-xs text-muted-foreground">{s.label}</p>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+
+        {/* Details */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-sm font-semibold">Organization Details</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <FormField label="Organization Name">
+                <Input value={org.name} onChange={(e) => onUpdateChildOrg?.(org.id, { name: e.target.value })} />
+              </FormField>
+              <FormField label="Region">
+                <Input value={org.region || ""} onChange={(e) => onUpdateChildOrg?.(org.id, { region: e.target.value })} />
+              </FormField>
+            </div>
+            <FormField label="Description">
+              <Textarea value={org.description || ""} onChange={(e) => onUpdateChildOrg?.(org.id, { description: e.target.value })} rows={3} />
+            </FormField>
+            <FormField label="Plan">
+              <select
+                value={org.plan}
+                onChange={(e) => onUpdateChildOrg?.(org.id, { plan: e.target.value as Plan })}
+                className="h-10 w-full px-3 rounded-md border border-input bg-background text-sm"
+              >
+                <option value="free">Free</option>
+                <option value="pro">Pro</option>
+                <option value="enterprise">Enterprise</option>
+              </select>
+            </FormField>
+          </CardContent>
+        </Card>
+
+        {/* Status Management */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-sm font-semibold">Status & Actions</CardTitle>
+            <CardDescription className="text-xs">Control this organization's access and status</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <div className="flex items-center gap-3">
+              {org.orgStatus !== "active" && (
+                <Button size="sm" onClick={() => handleStatusChange(org.id, "active")}>
+                  <PlayCircle className="w-3.5 h-3.5 mr-1.5" /> Activate
+                </Button>
+              )}
+              {org.orgStatus !== "suspended" && (
+                <Button size="sm" variant="outline" onClick={() => handleStatusChange(org.id, "suspended")}>
+                  <PauseCircle className="w-3.5 h-3.5 mr-1.5" /> Suspend
+                </Button>
+              )}
+              <Button size="sm" variant="outline" onClick={() => onViewChildOrg?.(org.id)}>
+                <ExternalLink className="w-3.5 h-3.5 mr-1.5" /> View Dashboard
+              </Button>
+            </div>
+            <Separator />
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-destructive">Delete Organization</p>
+                <p className="text-xs text-muted-foreground">This action cannot be undone. All data will be lost.</p>
+              </div>
+              <Button size="sm" variant="destructive" onClick={() => { onDeleteChildOrg?.(org.id); setSelectedOrg(null); toast.success("Organization deleted"); }}>
+                <Trash2 className="w-3.5 h-3.5 mr-1.5" /> Delete
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      </motion.div>
+    );
+  }
+
+  return (
+    <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.25 }} className="space-y-6">
+      <div className="flex items-center justify-between">
+        <SectionHeader title="Organizations" description="Manage your sub-organizations and chapters." />
+        <Button size="sm" onClick={() => setIsCreateOpen(true)}>
+          <Plus className="w-3.5 h-3.5 mr-1.5" /> New Organization
+        </Button>
+      </div>
+      <Separator />
+
+      {/* Summary stats */}
+      <div className="grid grid-cols-4 gap-3">
+        {[
+          { label: "Total Orgs", value: childOrgs.length, icon: Building2, color: "text-primary" },
+          { label: "Active", value: activeCount, icon: CheckCircle2, color: "text-emerald-600" },
+          { label: "Total Contacts", value: totalContacts.toLocaleString(), icon: Users, color: "text-blue-600" },
+          { label: "Total Messages", value: totalMessages.toLocaleString(), icon: MessageSquare, color: "text-violet-600" },
+        ].map(s => (
+          <div key={s.label} className="bg-muted/30 border border-border rounded-lg px-4 py-3 flex items-center gap-3">
+            <s.icon className={cn("w-4 h-4", s.color)} />
+            <div>
+              <p className="text-lg font-bold text-foreground leading-none">{s.value}</p>
+              <p className="text-[11px] text-muted-foreground mt-0.5">{s.label}</p>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* Orgs table */}
+      <Card>
+        <CardContent className="p-0">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b border-border bg-muted/30">
+                <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground">Organization</th>
+                <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground">Region</th>
+                <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground">Status</th>
+                <th className="px-4 py-3 text-right text-xs font-semibold text-muted-foreground">Contacts</th>
+                <th className="px-4 py-3 text-right text-xs font-semibold text-muted-foreground">Team</th>
+                <th className="px-4 py-3 text-right text-xs font-semibold text-muted-foreground">Plan</th>
+                <th className="px-4 py-3 w-10"></th>
+              </tr>
+            </thead>
+            <tbody>
+              {childOrgs.length === 0 ? (
+                <tr><td colSpan={7} className="px-4 py-12 text-center text-muted-foreground">No sub-organizations yet. Create one to get started.</td></tr>
+              ) : childOrgs.map(org => {
+                const statusCfg = ORG_STATUS_CONFIG[org.orgStatus || "active"];
+                return (
+                  <tr key={org.id} className="border-b border-border last:border-0 hover:bg-muted/20 transition-colors group cursor-pointer" onClick={() => setSelectedOrg(org)}>
+                    <td className="px-4 py-3">
+                      <div className="flex items-center gap-3">
+                        <div className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+                          <Building2 className="w-4 h-4 text-primary" />
+                        </div>
+                        <div className="min-w-0">
+                          <p className="font-semibold text-foreground group-hover:text-primary transition-colors truncate">{org.name}</p>
+                          {org.description && <p className="text-xs text-muted-foreground truncate max-w-[240px]">{org.description}</p>}
+                        </div>
+                      </div>
+                    </td>
+                    <td className="px-4 py-3">
+                      <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
+                        <MapPin className="w-3 h-3" /> {org.region || "—"}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3">
+                      <span className={cn("inline-flex items-center gap-1.5 px-2 py-0.5 text-[11px] font-semibold rounded-full border", statusCfg.color)}>
+                        <span className={cn("w-1.5 h-1.5 rounded-full", statusCfg.dot)} />
+                        {statusCfg.label}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3 text-right font-medium text-foreground tabular-nums">{org.stats.contacts.toLocaleString()}</td>
+                    <td className="px-4 py-3 text-right font-medium text-foreground tabular-nums">{org.stats.activeUsers}</td>
+                    <td className="px-4 py-3 text-right">
+                      <Badge variant="outline" className="text-[10px] capitalize">{org.plan}</Badge>
+                    </td>
+                    <td className="px-4 py-3 text-right" onClick={(e) => e.stopPropagation()}>
+                      <button className="p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted transition-colors" onClick={() => setSelectedOrg(org)}>
+                        <ChevronRight className="w-4 h-4" />
+                      </button>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </CardContent>
+      </Card>
+
+      {/* Create org dialog */}
+      {isCreateOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+          <Card className="w-full max-w-md mx-4">
+            <CardHeader>
+              <CardTitle className="text-base font-semibold">Create New Organization</CardTitle>
+              <CardDescription className="text-xs">Add a new sub-organization under {parentOrg.name}</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <FormField label="Organization Name" htmlFor="org-name">
+                <Input id="org-name" placeholder="e.g. Jimma Chapter" value={newOrg.name} onChange={(e) => setNewOrg(prev => ({ ...prev, name: e.target.value }))} />
+              </FormField>
+              <FormField label="Region" htmlFor="org-region">
+                <Input id="org-region" placeholder="e.g. Jimma" value={newOrg.region} onChange={(e) => setNewOrg(prev => ({ ...prev, region: e.target.value }))} />
+              </FormField>
+              <FormField label="Description" htmlFor="org-desc">
+                <Textarea id="org-desc" placeholder="Brief description of this organization..." value={newOrg.description} onChange={(e) => setNewOrg(prev => ({ ...prev, description: e.target.value }))} rows={3} />
+              </FormField>
+              <div className="flex justify-end gap-2 pt-2">
+                <Button variant="outline" size="sm" onClick={() => { setIsCreateOpen(false); setNewOrg({ name: "", region: "", description: "" }); }}>Cancel</Button>
+                <Button size="sm" onClick={handleCreate} disabled={!newOrg.name.trim()}>Create Organization</Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
+    </motion.div>
+  );
+};
+
 // --- Main Settings View ---
 export const SettingsView = ({
   tenant,
   user,
   onUpgrade,
   onUpdateTenant,
-  onUpdateUser
+  onUpdateUser,
+  childOrgs = [],
+  onCreateChildOrg,
+  onUpdateChildOrg,
+  onDeleteChildOrg,
+  onViewChildOrg,
 }: {
   tenant: Tenant;
   user: UserType;
   onUpgrade: (plan: Plan) => void;
   onUpdateTenant: (data: Partial<Tenant>) => void;
   onUpdateUser: (data: Partial<UserType>) => void;
+  childOrgs?: Tenant[];
+  onCreateChildOrg?: (data: Partial<Tenant>) => void;
+  onUpdateChildOrg?: (id: string, data: Partial<Tenant>) => void;
+  onDeleteChildOrg?: (id: string) => void;
+  onViewChildOrg?: (id: string) => void;
 }) => {
   const [activeSection, setActiveSection] = useState("profile");
+  const isSuperOrg = tenant.orgRole === "super";
+  const filteredNav = settingsNav.filter(item => !item.superOnly || isSuperOrg);
 
   return (
     <div className="p-6 lg:p-10 animate-in fade-in duration-300">
@@ -973,7 +1260,7 @@ export const SettingsView = ({
               <p className="px-3 pt-2 pb-3 text-xs font-bold text-muted-foreground uppercase tracking-widest">
                 Settings
               </p>
-              {settingsNav.map((item) => {
+              {filteredNav.map((item) => {
                 const isActive = activeSection === item.id;
                 return (
                   <button
@@ -1011,6 +1298,16 @@ export const SettingsView = ({
           <div className="flex-1 min-w-0 p-6 lg:p-8 overflow-y-auto">
             {activeSection === "profile" && <ProfileSection user={user} onUpdate={onUpdateUser} />}
             {activeSection === "organization" && <OrganizationSection tenant={tenant} onUpdate={onUpdateTenant} />}
+            {activeSection === "child-orgs" && isSuperOrg && (
+              <ChildOrgsSection
+                parentOrg={tenant}
+                childOrgs={childOrgs}
+                onCreateChildOrg={onCreateChildOrg}
+                onUpdateChildOrg={onUpdateChildOrg}
+                onDeleteChildOrg={onDeleteChildOrg}
+                onViewChildOrg={onViewChildOrg}
+              />
+            )}
             {activeSection === "billing" && <BillingSection tenant={tenant} onUpgrade={onUpgrade} />}
             {activeSection === "notifications" && <NotificationsSection />}
             {activeSection === "security" && <SecuritySection />}
