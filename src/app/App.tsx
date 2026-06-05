@@ -841,7 +841,7 @@ export default function App() {
                   <div
                     role="tablist"
                     aria-label="Dashboard views"
-                    className="inline-flex items-center gap-1 bg-muted/60 border border-border rounded-full p-1"
+                    className="inline-flex items-center gap-1 bg-muted/60 border border-border rounded-full p-1 h-12"
                   >
                     {([
                       ["main",         "Main Dashboard",          LayoutDashboard],
@@ -856,7 +856,7 @@ export default function App() {
                           aria-selected={isActive}
                           onClick={() => setDashboardTab(k)}
                           className={cn(
-                            "flex items-center gap-2 px-4 py-1.5 text-sm font-semibold rounded-full transition-all",
+                            "flex items-center gap-2 px-4 h-10 text-sm font-semibold rounded-full transition-all",
                             isActive
                               ? "bg-primary text-primary-foreground shadow-sm"
                               : "text-muted-foreground hover:text-foreground"
@@ -875,7 +875,7 @@ export default function App() {
                       <button
                         onClick={() => setIsOrgSwitcherOpen(v => !v)}
                         className={cn(
-                          "flex items-center gap-2 pl-3 pr-2.5 py-1.5 text-sm font-semibold rounded-full border transition-all",
+                          "flex items-center gap-2 pl-3 pr-2.5 h-12 text-sm font-semibold rounded-full border transition-all",
                           viewingOrg
                             ? "border-violet-300 bg-violet-50 text-violet-700 dark:border-violet-500/40 dark:bg-violet-500/10 dark:text-violet-300"
                             : isOrgSwitcherOpen
