@@ -6,7 +6,7 @@ import {
   ClipboardList, BarChart3, Link2, QrCode, Sparkles, Users,
   Mail, Phone, Type, Hash, Star, Smartphone, Globe, Palette,
   Settings2, Zap, CheckCircle2, Circle, AlertCircle, Archive,
-  MessageSquare,
+  MessageSquare, Download, Send as SendIcon,
 } from "lucide-react";
 import { toast } from "sonner";
 import {
@@ -416,6 +416,112 @@ const LivePreview = ({ campaign }: { campaign: Campaign }) => {
 };
 
 // ============================================================================
+// QR CODE GENERATOR (pure canvas, no dependencies)
+// ============================================================================
+
+const CAMPAIGN_BASE_URL = "https://campaigns.turumba.net";
+const getCampaignUrl = (slug: string) => `${CAMPAIGN_BASE_URL}/${slug}`;
+
+// Simple QR code via Google Charts API rendered as an img
+const QRCodeImage = ({ url, size = 200 }: { url: string; size?: number }) => (
+  <img
+    src={`https://api.qrserver.com/v1/create-qr-code/?size=${size}x${size}&data=${encodeURIComponent(url)}&margin=8`}
+    alt="QR Code"
+    width={size}
+    height={size}
+    className="rounded-lg border border-border"
+  />
+);
+
+// ============================================================================
+// SHARE DIALOG (reusable for table + builder)
+// ============================================================================
+
+const ShareDialog = ({ campaign, isOpen, onClose }: { campaign: Campaign; isOpen: boolean; onClose: () => void }) => {
+  if (!isOpen) return null;
+  const url = getCampaignUrl(campaign.slug);
+  const [copied, setCopied] = useState(false);
+
+  const copyUrl = () => {
+    navigator.clipboard.writeText(url).then(() => { setCopied(true); setTimeout(() => setCopied(false), 2000); toast.success("Link copied!"); });
+  };
+
+  const downloadQR = () => {
+    const link = document.createElement("a");
+    link.href = `https://api.qrserver.com/v1/create-qr-code/?size=600x600&data=${encodeURIComponent(url)}&margin=16&format=png`;
+    link.download = `${campaign.slug}-qr-code.png`;
+    link.click();
+    toast.success("QR code downloading...");
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50" onClick={onClose}>
+      <div className="bg-background border border-border rounded-2xl shadow-2xl w-full max-w-md mx-4" onClick={(e) => e.stopPropagation()}>
+        {/* Header */}
+        <div className="flex items-center justify-between px-6 py-4 border-b border-border">
+          <div>
+            <h3 className="text-base font-semibold text-foreground">Share Campaign</h3>
+            <p className="text-xs text-muted-foreground mt-0.5">{campaign.name}</p>
+          </div>
+          <button onClick={onClose} className="p-1.5 rounded-md hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"><X className="w-4 h-4" /></button>
+        </div>
+
+        <div className="px-6 py-5 space-y-5">
+          {/* Campaign URL */}
+          <div className="space-y-2">
+            <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Campaign Link</Label>
+            <div className="flex items-center gap-2">
+              <div className="flex-1 px-3 py-2.5 bg-muted/50 border border-border rounded-lg text-sm text-foreground font-mono truncate">{url}</div>
+              <Button size="sm" variant={copied ? "default" : "outline"} onClick={copyUrl} className="shrink-0">
+                {copied ? <><Check className="w-3.5 h-3.5 mr-1" /> Copied</> : <><Copy className="w-3.5 h-3.5 mr-1" /> Copy</>}
+              </Button>
+            </div>
+          </div>
+
+          {/* QR Code */}
+          <div className="space-y-3">
+            <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">QR Code</Label>
+            <div className="flex items-start gap-4">
+              <QRCodeImage url={url} size={160} />
+              <div className="flex-1 space-y-3 pt-1">
+                <p className="text-xs text-muted-foreground leading-relaxed">Scan this QR code to open the campaign. Print it on posters, flyers, or event materials.</p>
+                <Button size="sm" variant="outline" onClick={downloadQR} className="w-full">
+                  <Download className="w-3.5 h-3.5 mr-1.5" /> Download QR Code
+                </Button>
+              </div>
+            </div>
+          </div>
+
+          {/* Social share */}
+          <div className="space-y-2">
+            <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Share on Social</Label>
+            <div className="flex items-center gap-2">
+              <Button size="sm" variant="outline" className="flex-1" onClick={() => { window.open(`https://wa.me/?text=${encodeURIComponent(campaign.name + " " + url)}`, "_blank"); }}>
+                <MessageSquare className="w-3.5 h-3.5 mr-1.5" /> WhatsApp
+              </Button>
+              <Button size="sm" variant="outline" className="flex-1" onClick={() => { window.open(`https://t.me/share/url?url=${encodeURIComponent(url)}&text=${encodeURIComponent(campaign.name)}`, "_blank"); }}>
+                <SendIcon className="w-3.5 h-3.5 mr-1.5" /> Telegram
+              </Button>
+              <Button size="sm" variant="outline" className="flex-1" onClick={() => { window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}`, "_blank"); }}>
+                <Globe className="w-3.5 h-3.5 mr-1.5" /> Facebook
+              </Button>
+            </div>
+          </div>
+
+          {/* Status note */}
+          {campaign.status !== "active" && (
+            <div className="flex items-start gap-2 px-3 py-2.5 bg-amber-50 border border-amber-200 rounded-lg">
+              <AlertCircle className="w-4 h-4 text-amber-600 mt-0.5 shrink-0" />
+              <p className="text-xs text-amber-700">This campaign is not active. Publish it first so participants can access the link.</p>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// ============================================================================
 // CAMPAIGN BUILDER (Full Page)
 // ============================================================================
 
@@ -425,7 +531,7 @@ const CampaignBuilder = ({ campaign, onBack, onSave }: {
   onSave: (c: Campaign) => void;
 }) => {
   const [draft, setDraft] = useState<Campaign>(campaign);
-  const [builderTab, setBuilderTab] = useState<"questions" | "settings" | "outcomes">("questions");
+  const [builderTab, setBuilderTab] = useState<"questions" | "settings" | "outcomes" | "share">("questions");
   const [activeQuestionId, setActiveQuestionId] = useState<string | null>(null);
   const [dragIndex, setDragIndex] = useState<number | null>(null);
   const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
@@ -492,6 +598,7 @@ const CampaignBuilder = ({ campaign, onBack, onSave }: {
             { id: "questions" as const, label: "Questions", icon: ClipboardList },
             { id: "settings" as const, label: "Settings", icon: Settings2 },
             { id: "outcomes" as const, label: "Outcomes", icon: Zap },
+            { id: "share" as const, label: "Share", icon: Link2 },
           ]).map(tab => (
             <button key={tab.id} onClick={() => setBuilderTab(tab.id)}
               className={cn("flex items-center gap-2 px-4 py-2.5 text-sm font-medium border-b-2 transition-all -mb-px",
@@ -624,6 +731,78 @@ const CampaignBuilder = ({ campaign, onBack, onSave }: {
             </div>
           )}
 
+          {builderTab === "share" && (
+            <div className="space-y-6 max-w-2xl">
+              {/* Campaign URL */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-sm font-semibold">Campaign Link</CardTitle>
+                  <CardDescription className="text-xs">Share this unique URL with your audience</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  <div className="flex items-center gap-2">
+                    <div className="flex-1 px-3 py-2.5 bg-muted/50 border border-border rounded-lg text-sm text-foreground font-mono truncate">{getCampaignUrl(draft.slug)}</div>
+                    <Button size="sm" onClick={() => { navigator.clipboard.writeText(getCampaignUrl(draft.slug)); toast.success("Link copied!"); }}>
+                      <Copy className="w-3.5 h-3.5 mr-1.5" /> Copy
+                    </Button>
+                  </div>
+                  {draft.status !== "active" && (
+                    <div className="flex items-start gap-2 px-3 py-2 bg-amber-50 border border-amber-200 rounded-lg">
+                      <AlertCircle className="w-4 h-4 text-amber-600 mt-0.5 shrink-0" />
+                      <p className="text-xs text-amber-700">This campaign is not active. Publish it so participants can access this link.</p>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+
+              {/* QR Code */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-sm font-semibold">QR Code</CardTitle>
+                  <CardDescription className="text-xs">Print on posters, flyers, or event materials</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="flex items-start gap-6">
+                    <QRCodeImage url={getCampaignUrl(draft.slug)} size={200} />
+                    <div className="flex-1 space-y-4 pt-2">
+                      <p className="text-sm text-muted-foreground leading-relaxed">Participants can scan this QR code with their phone camera to open the campaign directly.</p>
+                      <Button variant="outline" onClick={() => {
+                        const link = document.createElement("a");
+                        link.href = `https://api.qrserver.com/v1/create-qr-code/?size=600x600&data=${encodeURIComponent(getCampaignUrl(draft.slug))}&margin=16&format=png`;
+                        link.download = `${draft.slug}-qr-code.png`;
+                        link.click();
+                        toast.success("QR code downloading...");
+                      }}>
+                        <Download className="w-4 h-4 mr-1.5" /> Download PNG (600x600)
+                      </Button>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Social sharing */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-sm font-semibold">Share on Social</CardTitle>
+                  <CardDescription className="text-xs">Send the campaign link via social platforms</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-3 gap-3">
+                    <Button variant="outline" className="h-12" onClick={() => window.open(`https://wa.me/?text=${encodeURIComponent(draft.name + "\n" + getCampaignUrl(draft.slug))}`, "_blank")}>
+                      <MessageSquare className="w-4 h-4 mr-2" /> WhatsApp
+                    </Button>
+                    <Button variant="outline" className="h-12" onClick={() => window.open(`https://t.me/share/url?url=${encodeURIComponent(getCampaignUrl(draft.slug))}&text=${encodeURIComponent(draft.name)}`, "_blank")}>
+                      <SendIcon className="w-4 h-4 mr-2" /> Telegram
+                    </Button>
+                    <Button variant="outline" className="h-12" onClick={() => window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(getCampaignUrl(draft.slug))}`, "_blank")}>
+                      <Globe className="w-4 h-4 mr-2" /> Facebook
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          )}
+
           {builderTab === "outcomes" && (
             <div className="space-y-6 max-w-2xl">
               <Card>
@@ -681,6 +860,7 @@ export const CampaignsView = () => {
   const [filterStatus, setFilterStatus] = useState<"all" | CampaignStatus>("all");
   const [filterType, setFilterType] = useState<"all" | CampaignType>("all");
   const [editingCampaign, setEditingCampaign] = useState<Campaign | null>(null);
+  const [sharingCampaign, setSharingCampaign] = useState<Campaign | null>(null);
 
   const filtered = useMemo(() => {
     return campaigns.filter(c => {
@@ -785,6 +965,7 @@ export const CampaignsView = () => {
                 <th className="px-5 py-3 text-left text-xs font-semibold text-muted-foreground">Campaign</th>
                 <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground">Type</th>
                 <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground">Status</th>
+                <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground">Link</th>
                 <th className="px-4 py-3 text-right text-xs font-semibold text-muted-foreground">Views</th>
                 <th className="px-4 py-3 text-right text-xs font-semibold text-muted-foreground">Completions</th>
                 <th className="px-4 py-3 text-right text-xs font-semibold text-muted-foreground">Conv. Rate</th>
@@ -816,6 +997,16 @@ export const CampaignsView = () => {
                         {stCfg.label}
                       </span>
                     </td>
+                    <td className="px-4 py-3.5" onClick={(e) => e.stopPropagation()}>
+                      <div className="flex items-center gap-1.5">
+                        <button onClick={() => { navigator.clipboard.writeText(getCampaignUrl(c.slug)); toast.success("Link copied!"); }} className="p-1.5 rounded-md text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors" title="Copy link">
+                          <Link2 className="w-3.5 h-3.5" />
+                        </button>
+                        <button onClick={() => setSharingCampaign(c)} className="p-1.5 rounded-md text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors" title="Share & QR">
+                          <QrCode className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    </td>
                     <td className="px-4 py-3.5 text-right font-medium text-foreground tabular-nums">{c.analytics.views.toLocaleString()}</td>
                     <td className="px-4 py-3.5 text-right font-medium text-foreground tabular-nums">{c.analytics.completions.toLocaleString()}</td>
                     <td className="px-4 py-3.5 text-right font-medium text-foreground tabular-nums">{funnelPercent(c.analytics.conversions, c.analytics.views)}</td>
@@ -842,6 +1033,9 @@ export const CampaignsView = () => {
           </table>
         </div>
       )}
+
+      {/* Share dialog */}
+      {sharingCampaign && <ShareDialog campaign={sharingCampaign} isOpen={true} onClose={() => setSharingCampaign(null)} />}
     </div>
   );
 };
