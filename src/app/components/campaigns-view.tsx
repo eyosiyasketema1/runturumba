@@ -6,7 +6,7 @@ import {
   ClipboardList, BarChart3, Link2, QrCode, Sparkles, Users,
   Mail, Phone, Type, Hash, Star, Smartphone, Globe, Palette,
   Settings2, Zap, CheckCircle2, Circle, AlertCircle, Archive,
-  MessageSquare, Download, Send as SendIcon,
+  MessageSquare, Download, Send as SendIcon, Upload,
 } from "lucide-react";
 import { toast } from "sonner";
 import {
@@ -685,9 +685,78 @@ const CampaignBuilder = ({ campaign, onBack, onSave }: {
 
               {draft.type === "video_quiz" && (
                 <Card>
-                  <CardHeader><CardTitle className="text-sm font-semibold">Video</CardTitle></CardHeader>
+                  <CardHeader>
+                    <CardTitle className="text-sm font-semibold">Video</CardTitle>
+                    <CardDescription className="text-xs">Upload a video file or paste a link from YouTube, Vimeo, etc.</CardDescription>
+                  </CardHeader>
                   <CardContent className="space-y-4">
-                    <div className="space-y-1.5"><Label className="text-xs">Video URL</Label><Input value={draft.settings.videoUrl || ""} onChange={(e) => updateSettings({ videoUrl: e.target.value })} placeholder="https://youtube.com/watch?v=..." /></div>
+                    {/* Video preview or upload area */}
+                    {draft.settings.videoUrl ? (
+                      <div className="space-y-3">
+                        <div className="relative w-full aspect-video bg-gray-900 rounded-lg overflow-hidden border border-border">
+                          {draft.settings.videoUrl.includes("youtube.com") || draft.settings.videoUrl.includes("youtu.be") ? (
+                            <iframe
+                              src={`https://www.youtube.com/embed/${draft.settings.videoUrl.match(/(?:v=|youtu\.be\/)([^&?]+)/)?.[1] || ""}`}
+                              className="w-full h-full" frameBorder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope" allowFullScreen
+                            />
+                          ) : draft.settings.videoUrl.startsWith("blob:") || draft.settings.videoUrl.endsWith(".mp4") || draft.settings.videoUrl.endsWith(".webm") ? (
+                            <video src={draft.settings.videoUrl} controls className="w-full h-full object-contain" />
+                          ) : (
+                            <div className="w-full h-full flex items-center justify-center">
+                              <Video className="w-12 h-12 text-gray-500" />
+                            </div>
+                          )}
+                          <button
+                            onClick={() => updateSettings({ videoUrl: "" })}
+                            className="absolute top-2 right-2 p-1.5 rounded-md bg-black/60 text-white hover:bg-black/80 transition-colors"
+                          >
+                            <X className="w-4 h-4" />
+                          </button>
+                        </div>
+                        <p className="text-xs text-muted-foreground truncate font-mono">{draft.settings.videoUrl}</p>
+                      </div>
+                    ) : (
+                      <div
+                        className="border-2 border-dashed border-border rounded-xl p-8 text-center hover:border-primary/40 hover:bg-primary/5 transition-all cursor-pointer"
+                        onClick={() => document.getElementById("video-upload-input")?.click()}
+                      >
+                        <Video className="w-10 h-10 text-muted-foreground mx-auto mb-3" />
+                        <p className="text-sm font-medium text-foreground">Upload a video</p>
+                        <p className="text-xs text-muted-foreground mt-1">MP4, WebM up to 100MB — or paste a URL below</p>
+                      </div>
+                    )}
+                    <input
+                      id="video-upload-input"
+                      type="file"
+                      accept="video/mp4,video/webm,video/ogg"
+                      className="hidden"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (file) {
+                          const blobUrl = URL.createObjectURL(file);
+                          updateSettings({ videoUrl: blobUrl });
+                          toast.success(`Video "${file.name}" loaded`);
+                        }
+                        e.target.value = "";
+                      }}
+                    />
+                    <div className="flex items-center gap-3">
+                      <div className="flex-1 h-px bg-border" />
+                      <span className="text-xs text-muted-foreground">or paste a link</span>
+                      <div className="flex-1 h-px bg-border" />
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Input
+                        value={draft.settings.videoUrl?.startsWith("blob:") ? "" : (draft.settings.videoUrl || "")}
+                        onChange={(e) => updateSettings({ videoUrl: e.target.value })}
+                        placeholder="https://youtube.com/watch?v=... or https://vimeo.com/..."
+                      />
+                      {!draft.settings.videoUrl && (
+                        <Button size="sm" variant="outline" onClick={() => document.getElementById("video-upload-input")?.click()}>
+                          <Upload className="w-3.5 h-3.5 mr-1.5" /> Upload
+                        </Button>
+                      )}
+                    </div>
                   </CardContent>
                 </Card>
               )}
