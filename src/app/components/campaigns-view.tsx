@@ -59,38 +59,39 @@ const CONTACT_FIELD_OPTIONS = [
   { field: "city", label: "City / Location", icon: Globe },
 ];
 
-const QuestionCard = ({ question, index, onUpdate, onDelete, onMoveUp, onMoveDown, isFirst, isLast, isActive, onSelect }: {
+const QuestionCard = ({ question, index, onUpdate, onDelete, isActive, onSelect, onDragStart, onDragOver, onDrop, isDragOver }: {
   question: CampaignQuestion;
   index: number;
   onUpdate: (q: CampaignQuestion) => void;
   onDelete: () => void;
-  onMoveUp: () => void;
-  onMoveDown: () => void;
-  isFirst: boolean;
-  isLast: boolean;
   isActive: boolean;
   onSelect: () => void;
+  onDragStart: () => void;
+  onDragOver: (e: React.DragEvent) => void;
+  onDrop: () => void;
+  isDragOver: boolean;
 }) => {
   const qtCfg = QUESTION_TYPE_CONFIG[question.type];
   const QIcon = qtCfg.icon;
 
   return (
     <div
+      draggable
+      onDragStart={onDragStart}
+      onDragOver={onDragOver}
+      onDrop={onDrop}
       className={cn(
         "border rounded-xl bg-card transition-all",
-        isActive ? "border-primary shadow-md ring-1 ring-primary/20" : "border-border hover:border-primary/30 cursor-pointer"
+        isActive ? "border-primary shadow-md ring-1 ring-primary/20" : "border-border hover:border-primary/30 cursor-pointer",
+        isDragOver && "border-primary/50 bg-primary/5 border-dashed"
       )}
       onClick={() => !isActive && onSelect()}
     >
       {/* Always visible: number + question text + type + actions */}
       <div className="flex items-start gap-3 px-4 py-3">
-        {/* Drag handle + reorder */}
-        <div className="flex flex-col items-center gap-0.5 pt-1 shrink-0">
-          <GripVertical className="w-4 h-4 text-muted-foreground/40" />
-          <div className="flex flex-col gap-0">
-            <button onClick={(e) => { e.stopPropagation(); onMoveUp(); }} disabled={isFirst} className="p-0.5 text-muted-foreground hover:text-foreground disabled:opacity-20 transition-colors"><ChevronUp className="w-3 h-3" /></button>
-            <button onClick={(e) => { e.stopPropagation(); onMoveDown(); }} disabled={isLast} className="p-0.5 text-muted-foreground hover:text-foreground disabled:opacity-20 transition-colors"><ChevronDown className="w-3 h-3" /></button>
-          </div>
+        {/* Drag handle */}
+        <div className="pt-2 shrink-0 cursor-grab active:cursor-grabbing">
+          <GripVertical className="w-4 h-4 text-muted-foreground/40 hover:text-muted-foreground transition-colors" />
         </div>
 
         {/* Question number */}
@@ -426,6 +427,18 @@ const CampaignBuilder = ({ campaign, onBack, onSave }: {
   const [draft, setDraft] = useState<Campaign>(campaign);
   const [builderTab, setBuilderTab] = useState<"questions" | "settings" | "outcomes">("questions");
   const [activeQuestionId, setActiveQuestionId] = useState<string | null>(null);
+  const [dragIndex, setDragIndex] = useState<number | null>(null);
+  const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
+
+  const handleDrop = (targetIndex: number) => {
+    if (dragIndex === null || dragIndex === targetIndex) { setDragIndex(null); setDragOverIndex(null); return; }
+    const qs = [...draft.questions];
+    const [moved] = qs.splice(dragIndex, 1);
+    qs.splice(targetIndex, 0, moved);
+    setDraft(prev => ({ ...prev, questions: qs.map((q, i) => ({ ...q, orderIndex: i })) }));
+    setDragIndex(null);
+    setDragOverIndex(null);
+  };
 
   const updateSettings = (data: Partial<CampaignSettings>) => setDraft(prev => ({ ...prev, settings: { ...prev.settings, ...data } }));
   const updateBranding = (data: Partial<Campaign["settings"]["branding"]>) => setDraft(prev => ({ ...prev, settings: { ...prev.settings, branding: { ...prev.settings.branding, ...data } } }));
@@ -446,13 +459,7 @@ const CampaignBuilder = ({ campaign, onBack, onSave }: {
 
   const updateQuestion = (id: string, q: CampaignQuestion) => setDraft(prev => ({ ...prev, questions: prev.questions.map(x => x.id === id ? q : x) }));
   const deleteQuestion = (id: string) => { setDraft(prev => ({ ...prev, questions: prev.questions.filter(x => x.id !== id).map((q, i) => ({ ...q, orderIndex: i })) })); if (activeQuestionId === id) setActiveQuestionId(null); };
-  const moveQuestion = (index: number, dir: -1 | 1) => {
-    const qs = [...draft.questions];
-    const target = index + dir;
-    if (target < 0 || target >= qs.length) return;
-    [qs[index], qs[target]] = [qs[target], qs[index]];
-    setDraft(prev => ({ ...prev, questions: qs.map((q, i) => ({ ...q, orderIndex: i })) }));
-  };
+
 
   return (
     <div className="h-[calc(100vh-64px)] flex flex-col">
@@ -525,11 +532,12 @@ const CampaignBuilder = ({ campaign, onBack, onSave }: {
                     <QuestionCard key={q.id} question={q} index={i}
                       onUpdate={(updated) => updateQuestion(q.id, updated)}
                       onDelete={() => deleteQuestion(q.id)}
-                      onMoveUp={() => moveQuestion(i, -1)}
-                      onMoveDown={() => moveQuestion(i, 1)}
-                      isFirst={i === 0} isLast={i === draft.questions.length - 1}
                       isActive={activeQuestionId === q.id}
-                      onSelect={() => setActiveQuestionId(q.id)} />
+                      onSelect={() => setActiveQuestionId(q.id)}
+                      onDragStart={() => setDragIndex(i)}
+                      onDragOver={(e) => { e.preventDefault(); setDragOverIndex(i); }}
+                      onDrop={() => handleDrop(i)}
+                      isDragOver={dragOverIndex === i && dragIndex !== i} />
                   ))}
 
                   {/* Add question buttons — always at the bottom */}
@@ -588,21 +596,18 @@ const CampaignBuilder = ({ campaign, onBack, onSave }: {
               <Card>
                 <CardHeader><CardTitle className="text-sm font-semibold">Branding</CardTitle></CardHeader>
                 <CardContent className="space-y-4">
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-1.5">
-                      <Label className="text-xs">Primary Color</Label>
-                      <div className="flex items-center gap-2">
-                        <input type="color" value={draft.settings.branding.primaryColor} onChange={(e) => updateBranding({ primaryColor: e.target.value })} className="w-8 h-8 rounded border cursor-pointer" />
-                        <Input value={draft.settings.branding.primaryColor} onChange={(e) => updateBranding({ primaryColor: e.target.value })} className="flex-1 h-8 text-xs" />
-                      </div>
+                  <div className="space-y-1.5">
+                    <Label className="text-xs">Primary Color</Label>
+                    <div className="flex items-center gap-2">
+                      <input type="color" value={draft.settings.branding.primaryColor} onChange={(e) => updateBranding({ primaryColor: e.target.value, backgroundColor: e.target.value + "1A" })} className="w-10 h-10 rounded-lg border cursor-pointer" />
+                      <Input value={draft.settings.branding.primaryColor} onChange={(e) => updateBranding({ primaryColor: e.target.value, backgroundColor: e.target.value + "1A" })} className="flex-1" />
                     </div>
-                    <div className="space-y-1.5">
-                      <Label className="text-xs">Background Color</Label>
-                      <div className="flex items-center gap-2">
-                        <input type="color" value={draft.settings.branding.backgroundColor} onChange={(e) => updateBranding({ backgroundColor: e.target.value })} className="w-8 h-8 rounded border cursor-pointer" />
-                        <Input value={draft.settings.branding.backgroundColor} onChange={(e) => updateBranding({ backgroundColor: e.target.value })} className="flex-1 h-8 text-xs" />
-                      </div>
-                    </div>
+                    <p className="text-[11px] text-muted-foreground">Background color is automatically set to 10% of the primary color</p>
+                  </div>
+                  {/* Preview swatch */}
+                  <div className="flex items-center gap-3">
+                    <div className="flex-1 h-12 rounded-lg border flex items-center justify-center text-xs font-semibold text-white" style={{ backgroundColor: draft.settings.branding.primaryColor }}>Primary</div>
+                    <div className="flex-1 h-12 rounded-lg border flex items-center justify-center text-xs font-medium" style={{ backgroundColor: draft.settings.branding.primaryColor + "1A", color: draft.settings.branding.primaryColor }}>Background (10%)</div>
                   </div>
                 </CardContent>
               </Card>
