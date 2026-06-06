@@ -1197,3 +1197,148 @@ export const INITIAL_CONTENT: ContentRow[] = [
   { id: "c-5", title: "Understanding Baptism",               type: "Bible Study",   typeTone: "blue",   category: "Bible Basics",  difficulty: "Intermediate",  lang: "English",       status: "Draft",     statusTone: "amber", summary: "What baptism means and why it matters in the life of a believer.",                  body: "Baptism is an outward expression of an inward transformation…",            tags: ["baptism", "bible_study", "sacrament"],      author: "curated",      source: "Romans 6:3-4",  readTimeMin: 8,  variants: { telegram: "💧 Baptism study: Romans 6…",                         whatsapp: "Why baptism matters…",                    sms: "Rom 6:3-4",       web: "Full study…" },                           stats: { views: 340,  engagement: 65, completion: 32 }, updatedAt: "1 week ago" },
   { id: "c-6", title: "Building Community: You're Not Alone", type: "Prayer Guide", typeTone: "green",  category: "Community",     difficulty: "Advanced",      lang: "Amharic",       status: "Published", statusTone: "green", summary: "A guide for seekers ready to connect with fellowship.",                            body: "Faith was never meant to be a solo journey…",                              tags: ["community", "fellowship", "amharic"],       author: "curated",      source: "Hebrews 10:25", readTimeMin: 6,  variants: { telegram: "👥 ማህበረሰብ: ብቻህን አይደለህም…",                           whatsapp: "ማህበረሰብ መገንባት…",                           sms: "ዕብ. 10:25",      web: "Full guide…" },                           stats: { views: 780,  engagement: 88, completion: 60 }, updatedAt: "4 days ago" },
 ];
+
+// ============================================================================
+// CAMPAIGNS
+// ============================================================================
+
+export type CampaignType = "survey" | "video_quiz";
+export type CampaignStatus = "draft" | "active" | "paused" | "archived";
+export type QuestionType = "multiple_choice" | "text" | "scale" | "contact_info";
+
+export interface CampaignQuestion {
+  id: string;
+  orderIndex: number;
+  type: QuestionType;
+  questionText: string;
+  description?: string;
+  required: boolean;
+  config: Record<string, any>;
+  scoringWeight?: number;
+}
+
+export interface CampaignBranding {
+  logoUrl?: string;
+  primaryColor: string;
+  backgroundColor: string;
+}
+
+export interface CampaignSettings {
+  videoUrl?: string;
+  videoThumbnailUrl?: string;
+  welcomeMessage: string;
+  completionMessage: string;
+  collectContact: boolean;
+  contactFields: string[];
+  branding: CampaignBranding;
+  language: string;
+}
+
+export interface CampaignOutcomeConfig {
+  automationId?: string;
+  autoClassify: boolean;
+  autoMatch: boolean;
+  contentRecommendationEnabled: boolean;
+}
+
+export interface Campaign {
+  id: string;
+  tenantId: string;
+  name: string;
+  description: string;
+  type: CampaignType;
+  status: CampaignStatus;
+  slug: string;
+  settings: CampaignSettings;
+  outcomeConfig: CampaignOutcomeConfig;
+  questions: CampaignQuestion[];
+  analytics: { views: number; starts: number; completions: number; conversions: number };
+  publishedAt?: string;
+  createdAt: string;
+}
+
+export const INITIAL_CAMPAIGNS: Campaign[] = [
+  {
+    id: "camp-1", tenantId: "tenant-1", name: "New Seeker Welcome Survey", description: "Understand new seekers and connect them with the right mentor",
+    type: "survey", status: "active", slug: "gcm-welcome",
+    settings: { welcomeMessage: "Welcome! We'd love to learn about you so we can connect you with the right mentor and resources.", completionMessage: "Thank you for sharing! A mentor will be in touch with you soon.", collectContact: true, contactFields: ["name", "phone", "email"], branding: { primaryColor: "#4F46E5", backgroundColor: "#FFFFFF" }, language: "en" },
+    outcomeConfig: { automationId: "auto-1", autoClassify: true, autoMatch: true, contentRecommendationEnabled: true },
+    questions: [
+      { id: "q1-1", orderIndex: 0, type: "contact_info", questionText: "Let's start with your contact details", required: true, config: { fields: [{ field: "name", label: "Your Name", required: true }, { field: "phone", label: "Phone Number", required: true }, { field: "email", label: "Email", required: false }] } },
+      { id: "q1-2", orderIndex: 1, type: "multiple_choice", questionText: "How did you hear about us?", required: true, config: { options: [{ value: "social", label: "Social Media", score: 1 }, { value: "friend", label: "A Friend", score: 2 }, { value: "event", label: "Event or Conference", score: 2 }, { value: "search", label: "Online Search", score: 1 }, { value: "other", label: "Other", score: 0 }] } },
+      { id: "q1-3", orderIndex: 2, type: "multiple_choice", questionText: "Where are you on your spiritual journey?", required: true, config: { options: [{ value: "curious", label: "Just curious about faith", score: 1 }, { value: "exploring", label: "Exploring and learning", score: 2 }, { value: "new", label: "New believer", score: 3 }, { value: "growing", label: "Growing in faith", score: 4 }, { value: "returning", label: "Returning after time away", score: 2 }] }, scoringWeight: 2.0 },
+      { id: "q1-4", orderIndex: 3, type: "scale", questionText: "How comfortable are you discussing faith with others?", required: true, config: { min: 1, max: 10, minLabel: "Not at all", maxLabel: "Very comfortable" }, scoringWeight: 1.5 },
+      { id: "q1-5", orderIndex: 4, type: "text", questionText: "Is there anything specific you'd like help with or questions you have?", required: false, config: { placeholder: "Share anything on your mind...", maxLength: 500 } },
+    ],
+    analytics: { views: 2840, starts: 1920, completions: 1456, conversions: 892 },
+    publishedAt: "2025-11-15T10:00:00Z", createdAt: "2025-11-10T08:00:00Z",
+  },
+  {
+    id: "camp-2", tenantId: "tenant-1", name: "Easter Outreach Campaign", description: "Video testimony + quiz for Easter campaign",
+    type: "video_quiz", status: "active", slug: "gcm-easter-2026",
+    settings: { videoUrl: "https://www.youtube.com/watch?v=example", videoThumbnailUrl: "https://img.youtube.com/vi/example/hqdefault.jpg", welcomeMessage: "Watch this short story of hope, then answer a few questions.", completionMessage: "Thank you for watching and sharing your thoughts! We'd love to continue this conversation with you.", collectContact: true, contactFields: ["name", "phone"], branding: { primaryColor: "#DC2626", backgroundColor: "#FFF7ED" }, language: "en" },
+    outcomeConfig: { automationId: "auto-8", autoClassify: true, autoMatch: true, contentRecommendationEnabled: true },
+    questions: [
+      { id: "q2-1", orderIndex: 0, type: "multiple_choice", questionText: "What stood out to you most in the video?", required: true, config: { options: [{ value: "story", label: "The personal story", score: 2 }, { value: "hope", label: "The message of hope", score: 2 }, { value: "community", label: "The sense of community", score: 1 }, { value: "unsure", label: "I'm not sure yet", score: 0 }] } },
+      { id: "q2-2", orderIndex: 1, type: "scale", questionText: "How much did this video resonate with you?", required: true, config: { min: 1, max: 5, minLabel: "Not at all", maxLabel: "Deeply" } },
+      { id: "q2-3", orderIndex: 2, type: "text", questionText: "Would you like to share any thoughts or questions?", required: false, config: { placeholder: "Your thoughts...", maxLength: 300 } },
+      { id: "q2-4", orderIndex: 3, type: "contact_info", questionText: "Want us to follow up with you?", required: false, config: { fields: [{ field: "name", label: "Your Name", required: true }, { field: "phone", label: "Phone", required: true }] } },
+    ],
+    analytics: { views: 5200, starts: 3100, completions: 2180, conversions: 1340 },
+    publishedAt: "2026-03-20T09:00:00Z", createdAt: "2026-03-10T08:00:00Z",
+  },
+  {
+    id: "camp-3", tenantId: "tenant-1", name: "Faith Discovery Quiz", description: "Short quiz to help seekers discover where they are on their journey",
+    type: "survey", status: "active", slug: "gcm-faith-discovery",
+    settings: { welcomeMessage: "Take this 2-minute quiz to discover where you are on your faith journey.", completionMessage: "Based on your answers, we've prepared some personalized resources just for you!", collectContact: true, contactFields: ["name", "phone"], branding: { primaryColor: "#059669", backgroundColor: "#F0FDF4" }, language: "en" },
+    outcomeConfig: { autoClassify: true, autoMatch: false, contentRecommendationEnabled: true },
+    questions: [
+      { id: "q3-1", orderIndex: 0, type: "multiple_choice", questionText: "Do you currently practice any form of prayer or meditation?", required: true, config: { options: [{ value: "daily", label: "Yes, daily", score: 4 }, { value: "sometimes", label: "Sometimes", score: 2 }, { value: "rarely", label: "Rarely", score: 1 }, { value: "never", label: "Never", score: 0 }] } },
+      { id: "q3-2", orderIndex: 1, type: "multiple_choice", questionText: "Have you read any part of the Bible?", required: true, config: { options: [{ value: "regularly", label: "I read regularly", score: 4 }, { value: "some", label: "I've read some parts", score: 2 }, { value: "once", label: "Once or twice", score: 1 }, { value: "never", label: "Never", score: 0 }] } },
+      { id: "q3-3", orderIndex: 2, type: "scale", questionText: "How interested are you in learning more about the Christian faith?", required: true, config: { min: 1, max: 10, minLabel: "Not interested", maxLabel: "Very interested" }, scoringWeight: 2.0 },
+      { id: "q3-4", orderIndex: 3, type: "contact_info", questionText: "Get your personalized results", required: true, config: { fields: [{ field: "name", label: "Name", required: true }, { field: "phone", label: "Phone", required: true }] } },
+    ],
+    analytics: { views: 1850, starts: 1240, completions: 980, conversions: 620 },
+    publishedAt: "2026-01-05T10:00:00Z", createdAt: "2025-12-28T08:00:00Z",
+  },
+  {
+    id: "camp-4", tenantId: "tenant-1", name: "Baptism Interest Survey", description: "For seekers considering baptism — gauge readiness and connect with preparation mentors",
+    type: "survey", status: "paused", slug: "gcm-baptism-interest",
+    settings: { welcomeMessage: "Thinking about baptism? We'd love to help you prepare.", completionMessage: "Thank you! A baptism preparation mentor will reach out to you soon.", collectContact: true, contactFields: ["name", "phone", "email"], branding: { primaryColor: "#2563EB", backgroundColor: "#EFF6FF" }, language: "en" },
+    outcomeConfig: { automationId: "auto-14", autoClassify: true, autoMatch: true, contentRecommendationEnabled: true },
+    questions: [
+      { id: "q4-1", orderIndex: 0, type: "multiple_choice", questionText: "How long have you been following Jesus?", required: true, config: { options: [{ value: "new", label: "Less than 6 months", score: 1 }, { value: "medium", label: "6 months to 2 years", score: 2 }, { value: "long", label: "More than 2 years", score: 3 }] } },
+      { id: "q4-2", orderIndex: 1, type: "multiple_choice", questionText: "Why are you interested in baptism?", required: true, config: { options: [{ value: "obedience", label: "I want to obey Jesus' command", score: 3 }, { value: "public", label: "I want to publicly declare my faith", score: 2 }, { value: "curious", label: "I'm still learning about it", score: 1 }] } },
+      { id: "q4-3", orderIndex: 2, type: "text", questionText: "Any questions about baptism you'd like answered?", required: false, config: { placeholder: "Your questions...", maxLength: 400 } },
+      { id: "q4-4", orderIndex: 3, type: "contact_info", questionText: "Your contact details", required: true, config: { fields: [{ field: "name", label: "Name", required: true }, { field: "phone", label: "Phone", required: true }, { field: "email", label: "Email", required: false }] } },
+    ],
+    analytics: { views: 620, starts: 410, completions: 340, conversions: 210 },
+    publishedAt: "2026-02-01T10:00:00Z", createdAt: "2026-01-20T08:00:00Z",
+  },
+  {
+    id: "camp-5", tenantId: "tenant-1", name: "Community Event Feedback", description: "Post-event feedback form for gathering attendee insights",
+    type: "survey", status: "draft", slug: "gcm-event-feedback",
+    settings: { welcomeMessage: "Thank you for attending! We'd love your feedback.", completionMessage: "Your feedback helps us serve you better. Thank you!", collectContact: false, contactFields: [], branding: { primaryColor: "#7C3AED", backgroundColor: "#FAF5FF" }, language: "en" },
+    outcomeConfig: { autoClassify: false, autoMatch: false, contentRecommendationEnabled: false },
+    questions: [
+      { id: "q5-1", orderIndex: 0, type: "scale", questionText: "How would you rate the event overall?", required: true, config: { min: 1, max: 5, minLabel: "Poor", maxLabel: "Excellent" } },
+      { id: "q5-2", orderIndex: 1, type: "multiple_choice", questionText: "What was the best part?", required: true, config: { options: [{ value: "worship", label: "Worship", score: 0 }, { value: "teaching", label: "Teaching", score: 0 }, { value: "fellowship", label: "Fellowship", score: 0 }, { value: "food", label: "Food & hospitality", score: 0 }] } },
+      { id: "q5-3", orderIndex: 2, type: "text", questionText: "Any suggestions for future events?", required: false, config: { placeholder: "Your suggestions...", maxLength: 500 } },
+    ],
+    analytics: { views: 0, starts: 0, completions: 0, conversions: 0 },
+    createdAt: "2026-05-28T08:00:00Z",
+  },
+  {
+    id: "camp-6", tenantId: "tenant-1", name: "Amharic Seeker Intake", description: "Intake survey in Amharic for Ethiopian seekers",
+    type: "survey", status: "archived", slug: "gcm-amharic-intake",
+    settings: { welcomeMessage: "እንኳን ደህና መጡ! ስለ እርስዎ ለማወቅ እንፈልጋለን።", completionMessage: "አመሰግናለሁ! አማካሪ በቅርቡ ያገኙዎታል።", collectContact: true, contactFields: ["name", "phone"], branding: { primaryColor: "#B45309", backgroundColor: "#FFFBEB" }, language: "am" },
+    outcomeConfig: { automationId: "auto-1", autoClassify: true, autoMatch: true, contentRecommendationEnabled: true },
+    questions: [
+      { id: "q6-1", orderIndex: 0, type: "contact_info", questionText: "የእርስዎ መረጃ", required: true, config: { fields: [{ field: "name", label: "ስም", required: true }, { field: "phone", label: "ስልክ", required: true }] } },
+      { id: "q6-2", orderIndex: 1, type: "multiple_choice", questionText: "እምነት ጉዞዎ የት ነው?", required: true, config: { options: [{ value: "curious", label: "ጉጉት", score: 1 }, { value: "exploring", label: "በመፈለግ ላይ", score: 2 }, { value: "new", label: "አዲስ አማኝ", score: 3 }] } },
+      { id: "q6-3", orderIndex: 2, type: "text", questionText: "ጥያቄ ካለዎት ያጋሩ", required: false, config: { placeholder: "ጥያቄዎን ይጻፉ...", maxLength: 400 } },
+    ],
+    analytics: { views: 1100, starts: 780, completions: 650, conversions: 420 },
+    publishedAt: "2025-08-15T10:00:00Z", createdAt: "2025-08-01T08:00:00Z",
+  },
+];
