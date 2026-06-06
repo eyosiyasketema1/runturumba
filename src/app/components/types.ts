@@ -1219,6 +1219,7 @@ export interface CampaignQuestion {
 
 export interface CampaignBranding {
   logoUrl?: string;
+  headerImageUrl?: string;
   primaryColor: string;
   backgroundColor: string;
 }

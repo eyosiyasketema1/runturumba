@@ -6,7 +6,7 @@ import {
   ClipboardList, BarChart3, Link2, QrCode, Sparkles, Users,
   Mail, Phone, Type, Hash, Star, Smartphone, Globe, Palette,
   Settings2, Zap, CheckCircle2, Circle, AlertCircle, Archive,
-  MessageSquare, Download, Send as SendIcon, Upload,
+  MessageSquare, Download, Send as SendIcon, Upload, Image,
 } from "lucide-react";
 import { toast } from "sonner";
 import {
@@ -306,12 +306,22 @@ const LivePreview = ({ campaign }: { campaign: Campaign }) => {
         <div className="h-7 bg-gray-800 flex items-center justify-center">
           <div className="w-16 h-1.5 bg-gray-600 rounded-full" />
         </div>
-        {/* Header */}
+        {/* Header image */}
+        {branding.headerImageUrl && (
+          <div className="w-full aspect-[3/1] overflow-hidden">
+            <img src={branding.headerImageUrl} alt="Header" className="w-full h-full object-cover" />
+          </div>
+        )}
+        {/* Header bar */}
         <div className="px-4 py-3 border-b" style={{ backgroundColor: branding.primaryColor + "10" }}>
           <div className="flex items-center gap-2">
-            <div className="w-6 h-6 rounded-md flex items-center justify-center" style={{ backgroundColor: branding.primaryColor }}>
-              <ClipboardList className="w-3.5 h-3.5 text-white" />
-            </div>
+            {branding.logoUrl ? (
+              <img src={branding.logoUrl} alt="Logo" className="w-6 h-6 rounded-md object-contain" />
+            ) : (
+              <div className="w-6 h-6 rounded-md flex items-center justify-center" style={{ backgroundColor: branding.primaryColor }}>
+                <ClipboardList className="w-3.5 h-3.5 text-white" />
+              </div>
+            )}
             <span className="text-xs font-bold text-gray-800 truncate">{campaign.name}</span>
           </div>
           {/* Progress */}
@@ -770,20 +780,90 @@ const CampaignBuilder = ({ campaign, onBack, onSave }: {
               </Card>
 
               <Card>
-                <CardHeader><CardTitle className="text-sm font-semibold">Branding</CardTitle></CardHeader>
-                <CardContent className="space-y-4">
+                <CardHeader>
+                  <CardTitle className="text-sm font-semibold">Branding</CardTitle>
+                  <CardDescription className="text-xs">Customize the look and feel of your campaign</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-5">
+                  {/* Logo Upload */}
+                  <div className="space-y-2">
+                    <Label className="text-xs font-medium">Logo</Label>
+                    <div className="flex items-center gap-4">
+                      {draft.settings.branding.logoUrl ? (
+                        <div className="relative w-16 h-16 rounded-xl border border-border overflow-hidden bg-muted/30 shrink-0">
+                          <img src={draft.settings.branding.logoUrl} alt="Logo" className="w-full h-full object-contain p-1" />
+                          <button onClick={() => updateBranding({ logoUrl: "" })} className="absolute -top-1 -right-1 p-0.5 rounded-full bg-destructive text-white shadow-sm"><X className="w-3 h-3" /></button>
+                        </div>
+                      ) : (
+                        <div
+                          className="w-16 h-16 rounded-xl border-2 border-dashed border-border flex items-center justify-center cursor-pointer hover:border-primary/40 hover:bg-primary/5 transition-all shrink-0"
+                          onClick={() => document.getElementById("logo-upload-input")?.click()}
+                        >
+                          <Plus className="w-5 h-5 text-muted-foreground" />
+                        </div>
+                      )}
+                      <div className="flex-1">
+                        <p className="text-xs text-muted-foreground">Square image, recommended 200x200px. PNG or JPG.</p>
+                        <Button size="sm" variant="outline" className="mt-2 h-7 text-xs" onClick={() => document.getElementById("logo-upload-input")?.click()}>
+                          <Upload className="w-3 h-3 mr-1" /> {draft.settings.branding.logoUrl ? "Change" : "Upload"}
+                        </Button>
+                      </div>
+                    </div>
+                    <input id="logo-upload-input" type="file" accept="image/png,image/jpeg,image/svg+xml" className="hidden" onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) { updateBranding({ logoUrl: URL.createObjectURL(file) }); toast.success("Logo uploaded"); }
+                      e.target.value = "";
+                    }} />
+                  </div>
+
+                  <Separator />
+
+                  {/* Header Image Upload */}
+                  <div className="space-y-2">
+                    <Label className="text-xs font-medium">Header Image</Label>
+                    <p className="text-[11px] text-muted-foreground">Displayed at the top of the campaign page. Recommended size: 1200 x 400px (3:1 ratio).</p>
+                    {draft.settings.branding.headerImageUrl ? (
+                      <div className="relative w-full aspect-[3/1] rounded-lg border border-border overflow-hidden bg-muted/30">
+                        <img src={draft.settings.branding.headerImageUrl} alt="Header" className="w-full h-full object-cover" />
+                        <button onClick={() => updateBranding({ headerImageUrl: "" })} className="absolute top-2 right-2 p-1.5 rounded-md bg-black/60 text-white hover:bg-black/80 transition-colors"><X className="w-4 h-4" /></button>
+                      </div>
+                    ) : (
+                      <div
+                        className="w-full aspect-[3/1] rounded-lg border-2 border-dashed border-border flex flex-col items-center justify-center cursor-pointer hover:border-primary/40 hover:bg-primary/5 transition-all"
+                        onClick={() => document.getElementById("header-upload-input")?.click()}
+                      >
+                        <Image className="w-8 h-8 text-muted-foreground mb-2" />
+                        <p className="text-xs font-medium text-foreground">Upload header image</p>
+                        <p className="text-[11px] text-muted-foreground mt-0.5">1200 x 400px · PNG, JPG</p>
+                      </div>
+                    )}
+                    {draft.settings.branding.headerImageUrl && (
+                      <Button size="sm" variant="outline" className="h-7 text-xs" onClick={() => document.getElementById("header-upload-input")?.click()}>
+                        <Upload className="w-3 h-3 mr-1" /> Change Image
+                      </Button>
+                    )}
+                    <input id="header-upload-input" type="file" accept="image/png,image/jpeg" className="hidden" onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) { updateBranding({ headerImageUrl: URL.createObjectURL(file) }); toast.success("Header image uploaded"); }
+                      e.target.value = "";
+                    }} />
+                  </div>
+
+                  <Separator />
+
+                  {/* Primary Color */}
                   <div className="space-y-1.5">
-                    <Label className="text-xs">Primary Color</Label>
+                    <Label className="text-xs font-medium">Primary Color</Label>
                     <div className="flex items-center gap-2">
                       <input type="color" value={draft.settings.branding.primaryColor} onChange={(e) => updateBranding({ primaryColor: e.target.value, backgroundColor: e.target.value + "1A" })} className="w-10 h-10 rounded-lg border cursor-pointer" />
                       <Input value={draft.settings.branding.primaryColor} onChange={(e) => updateBranding({ primaryColor: e.target.value, backgroundColor: e.target.value + "1A" })} className="flex-1" />
                     </div>
-                    <p className="text-[11px] text-muted-foreground">Background color is automatically set to 10% of the primary color</p>
+                    <p className="text-[11px] text-muted-foreground">Background color is automatically set to 10% of primary</p>
                   </div>
                   {/* Preview swatch */}
                   <div className="flex items-center gap-3">
-                    <div className="flex-1 h-12 rounded-lg border flex items-center justify-center text-xs font-semibold text-white" style={{ backgroundColor: draft.settings.branding.primaryColor }}>Primary</div>
-                    <div className="flex-1 h-12 rounded-lg border flex items-center justify-center text-xs font-medium" style={{ backgroundColor: draft.settings.branding.primaryColor + "1A", color: draft.settings.branding.primaryColor }}>Background (10%)</div>
+                    <div className="flex-1 h-10 rounded-lg border flex items-center justify-center text-xs font-semibold text-white" style={{ backgroundColor: draft.settings.branding.primaryColor }}>Primary</div>
+                    <div className="flex-1 h-10 rounded-lg border flex items-center justify-center text-xs font-medium" style={{ backgroundColor: draft.settings.branding.primaryColor + "1A", color: draft.settings.branding.primaryColor }}>Background</div>
                   </div>
                 </CardContent>
               </Card>
