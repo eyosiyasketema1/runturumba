@@ -52,106 +52,235 @@ const funnelPercent = (num: number, denom: number) => denom === 0 ? "0%" : `${Ma
 // QUESTION EDITOR
 // ============================================================================
 
-const QuestionEditor = ({ question, onUpdate, onDelete, onMoveUp, onMoveDown, isFirst, isLast }: {
+const CONTACT_FIELD_OPTIONS = [
+  { field: "name", label: "Full Name", icon: Users },
+  { field: "phone", label: "Phone Number", icon: Phone },
+  { field: "email", label: "Email Address", icon: Mail },
+  { field: "city", label: "City / Location", icon: Globe },
+];
+
+const QuestionCard = ({ question, index, onUpdate, onDelete, onMoveUp, onMoveDown, isFirst, isLast, isActive, onSelect }: {
   question: CampaignQuestion;
+  index: number;
   onUpdate: (q: CampaignQuestion) => void;
   onDelete: () => void;
   onMoveUp: () => void;
   onMoveDown: () => void;
   isFirst: boolean;
   isLast: boolean;
+  isActive: boolean;
+  onSelect: () => void;
 }) => {
-  const [isExpanded, setIsExpanded] = useState(false);
   const qtCfg = QUESTION_TYPE_CONFIG[question.type];
   const QIcon = qtCfg.icon;
 
   return (
-    <div className="border border-border rounded-lg bg-card hover:border-primary/30 transition-colors group">
-      {/* Header row */}
-      <div className="flex items-center gap-2 px-3 py-2.5 cursor-pointer" onClick={() => setIsExpanded(!isExpanded)}>
-        <div className="flex flex-col gap-0.5 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
-          <button onClick={(e) => { e.stopPropagation(); onMoveUp(); }} disabled={isFirst} className="p-0.5 text-muted-foreground hover:text-foreground disabled:opacity-20"><ChevronUp className="w-3 h-3" /></button>
-          <button onClick={(e) => { e.stopPropagation(); onMoveDown(); }} disabled={isLast} className="p-0.5 text-muted-foreground hover:text-foreground disabled:opacity-20"><ChevronDown className="w-3 h-3" /></button>
+    <div
+      className={cn(
+        "border rounded-xl bg-card transition-all",
+        isActive ? "border-primary shadow-md ring-1 ring-primary/20" : "border-border hover:border-primary/30 cursor-pointer"
+      )}
+      onClick={() => !isActive && onSelect()}
+    >
+      {/* Always visible: number + question text + type + actions */}
+      <div className="flex items-start gap-3 px-4 py-3">
+        {/* Drag handle + reorder */}
+        <div className="flex flex-col items-center gap-0.5 pt-1 shrink-0">
+          <GripVertical className="w-4 h-4 text-muted-foreground/40" />
+          <div className="flex flex-col gap-0">
+            <button onClick={(e) => { e.stopPropagation(); onMoveUp(); }} disabled={isFirst} className="p-0.5 text-muted-foreground hover:text-foreground disabled:opacity-20 transition-colors"><ChevronUp className="w-3 h-3" /></button>
+            <button onClick={(e) => { e.stopPropagation(); onMoveDown(); }} disabled={isLast} className="p-0.5 text-muted-foreground hover:text-foreground disabled:opacity-20 transition-colors"><ChevronDown className="w-3 h-3" /></button>
+          </div>
         </div>
-        <div className={cn("w-7 h-7 rounded-md flex items-center justify-center shrink-0 bg-muted/50")}>
-          <QIcon className={cn("w-3.5 h-3.5", qtCfg.color)} />
+
+        {/* Question number */}
+        <div className={cn("w-8 h-8 rounded-lg flex items-center justify-center shrink-0 text-xs font-bold", isActive ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground")}>
+          {index + 1}
         </div>
+
+        {/* Content */}
         <div className="flex-1 min-w-0">
-          <p className="text-sm font-medium text-foreground truncate">{question.questionText || "Untitled question"}</p>
-          <p className="text-[11px] text-muted-foreground">{qtCfg.label}{question.required ? " · Required" : ""}</p>
+          {isActive ? (
+            <input
+              value={question.questionText}
+              onChange={(e) => onUpdate({ ...question, questionText: e.target.value })}
+              placeholder="Type your question here..."
+              className="w-full text-sm font-semibold text-foreground bg-transparent border-none outline-none placeholder:text-muted-foreground/50"
+              autoFocus
+            />
+          ) : (
+            <p className="text-sm font-medium text-foreground truncate">{question.questionText || "Untitled question"}</p>
+          )}
+          <div className="flex items-center gap-2 mt-1">
+            <span className={cn("inline-flex items-center gap-1 text-[11px] font-medium", qtCfg.color)}>
+              <QIcon className="w-3 h-3" /> {qtCfg.label}
+            </span>
+            {question.required && <span className="text-[10px] text-rose-500 font-medium">Required</span>}
+          </div>
         </div>
-        <ChevronRight className={cn("w-4 h-4 text-muted-foreground transition-transform", isExpanded && "rotate-90")} />
+
+        {/* Delete */}
+        <button onClick={(e) => { e.stopPropagation(); onDelete(); }} className="p-1.5 rounded-md text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors shrink-0">
+          <Trash2 className="w-3.5 h-3.5" />
+        </button>
       </div>
 
-      {/* Expanded editor */}
-      {isExpanded && (
-        <div className="px-4 pb-4 pt-1 border-t border-border space-y-3">
-          <div className="space-y-1.5">
-            <Label className="text-xs">Question Text</Label>
-            <Input value={question.questionText} onChange={(e) => onUpdate({ ...question, questionText: e.target.value })} />
+      {/* Expanded editor — only when active */}
+      {isActive && (
+        <div className="px-4 pb-4 space-y-4 border-t border-border mx-4 pt-4">
+          {/* Description */}
+          <div className="space-y-1">
+            <Label className="text-xs text-muted-foreground">Description (optional)</Label>
+            <Input value={question.description || ""} onChange={(e) => onUpdate({ ...question, description: e.target.value })} placeholder="Add helper text for participants..." className="text-sm" />
           </div>
-          <div className="space-y-1.5">
-            <Label className="text-xs">Helper Text (optional)</Label>
-            <Input value={question.description || ""} onChange={(e) => onUpdate({ ...question, description: e.target.value })} placeholder="Additional context for participants..." />
-          </div>
-          <div className="flex items-center gap-4">
+
+          {/* Type selector + required toggle */}
+          <div className="flex items-center gap-4 flex-wrap">
             <div className="flex items-center gap-2">
-              <Label className="text-xs">Type</Label>
-              <select value={question.type} onChange={(e) => onUpdate({ ...question, type: e.target.value as QuestionType, config: {} })} className="h-8 px-2 text-xs rounded-md border border-input bg-background">
+              <Label className="text-xs text-muted-foreground shrink-0">Type</Label>
+              <select
+                value={question.type}
+                onChange={(e) => {
+                  const newType = e.target.value as QuestionType;
+                  const defaults: Record<QuestionType, any> = {
+                    multiple_choice: { options: [{ value: "opt_1", label: "Option 1", score: 0 }, { value: "opt_2", label: "Option 2", score: 0 }] },
+                    text: { placeholder: "Type your answer...", maxLength: 500 },
+                    scale: { min: 1, max: 5, minLabel: "Not at all", maxLabel: "Very much" },
+                    contact_info: { fields: CONTACT_FIELD_OPTIONS.slice(0, 3).map(f => ({ field: f.field, label: f.label, required: f.field === "name" })) },
+                  };
+                  onUpdate({ ...question, type: newType, config: defaults[newType] });
+                }}
+                className="h-9 px-3 text-sm rounded-lg border border-input bg-background"
+              >
                 <option value="multiple_choice">Multiple Choice</option>
-                <option value="text">Text</option>
-                <option value="scale">Scale</option>
+                <option value="text">Open Text</option>
+                <option value="scale">Rating Scale</option>
                 <option value="contact_info">Contact Info</option>
               </select>
             </div>
             <div className="flex items-center gap-2">
               <Switch checked={question.required} onCheckedChange={(v) => onUpdate({ ...question, required: v })} />
-              <Label className="text-xs">Required</Label>
+              <Label className="text-xs text-muted-foreground">Required</Label>
             </div>
           </div>
 
           {/* Type-specific config */}
           {question.type === "multiple_choice" && (
             <div className="space-y-2">
-              <Label className="text-xs">Options</Label>
+              <Label className="text-xs text-muted-foreground">Answer Options</Label>
               {(question.config.options || []).map((opt: any, i: number) => (
-                <div key={i} className="flex items-center gap-2">
-                  <span className="text-xs text-muted-foreground w-5 shrink-0">{i + 1}.</span>
-                  <Input value={opt.label} className="h-8 text-xs flex-1" onChange={(e) => {
-                    const opts = [...(question.config.options || [])];
-                    opts[i] = { ...opts[i], label: e.target.value, value: e.target.value.toLowerCase().replace(/\s+/g, "_") };
-                    onUpdate({ ...question, config: { ...question.config, options: opts } });
-                  }} />
-                  <button onClick={() => {
-                    const opts = (question.config.options || []).filter((_: any, j: number) => j !== i);
-                    onUpdate({ ...question, config: { ...question.config, options: opts } });
-                  }} className="p-1 text-muted-foreground hover:text-destructive"><X className="w-3 h-3" /></button>
+                <div key={i} className="flex items-center gap-2 group/opt">
+                  <div className="w-4 h-4 rounded-full border-2 border-muted-foreground/30 shrink-0" />
+                  <Input
+                    value={opt.label}
+                    placeholder={`Option ${i + 1}`}
+                    className="h-9 text-sm flex-1"
+                    autoFocus={!opt.label}
+                    onChange={(e) => {
+                      const opts = [...(question.config.options || [])];
+                      opts[i] = { ...opts[i], label: e.target.value, value: e.target.value.toLowerCase().replace(/[^a-z0-9]+/g, "_") || `opt_${i}` };
+                      onUpdate({ ...question, config: { ...question.config, options: opts } });
+                    }}
+                  />
+                  <button
+                    onClick={() => onUpdate({ ...question, config: { ...question.config, options: (question.config.options || []).filter((_: any, j: number) => j !== i) } })}
+                    className="p-1 text-muted-foreground/40 hover:text-destructive opacity-0 group-hover/opt:opacity-100 transition-all"
+                  ><X className="w-3.5 h-3.5" /></button>
                 </div>
               ))}
-              <Button size="sm" variant="outline" className="h-7 text-xs" onClick={() => {
-                const opts = [...(question.config.options || []), { value: `opt_${Date.now()}`, label: "", score: 0 }];
-                onUpdate({ ...question, config: { ...question.config, options: opts } });
-              }}><Plus className="w-3 h-3 mr-1" /> Add Option</Button>
-            </div>
-          )}
-          {question.type === "scale" && (
-            <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-1"><Label className="text-xs">Min Label</Label><Input className="h-8 text-xs" value={question.config.minLabel || ""} onChange={(e) => onUpdate({ ...question, config: { ...question.config, minLabel: e.target.value } })} /></div>
-              <div className="space-y-1"><Label className="text-xs">Max Label</Label><Input className="h-8 text-xs" value={question.config.maxLabel || ""} onChange={(e) => onUpdate({ ...question, config: { ...question.config, maxLabel: e.target.value } })} /></div>
-              <div className="space-y-1"><Label className="text-xs">Min Value</Label><Input type="number" className="h-8 text-xs" value={question.config.min || 1} onChange={(e) => onUpdate({ ...question, config: { ...question.config, min: parseInt(e.target.value) } })} /></div>
-              <div className="space-y-1"><Label className="text-xs">Max Value</Label><Input type="number" className="h-8 text-xs" value={question.config.max || 10} onChange={(e) => onUpdate({ ...question, config: { ...question.config, max: parseInt(e.target.value) } })} /></div>
-            </div>
-          )}
-          {question.type === "text" && (
-            <div className="space-y-2">
-              <div className="space-y-1"><Label className="text-xs">Placeholder</Label><Input className="h-8 text-xs" value={question.config.placeholder || ""} onChange={(e) => onUpdate({ ...question, config: { ...question.config, placeholder: e.target.value } })} /></div>
-              <div className="space-y-1"><Label className="text-xs">Max Length</Label><Input type="number" className="h-8 text-xs" value={question.config.maxLength || 500} onChange={(e) => onUpdate({ ...question, config: { ...question.config, maxLength: parseInt(e.target.value) } })} /></div>
+              <button
+                onClick={() => onUpdate({ ...question, config: { ...question.config, options: [...(question.config.options || []), { value: `opt_${Date.now()}`, label: "", score: 0 }] } })}
+                className="flex items-center gap-2 text-sm text-primary hover:text-primary/80 font-medium pl-6 py-1 transition-colors"
+              >
+                <Plus className="w-3.5 h-3.5" /> Add option
+              </button>
             </div>
           )}
 
-          <div className="flex justify-end">
-            <Button size="sm" variant="destructive" className="h-7 text-xs" onClick={onDelete}><Trash2 className="w-3 h-3 mr-1" /> Delete</Button>
-          </div>
+          {question.type === "scale" && (
+            <div className="space-y-3">
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1"><Label className="text-xs text-muted-foreground">Min Value</Label><Input type="number" value={question.config.min || 1} onChange={(e) => onUpdate({ ...question, config: { ...question.config, min: parseInt(e.target.value) || 1 } })} /></div>
+                <div className="space-y-1"><Label className="text-xs text-muted-foreground">Max Value</Label><Input type="number" value={question.config.max || 5} onChange={(e) => onUpdate({ ...question, config: { ...question.config, max: parseInt(e.target.value) || 5 } })} /></div>
+                <div className="space-y-1"><Label className="text-xs text-muted-foreground">Low Label</Label><Input value={question.config.minLabel || ""} onChange={(e) => onUpdate({ ...question, config: { ...question.config, minLabel: e.target.value } })} placeholder="e.g. Not at all" /></div>
+                <div className="space-y-1"><Label className="text-xs text-muted-foreground">High Label</Label><Input value={question.config.maxLabel || ""} onChange={(e) => onUpdate({ ...question, config: { ...question.config, maxLabel: e.target.value } })} placeholder="e.g. Very much" /></div>
+              </div>
+              {/* Scale preview */}
+              <div className="flex items-center gap-1 pt-1">
+                {Array.from({ length: Math.min((question.config.max || 5) - (question.config.min || 1) + 1, 11) }, (_, i) => (
+                  <div key={i} className="flex-1 h-9 border border-border rounded-md flex items-center justify-center text-xs text-muted-foreground bg-muted/30">
+                    {(question.config.min || 1) + i}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {question.type === "text" && (
+            <div className="space-y-3">
+              <div className="space-y-1">
+                <Label className="text-xs text-muted-foreground">Placeholder Text</Label>
+                <Input value={question.config.placeholder || ""} onChange={(e) => onUpdate({ ...question, config: { ...question.config, placeholder: e.target.value } })} placeholder="e.g. Share your thoughts..." />
+              </div>
+              <div className="space-y-1">
+                <Label className="text-xs text-muted-foreground">Max Characters</Label>
+                <Input type="number" value={question.config.maxLength || 500} onChange={(e) => onUpdate({ ...question, config: { ...question.config, maxLength: parseInt(e.target.value) || 500 } })} />
+              </div>
+              {/* Text preview */}
+              <div className="border border-border rounded-lg px-3 py-2 bg-muted/20 text-sm text-muted-foreground/50 min-h-[60px]">
+                {question.config.placeholder || "Participant's answer will appear here..."}
+              </div>
+            </div>
+          )}
+
+          {question.type === "contact_info" && (
+            <div className="space-y-3">
+              <Label className="text-xs text-muted-foreground">Select which fields to collect</Label>
+              <div className="space-y-2">
+                {CONTACT_FIELD_OPTIONS.map(fieldOpt => {
+                  const existing = (question.config.fields || []).find((f: any) => f.field === fieldOpt.field);
+                  const isEnabled = !!existing;
+                  const FieldIcon = fieldOpt.icon;
+                  return (
+                    <div key={fieldOpt.field} className={cn("flex items-center justify-between px-3 py-2.5 rounded-lg border transition-colors", isEnabled ? "border-primary/30 bg-primary/5" : "border-border bg-muted/20")}>
+                      <div className="flex items-center gap-3">
+                        <FieldIcon className={cn("w-4 h-4", isEnabled ? "text-primary" : "text-muted-foreground")} />
+                        <div>
+                          <p className={cn("text-sm font-medium", isEnabled ? "text-foreground" : "text-muted-foreground")}>{fieldOpt.label}</p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        {isEnabled && (
+                          <div className="flex items-center gap-1.5">
+                            <Switch
+                              checked={existing.required}
+                              onCheckedChange={(v) => {
+                                const fields = (question.config.fields || []).map((f: any) => f.field === fieldOpt.field ? { ...f, required: v } : f);
+                                onUpdate({ ...question, config: { ...question.config, fields } });
+                              }}
+                            />
+                            <span className="text-[11px] text-muted-foreground">Required</span>
+                          </div>
+                        )}
+                        <Switch
+                          checked={isEnabled}
+                          onCheckedChange={(v) => {
+                            if (v) {
+                              const fields = [...(question.config.fields || []), { field: fieldOpt.field, label: fieldOpt.label, required: fieldOpt.field === "name" }];
+                              onUpdate({ ...question, config: { ...question.config, fields } });
+                            } else {
+                              const fields = (question.config.fields || []).filter((f: any) => f.field !== fieldOpt.field);
+                              onUpdate({ ...question, config: { ...question.config, fields } });
+                            }
+                          }}
+                        />
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
         </div>
       )}
     </div>
@@ -296,6 +425,7 @@ const CampaignBuilder = ({ campaign, onBack, onSave }: {
 }) => {
   const [draft, setDraft] = useState<Campaign>(campaign);
   const [builderTab, setBuilderTab] = useState<"questions" | "settings" | "outcomes">("questions");
+  const [activeQuestionId, setActiveQuestionId] = useState<string | null>(null);
 
   const updateSettings = (data: Partial<CampaignSettings>) => setDraft(prev => ({ ...prev, settings: { ...prev.settings, ...data } }));
   const updateBranding = (data: Partial<Campaign["settings"]["branding"]>) => setDraft(prev => ({ ...prev, settings: { ...prev.settings, branding: { ...prev.settings.branding, ...data } } }));
@@ -305,15 +435,17 @@ const CampaignBuilder = ({ campaign, onBack, onSave }: {
     const defaults: Record<QuestionType, any> = {
       multiple_choice: { options: [{ value: "opt_1", label: "Option 1", score: 0 }, { value: "opt_2", label: "Option 2", score: 0 }] },
       text: { placeholder: "Type your answer...", maxLength: 500 },
-      scale: { min: 1, max: 5, minLabel: "Low", maxLabel: "High" },
-      contact_info: { fields: [{ field: "name", label: "Your Name", required: true }, { field: "phone", label: "Phone", required: false }] },
+      scale: { min: 1, max: 5, minLabel: "Not at all", maxLabel: "Very much" },
+      contact_info: { fields: CONTACT_FIELD_OPTIONS.slice(0, 3).map(f => ({ field: f.field, label: f.label, required: f.field === "name" })) },
     };
-    const q: CampaignQuestion = { id: `q-${Date.now()}`, orderIndex: draft.questions.length, type, questionText: "", required: true, config: defaults[type] };
+    const newId = `q-${Date.now()}`;
+    const q: CampaignQuestion = { id: newId, orderIndex: draft.questions.length, type, questionText: "", required: true, config: defaults[type] };
     setDraft(prev => ({ ...prev, questions: [...prev.questions, q] }));
+    setActiveQuestionId(newId);
   };
 
   const updateQuestion = (id: string, q: CampaignQuestion) => setDraft(prev => ({ ...prev, questions: prev.questions.map(x => x.id === id ? q : x) }));
-  const deleteQuestion = (id: string) => setDraft(prev => ({ ...prev, questions: prev.questions.filter(x => x.id !== id).map((q, i) => ({ ...q, orderIndex: i })) }));
+  const deleteQuestion = (id: string) => { setDraft(prev => ({ ...prev, questions: prev.questions.filter(x => x.id !== id).map((q, i) => ({ ...q, orderIndex: i })) })); if (activeQuestionId === id) setActiveQuestionId(null); };
   const moveQuestion = (index: number, dir: -1 | 1) => {
     const qs = [...draft.questions];
     const target = index + dir;
@@ -369,36 +501,51 @@ const CampaignBuilder = ({ campaign, onBack, onSave }: {
         <div className="flex-1 overflow-y-auto p-6">
           {builderTab === "questions" && (
             <div className="space-y-4 max-w-2xl">
-              <div className="flex items-center justify-between">
-                <h3 className="text-base font-semibold text-foreground">Questions ({draft.questions.length})</h3>
-              </div>
-              {/* Add question type buttons */}
-              <div className="flex items-center gap-2 flex-wrap">
-                {(Object.entries(QUESTION_TYPE_CONFIG) as [QuestionType, typeof QUESTION_TYPE_CONFIG[QuestionType]][]).map(([type, cfg]) => {
-                  const BtnIcon = cfg.icon;
-                  return (
-                    <Button key={type} size="sm" variant="outline" onClick={() => addQuestion(type)} className="gap-1.5">
-                      <BtnIcon className={cn("w-3.5 h-3.5", cfg.color)} /> {cfg.label}
-                    </Button>
-                  );
-                })}
-              </div>
+              <h3 className="text-base font-semibold text-foreground">Questions ({draft.questions.length})</h3>
+
               {draft.questions.length === 0 ? (
                 <div className="text-center py-16 border-2 border-dashed border-border rounded-xl">
                   <ClipboardList className="w-10 h-10 text-muted-foreground mx-auto mb-3" />
                   <p className="text-sm font-medium text-foreground">No questions yet</p>
-                  <p className="text-xs text-muted-foreground mt-1">Click a question type above to add your first question</p>
+                  <p className="text-xs text-muted-foreground mt-1 mb-5">Add your first question to start building</p>
+                  <div className="flex items-center justify-center gap-2 flex-wrap">
+                    {(Object.entries(QUESTION_TYPE_CONFIG) as [QuestionType, typeof QUESTION_TYPE_CONFIG[QuestionType]][]).map(([type, cfg]) => {
+                      const BtnIcon = cfg.icon;
+                      return (
+                        <Button key={type} size="sm" variant="outline" onClick={() => addQuestion(type)} className="gap-1.5">
+                          <BtnIcon className={cn("w-3.5 h-3.5", cfg.color)} /> {cfg.label}
+                        </Button>
+                      );
+                    })}
+                  </div>
                 </div>
               ) : (
-                <div className="space-y-2">
+                <div className="space-y-3">
                   {draft.questions.map((q, i) => (
-                    <QuestionEditor key={q.id} question={q}
+                    <QuestionCard key={q.id} question={q} index={i}
                       onUpdate={(updated) => updateQuestion(q.id, updated)}
                       onDelete={() => deleteQuestion(q.id)}
                       onMoveUp={() => moveQuestion(i, -1)}
                       onMoveDown={() => moveQuestion(i, 1)}
-                      isFirst={i === 0} isLast={i === draft.questions.length - 1} />
+                      isFirst={i === 0} isLast={i === draft.questions.length - 1}
+                      isActive={activeQuestionId === q.id}
+                      onSelect={() => setActiveQuestionId(q.id)} />
                   ))}
+
+                  {/* Add question buttons — always at the bottom */}
+                  <div className="border-2 border-dashed border-border rounded-xl p-4">
+                    <p className="text-xs font-medium text-muted-foreground mb-3 text-center">Add a question</p>
+                    <div className="flex items-center justify-center gap-2 flex-wrap">
+                      {(Object.entries(QUESTION_TYPE_CONFIG) as [QuestionType, typeof QUESTION_TYPE_CONFIG[QuestionType]][]).map(([type, cfg]) => {
+                        const BtnIcon = cfg.icon;
+                        return (
+                          <Button key={type} size="sm" variant="outline" onClick={() => addQuestion(type)} className="gap-1.5">
+                            <BtnIcon className={cn("w-3.5 h-3.5", cfg.color)} /> {cfg.label}
+                          </Button>
+                        );
+                      })}
+                    </div>
+                  </div>
                 </div>
               )}
             </div>
