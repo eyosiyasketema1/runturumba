@@ -603,7 +603,7 @@ const CampaignBuilder = ({ campaign, onBack, onSave }: {
 
       {/* Builder tabs */}
       <div className="px-6 border-b border-border bg-muted/20 shrink-0">
-        <div className="flex items-center gap-1">
+        <div className="flex items-center justify-center gap-1">
           {([
             { id: "questions" as const, label: "Questions", icon: ClipboardList },
             { id: "settings" as const, label: "Settings", icon: Settings2 },
@@ -624,7 +624,7 @@ const CampaignBuilder = ({ campaign, onBack, onSave }: {
         {/* Left: Editor */}
         <div className="flex-1 overflow-y-auto p-6">
           {builderTab === "questions" && (
-            <div className="space-y-4 max-w-2xl">
+            <div className="space-y-4 max-w-2xl mx-auto">
               <h3 className="text-base font-semibold text-foreground">Questions ({draft.questions.length})</h3>
 
               {draft.questions.length === 0 ? (
@@ -677,7 +677,7 @@ const CampaignBuilder = ({ campaign, onBack, onSave }: {
           )}
 
           {builderTab === "settings" && (
-            <div className="space-y-6 max-w-2xl">
+            <div className="space-y-6 max-w-2xl mx-auto">
               <Card>
                 <CardHeader><CardTitle className="text-sm font-semibold">General</CardTitle></CardHeader>
                 <CardContent className="space-y-4">
@@ -881,7 +881,7 @@ const CampaignBuilder = ({ campaign, onBack, onSave }: {
           )}
 
           {builderTab === "share" && (
-            <div className="space-y-6 max-w-2xl">
+            <div className="space-y-6 max-w-2xl mx-auto">
               {/* Campaign URL */}
               <Card>
                 <CardHeader>
@@ -953,7 +953,7 @@ const CampaignBuilder = ({ campaign, onBack, onSave }: {
           )}
 
           {builderTab === "outcomes" && (
-            <div className="space-y-6 max-w-2xl">
+            <div className="space-y-6 max-w-2xl mx-auto">
               <Card>
                 <CardHeader>
                   <CardTitle className="text-sm font-semibold">Post-Completion Actions</CardTitle>
