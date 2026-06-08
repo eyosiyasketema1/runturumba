@@ -133,10 +133,11 @@ export default function App() {
     return localStorage.getItem("turumba_onboarding_complete") !== "true";
   });
   
-  // Org hierarchy — super org can switch to view child org data
+  // Org hierarchy — two levels: super orgs + child orgs
   const [allTenants, setAllTenants] = useState<Tenant[]>(INITIAL_TENANTS);
+  const superOrgs = useMemo(() => allTenants.filter(t => t.orgRole === "super"), [allTenants]);
   const childOrgs = useMemo(() => allTenants.filter(t => t.parentOrgId === activeTenant.id), [allTenants, activeTenant.id]);
-  const [viewingOrgId, setViewingOrgId] = useState<string | null>(null); // null = super org view
+  const [viewingOrgId, setViewingOrgId] = useState<string | null>(null); // null = super org (HQ) view
   const viewingOrg = viewingOrgId ? allTenants.find(t => t.id === viewingOrgId) ?? null : null;
 
   // Deterministic seed per org for slicing mock data — gives each org a unique subset
@@ -654,26 +655,86 @@ export default function App() {
           isSidebarCollapsed ? "lg:w-[72px] w-72" : "w-60"
         )}
       >
-        {/* Logo */}
-        <div className="flex items-center justify-between h-[64px] px-4">
-          <div className="flex items-center gap-2.5 min-w-0">
+        {/* Org Switcher Header */}
+        <div className="relative px-3 pt-3 pb-2">
+          <button
+            onClick={() => (!isSidebarCollapsed || isMobileSidebarOpen) && setIsOrgSwitcherOpen(v => !v)}
+            className={cn(
+              "w-full flex items-center gap-2.5 px-2 py-2 rounded-lg transition-all",
+              isOrgSwitcherOpen ? "bg-sidebar-accent" : "hover:bg-sidebar-accent/50"
+            )}
+          >
             <div className="w-9 h-9 rounded-lg bg-primary flex items-center justify-center shrink-0 shadow-sm">
               <Globe className="w-4 h-4 text-primary-foreground" />
             </div>
             {(!isSidebarCollapsed || isMobileSidebarOpen) && (
-              <div className="flex flex-col min-w-0">
-                <span className="text-sm font-bold text-sidebar-foreground tracking-tight leading-tight">{activeTenant.name}</span>
-                <span className="text-[10px] text-muted-foreground">Workspace</span>
-              </div>
+              <>
+                <div className="flex flex-col min-w-0 flex-1 text-left">
+                  <span className="text-sm font-bold text-sidebar-foreground tracking-tight leading-tight truncate">{activeTenant.name}</span>
+                  <span className="text-[10px] text-muted-foreground">Workspace</span>
+                </div>
+                <ChevronDown className={cn("w-4 h-4 text-muted-foreground shrink-0 transition-transform", isOrgSwitcherOpen && "rotate-180")} />
+              </>
             )}
-          </div>
+          </button>
+
+          {/* Mobile close */}
           <button
             onClick={() => setIsMobileSidebarOpen(false)}
-            className="lg:hidden p-1.5 text-muted-foreground hover:text-foreground transition-colors"
+            className="lg:hidden absolute top-3 right-3 p-1.5 text-muted-foreground hover:text-foreground transition-colors"
             aria-label="Close menu"
           >
             <X className="w-4 h-4" />
           </button>
+
+          {/* Org dropdown */}
+          <AnimatePresence>
+            {isOrgSwitcherOpen && (!isSidebarCollapsed || isMobileSidebarOpen) && (
+              <>
+                <div className="fixed inset-0 z-40" onClick={() => setIsOrgSwitcherOpen(false)} />
+                <motion.div
+                  initial={{ opacity: 0, y: -4 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -4 }}
+                  transition={{ duration: 0.15 }}
+                  className="absolute left-3 right-3 top-full mt-1 bg-popover border border-border rounded-xl shadow-xl z-50 overflow-hidden"
+                >
+                  <div className="py-1.5 max-h-[360px] overflow-y-auto">
+                    {superOrgs.map((org, i) => {
+                      const isSelected = activeTenant.id === org.id;
+                      const colors = ["bg-primary", "bg-violet-500", "bg-cyan-500", "bg-amber-500", "bg-emerald-500", "bg-rose-500"];
+                      return (
+                        <button
+                          key={org.id}
+                          onClick={() => { setActiveTenant(org); setViewingOrgId(null); setIsOrgSwitcherOpen(false); }}
+                          className={cn("w-full flex items-center gap-3 px-3 py-2.5 text-left transition-colors", isSelected ? "bg-primary/5" : "hover:bg-muted/50")}
+                        >
+                          <div className={cn("w-9 h-9 rounded-lg flex items-center justify-center shrink-0 text-white shadow-sm", colors[i % colors.length])}>
+                            <Building2 className="w-4 h-4" />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <span className={cn("text-sm font-bold truncate block", isSelected ? "text-primary" : "text-foreground")}>{org.name}</span>
+                            <span className="text-[11px] text-muted-foreground">Workspace</span>
+                          </div>
+                          {isSelected && <Check className="w-4 h-4 text-primary shrink-0" />}
+                        </button>
+                      );
+                    })}
+                  </div>
+
+                  {/* Create new org button */}
+                  <div className="border-t border-border px-3 py-2">
+                    <button
+                      onClick={() => { setIsOrgSwitcherOpen(false); setCurrentView("settings" as any); }}
+                      className="w-full flex items-center justify-center gap-1.5 py-2 text-sm font-semibold text-primary hover:bg-primary/5 rounded-lg transition-colors"
+                    >
+                      Create New Organization <Plus className="w-4 h-4" />
+                    </button>
+                  </div>
+                </motion.div>
+              </>
+            )}
+          </AnimatePresence>
         </div>
 
         <nav className="flex-1 px-3 py-2 space-y-4 overflow-y-auto no-scrollbar">
@@ -882,7 +943,7 @@ export default function App() {
             {currentView === "dashboard" && (
               <motion.div key="dashboard" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.2 }}>
                 {/* Dashboard tab switcher — each tab is a separate dashboard view */}
-                <div className="px-6 pt-6 flex items-center gap-3">
+                <div className="px-6 pt-6 flex items-center justify-between gap-4">
                   <div
                     role="tablist"
                     aria-label="Dashboard views"
@@ -914,94 +975,25 @@ export default function App() {
                     })}
                   </div>
 
-                  {/* Org Switcher — far right, aligned with dashboard tabs */}
-                  {activeTenant.orgRole === "super" && childOrgs.length > 0 && (
+                  {/* Sub-org switcher — view child org data within the current super org */}
+                  {childOrgs.length > 0 && (
                     <div className="relative shrink-0">
-                      <button
-                        onClick={() => setIsOrgSwitcherOpen(v => !v)}
+                      <select
+                        value={viewingOrgId || ""}
+                        onChange={(e) => setViewingOrgId(e.target.value || null)}
                         className={cn(
-                          "flex items-center gap-2 pl-3 pr-2.5 h-12 text-sm font-semibold rounded-full border-2 transition-all",
-                          viewingOrg
+                          "h-12 pl-4 pr-10 text-sm font-semibold rounded-full border-2 appearance-none cursor-pointer transition-all",
+                          viewingOrgId
                             ? "border-primary bg-primary/10 text-primary"
-                            : isOrgSwitcherOpen
-                              ? "border-primary bg-primary/5 text-foreground"
-                              : "border-primary/50 bg-muted/60 text-foreground hover:bg-primary/5 hover:border-primary"
+                            : "border-border bg-muted/60 text-foreground hover:border-primary/50"
                         )}
+                        style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%239ca3af' stroke-width='2'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E")`, backgroundRepeat: "no-repeat", backgroundPosition: "right 12px center" }}
                       >
-                        <Building2 className="w-4 h-4 shrink-0" />
-                        <span className="max-w-[200px] truncate">{viewingOrg ? viewingOrg.name : `${activeTenant.name} — Super Org`}</span>
-                        <ChevronDown className={cn("w-3.5 h-3.5 text-muted-foreground transition-transform", isOrgSwitcherOpen && "rotate-180")} />
-                      </button>
-
-                      <AnimatePresence>
-                        {isOrgSwitcherOpen && (
-                          <>
-                            <div className="fixed inset-0 z-30" onClick={() => setIsOrgSwitcherOpen(false)} />
-                            <motion.div
-                              initial={{ opacity: 0, y: -4 }}
-                              animate={{ opacity: 1, y: 0 }}
-                              exit={{ opacity: 0, y: -4 }}
-                              transition={{ duration: 0.15 }}
-                              className="absolute right-0 mt-2 w-80 bg-popover border border-border rounded-lg shadow-xl z-40 overflow-hidden"
-                            >
-                              <div className="px-4 py-3 border-b border-border bg-muted/30">
-                                <p className="text-xs font-bold text-foreground">Switch Organization</p>
-                                <p className="text-[11px] text-muted-foreground mt-0.5">View data as a specific organization</p>
-                              </div>
-                              <div className="py-1 max-h-[360px] overflow-y-auto">
-                                {/* Super org (HQ) */}
-                                <button
-                                  onClick={() => { setViewingOrgId(null); setIsOrgSwitcherOpen(false); }}
-                                  className={cn(
-                                    "w-full flex items-center gap-3 px-4 py-3 text-left transition-colors",
-                                    !viewingOrgId ? "bg-primary/5" : "hover:bg-muted/50"
-                                  )}
-                                >
-                                  <div className={cn("w-9 h-9 rounded-lg flex items-center justify-center shrink-0", !viewingOrgId ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground")}>
-                                    <Building2 className="w-4.5 h-4.5" />
-                                  </div>
-                                  <div className="flex-1 min-w-0">
-                                    <div className="flex items-center justify-between gap-2">
-                                      <span className={cn("text-sm font-semibold truncate", !viewingOrgId ? "text-primary" : "text-foreground")}>{activeTenant.name}</span>
-                                      {!viewingOrgId && <Check className="w-4 h-4 text-primary shrink-0" />}
-                                    </div>
-                                    <p className="text-xs text-muted-foreground">Super Org · All data</p>
-                                  </div>
-                                </button>
-
-                                <div className="mx-4 my-1 border-t border-border" />
-
-                                {childOrgs.map(org => {
-                                  const isSelected = viewingOrgId === org.id;
-                                  const statusDot = org.orgStatus === "active" ? "bg-emerald-500" : org.orgStatus === "suspended" ? "bg-rose-500" : "bg-amber-500";
-                                  return (
-                                    <button
-                                      key={org.id}
-                                      onClick={() => { setViewingOrgId(org.id); setIsOrgSwitcherOpen(false); }}
-                                      className={cn(
-                                        "w-full flex items-center gap-3 px-4 py-3 text-left transition-colors",
-                                        isSelected ? "bg-primary/5" : "hover:bg-muted/50"
-                                      )}
-                                    >
-                                      <div className={cn("w-9 h-9 rounded-lg flex items-center justify-center shrink-0 relative", isSelected ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground")}>
-                                        <Building2 className="w-4.5 h-4.5" />
-                                        <span className={cn("absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full border-2 border-popover", statusDot)} />
-                                      </div>
-                                      <div className="flex-1 min-w-0">
-                                        <div className="flex items-center justify-between gap-2">
-                                          <span className={cn("text-sm font-semibold truncate", isSelected ? "text-primary" : "text-foreground")}>{org.name}</span>
-                                          {isSelected && <Check className="w-4 h-4 text-primary shrink-0" />}
-                                        </div>
-                                        <p className="text-xs text-muted-foreground">{org.region || "No region"} · {org.stats.contacts.toLocaleString()} contacts</p>
-                                      </div>
-                                    </button>
-                                  );
-                                })}
-                              </div>
-                            </motion.div>
-                          </>
-                        )}
-                      </AnimatePresence>
+                        <option value="">{activeTenant.name} (HQ)</option>
+                        {childOrgs.map(org => (
+                          <option key={org.id} value={org.id}>{org.name}</option>
+                        ))}
+                      </select>
                     </div>
                   )}
                 </div>
