@@ -660,8 +660,10 @@ export default function App() {
           <button
             onClick={() => (!isSidebarCollapsed || isMobileSidebarOpen) && setIsOrgSwitcherOpen(v => !v)}
             className={cn(
-              "w-full flex items-center gap-2.5 px-2 py-2 rounded-lg transition-all",
-              isOrgSwitcherOpen ? "bg-sidebar-accent" : "hover:bg-sidebar-accent/50"
+              "w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl border transition-all",
+              isOrgSwitcherOpen
+                ? "bg-sidebar-accent border-sidebar-border shadow-sm"
+                : "bg-sidebar-accent/40 border-sidebar-border/50 hover:bg-sidebar-accent hover:border-sidebar-border"
             )}
           >
             <div className="w-9 h-9 rounded-lg bg-primary flex items-center justify-center shrink-0 shadow-sm">
