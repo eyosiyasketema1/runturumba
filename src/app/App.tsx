@@ -952,7 +952,7 @@ export default function App() {
             {currentView === "dashboard" && (
               <motion.div key="dashboard" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.2 }}>
                 {/* Dashboard tab switcher — each tab is a separate dashboard view */}
-                <div className="px-6 pt-6 flex items-center justify-between gap-4">
+                <div className="px-6 pt-6 flex items-center gap-3">
                   <div
                     role="tablist"
                     aria-label="Dashboard views"
@@ -1009,7 +1009,7 @@ export default function App() {
                               animate={{ opacity: 1, y: 0 }}
                               exit={{ opacity: 0, y: -4 }}
                               transition={{ duration: 0.15 }}
-                              className="absolute right-0 mt-2 w-72 bg-popover border border-border rounded-lg shadow-xl z-40 overflow-hidden"
+                              className="absolute left-0 mt-2 w-72 bg-popover border border-border rounded-lg shadow-xl z-40 overflow-hidden"
                             >
                               <div className="px-3 py-2 border-b border-border bg-muted/30">
                                 <p className="text-xs font-bold text-foreground">Sub-Organizations</p>
