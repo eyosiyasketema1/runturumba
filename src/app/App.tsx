@@ -128,6 +128,8 @@ export default function App() {
   const [viewMode, setViewMode] = useState<ViewRole>("super_admin");
   const [isRoleMenuOpen, setIsRoleMenuOpen] = useState(false);
   const [isOrgSwitcherOpen, setIsOrgSwitcherOpen] = useState(false);
+  const [isCreateOrgOpen, setIsCreateOrgOpen] = useState(false);
+  const [newOrgForm, setNewOrgForm] = useState({ name: "", description: "" });
   const [isAllActivityOpen, setIsAllActivityOpen] = useState(false);
   const [isOnboarding, setIsOnboarding] = useState(() => {
     return localStorage.getItem("turumba_onboarding_complete") !== "true";
@@ -727,7 +729,7 @@ export default function App() {
                   {/* Create new org button */}
                   <div className="border-t border-border px-3 py-2">
                     <button
-                      onClick={() => { setIsOrgSwitcherOpen(false); setCurrentView("settings" as any); }}
+                      onClick={() => { setIsOrgSwitcherOpen(false); setIsCreateOrgOpen(true); }}
                       className="w-full flex items-center justify-center gap-1.5 py-2 text-sm font-semibold text-primary hover:bg-primary/5 rounded-lg transition-colors"
                     >
                       Create New Organization <Plus className="w-4 h-4" />
@@ -1562,6 +1564,76 @@ export default function App() {
           </div>
         </div>
       </Modal>
+
+      {/* Create New Organization Modal */}
+      {isCreateOrgOpen && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50" onClick={() => setIsCreateOrgOpen(false)}>
+          <div className="bg-background border border-border rounded-2xl shadow-2xl w-full max-w-md mx-4" onClick={(e) => e.stopPropagation()}>
+            <div className="px-6 py-5 border-b border-border">
+              <h3 className="text-lg font-bold text-foreground">Create New Organization</h3>
+              <p className="text-sm text-muted-foreground mt-1">Add a new super organization to your workspace</p>
+            </div>
+            <div className="px-6 py-5 space-y-4">
+              <div className="space-y-1.5">
+                <label className="text-sm font-medium text-foreground">Organization Name</label>
+                <input
+                  value={newOrgForm.name}
+                  onChange={(e) => setNewOrgForm(p => ({ ...p, name: e.target.value }))}
+                  placeholder="e.g. New Hope Ministry"
+                  className="w-full h-10 px-3 rounded-lg border border-border bg-background text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
+                  autoFocus
+                />
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-sm font-medium text-foreground">Description</label>
+                <textarea
+                  value={newOrgForm.description}
+                  onChange={(e) => setNewOrgForm(p => ({ ...p, description: e.target.value }))}
+                  placeholder="Brief description of this organization..."
+                  rows={3}
+                  className="w-full px-3 py-2 rounded-lg border border-border bg-background text-sm text-foreground placeholder:text-muted-foreground resize-none focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
+                />
+              </div>
+            </div>
+            <div className="px-6 py-4 border-t border-border flex items-center justify-end gap-3">
+              <button
+                onClick={() => { setIsCreateOrgOpen(false); setNewOrgForm({ name: "", description: "" }); }}
+                className="px-4 py-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => {
+                  if (!newOrgForm.name.trim()) return;
+                  const newOrg: Tenant = {
+                    id: `tenant-${Date.now()}`,
+                    name: newOrgForm.name.trim(),
+                    industry: "Ministry",
+                    plan: "free",
+                    createdAt: new Date().toISOString().slice(0, 10),
+                    stats: { contacts: 0, messages: 0, activeUsers: 0 },
+                    orgRole: "super",
+                    parentOrgId: null,
+                    orgStatus: "active",
+                    region: "",
+                    description: newOrgForm.description.trim(),
+                  };
+                  setAllTenants(prev => [...prev, newOrg]);
+                  setActiveTenant(newOrg);
+                  setViewingOrgId(null);
+                  setIsCreateOrgOpen(false);
+                  setNewOrgForm({ name: "", description: "" });
+                  toast.success(`"${newOrg.name}" created`);
+                }}
+                disabled={!newOrgForm.name.trim()}
+                className="px-4 py-2 text-sm font-semibold text-white bg-primary rounded-lg hover:bg-primary/90 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
+              >
+                Create New
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
