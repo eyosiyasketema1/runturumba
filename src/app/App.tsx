@@ -638,96 +638,63 @@ export default function App() {
     return (
       <>
         <Toaster position="top-right" richColors closeButton />
-        <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-indigo-950 flex flex-col items-center justify-center relative overflow-hidden">
-          {/* Background effects */}
-          <div className="absolute inset-0 pointer-events-none">
-            <div className="absolute top-0 left-1/4 w-96 h-96 bg-indigo-500/10 rounded-full blur-[128px]" />
-            <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-purple-500/10 rounded-full blur-[128px]" />
-            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-blue-500/5 rounded-full blur-[160px]" />
-          </div>
-
-          {/* Grid overlay */}
-          <div className="absolute inset-0 pointer-events-none opacity-[0.03]" style={{
-            backgroundImage: "linear-gradient(rgba(255,255,255,0.1) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.1) 1px, transparent 1px)",
-            backgroundSize: "60px 60px",
-          }} />
-
-          {/* Content */}
+        <div className="min-h-screen bg-background flex flex-col items-center justify-center px-6">
           <motion.div
-            initial={{ opacity: 0, y: 20 }}
+            initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, ease: "easeOut" }}
-            className="relative z-10 flex flex-col items-center text-center px-6 max-w-3xl"
+            transition={{ duration: 0.4, ease: "easeOut" }}
+            className="flex flex-col items-center text-center max-w-xl w-full"
           >
-            {/* Logo / Brand */}
-            <div className="mb-8 flex flex-col items-center">
-              <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center shadow-lg shadow-indigo-500/30 mb-4">
-                <MessageSquare className="w-8 h-8 text-white" />
-              </div>
-              <h1 className="text-4xl font-bold tracking-tight text-white">
-                Turumba
-              </h1>
-              <p className="text-sm text-indigo-300/80 font-medium mt-1.5 tracking-wide uppercase">
-                Great Commission Ministry Ethiopia
-              </p>
+            {/* Logo */}
+            <div className="w-12 h-12 rounded-xl bg-primary flex items-center justify-center mb-5">
+              <MessageSquare className="w-6 h-6 text-primary-foreground" />
             </div>
-
-            <p className="text-lg text-slate-300 mb-10 max-w-md leading-relaxed">
-              Choose which version of the platform you'd like to explore.
+            <h1 className="text-2xl font-bold tracking-tight text-foreground">Turumba</h1>
+            <p className="text-sm text-muted-foreground mt-1.5 mb-8">
+              Choose which version of the platform to explore.
             </p>
 
             {/* Version Cards */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 w-full max-w-xl">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 w-full">
               {/* Current */}
-              <motion.button
-                whileHover={{ scale: 1.03, y: -2 }}
-                whileTap={{ scale: 0.98 }}
+              <button
                 onClick={() => { setSelectedVersion("current"); localStorage.setItem("turumba_version", "current"); }}
-                className="group relative bg-white/[0.06] backdrop-blur-sm border border-white/10 rounded-2xl p-6 text-left hover:bg-white/[0.1] hover:border-indigo-400/30 transition-all duration-300 cursor-pointer"
+                className="group bg-card border border-border rounded-xl p-5 text-left hover:border-primary/40 hover:shadow-sm transition-all cursor-pointer"
               >
-                <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-blue-500/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-                <div className="relative">
-                  <div className="w-12 h-12 rounded-xl bg-blue-500/20 flex items-center justify-center mb-4">
-                    <Building2 className="w-6 h-6 text-blue-400" />
-                  </div>
-                  <h2 className="text-xl font-bold text-white mb-1.5">Current Turumba</h2>
-                  <p className="text-sm text-slate-400 leading-relaxed">
-                    The production platform with all existing features — contacts, messaging, automations, and more.
-                  </p>
-                  <div className="flex items-center gap-1.5 mt-4 text-blue-400 text-xs font-semibold uppercase tracking-wider">
-                    <span>Launch</span>
-                    <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
-                  </div>
+                <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center mb-3">
+                  <Building2 className="w-5 h-5 text-primary" />
                 </div>
-              </motion.button>
+                <h2 className="text-base font-semibold text-foreground mb-1">Current Turumba</h2>
+                <p className="text-sm text-muted-foreground leading-relaxed">
+                  The production platform with all existing features — contacts, messaging, automations, and more.
+                </p>
+                <div className="flex items-center gap-1.5 mt-3 text-primary text-xs font-semibold">
+                  <span>Launch</span>
+                  <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
+                </div>
+              </button>
 
               {/* Future */}
-              <motion.button
-                whileHover={{ scale: 1.03, y: -2 }}
-                whileTap={{ scale: 0.98 }}
+              <button
                 onClick={() => { setSelectedVersion("future"); localStorage.setItem("turumba_version", "future"); }}
-                className="group relative bg-white/[0.06] backdrop-blur-sm border border-white/10 rounded-2xl p-6 text-left hover:bg-white/[0.1] hover:border-purple-400/30 transition-all duration-300 cursor-pointer"
+                className="group bg-card border border-border rounded-xl p-5 text-left hover:border-primary/40 hover:shadow-sm transition-all cursor-pointer"
               >
-                <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-purple-500/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-                <div className="relative">
-                  <div className="w-12 h-12 rounded-xl bg-purple-500/20 flex items-center justify-center mb-4">
-                    <Sparkles className="w-6 h-6 text-purple-400" />
-                  </div>
-                  <h2 className="text-xl font-bold text-white mb-1.5">Future Turumba</h2>
-                  <p className="text-sm text-slate-400 leading-relaxed">
-                    The next-generation vision — AI-powered insights, advanced analytics, and new capabilities.
-                  </p>
-                  <div className="flex items-center gap-1.5 mt-4 text-purple-400 text-xs font-semibold uppercase tracking-wider">
-                    <span>Explore</span>
-                    <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
-                  </div>
+                <div className="w-10 h-10 rounded-lg bg-violet-500/10 flex items-center justify-center mb-3">
+                  <Sparkles className="w-5 h-5 text-violet-600" />
                 </div>
-              </motion.button>
+                <h2 className="text-base font-semibold text-foreground mb-1">Future Turumba</h2>
+                <p className="text-sm text-muted-foreground leading-relaxed">
+                  The next-generation vision — AI-powered insights, advanced analytics, and new capabilities.
+                </p>
+                <div className="flex items-center gap-1.5 mt-3 text-violet-600 text-xs font-semibold">
+                  <span>Explore</span>
+                  <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
+                </div>
+              </button>
             </div>
 
-            {/* Footer */}
-            <p className="text-xs text-slate-500 mt-10">
-              Both versions share the same feature set for this demo. Select either to continue.
+            <p className="text-xs text-muted-foreground mt-8">
+              Both versions share the same feature set for this demo.
             </p>
           </motion.div>
         </div>
