@@ -7,7 +7,10 @@ import {
   RefreshCw, ExternalLink, ChevronRight, ChevronLeft, Shield,
   Inbox, ListOrdered, GitBranch, FolderPlus, Folder, FolderOpen,
   ArrowUpDown, SlidersHorizontal, ChevronDown,
-  CornerDownRight, FileText
+  CornerDownRight, FileText, LayoutTemplate,
+  Reply, Droplet, Workflow, Megaphone, Star, TrendingUp,
+  UserPlus, Heart, CalendarDays, Gift, BookOpen, Sparkles,
+  Bell, HandHeart, GraduationCap, Target
 } from "lucide-react";
 // motion/AnimatePresence removed — webhooks tab eliminated.
 import { toast } from "sonner";
@@ -50,6 +53,72 @@ const ACTION_OPTIONS: { id: AutomationAction; label: string; icon: any; descript
   { id: "add_to_group", label: "Add to Group", icon: Users, description: "Add the contact to a group" },
   { id: "send_broadcast", label: "Send Broadcast", icon: Send, description: "Trigger a broadcast message" },
   { id: "webhook_call", label: "Call Webhook", icon: Globe, description: "POST data to an external URL" },
+];
+
+// ============================================================
+// Automation Templates
+// ============================================================
+
+type TemplateType = "basic" | "sequence" | "flow" | "broadcast";
+type TemplateCategory = "onboarding" | "engagement" | "nurture" | "outreach" | "discipleship" | "events" | "support";
+
+interface AutomationTemplate {
+  id: string;
+  name: string;
+  description: string;
+  type: TemplateType;
+  category: TemplateCategory;
+  icon: any;
+  iconTint: string;
+  popular?: boolean;
+  steps?: number;
+  trigger: string;
+  action: string;
+  tags: string[];
+}
+
+const TEMPLATE_CATEGORIES: { id: TemplateCategory | "all"; label: string }[] = [
+  { id: "all", label: "All" },
+  { id: "onboarding", label: "Onboarding" },
+  { id: "engagement", label: "Engagement" },
+  { id: "nurture", label: "Nurture" },
+  { id: "outreach", label: "Outreach" },
+  { id: "discipleship", label: "Discipleship" },
+  { id: "events", label: "Events" },
+  { id: "support", label: "Support" },
+];
+
+const TEMPLATE_TYPE_CONFIG: Record<TemplateType, { label: string; icon: any; color: string; bg: string; border: string }> = {
+  basic:     { label: "Auto-Reply",  icon: Reply,     color: "text-blue-600",   bg: "bg-blue-50",   border: "border-blue-200" },
+  sequence:  { label: "Drip",        icon: Droplet,   color: "text-blue-500",   bg: "bg-blue-50",   border: "border-blue-200" },
+  flow:      { label: "Flow",        icon: Workflow,   color: "text-blue-600",   bg: "bg-blue-50",   border: "border-blue-200" },
+  broadcast: { label: "Broadcast",   icon: Megaphone,  color: "text-amber-600",  bg: "bg-amber-50",  border: "border-amber-200" },
+};
+
+const AUTOMATION_TEMPLATES: AutomationTemplate[] = [
+  // ── Auto-Reply (basic) ──
+  { id: "tpl-1",  name: "Welcome Message",         description: "Greet new contacts with a personalized welcome message when they first reach out.", type: "basic", category: "onboarding", icon: HandHeart, iconTint: "bg-emerald-50 text-emerald-600",  popular: true, trigger: "First message received", action: "Send welcome reply", tags: ["welcome", "greeting"] },
+  { id: "tpl-2",  name: "Keyword FAQ Bot",          description: "Auto-respond to common questions like 'hours', 'location', or 'price' with instant answers.", type: "basic", category: "support", icon: MessageSquare, iconTint: "bg-blue-50 text-blue-600", popular: true, trigger: "Keyword match", action: "Send templated reply", tags: ["faq", "keywords", "support"] },
+  { id: "tpl-3",  name: "After-Hours Reply",        description: "Let contacts know you're away and when they can expect a response.", type: "basic", category: "support", icon: Clock, iconTint: "bg-gray-50 text-gray-600", trigger: "Message outside hours", action: "Send away message", tags: ["away", "hours", "oof"] },
+  { id: "tpl-4",  name: "New Subscriber Greeting",  description: "Automatically welcome new subscribers and share key resources or next steps.", type: "basic", category: "onboarding", icon: UserPlus, iconTint: "bg-violet-50 text-violet-600", trigger: "Contact added", action: "Send greeting + resource links", tags: ["subscribe", "welcome"] },
+
+  // ── Drip (sequence) ──
+  { id: "tpl-5",  name: "7-Day Onboarding",         description: "Guide new contacts through your platform with a 7-day drip sequence of tips and resources.", type: "sequence", category: "onboarding", icon: BookOpen, iconTint: "bg-blue-50 text-blue-600", popular: true, steps: 7, trigger: "Contact added", action: "Send daily message", tags: ["onboarding", "drip", "welcome"] },
+  { id: "tpl-6",  name: "Re-Engagement Campaign",   description: "Win back inactive contacts with a 3-message sequence offering value and a personal check-in.", type: "sequence", category: "engagement", icon: Heart, iconTint: "bg-rose-50 text-rose-600", steps: 3, trigger: "30 days inactive", action: "Send re-engagement series", tags: ["re-engage", "inactive", "winback"] },
+  { id: "tpl-7",  name: "Course Follow-Up",         description: "Drip additional resources and check-ins after someone completes a course or event.", type: "sequence", category: "nurture", icon: GraduationCap, iconTint: "bg-amber-50 text-amber-600", steps: 5, trigger: "Tag 'course-complete' added", action: "Send follow-up series", tags: ["course", "follow-up", "learning"] },
+  { id: "tpl-8",  name: "Discipleship Journey",     description: "A 14-day guided devotional sequence with daily scripture, reflection, and mentor check-ins.", type: "sequence", category: "discipleship", icon: Sparkles, iconTint: "bg-purple-50 text-purple-600", popular: true, steps: 14, trigger: "Opted into discipleship", action: "Daily devotional message", tags: ["discipleship", "devotional", "faith"] },
+
+  // ── Flow (journey) ──
+  { id: "tpl-9",  name: "Lead Qualification",       description: "Ask qualifying questions, score responses, and route contacts to the right team member.", type: "flow", category: "outreach", icon: Target, iconTint: "bg-orange-50 text-orange-600", popular: true, steps: 6, trigger: "New lead message", action: "Qualify → Route → Assign", tags: ["lead", "qualification", "routing"] },
+  { id: "tpl-10", name: "Event Registration",       description: "Collect RSVPs, send confirmations, reminders, and post-event follow-ups — all automated.", type: "flow", category: "events", icon: CalendarDays, iconTint: "bg-cyan-50 text-cyan-600", steps: 8, trigger: "Keyword 'register'", action: "Collect info → Confirm → Remind", tags: ["event", "registration", "rsvp"] },
+  { id: "tpl-11", name: "Survey + Smart Routing",   description: "Run a survey, branch on answers, and route contacts to different paths based on responses.", type: "flow", category: "engagement", icon: GitBranch, iconTint: "bg-indigo-50 text-indigo-600", steps: 5, trigger: "Survey started", action: "Branch on answers → Route", tags: ["survey", "routing", "branch"] },
+  { id: "tpl-12", name: "Seeker Follow-Up Path",    description: "A multi-step journey that guides seekers from initial interest to connection with a mentor.", type: "flow", category: "discipleship", icon: TrendingUp, iconTint: "bg-emerald-50 text-emerald-600", steps: 10, trigger: "Campaign response", action: "Nurture → Match mentor → Check-in", tags: ["seeker", "mentor", "follow-up"] },
+
+  // ── Broadcast ──
+  { id: "tpl-13", name: "Weekly Newsletter",        description: "Send a weekly update to all active contacts with news, events, and encouragement.", type: "broadcast", category: "outreach", icon: Send, iconTint: "bg-blue-50 text-blue-600", popular: true, trigger: "Every Monday 9 AM", action: "Broadcast to all active", tags: ["newsletter", "weekly", "update"] },
+  { id: "tpl-14", name: "Event Announcement",       description: "Blast an upcoming event to your audience with date, location, and registration link.", type: "broadcast", category: "events", icon: Bell, iconTint: "bg-amber-50 text-amber-600", trigger: "Manual or scheduled", action: "Broadcast to segment", tags: ["event", "announcement", "invite"] },
+  { id: "tpl-15", name: "Holiday Greeting",         description: "Send a warm holiday or special occasion greeting to all contacts.", type: "broadcast", category: "outreach", icon: Gift, iconTint: "bg-pink-50 text-pink-600", trigger: "Scheduled date", action: "Broadcast greeting", tags: ["holiday", "greeting", "seasonal"] },
+  { id: "tpl-16", name: "Promotion / Campaign",     description: "Announce a promotion, campaign launch, or special offer to a targeted segment.", type: "broadcast", category: "engagement", icon: Star, iconTint: "bg-yellow-50 text-yellow-600", trigger: "Manual trigger", action: "Broadcast to tagged segment", tags: ["promo", "campaign", "offer"] },
 ];
 
 interface AutomationViewProps {
@@ -156,6 +225,7 @@ export const AutomationView = ({
 }: AutomationViewProps) => {
   // Webhooks tab removed — webhooks now live inside the Journey Builder.
   const activeTab = "rules" as const;
+  const [viewMode, setViewMode] = useState<"automations" | "templates">("automations");
   const [searchQuery, setSearchQuery] = useState("");
   const [isAddRuleOpen, setIsAddRuleOpen] = useState(false);
   // isAddWebhookOpen removed — webhooks are managed inside the Journey Builder.
@@ -387,6 +457,49 @@ export const AutomationView = ({
         </Button>
       </header>
 
+      {/* Top-level tab switcher */}
+      <div className="flex items-center gap-1 p-1 bg-muted border border-border rounded-lg w-fit">
+        <button
+          onClick={() => setViewMode("automations")}
+          className={cn(
+            "flex items-center gap-2 px-4 py-2 text-sm font-semibold rounded-md transition-all",
+            viewMode === "automations"
+              ? "bg-background text-foreground shadow-sm border border-border"
+              : "text-muted-foreground hover:text-foreground"
+          )}
+        >
+          <Zap className="w-4 h-4" />
+          My Automations
+        </button>
+        <button
+          onClick={() => setViewMode("templates")}
+          className={cn(
+            "flex items-center gap-2 px-4 py-2 text-sm font-semibold rounded-md transition-all",
+            viewMode === "templates"
+              ? "bg-background text-foreground shadow-sm border border-border"
+              : "text-muted-foreground hover:text-foreground"
+          )}
+        >
+          <LayoutTemplate className="w-4 h-4" />
+          Templates
+        </button>
+      </div>
+
+      {viewMode === "templates" && (
+        <AutomationTemplatesTab
+          onUseTemplate={(tpl) => {
+            setViewMode("automations");
+            if (tpl.type === "broadcast") {
+              setBuilderState({ kind: "sequence", mode: "new" });
+            } else {
+              setBuilderState({ kind: tpl.type, mode: "new" });
+            }
+            toast.success(`Started new ${TEMPLATE_TYPE_CONFIG[tpl.type].label} from "${tpl.name}"`);
+          }}
+        />
+      )}
+
+      {viewMode === "automations" && <>
       {/* Summary stats */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         {[
@@ -754,6 +867,8 @@ export const AutomationView = ({
             </div>
       </div>
 
+      </>}
+
       {/* Type picker — shown when the user clicks New from the All folder */}
       <Modal
         isOpen={isTypePickerOpen}
@@ -764,12 +879,20 @@ export const AutomationView = ({
         <AutomationTypePicker onPick={(t) => {
           setIsTypePickerOpen(false);
           if (t === "broadcast") {
-            // Broadcast reuses sequence builder pattern for now
             setBuilderState({ kind: "sequence", mode: "new" });
           } else {
             setBuilderState({ kind: t, mode: "new" });
           }
         }} />
+        <div className="border-t border-border pt-4 mt-2 text-center">
+          <button
+            onClick={() => { setIsTypePickerOpen(false); setViewMode("templates"); }}
+            className="text-sm text-primary font-medium hover:underline inline-flex items-center gap-1.5"
+          >
+            <LayoutTemplate className="w-4 h-4" />
+            Or start from a template
+          </button>
+        </div>
       </Modal>
 
       {/* Legacy Add Rule Modal — retained for edit-by-modal compatibility, not
@@ -859,6 +982,245 @@ export const AutomationView = ({
     </div>
   );
 };
+
+// ============================================================
+// Automation Templates Tab
+// ============================================================
+
+const AutomationTemplatesTab = ({ onUseTemplate }: { onUseTemplate: (tpl: AutomationTemplate) => void }) => {
+  const [search, setSearch] = useState("");
+  const [typeFilter, setTypeFilter] = useState<TemplateType | "all">("all");
+  const [categoryFilter, setCategoryFilter] = useState<TemplateCategory | "all">("all");
+  const [previewTemplate, setPreviewTemplate] = useState<AutomationTemplate | null>(null);
+
+  const filtered = useMemo(() => {
+    return AUTOMATION_TEMPLATES.filter(tpl => {
+      const q = search.toLowerCase();
+      const matchesSearch = !q || tpl.name.toLowerCase().includes(q) || tpl.description.toLowerCase().includes(q) || tpl.tags.some(t => t.includes(q));
+      const matchesType = typeFilter === "all" || tpl.type === typeFilter;
+      const matchesCategory = categoryFilter === "all" || tpl.category === categoryFilter;
+      return matchesSearch && matchesType && matchesCategory;
+    });
+  }, [search, typeFilter, categoryFilter]);
+
+  const popular = filtered.filter(t => t.popular);
+  const rest = filtered.filter(t => !t.popular);
+
+  return (
+    <div className="space-y-5">
+      {/* Search + Filters */}
+      <div className="flex flex-col sm:flex-row gap-3">
+        <div className="relative flex-1 max-w-md">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+          <Input
+            placeholder="Search templates..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="pl-9 h-10 text-sm"
+          />
+        </div>
+        <div className="flex items-center gap-2">
+          {/* Type filter pills */}
+          <div className="flex gap-1 p-1 bg-muted border border-border rounded-lg">
+            {([
+              { id: "all" as const, label: "All Types" },
+              { id: "basic" as const, label: "Auto-Reply" },
+              { id: "sequence" as const, label: "Drip" },
+              { id: "flow" as const, label: "Flow" },
+              { id: "broadcast" as const, label: "Broadcast" },
+            ]).map(t => (
+              <button
+                key={t.id}
+                onClick={() => setTypeFilter(t.id)}
+                className={cn(
+                  "px-3 py-1.5 text-xs font-semibold rounded-md transition-all",
+                  typeFilter === t.id
+                    ? "bg-background text-foreground shadow-sm border border-border"
+                    : "text-muted-foreground hover:text-foreground"
+                )}
+              >
+                {t.label}
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* Category chips */}
+      <div className="flex items-center gap-2 flex-wrap">
+        {TEMPLATE_CATEGORIES.map(cat => (
+          <button
+            key={cat.id}
+            onClick={() => setCategoryFilter(cat.id)}
+            className={cn(
+              "px-3 py-1.5 text-xs font-medium rounded-full border transition-all",
+              categoryFilter === cat.id
+                ? "bg-primary text-primary-foreground border-primary"
+                : "bg-background text-muted-foreground border-border hover:border-foreground/30 hover:text-foreground"
+            )}
+          >
+            {cat.label}
+          </button>
+        ))}
+      </div>
+
+      {/* Results count */}
+      <p className="text-xs text-muted-foreground">{filtered.length} template{filtered.length !== 1 ? "s" : ""} found</p>
+
+      {/* Popular section */}
+      {popular.length > 0 && typeFilter === "all" && categoryFilter === "all" && !search && (
+        <div className="space-y-3">
+          <div className="flex items-center gap-2">
+            <Star className="w-4 h-4 text-amber-500" />
+            <h3 className="text-sm font-semibold text-foreground">Popular Templates</h3>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+            {popular.map(tpl => (
+              <TemplateCard key={tpl.id} template={tpl} onUse={onUseTemplate} onPreview={setPreviewTemplate} />
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* All / filtered templates */}
+      <div className="space-y-3">
+        {(popular.length > 0 && typeFilter === "all" && categoryFilter === "all" && !search) && (
+          <h3 className="text-sm font-semibold text-foreground">All Templates</h3>
+        )}
+        {filtered.length === 0 ? (
+          <div className="text-center py-16">
+            <LayoutTemplate className="w-10 h-10 text-muted-foreground/30 mx-auto mb-3" />
+            <p className="text-sm font-medium text-muted-foreground">No templates match your filters</p>
+            <p className="text-xs text-muted-foreground/70 mt-1">Try a different search or category.</p>
+            <Button variant="outline" size="sm" className="mt-4" onClick={() => { setSearch(""); setTypeFilter("all"); setCategoryFilter("all"); }}>
+              Clear Filters
+            </Button>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+            {(popular.length > 0 && typeFilter === "all" && categoryFilter === "all" && !search ? rest : filtered).map(tpl => (
+              <TemplateCard key={tpl.id} template={tpl} onUse={onUseTemplate} onPreview={setPreviewTemplate} />
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Preview Modal */}
+      <Modal isOpen={!!previewTemplate} onClose={() => setPreviewTemplate(null)} title="" size="lg">
+        {previewTemplate && (() => {
+          const typeCfg = TEMPLATE_TYPE_CONFIG[previewTemplate.type];
+          const TypeIcon = typeCfg.icon;
+          const TplIcon = previewTemplate.icon;
+          return (
+            <div className="space-y-5 -mt-2">
+              <div className="flex items-start gap-4">
+                <div className={cn("w-14 h-14 rounded-xl flex items-center justify-center shrink-0", previewTemplate.iconTint)}>
+                  <TplIcon className="w-7 h-7" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <h3 className="text-lg font-bold text-foreground">{previewTemplate.name}</h3>
+                  <div className="flex items-center gap-2 mt-1 flex-wrap">
+                    <span className={cn("inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium rounded-full border", typeCfg.bg, typeCfg.color, typeCfg.border)}>
+                      <TypeIcon className="w-3 h-3" />
+                      {typeCfg.label}
+                    </span>
+                    <span className="text-xs text-muted-foreground capitalize">{previewTemplate.category}</span>
+                    {previewTemplate.popular && (
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium rounded-full bg-amber-50 text-amber-600 border border-amber-200">
+                        <Star className="w-3 h-3" /> Popular
+                      </span>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              <p className="text-sm text-muted-foreground leading-relaxed">{previewTemplate.description}</p>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div className="p-4 border rounded-lg bg-muted/20">
+                  <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest mb-2">Trigger</p>
+                  <p className="text-sm text-foreground font-medium">{previewTemplate.trigger}</p>
+                </div>
+                <div className="p-4 border rounded-lg bg-muted/20">
+                  <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest mb-2">Action</p>
+                  <p className="text-sm text-foreground font-medium">{previewTemplate.action}</p>
+                </div>
+              </div>
+
+              {previewTemplate.steps && (
+                <div className="p-4 border rounded-lg bg-muted/20">
+                  <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest mb-2">Steps</p>
+                  <p className="text-sm text-foreground font-medium">{previewTemplate.steps} steps in this automation</p>
+                </div>
+              )}
+
+              <div className="flex flex-wrap gap-1.5">
+                {previewTemplate.tags.map(tag => (
+                  <span key={tag} className="px-2 py-0.5 text-xs text-muted-foreground bg-muted rounded-full border border-border">#{tag}</span>
+                ))}
+              </div>
+
+              <div className="flex justify-end gap-2 pt-2 border-t">
+                <Button variant="outline" size="sm" onClick={() => setPreviewTemplate(null)}>Close</Button>
+                <Button size="sm" onClick={() => { setPreviewTemplate(null); onUseTemplate(previewTemplate); }}>
+                  <Plus className="w-3.5 h-3.5 mr-1.5" />
+                  Use This Template
+                </Button>
+              </div>
+            </div>
+          );
+        })()}
+      </Modal>
+    </div>
+  );
+};
+
+const TemplateCard = ({ template, onUse, onPreview }: {
+  template: AutomationTemplate;
+  onUse: (tpl: AutomationTemplate) => void;
+  onPreview: (tpl: AutomationTemplate) => void;
+}) => {
+  const typeCfg = TEMPLATE_TYPE_CONFIG[template.type];
+  const TypeIcon = typeCfg.icon;
+  const TplIcon = template.icon;
+
+  return (
+    <div className="group border border-border rounded-xl bg-card hover:border-primary/30 hover:shadow-md transition-all p-5 flex flex-col">
+      <div className="flex items-start gap-3 mb-3">
+        <div className={cn("w-10 h-10 rounded-lg flex items-center justify-center shrink-0", template.iconTint)}>
+          <TplIcon className="w-5 h-5" />
+        </div>
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2">
+            <p className="text-sm font-semibold text-foreground truncate">{template.name}</p>
+            {template.popular && <Star className="w-3 h-3 text-amber-500 shrink-0" />}
+          </div>
+          <span className={cn("inline-flex items-center gap-1 mt-1 px-2 py-0.5 text-[10px] font-medium rounded-full border", typeCfg.bg, typeCfg.color, typeCfg.border)}>
+            <TypeIcon className="w-2.5 h-2.5" />
+            {typeCfg.label}
+          </span>
+        </div>
+      </div>
+      <p className="text-xs text-muted-foreground leading-relaxed flex-1 mb-4">{template.description}</p>
+      <div className="flex items-center gap-2">
+        {template.steps && (
+          <span className="text-[10px] text-muted-foreground font-medium">{template.steps} steps</span>
+        )}
+        <div className="flex-1" />
+        <button
+          onClick={() => onPreview(template)}
+          className="text-xs text-muted-foreground hover:text-foreground font-medium transition-colors"
+        >
+          Preview
+        </button>
+        <Button size="sm" variant="outline" className="h-7 text-xs" onClick={() => onUse(template)}>
+          Use
+        </Button>
+      </div>
+    </div>
+  );
+};
+
 
 // --- Move to Folder Modal ---
 const MoveToFolderModal = ({
