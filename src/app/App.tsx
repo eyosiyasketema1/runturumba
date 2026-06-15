@@ -899,12 +899,22 @@ export default function App() {
               <div className="h-4 w-px bg-border" />
               <span className="text-sm font-semibold text-muted-foreground">Turumba</span>
               {selectedVersion && (
-                <span className={cn(
-                  "text-[10px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded-full",
-                  selectedVersion === "current" ? "bg-blue-50 text-blue-600 border border-blue-200" : "bg-purple-50 text-purple-600 border border-purple-200"
-                )}>
+                <button
+                  onClick={() => {
+                    const next = selectedVersion === "current" ? "future" : "current";
+                    setSelectedVersion(next);
+                    localStorage.setItem("turumba_version", next);
+                  }}
+                  className={cn(
+                    "text-[10px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded-full cursor-pointer transition-colors",
+                    selectedVersion === "current"
+                      ? "bg-blue-50 text-blue-600 border border-blue-200 hover:bg-blue-100"
+                      : "bg-purple-50 text-purple-600 border border-purple-200 hover:bg-purple-100"
+                  )}
+                  title={`Switch to ${selectedVersion === "current" ? "Future" : "Current"} Turumba`}
+                >
                   {selectedVersion === "current" ? "Current" : "Future"}
-                </span>
+                </button>
               )}
             </div>
           </div>
