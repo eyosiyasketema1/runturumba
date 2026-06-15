@@ -457,32 +457,29 @@ export const AutomationView = ({
         </Button>
       </header>
 
-      {/* Top-level tab switcher */}
-      <div className="flex items-center gap-1 p-1 bg-muted border border-border rounded-lg w-fit">
-        <button
-          onClick={() => setViewMode("automations")}
-          className={cn(
-            "flex items-center gap-2 px-4 py-2 text-sm font-semibold rounded-md transition-all",
-            viewMode === "automations"
-              ? "bg-background text-foreground shadow-sm border border-border"
-              : "text-muted-foreground hover:text-foreground"
-          )}
-        >
-          <Zap className="w-4 h-4" />
-          My Automations
-        </button>
-        <button
-          onClick={() => setViewMode("templates")}
-          className={cn(
-            "flex items-center gap-2 px-4 py-2 text-sm font-semibold rounded-md transition-all",
-            viewMode === "templates"
-              ? "bg-background text-foreground shadow-sm border border-border"
-              : "text-muted-foreground hover:text-foreground"
-          )}
-        >
-          <LayoutTemplate className="w-4 h-4" />
-          Templates
-        </button>
+      {/* Top-level tab switcher — pill style matching dashboard */}
+      <div className="inline-flex items-center gap-1 bg-muted/60 border border-border rounded-full p-1 h-12">
+        {([
+          ["automations", "My Automations", Zap],
+          ["templates",   "Templates",      LayoutTemplate],
+        ] as const).map(([k, label, Icon]) => {
+          const isActive = viewMode === k;
+          return (
+            <button
+              key={k}
+              onClick={() => setViewMode(k)}
+              className={cn(
+                "flex items-center gap-2 px-4 h-10 text-sm font-semibold rounded-full transition-all",
+                isActive
+                  ? "bg-primary text-primary-foreground shadow-sm"
+                  : "text-muted-foreground hover:text-foreground"
+              )}
+            >
+              <Icon className="w-3.5 h-3.5" />
+              <span>{label}</span>
+            </button>
+          );
+        })}
       </div>
 
       {viewMode === "templates" && (
