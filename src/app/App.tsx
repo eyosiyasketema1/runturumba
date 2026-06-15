@@ -344,8 +344,18 @@ export default function App() {
   ];
 
   const allowedViewIds = ROLE_VIEW_ACCESS[viewMode];
+
+  // In "current" version, hide Reporting section and Gamification item
+  const hiddenInCurrent = new Set(["growth_metrics", "vital_analytics", "reporting", "validations", "gamification"]);
+
   const filteredNavSections = navSections
-    .map(s => ({ ...s, items: s.items.filter(i => allowedViewIds.includes(i.id)) }))
+    .map(s => ({
+      ...s,
+      items: s.items.filter(i =>
+        allowedViewIds.includes(i.id) &&
+        (selectedVersion !== "current" || !hiddenInCurrent.has(i.id))
+      ),
+    }))
     .filter(s => s.items.length > 0);
 
   const currentRole = ROLE_OPTIONS.find(r => r.id === viewMode) || ROLE_OPTIONS[0];
