@@ -2,10 +2,10 @@ import React, { useState } from "react";
 import {
   User, Building2, CreditCard, Bell, Shield, Mail,
   Phone, Globe, Clock, MapPin, Camera, Save,
-  Check, ChevronRight, Key, Smartphone, Lock, Eye,
+  Check, ChevronRight, Key, Smartphone, Lock, Eye, EyeOff, Copy, CalendarDays,
   ArrowLeft, ArrowUpRight, Download, Sparkles, Pencil, Plus, Trash2, X,
   Brain, Share2, AlertCircle, BookOpen, Loader2, CheckCircle2, XCircle, ExternalLink, Zap, ShieldCheck, RotateCcw,
-  MapPin, Users, MessageSquare, MoreVertical, PauseCircle, PlayCircle
+  MapPin, Users, MessageSquare, MoreVertical, PauseCircle, PlayCircle, RefreshCw
 } from "lucide-react";
 import { motion } from "motion/react";
 import { toast } from "sonner";
@@ -1754,15 +1754,115 @@ export const SettingsView = ({
 };
 
 // --- API & Integrations Section ---
+// ── API Key Types ──
+type ApiKeyScope = "contacts:read" | "contacts:write" | "messages:read" | "messages:write" | "automations:read" | "automations:write" | "broadcasts:send" | "webhooks:manage" | "analytics:read";
+interface ApiKeyEntry {
+  id: string;
+  name: string;
+  key: string;
+  prefix: string;
+  scopes: ApiKeyScope[];
+  created: string;
+  lastUsed: string | null;
+  expiresAt: string | null;
+  status: "active" | "revoked";
+}
+
+const ALL_SCOPES: { id: ApiKeyScope; label: string; group: string; description: string }[] = [
+  { id: "contacts:read",       label: "Read Contacts",       group: "Contacts",     description: "View contact profiles and lists" },
+  { id: "contacts:write",      label: "Write Contacts",      group: "Contacts",     description: "Create, update, delete contacts" },
+  { id: "messages:read",       label: "Read Messages",       group: "Messages",     description: "View conversation history" },
+  { id: "messages:write",      label: "Send Messages",       group: "Messages",     description: "Send messages to contacts" },
+  { id: "automations:read",    label: "Read Automations",    group: "Automations",  description: "View automation rules and flows" },
+  { id: "automations:write",   label: "Write Automations",   group: "Automations",  description: "Create and modify automations" },
+  { id: "broadcasts:send",     label: "Send Broadcasts",     group: "Broadcasts",   description: "Create and send broadcast messages" },
+  { id: "webhooks:manage",     label: "Manage Webhooks",     group: "Webhooks",     description: "Create, update, delete webhooks" },
+  { id: "analytics:read",      label: "Read Analytics",      group: "Analytics",    description: "View reports and dashboard metrics" },
+];
+
+const generateRandomKey = () => {
+  const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+  let result = "";
+  for (let i = 0; i < 32; i++) result += chars.charAt(Math.floor(Math.random() * chars.length));
+  return result;
+};
+
 const ApiSection = () => {
-  const [apiKeys] = useState([
-    { id: "key-1", name: "Production API Key", key: "trb_live_a1b2c3d4e5f6g7h8i9j0", created: "Jan 15, 2026", lastUsed: "Feb 20, 2026", active: true },
-    { id: "key-2", name: "Staging API Key", key: "trb_test_z9y8x7w6v5u4t3s2r1q0", created: "Feb 1, 2026", lastUsed: "Feb 18, 2026", active: true },
+  const [apiKeys, setApiKeys] = useState<ApiKeyEntry[]>([
+    { id: "key-1", name: "Production — Mobile App", key: "trb_live_a1b2c3d4e5f6g7h8i9j0klmnopqrstuv", prefix: "trb_live", scopes: ["contacts:read", "contacts:write", "messages:read", "messages:write", "broadcasts:send"], created: "Jan 15, 2026", lastUsed: "Jun 14, 2026", expiresAt: null, status: "active" },
+    { id: "key-2", name: "Staging — Website Widget", key: "trb_test_z9y8x7w6v5u4t3s2r1q0abcdefghijkl", prefix: "trb_test", scopes: ["contacts:read", "messages:read", "messages:write"], created: "Feb 1, 2026", lastUsed: "Jun 10, 2026", expiresAt: "Dec 31, 2026", status: "active" },
+    { id: "key-3", name: "Analytics Dashboard", key: "trb_live_m4n5o6p7q8r9s0t1u2v3wxyz12345678", prefix: "trb_live", scopes: ["analytics:read", "contacts:read"], created: "Mar 10, 2026", lastUsed: "Jun 12, 2026", expiresAt: "Sep 10, 2026", status: "active" },
+    { id: "key-4", name: "Old Integration (revoked)", key: "trb_live_oldkey123456789abcdefghijklmnop", prefix: "trb_live", scopes: ["contacts:read", "messages:read"], created: "Nov 5, 2025", lastUsed: "Jan 3, 2026", expiresAt: null, status: "revoked" },
   ]);
   const [showKey, setShowKey] = useState<Record<string, boolean>>({});
-  const [webhookSecret] = useState("whsec_k3p9m2n7x4b8v1c6");
+  const [webhookSecret] = useState("whsec_k3p9m2n7x4b8v1c6d0e5f2g9");
+
+  // ── Create Key Modal State ──
+  const [isCreateOpen, setIsCreateOpen] = useState(false);
+  const [newKeyName, setNewKeyName] = useState("");
+  const [newKeyPrefix, setNewKeyPrefix] = useState<"trb_live" | "trb_test">("trb_live");
+  const [newKeyScopes, setNewKeyScopes] = useState<ApiKeyScope[]>([]);
+  const [newKeyExpiry, setNewKeyExpiry] = useState<"none" | "30" | "90" | "180" | "365">("none");
+  const [justCreatedKey, setJustCreatedKey] = useState<string | null>(null);
+
+  // ── Delete Confirmation ──
+  const [deleteKeyId, setDeleteKeyId] = useState<string | null>(null);
 
   const toggleShowKey = (id: string) => setShowKey(prev => ({ ...prev, [id]: !prev[id] }));
+
+  const toggleScope = (scope: ApiKeyScope) => {
+    setNewKeyScopes(prev => prev.includes(scope) ? prev.filter(s => s !== scope) : [...prev, scope]);
+  };
+
+  const handleCreateKey = () => {
+    if (!newKeyName.trim()) { toast.error("Please enter a key name"); return; }
+    if (newKeyScopes.length === 0) { toast.error("Select at least one permission"); return; }
+    const rawKey = generateRandomKey();
+    const fullKey = `${newKeyPrefix}_${rawKey}`;
+    const expiryMap: Record<string, string | null> = { none: null, "30": "30 days", "90": "90 days", "180": "6 months", "365": "1 year" };
+    const now = new Date();
+    const expiresLabel = newKeyExpiry !== "none" ? (() => {
+      const d = new Date(now); d.setDate(d.getDate() + parseInt(newKeyExpiry));
+      return d.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+    })() : null;
+    const newEntry: ApiKeyEntry = {
+      id: `key-${Date.now()}`,
+      name: newKeyName.trim(),
+      key: fullKey,
+      prefix: newKeyPrefix,
+      scopes: [...newKeyScopes],
+      created: now.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }),
+      lastUsed: null,
+      expiresAt: expiresLabel,
+      status: "active",
+    };
+    setApiKeys(prev => [newEntry, ...prev]);
+    setJustCreatedKey(fullKey);
+    toast.success(`API key "${newKeyName}" created`);
+  };
+
+  const handleRevokeKey = (id: string) => {
+    setApiKeys(prev => prev.map(k => k.id === id ? { ...k, status: "revoked" as const } : k));
+    toast.success("API key revoked");
+  };
+
+  const handleDeleteKey = (id: string) => {
+    setApiKeys(prev => prev.filter(k => k.id !== id));
+    setDeleteKeyId(null);
+    toast.success("API key permanently deleted");
+  };
+
+  const handleResetCreate = () => {
+    setNewKeyName(""); setNewKeyScopes([]); setNewKeyExpiry("none"); setNewKeyPrefix("trb_live"); setJustCreatedKey(null); setIsCreateOpen(false);
+  };
+
+  const activeKeys = apiKeys.filter(k => k.status === "active");
+  const revokedKeys = apiKeys.filter(k => k.status === "revoked");
+
+  // Group scopes for the create form
+  const scopeGroups = ALL_SCOPES.reduce<Record<string, typeof ALL_SCOPES>>((acc, s) => {
+    (acc[s.group] ??= []).push(s); return acc;
+  }, {});
 
   return (
     <motion.div
@@ -1771,71 +1871,154 @@ const ApiSection = () => {
       transition={{ duration: 0.25 }}
       className="space-y-6"
     >
-      <SectionHeader title="API & Integrations" description="Manage API keys and developer tools for integrating with Turumba." />
+      <SectionHeader title="API & Integrations" description="Generate and manage API keys for external developers and partners to integrate with Turumba." />
       <Separator />
 
-      {/* API Keys */}
+      {/* ── Summary Stats ── */}
+      <div className="grid grid-cols-4 gap-3">
+        {[
+          { label: "Active Keys", value: activeKeys.length, color: "text-emerald-600", bg: "bg-emerald-50" },
+          { label: "Revoked", value: revokedKeys.length, color: "text-red-600", bg: "bg-red-50" },
+          { label: "Requests/min", value: "60", color: "text-blue-600", bg: "bg-blue-50" },
+          { label: "Rate Limit", value: "Pro", color: "text-violet-600", bg: "bg-violet-50" },
+        ].map(stat => (
+          <div key={stat.label} className="flex items-center gap-3 p-3 border rounded-lg bg-card">
+            <div className={cn("w-9 h-9 rounded-lg flex items-center justify-center shrink-0", stat.bg)}>
+              <span className={cn("text-sm font-bold", stat.color)}>{stat.value}</span>
+            </div>
+            <p className="text-xs text-muted-foreground font-medium">{stat.label}</p>
+          </div>
+        ))}
+      </div>
+
+      {/* ── Active API Keys ── */}
       <Card>
         <CardHeader>
           <div className="flex items-center justify-between">
             <div>
               <CardTitle className="text-sm font-semibold">API Keys</CardTitle>
-              <CardDescription className="text-xs">Use these keys to authenticate requests to the Turumba API.</CardDescription>
+              <CardDescription className="text-xs">Generate keys for external developers and partners to authenticate with the Turumba API.</CardDescription>
             </div>
-            <Button size="sm" variant="outline" onClick={() => toast.success("New API key generated")}>
-              <Key className="w-3.5 h-3.5" />
-              Generate Key
+            <Button size="sm" onClick={() => setIsCreateOpen(true)}>
+              <Plus className="w-3.5 h-3.5 mr-1.5" />
+              Generate New Key
             </Button>
           </div>
         </CardHeader>
         <CardContent className="space-y-3">
-          {apiKeys.map(ak => (
-            <div key={ak.id} className="p-4 border rounded-lg bg-muted/10 space-y-2">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-semibold text-foreground">{ak.name}</p>
-                  <p className="text-xs text-muted-foreground">Created {ak.created} &middot; Last used {ak.lastUsed}</p>
+          {activeKeys.length === 0 && (
+            <div className="text-center py-8 text-muted-foreground">
+              <Key className="w-8 h-8 mx-auto mb-2 opacity-40" />
+              <p className="text-sm font-medium">No active API keys</p>
+              <p className="text-xs mt-1">Generate a key to start integrating with the Turumba API.</p>
+            </div>
+          )}
+          {activeKeys.map(ak => (
+            <div key={ak.id} className="p-4 border rounded-lg bg-card hover:bg-muted/10 transition-colors space-y-3">
+              {/* Row 1: Name + Status */}
+              <div className="flex items-start justify-between gap-3">
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2">
+                    <p className="text-sm font-semibold text-foreground truncate">{ak.name}</p>
+                    <Badge variant="outline" className="text-[10px] text-emerald-600 border-emerald-200 bg-emerald-50 shrink-0">Active</Badge>
+                  </div>
+                  <div className="flex items-center gap-3 mt-1 text-xs text-muted-foreground">
+                    <span>Created {ak.created}</span>
+                    <span>·</span>
+                    <span>{ak.lastUsed ? `Last used ${ak.lastUsed}` : "Never used"}</span>
+                    {ak.expiresAt && (
+                      <>
+                        <span>·</span>
+                        <span className="inline-flex items-center gap-1"><CalendarDays className="w-3 h-3" /> Expires {ak.expiresAt}</span>
+                      </>
+                    )}
+                  </div>
                 </div>
-                <Badge variant="outline" className="text-xs text-emerald-600 border-emerald-200 bg-emerald-50">Active</Badge>
+                <div className="flex items-center gap-1 shrink-0">
+                  <Button variant="ghost" size="sm" className="h-7 px-2 text-xs text-amber-600 hover:text-amber-700 hover:bg-amber-50" onClick={() => handleRevokeKey(ak.id)}>
+                    Revoke
+                  </Button>
+                  <Button variant="ghost" size="sm" className="h-7 w-7 p-0 text-muted-foreground hover:text-red-600" onClick={() => setDeleteKeyId(ak.id)}>
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </Button>
+                </div>
               </div>
-              <div className="flex items-center gap-2 bg-muted/50 p-2 border rounded">
-                <code className="text-xs font-mono text-foreground flex-1">
-                  {showKey[ak.id] ? ak.key : ak.key.slice(0, 12) + "•".repeat(20)}
+              {/* Row 2: Key display */}
+              <div className="flex items-center gap-2 bg-muted/40 px-3 py-2 border rounded-md">
+                <code className="text-xs font-mono text-foreground flex-1 select-all">
+                  {showKey[ak.id] ? ak.key : ak.prefix + "_" + "•".repeat(32)}
                 </code>
-                <Button variant="ghost" size="sm" className="h-7 w-7 p-0" onClick={() => toggleShowKey(ak.id)}>
-                  <Eye className="w-3.5 h-3.5 text-muted-foreground" />
+                <Button variant="ghost" size="sm" className="h-7 w-7 p-0" onClick={() => toggleShowKey(ak.id)} title={showKey[ak.id] ? "Hide" : "Reveal"}>
+                  {showKey[ak.id] ? <EyeOff className="w-3.5 h-3.5 text-muted-foreground" /> : <Eye className="w-3.5 h-3.5 text-muted-foreground" />}
                 </Button>
-                <Button variant="ghost" size="sm" className="h-7 w-7 p-0" onClick={() => { navigator.clipboard?.writeText(ak.key); toast.success("API key copied"); }}>
-                  <Download className="w-3.5 h-3.5 text-muted-foreground" />
+                <Button variant="ghost" size="sm" className="h-7 w-7 p-0" onClick={() => { navigator.clipboard?.writeText(ak.key); toast.success("Key copied to clipboard"); }} title="Copy">
+                  <Copy className="w-3.5 h-3.5 text-muted-foreground" />
                 </Button>
+              </div>
+              {/* Row 3: Scopes */}
+              <div className="flex flex-wrap gap-1.5">
+                {ak.scopes.map(scope => (
+                  <span key={scope} className="inline-flex items-center px-2 py-0.5 text-[10px] font-medium rounded-full bg-muted border border-border text-muted-foreground">
+                    {ALL_SCOPES.find(s => s.id === scope)?.label ?? scope}
+                  </span>
+                ))}
               </div>
             </div>
           ))}
         </CardContent>
       </Card>
 
-      {/* Webhook Signing Secret */}
+      {/* ── Revoked Keys ── */}
+      {revokedKeys.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-sm font-semibold text-muted-foreground">Revoked Keys</CardTitle>
+            <CardDescription className="text-xs">These keys are no longer valid. Delete them permanently if no longer needed.</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-2">
+            {revokedKeys.map(ak => (
+              <div key={ak.id} className="flex items-center justify-between p-3 border rounded-lg bg-muted/10 opacity-60">
+                <div>
+                  <p className="text-sm font-medium text-foreground line-through">{ak.name}</p>
+                  <p className="text-xs text-muted-foreground">Revoked · Created {ak.created}</p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Badge variant="outline" className="text-[10px] text-red-600 border-red-200 bg-red-50">Revoked</Badge>
+                  <Button variant="ghost" size="sm" className="h-7 w-7 p-0 text-muted-foreground hover:text-red-600" onClick={() => setDeleteKeyId(ak.id)}>
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </Button>
+                </div>
+              </div>
+            ))}
+          </CardContent>
+        </Card>
+      )}
+
+      {/* ── Webhook Signing Secret ── */}
       <Card>
         <CardHeader>
           <CardTitle className="text-sm font-semibold">Webhook Signing Secret</CardTitle>
           <CardDescription className="text-xs">Use this secret to verify incoming webhook payloads from Turumba.</CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="flex items-center gap-2 bg-muted/50 p-3 border rounded">
+          <div className="flex items-center gap-2 bg-muted/40 px-3 py-2.5 border rounded-md">
             <code className="text-xs font-mono text-foreground flex-1">
-              {showKey["webhook"] ? webhookSecret : "whsec_" + "•".repeat(16)}
+              {showKey["webhook"] ? webhookSecret : "whsec_" + "•".repeat(24)}
             </code>
             <Button variant="ghost" size="sm" className="h-7 w-7 p-0" onClick={() => toggleShowKey("webhook")}>
-              <Eye className="w-3.5 h-3.5 text-muted-foreground" />
+              {showKey["webhook"] ? <EyeOff className="w-3.5 h-3.5 text-muted-foreground" /> : <Eye className="w-3.5 h-3.5 text-muted-foreground" />}
             </Button>
             <Button variant="ghost" size="sm" className="h-7 w-7 p-0" onClick={() => { navigator.clipboard?.writeText(webhookSecret); toast.success("Secret copied"); }}>
-              <Download className="w-3.5 h-3.5 text-muted-foreground" />
+              <Copy className="w-3.5 h-3.5 text-muted-foreground" />
+            </Button>
+            <Button variant="ghost" size="sm" className="h-7 w-7 p-0" onClick={() => toast.info("Secret regenerated (mock)")}>
+              <RefreshCw className="w-3.5 h-3.5 text-muted-foreground" />
             </Button>
           </div>
         </CardContent>
       </Card>
 
-      {/* Rate Limits */}
+      {/* ── Rate Limits ── */}
       <Card>
         <CardHeader>
           <CardTitle className="text-sm font-semibold">Rate Limits</CardTitle>
@@ -1857,7 +2040,7 @@ const ApiSection = () => {
         </CardContent>
       </Card>
 
-      {/* Documentation Link */}
+      {/* ── API Documentation ── */}
       <Card>
         <CardContent className="pt-6">
           <div className="flex items-center justify-between">
@@ -1866,11 +2049,169 @@ const ApiSection = () => {
               <p className="text-[13px] text-muted-foreground">Full reference for all API endpoints, schemas, and examples.</p>
             </div>
             <Button variant="outline" size="sm" onClick={() => toast.info("API docs would open in a new tab")}>
+              <ExternalLink className="w-3.5 h-3.5 mr-1.5" />
               View Docs
             </Button>
           </div>
         </CardContent>
       </Card>
+
+      {/* ══════════════════════════════════════════════════════════
+          CREATE KEY MODAL
+          ══════════════════════════════════════════════════════════ */}
+      {isCreateOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 animate-in fade-in duration-200">
+          <div className="bg-card border border-border rounded-xl shadow-xl w-full max-w-lg mx-4 max-h-[90vh] overflow-y-auto animate-in zoom-in-95 duration-200">
+            {justCreatedKey ? (
+              /* ── Success State: Show generated key ── */
+              <div className="p-6 space-y-5">
+                <div className="text-center space-y-2">
+                  <div className="w-12 h-12 rounded-full bg-emerald-50 flex items-center justify-center mx-auto">
+                    <Check className="w-6 h-6 text-emerald-600" />
+                  </div>
+                  <h3 className="text-lg font-bold text-foreground">API Key Created</h3>
+                  <p className="text-sm text-muted-foreground">Copy your key now — you won't be able to see it again.</p>
+                </div>
+                <div className="p-4 border-2 border-amber-200 bg-amber-50/50 rounded-lg space-y-3">
+                  <div className="flex items-center gap-2">
+                    <AlertCircle className="w-4 h-4 text-amber-600 shrink-0" />
+                    <p className="text-xs font-semibold text-amber-800">Save this key in a secure location</p>
+                  </div>
+                  <div className="flex items-center gap-2 bg-white p-3 border rounded-md">
+                    <code className="text-xs font-mono text-foreground flex-1 break-all select-all">{justCreatedKey}</code>
+                    <Button variant="outline" size="sm" className="shrink-0" onClick={() => { navigator.clipboard?.writeText(justCreatedKey); toast.success("Key copied!"); }}>
+                      <Copy className="w-3.5 h-3.5 mr-1.5" /> Copy
+                    </Button>
+                  </div>
+                </div>
+                <Button className="w-full" onClick={handleResetCreate}>Done</Button>
+              </div>
+            ) : (
+              /* ── Create Form ── */
+              <div className="p-6 space-y-5">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h3 className="text-lg font-bold text-foreground">Generate New API Key</h3>
+                    <p className="text-sm text-muted-foreground mt-0.5">Create a key for external developers or partner systems.</p>
+                  </div>
+                  <button onClick={handleResetCreate} className="p-1.5 rounded-md hover:bg-muted text-muted-foreground">
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+                <Separator />
+
+                {/* Key Name */}
+                <FormField label="Key Name" description="A descriptive label to identify this key (e.g., 'Partner CRM Integration').">
+                  <Input value={newKeyName} onChange={e => setNewKeyName(e.target.value)} placeholder="e.g., Mobile App - Production" />
+                </FormField>
+
+                {/* Environment */}
+                <FormField label="Environment" description="Live keys access production data. Test keys work with sandbox data.">
+                  <div className="flex gap-2">
+                    {([["trb_live", "Production", "text-emerald-700 bg-emerald-50 border-emerald-200"], ["trb_test", "Test / Staging", "text-amber-700 bg-amber-50 border-amber-200"]] as const).map(([val, label, style]) => (
+                      <button
+                        key={val}
+                        onClick={() => setNewKeyPrefix(val)}
+                        className={cn(
+                          "flex-1 py-2.5 px-4 rounded-lg border text-sm font-medium transition-all",
+                          newKeyPrefix === val ? style + " ring-2 ring-offset-1 ring-primary/30" : "bg-card border-border text-muted-foreground hover:bg-muted/50"
+                        )}
+                      >
+                        {label}
+                      </button>
+                    ))}
+                  </div>
+                </FormField>
+
+                {/* Permissions / Scopes */}
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <Label className="text-sm font-medium text-foreground">Permissions</Label>
+                    <button onClick={() => setNewKeyScopes(newKeyScopes.length === ALL_SCOPES.length ? [] : ALL_SCOPES.map(s => s.id))} className="text-xs text-primary font-medium hover:underline">
+                      {newKeyScopes.length === ALL_SCOPES.length ? "Deselect all" : "Select all"}
+                    </button>
+                  </div>
+                  <p className="text-[13px] text-muted-foreground -mt-2">Choose what this key can access. Follow the principle of least privilege.</p>
+                  <div className="space-y-4 max-h-[240px] overflow-y-auto pr-1">
+                    {Object.entries(scopeGroups).map(([group, scopes]) => (
+                      <div key={group}>
+                        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">{group}</p>
+                        <div className="space-y-1">
+                          {scopes.map(scope => (
+                            <label key={scope.id} className="flex items-center gap-3 p-2.5 rounded-lg hover:bg-muted/50 transition-colors cursor-pointer">
+                              <input type="checkbox" checked={newKeyScopes.includes(scope.id)} onChange={() => toggleScope(scope.id)}
+                                className="w-4 h-4 rounded border-border text-primary focus:ring-primary/30" />
+                              <div className="flex-1 min-w-0">
+                                <p className="text-sm font-medium text-foreground">{scope.label}</p>
+                                <p className="text-xs text-muted-foreground">{scope.description}</p>
+                              </div>
+                            </label>
+                          ))}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Expiration */}
+                <FormField label="Expiration" description="Set an optional expiry date for added security. Keys can also be manually revoked.">
+                  <div className="grid grid-cols-5 gap-1.5">
+                    {([["none", "Never"], ["30", "30 days"], ["90", "90 days"], ["180", "6 months"], ["365", "1 year"]] as const).map(([val, label]) => (
+                      <button
+                        key={val}
+                        onClick={() => setNewKeyExpiry(val)}
+                        className={cn(
+                          "py-2 px-2 rounded-md text-xs font-medium border transition-all text-center",
+                          newKeyExpiry === val ? "bg-primary text-primary-foreground border-primary" : "bg-card border-border text-muted-foreground hover:bg-muted/50"
+                        )}
+                      >
+                        {label}
+                      </button>
+                    ))}
+                  </div>
+                </FormField>
+
+                <Separator />
+
+                {/* Actions */}
+                <div className="flex justify-end gap-2">
+                  <Button variant="outline" onClick={handleResetCreate}>Cancel</Button>
+                  <Button onClick={handleCreateKey} disabled={!newKeyName.trim() || newKeyScopes.length === 0}>
+                    <Key className="w-3.5 h-3.5 mr-1.5" />
+                    Generate Key
+                  </Button>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* ══════════════════════════════════════════════════════════
+          DELETE CONFIRMATION MODAL
+          ══════════════════════════════════════════════════════════ */}
+      {deleteKeyId && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 animate-in fade-in duration-200">
+          <div className="bg-card border border-border rounded-xl shadow-xl w-full max-w-sm mx-4 p-6 space-y-4 animate-in zoom-in-95 duration-200">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-full bg-red-50 flex items-center justify-center shrink-0">
+                <Trash2 className="w-5 h-5 text-red-600" />
+              </div>
+              <div>
+                <h3 className="text-sm font-bold text-foreground">Delete API Key</h3>
+                <p className="text-xs text-muted-foreground mt-0.5">This action is permanent and cannot be undone. Any integrations using this key will immediately stop working.</p>
+              </div>
+            </div>
+            <div className="flex justify-end gap-2">
+              <Button variant="outline" size="sm" onClick={() => setDeleteKeyId(null)}>Cancel</Button>
+              <Button variant="destructive" size="sm" onClick={() => handleDeleteKey(deleteKeyId)}>
+                <Trash2 className="w-3.5 h-3.5 mr-1.5" />
+                Delete Permanently
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </motion.div>
   );
 };
