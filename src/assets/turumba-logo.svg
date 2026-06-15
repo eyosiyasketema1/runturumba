@@ -1,14 +1,16 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 240" fill="none">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 240">
   <!-- Blue circle background -->
-  <circle cx="120" cy="120" r="110" fill="#2E6BB5"/>
-  <!-- Turumba horn / trumpet mark -->
-  <!-- Main curved body of the horn -->
-  <path d="M80 155 C75 140 72 115 82 95 C92 75 110 65 130 68 C145 70 155 80 158 92 C161 104 155 118 142 125 C132 130 118 128 112 122"
-        stroke="#1B2838" stroke-width="9" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
-  <!-- Bell flare at the bottom left -->
-  <path d="M112 122 C105 118 92 125 85 140 C80 150 84 158 92 154 C100 150 108 138 112 122Z"
-        fill="#1B2838"/>
-  <!-- Small flick at top right of the horn -->
-  <path d="M155 85 C160 72 170 66 175 74 C178 82 170 94 160 98"
-        stroke="#1B2838" stroke-width="7" stroke-linecap="round" fill="none"/>
+  <circle cx="120" cy="120" r="120" fill="#2563EB"/>
+  <!-- Megaphone / horn shape in white -->
+  <g transform="translate(120,120) rotate(-30)">
+    <!-- Horn body - expanding cone -->
+    <path d="M-15,-8 L45,-35 Q55,-38 55,-28 L55,28 Q55,38 45,35 L-15,8 Z" fill="white"/>
+    <!-- Mouthpiece -->
+    <rect x="-25" y="-10" width="12" height="20" rx="3" fill="white"/>
+    <!-- Sound waves -->
+    <path d="M60,-20 Q75,-10 60,0" stroke="white" stroke-width="5" fill="none" stroke-linecap="round"/>
+    <path d="M60,0 Q75,10 60,20" stroke="white" stroke-width="5" fill="none" stroke-linecap="round"/>
+    <path d="M72,-30 Q92,-15 72,0" stroke="white" stroke-width="4" fill="none" stroke-linecap="round" opacity="0.7"/>
+    <path d="M72,0 Q92,15 72,30" stroke="white" stroke-width="4" fill="none" stroke-linecap="round" opacity="0.7"/>
+  </g>
 </svg>
