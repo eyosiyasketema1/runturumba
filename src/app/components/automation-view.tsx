@@ -1016,31 +1016,18 @@ const AutomationTemplatesTab = ({ onUseTemplate }: { onUseTemplate: (tpl: Automa
             className="pl-9 h-10 text-sm"
           />
         </div>
-        <div className="flex items-center gap-2">
-          {/* Type filter pills */}
-          <div className="flex gap-1 p-1 bg-muted border border-border rounded-lg">
-            {([
-              { id: "all" as const, label: "All Types" },
-              { id: "basic" as const, label: "Auto-Reply" },
-              { id: "sequence" as const, label: "Drip" },
-              { id: "flow" as const, label: "Flow" },
-              { id: "broadcast" as const, label: "Broadcast" },
-            ]).map(t => (
-              <button
-                key={t.id}
-                onClick={() => setTypeFilter(t.id)}
-                className={cn(
-                  "px-3 py-1.5 text-xs font-semibold rounded-md transition-all",
-                  typeFilter === t.id
-                    ? "bg-background text-foreground shadow-sm border border-border"
-                    : "text-muted-foreground hover:text-foreground"
-                )}
-              >
-                {t.label}
-              </button>
-            ))}
-          </div>
-        </div>
+        <select
+          value={typeFilter}
+          onChange={(e) => setTypeFilter(e.target.value as any)}
+          className="h-10 px-3 pr-8 rounded-lg border border-border bg-background text-sm text-foreground appearance-none cursor-pointer hover:border-muted-foreground/40 transition-colors"
+          style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%239ca3af' stroke-width='2'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E")`, backgroundRepeat: "no-repeat", backgroundPosition: "right 10px center" }}
+        >
+          <option value="all">All Types</option>
+          <option value="basic">Auto-Reply</option>
+          <option value="sequence">Drip</option>
+          <option value="flow">Flow</option>
+          <option value="broadcast">Broadcast</option>
+        </select>
       </div>
 
       {/* Category chips */}
@@ -1071,7 +1058,7 @@ const AutomationTemplatesTab = ({ onUseTemplate }: { onUseTemplate: (tpl: Automa
             <Star className="w-4 h-4 text-amber-500" />
             <h3 className="text-sm font-semibold text-foreground">Popular Templates</h3>
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
             {popular.map(tpl => (
               <TemplateCard key={tpl.id} template={tpl} onUse={onUseTemplate} onPreview={setPreviewTemplate} />
             ))}
@@ -1094,7 +1081,7 @@ const AutomationTemplatesTab = ({ onUseTemplate }: { onUseTemplate: (tpl: Automa
             </Button>
           </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
             {(popular.length > 0 && typeFilter === "all" && categoryFilter === "all" && !search ? rest : filtered).map(tpl => (
               <TemplateCard key={tpl.id} template={tpl} onUse={onUseTemplate} onPreview={setPreviewTemplate} />
             ))}
@@ -1198,21 +1185,24 @@ const TemplateCard = ({ template, onUse, onPreview }: {
           </span>
         </div>
       </div>
-      <p className="text-xs text-muted-foreground leading-relaxed flex-1 mb-4">{template.description}</p>
+      <p className="text-xs text-muted-foreground leading-relaxed flex-1 mb-3">{template.description}</p>
       <div className="flex items-center gap-2">
         {template.steps && (
           <span className="text-[10px] text-muted-foreground font-medium">{template.steps} steps</span>
         )}
         <div className="flex-1" />
-        <button
-          onClick={() => onPreview(template)}
-          className="text-xs text-muted-foreground hover:text-foreground font-medium transition-colors"
-        >
-          Preview
-        </button>
-        <Button size="sm" variant="outline" className="h-7 text-xs" onClick={() => onUse(template)}>
-          Use
-        </Button>
+        {/* Hover-only actions */}
+        <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+          <button
+            onClick={() => onPreview(template)}
+            className="text-xs text-muted-foreground hover:text-foreground font-medium transition-colors"
+          >
+            Preview
+          </button>
+          <Button size="sm" className="h-7 text-xs" onClick={() => onUse(template)}>
+            Use
+          </Button>
+        </div>
       </div>
     </div>
   );

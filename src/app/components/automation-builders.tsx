@@ -13,7 +13,7 @@ import {
   ChevronDown, Hash, Zap, Bell, AlertCircle, Clock, Sparkles,
   Send, Smartphone, Globe, MessageCircle, GripVertical,
   Eye, MousePointerClick, Users, TrendingDown, BarChart3, Activity,
-  Reply, Droplet, Workflow, Megaphone
+  Reply, Droplet, Workflow, Megaphone, LayoutTemplate
 } from "lucide-react";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
@@ -64,7 +64,7 @@ export interface SequenceDraft {
 // ============================================================================
 
 function BuilderHeader({
-  name, onNameChange, status, onBack, onSave, onPublish, typeLabel, runs,
+  name, onNameChange, status, onBack, onSave, onPublish, onSaveAsTemplate, typeLabel, runs,
 }: {
   name: string;
   onNameChange: (v: string) => void;
@@ -72,6 +72,7 @@ function BuilderHeader({
   onBack: () => void;
   onSave: () => void;
   onPublish: () => void;
+  onSaveAsTemplate?: () => void;
   typeLabel: string;
   runs?: number;
 }) {
@@ -125,6 +126,11 @@ function BuilderHeader({
         <Button variant="outline" size="sm" onClick={onSave}>
           <Save className="w-3.5 h-3.5" /> Save Draft
         </Button>
+        {onSaveAsTemplate && (
+          <Button variant="outline" size="sm" onClick={onSaveAsTemplate}>
+            <LayoutTemplate className="w-3.5 h-3.5" /> Save as Template
+          </Button>
+        )}
         <Button size="sm" onClick={onPublish}>Publish</Button>
       </div>
     </header>
@@ -408,6 +414,7 @@ export function BasicAutomationBuilder({
         onBack={onBack}
         onSave={() => { if (!isValid) return toast.error("Fill in the required fields before saving"); onSave(draft); toast.success(`"${name}" saved as draft`); }}
         onPublish={() => { if (!isValid) return toast.error("Fill in the required fields before publishing"); onPublish(draft); toast.success(`"${name}" published`); }}
+        onSaveAsTemplate={() => { if (!isValid) return toast.error("Fill in the required fields first"); toast.success(`"${name}" saved as template`); }}
       />
 
       <div className="flex-1 flex overflow-hidden">
@@ -621,6 +628,7 @@ export function SequenceBuilder({
         onBack={onBack}
         onSave={() => { if (!isValid) return toast.error("Add at least one step with a message"); onSave(draft); toast.success(`"${name}" saved as draft`); }}
         onPublish={() => { if (!isValid) return toast.error("Add at least one step with a message"); onPublish(draft); toast.success(`"${name}" published`); }}
+        onSaveAsTemplate={() => { if (!isValid) return toast.error("Add at least one step with a message first"); toast.success(`"${name}" saved as template`); }}
       />
 
       <div className="flex-1 flex overflow-hidden">
