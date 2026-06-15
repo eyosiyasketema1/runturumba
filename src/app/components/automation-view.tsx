@@ -285,7 +285,7 @@ const buildTemplateFlowNodes = (labels: string[]) => {
       iconColor: match.iconColor,
       iconBg: match.iconBg,
       config: {},
-      position: { x: 100, y: 80 + i * 120 },
+      position: { x: i, y: 0 },
     };
   });
 };
