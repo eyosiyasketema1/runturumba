@@ -355,16 +355,16 @@ export const PLAN_LIMITS: Record<Plan, {
   }
 };
 
-export const CHANNEL_TYPES: { id: ChannelType; label: string; icon: any; color: string; bgColor: string; borderColor: string; description: string }[] = [
-  { id: "whatsapp", label: "WhatsApp", icon: MessageSquare, color: "text-emerald-600", bgColor: "bg-emerald-50", borderColor: "border-emerald-200", description: "WhatsApp Business API" },
+export const CHANNEL_TYPES: { id: ChannelType; label: string; icon: any; color: string; bgColor: string; borderColor: string; description: string; logoUrl?: string }[] = [
+  { id: "whatsapp", label: "WhatsApp", icon: MessageSquare, color: "text-emerald-600", bgColor: "bg-emerald-50", borderColor: "border-emerald-200", description: "WhatsApp Business API", logoUrl: "https://cdn.simpleicons.org/whatsapp/25D366" },
   { id: "sms", label: "SMS", icon: Smartphone, color: "text-rose-500", bgColor: "bg-rose-50", borderColor: "border-rose-200", description: "SMS gateway provider" },
-  { id: "twilio", label: "Twilio", icon: PhoneCall, color: "text-red-600", bgColor: "bg-red-50", borderColor: "border-red-200", description: "Twilio SMS provider" },
-  { id: "telegram", label: "Telegram", icon: Send, color: "text-sky-600", bgColor: "bg-sky-50", borderColor: "border-sky-200", description: "Telegram Bot API" },
+  { id: "twilio", label: "Twilio", icon: PhoneCall, color: "text-red-600", bgColor: "bg-red-50", borderColor: "border-red-200", description: "Twilio SMS provider", logoUrl: "https://cdn.simpleicons.org/twilio/F22F46" },
+  { id: "telegram", label: "Telegram", icon: Send, color: "text-sky-600", bgColor: "bg-sky-50", borderColor: "border-sky-200", description: "Telegram Bot API", logoUrl: "https://cdn.simpleicons.org/telegram/26A5E4" },
   { id: "smpp", label: "SMPP", icon: Server, color: "text-gray-600", bgColor: "bg-gray-50", borderColor: "border-gray-200", description: "SMPP Protocol direct" },
-  { id: "email", label: "Email", icon: Mail, color: "text-blue-600", bgColor: "bg-blue-50", borderColor: "border-blue-200", description: "SendGrid email" },
-  { id: "messenger", label: "Messenger", icon: Facebook, color: "text-blue-500", bgColor: "bg-blue-50", borderColor: "border-blue-200", description: "Facebook Messenger Platform" },
-  { id: "instagram", label: "Instagram", icon: Camera, color: "text-pink-600", bgColor: "bg-pink-50", borderColor: "border-pink-200", description: "Instagram Direct Messaging" },
-  { id: "tiktok", label: "TikTok", icon: Music, color: "text-gray-900", bgColor: "bg-gray-100", borderColor: "border-gray-300", description: "TikTok Business Messaging" },
+  { id: "email", label: "Email", icon: Mail, color: "text-blue-600", bgColor: "bg-blue-50", borderColor: "border-blue-200", description: "SendGrid email", logoUrl: "https://cdn.simpleicons.org/minutemailer/29ABE2" },
+  { id: "messenger", label: "Messenger", icon: Facebook, color: "text-blue-500", bgColor: "bg-blue-50", borderColor: "border-blue-200", description: "Facebook Messenger Platform", logoUrl: "https://cdn.simpleicons.org/messenger/0084FF" },
+  { id: "instagram", label: "Instagram", icon: Camera, color: "text-pink-600", bgColor: "bg-pink-50", borderColor: "border-pink-200", description: "Instagram Direct Messaging", logoUrl: "https://cdn.simpleicons.org/instagram/E4405F" },
+  { id: "tiktok", label: "TikTok", icon: Music, color: "text-gray-900", bgColor: "bg-gray-100", borderColor: "border-gray-300", description: "TikTok Business Messaging", logoUrl: "https://cdn.simpleicons.org/tiktok/000000" },
 ];
 
 /** @deprecated Use CHANNEL_TYPES instead */

@@ -368,7 +368,7 @@ export const ChannelsView = ({
             <FilterButton active={typeFilter === "all"} onClick={() => setTypeFilter("all")}>All Types</FilterButton>
             {CHANNEL_TYPES.map(ct => (
               <FilterButton key={ct.id} active={typeFilter === ct.id} onClick={() => setTypeFilter(ct.id)}>
-                <ct.icon className="w-3 h-3" />
+                <ChannelIcon type={ct} className="w-3 h-3" />
                 {ct.label}
               </FilterButton>
             ))}
@@ -518,6 +518,15 @@ export const ChannelsView = ({
 // Shared tiny components
 // ============================================================
 
+/** Renders a brand logo (from Simple Icons CDN) when available, falls back to Lucide icon */
+const ChannelIcon = ({ type, className }: { type: typeof CHANNEL_TYPES[number]; className?: string }) => {
+  if (type.logoUrl) {
+    return <img src={type.logoUrl} alt={type.label} className={cn("object-contain", className)} />;
+  }
+  const Icon = type.icon;
+  return <Icon className={cn(className, type.color)} />;
+};
+
 const FilterButton = ({ active, onClick, children }: { active: boolean; onClick: () => void; children: React.ReactNode }) => (
   <button
     onClick={onClick}
@@ -588,7 +597,7 @@ const ChannelRow = ({ channel, onToggle, onDetail, onEdit, onDelete, onDuplicate
           <div className="flex items-center gap-4">
             {/* Icon */}
             <div className={cn("w-11 h-11 flex items-center justify-center shrink-0 border relative", typeInfo?.bgColor, typeInfo?.borderColor)}>
-              {typeInfo && <typeInfo.icon className={cn("w-5 h-5", typeInfo.color)} />}
+              {typeInfo && <ChannelIcon type={typeInfo} className="w-5 h-5" />}
               {/* Connection dot */}
               <span className={cn(
                 "absolute -bottom-0.5 -right-0.5 w-3 h-3 border-2 border-background rounded-full",
@@ -770,7 +779,7 @@ const AddChannelModal = ({ isOpen, onClose, onAdd }: {
                   className="flex items-center gap-3 p-4 border text-left transition-all hover:border-primary/40 hover:bg-muted/30 group"
                 >
                   <div className={cn("w-10 h-10 flex items-center justify-center shrink-0 rounded-lg", ct.bgColor)}>
-                    <ct.icon className={cn("w-5 h-5", ct.color)} />
+                    <ChannelIcon type={ct} className="w-5 h-5" />
                   </div>
                   <div>
                     <p className="text-sm font-semibold text-foreground">{ct.label}</p>
@@ -794,7 +803,7 @@ const AddChannelModal = ({ isOpen, onClose, onAdd }: {
             {typeInfo && (
               <div className="flex items-center gap-3 p-3 bg-muted/30 border mb-6">
                 <div className={cn("w-8 h-8 flex items-center justify-center border", typeInfo.bgColor, typeInfo.borderColor)}>
-                  <typeInfo.icon className={cn("w-4 h-4", typeInfo.color)} />
+                  <ChannelIcon type={typeInfo} className="w-4 h-4" />
                 </div>
                 <div>
                   <p className="text-sm font-semibold">{typeInfo.label}</p>
@@ -874,7 +883,7 @@ const AddChannelModal = ({ isOpen, onClose, onAdd }: {
                 <div className="flex items-center gap-3 mb-4">
                   {typeInfo && (
                     <div className={cn("w-10 h-10 flex items-center justify-center border", typeInfo.bgColor, typeInfo.borderColor)}>
-                      <typeInfo.icon className={cn("w-5 h-5", typeInfo.color)} />
+                      <ChannelIcon type={typeInfo} className="w-5 h-5" />
                     </div>
                   )}
                   <div>
@@ -968,7 +977,7 @@ const EditChannelModal = ({ isOpen, onClose, channel, onSave }: {
         {typeInfo && (
           <div className="flex items-center gap-3 p-3 bg-muted/30 border">
             <div className={cn("w-8 h-8 flex items-center justify-center border", typeInfo.bgColor, typeInfo.borderColor)}>
-              <typeInfo.icon className={cn("w-4 h-4", typeInfo.color)} />
+              <ChannelIcon type={typeInfo} className="w-4 h-4" />
             </div>
             <div className="flex-1">
               <p className="text-sm font-semibold">{typeInfo.label}</p>
@@ -1080,7 +1089,7 @@ const ChannelDetailDrawer = ({ isOpen, onClose, channel, onToggle, onEdit, onDel
         {/* Header */}
         <div className="flex items-start gap-4">
           <div className={cn("w-14 h-14 flex items-center justify-center shrink-0 border relative", typeInfo?.bgColor, typeInfo?.borderColor)}>
-            {typeInfo && <typeInfo.icon className={cn("w-7 h-7", typeInfo.color)} />}
+            {typeInfo && <ChannelIcon type={typeInfo} className="w-7 h-7" />}
             <span className={cn(
               "absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 border-2 border-background rounded-full",
               channel.status === "connected" ? "bg-emerald-500" :
@@ -1423,7 +1432,7 @@ const TestChannelModal = ({ isOpen, onClose, channel, onStatusChange }: {
         {typeInfo && (
           <div className="flex items-center gap-3 p-3 bg-muted/30 border">
             <div className={cn("w-8 h-8 flex items-center justify-center border", typeInfo.bgColor, typeInfo.borderColor)}>
-              <typeInfo.icon className={cn("w-4 h-4", typeInfo.color)} />
+              <ChannelIcon type={typeInfo} className="w-4 h-4" />
             </div>
             <div>
               <p className="text-sm font-semibold">{channel.name}</p>
