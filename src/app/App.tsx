@@ -63,6 +63,7 @@ import { Button } from "./components/ui/button";
 import { Input } from "./components/ui/input";
 import { Label } from "./components/ui/label";
 import { Textarea } from "./components/ui/textarea";
+import turumbaLogo from "../assets/turumba-logo.svg";
 
 // Extracted views
 import { DashboardView } from "./components/dashboard-view";
@@ -646,11 +647,10 @@ export default function App() {
             className="flex flex-col items-center text-center max-w-xl w-full"
           >
             {/* Logo */}
-            <div className="w-12 h-12 rounded-xl bg-primary flex items-center justify-center mb-5">
-              <MessageSquare className="w-6 h-6 text-primary-foreground" />
-            </div>
+            <img src={turumbaLogo} alt="Turumba" className="w-16 h-16 mb-3" />
             <h1 className="text-2xl font-bold tracking-tight text-foreground">Turumba</h1>
-            <p className="text-sm text-muted-foreground mt-1.5 mb-8">
+            <p className="text-xs text-muted-foreground font-medium mb-1">Messaging</p>
+            <p className="text-sm text-muted-foreground mt-3 mb-8">
               Choose which version of the platform to explore.
             </p>
 

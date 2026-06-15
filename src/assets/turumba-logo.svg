@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 240" fill="none">
+  <!-- Blue circle background -->
+  <circle cx="120" cy="120" r="110" fill="#2E6BB5"/>
+  <!-- Turumba horn / trumpet mark -->
+  <!-- Main curved body of the horn -->
+  <path d="M80 155 C75 140 72 115 82 95 C92 75 110 65 130 68 C145 70 155 80 158 92 C161 104 155 118 142 125 C132 130 118 128 112 122"
+        stroke="#1B2838" stroke-width="9" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+  <!-- Bell flare at the bottom left -->
+  <path d="M112 122 C105 118 92 125 85 140 C80 150 84 158 92 154 C100 150 108 138 112 122Z"
+        fill="#1B2838"/>
+  <!-- Small flick at top right of the horn -->
+  <path d="M155 85 C160 72 170 66 175 74 C178 82 170 94 160 98"
+        stroke="#1B2838" stroke-width="7" stroke-linecap="round" fill="none"/>
+</svg>
