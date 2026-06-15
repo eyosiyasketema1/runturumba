@@ -136,6 +136,9 @@ export default function App() {
   const [isSubOrgOpen, setIsSubOrgOpen] = useState(false);
   const [newOrgForm, setNewOrgForm] = useState({ name: "", description: "" });
   const [isAllActivityOpen, setIsAllActivityOpen] = useState(false);
+  const [selectedVersion, setSelectedVersion] = useState<"current" | "future" | null>(() => {
+    return (localStorage.getItem("turumba_version") as "current" | "future" | null) ?? null;
+  });
   const [isOnboarding, setIsOnboarding] = useState(() => {
     return localStorage.getItem("turumba_onboarding_complete") !== "true";
   });
@@ -543,6 +546,7 @@ export default function App() {
   const handleLogout = () => {
     // Clear persisted state
     localStorage.removeItem("turumba_onboarding_complete");
+    localStorage.removeItem("turumba_version");
     
     // Reset all app state to initial values
     setActiveTenant(INITIAL_TENANTS[0]);
@@ -566,7 +570,8 @@ export default function App() {
     setIsMobileSidebarOpen(false);
     setIsLogoutConfirmOpen(false);
     
-    // Return to onboarding / login
+    // Return to version chooser
+    setSelectedVersion(null);
     setIsOnboarding(true);
     toast.success("You've been signed out.");
   };
@@ -625,6 +630,110 @@ export default function App() {
     localStorage.setItem("turumba_onboarding_complete", "true");
     toast.success(`Welcome to Turumba, ${onboardingData.fullName?.split(" ")[0] || "there"}!`);
   };
+
+  // ── Version Chooser ─────────────────────────────────────────────────────
+  // Show a polished landing page before anything else, letting the user
+  // pick "Current Turumba" vs "Future Turumba" for the client pitch.
+  if (!selectedVersion) {
+    return (
+      <>
+        <Toaster position="top-right" richColors closeButton />
+        <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-indigo-950 flex flex-col items-center justify-center relative overflow-hidden">
+          {/* Background effects */}
+          <div className="absolute inset-0 pointer-events-none">
+            <div className="absolute top-0 left-1/4 w-96 h-96 bg-indigo-500/10 rounded-full blur-[128px]" />
+            <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-purple-500/10 rounded-full blur-[128px]" />
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-blue-500/5 rounded-full blur-[160px]" />
+          </div>
+
+          {/* Grid overlay */}
+          <div className="absolute inset-0 pointer-events-none opacity-[0.03]" style={{
+            backgroundImage: "linear-gradient(rgba(255,255,255,0.1) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.1) 1px, transparent 1px)",
+            backgroundSize: "60px 60px",
+          }} />
+
+          {/* Content */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, ease: "easeOut" }}
+            className="relative z-10 flex flex-col items-center text-center px-6 max-w-3xl"
+          >
+            {/* Logo / Brand */}
+            <div className="mb-8 flex flex-col items-center">
+              <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center shadow-lg shadow-indigo-500/30 mb-4">
+                <MessageSquare className="w-8 h-8 text-white" />
+              </div>
+              <h1 className="text-4xl font-bold tracking-tight text-white">
+                Turumba
+              </h1>
+              <p className="text-sm text-indigo-300/80 font-medium mt-1.5 tracking-wide uppercase">
+                Great Commission Ministry Ethiopia
+              </p>
+            </div>
+
+            <p className="text-lg text-slate-300 mb-10 max-w-md leading-relaxed">
+              Choose which version of the platform you'd like to explore.
+            </p>
+
+            {/* Version Cards */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 w-full max-w-xl">
+              {/* Current */}
+              <motion.button
+                whileHover={{ scale: 1.03, y: -2 }}
+                whileTap={{ scale: 0.98 }}
+                onClick={() => { setSelectedVersion("current"); localStorage.setItem("turumba_version", "current"); }}
+                className="group relative bg-white/[0.06] backdrop-blur-sm border border-white/10 rounded-2xl p-6 text-left hover:bg-white/[0.1] hover:border-indigo-400/30 transition-all duration-300 cursor-pointer"
+              >
+                <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-blue-500/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+                <div className="relative">
+                  <div className="w-12 h-12 rounded-xl bg-blue-500/20 flex items-center justify-center mb-4">
+                    <Building2 className="w-6 h-6 text-blue-400" />
+                  </div>
+                  <h2 className="text-xl font-bold text-white mb-1.5">Current Turumba</h2>
+                  <p className="text-sm text-slate-400 leading-relaxed">
+                    The production platform with all existing features — contacts, messaging, automations, and more.
+                  </p>
+                  <div className="flex items-center gap-1.5 mt-4 text-blue-400 text-xs font-semibold uppercase tracking-wider">
+                    <span>Launch</span>
+                    <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
+                  </div>
+                </div>
+              </motion.button>
+
+              {/* Future */}
+              <motion.button
+                whileHover={{ scale: 1.03, y: -2 }}
+                whileTap={{ scale: 0.98 }}
+                onClick={() => { setSelectedVersion("future"); localStorage.setItem("turumba_version", "future"); }}
+                className="group relative bg-white/[0.06] backdrop-blur-sm border border-white/10 rounded-2xl p-6 text-left hover:bg-white/[0.1] hover:border-purple-400/30 transition-all duration-300 cursor-pointer"
+              >
+                <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-purple-500/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+                <div className="relative">
+                  <div className="w-12 h-12 rounded-xl bg-purple-500/20 flex items-center justify-center mb-4">
+                    <Sparkles className="w-6 h-6 text-purple-400" />
+                  </div>
+                  <h2 className="text-xl font-bold text-white mb-1.5">Future Turumba</h2>
+                  <p className="text-sm text-slate-400 leading-relaxed">
+                    The next-generation vision — AI-powered insights, advanced analytics, and new capabilities.
+                  </p>
+                  <div className="flex items-center gap-1.5 mt-4 text-purple-400 text-xs font-semibold uppercase tracking-wider">
+                    <span>Explore</span>
+                    <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
+                  </div>
+                </div>
+              </motion.button>
+            </div>
+
+            {/* Footer */}
+            <p className="text-xs text-slate-500 mt-10">
+              Both versions share the same feature set for this demo. Select either to continue.
+            </p>
+          </motion.div>
+        </div>
+      </>
+    );
+  }
 
   // Show onboarding flow for new users
   if (isOnboarding) {
@@ -812,6 +921,14 @@ export default function App() {
             <div className="hidden md:flex items-center gap-2 ml-1">
               <div className="h-4 w-px bg-border" />
               <span className="text-sm font-semibold text-muted-foreground">Turumba</span>
+              {selectedVersion && (
+                <span className={cn(
+                  "text-[10px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded-full",
+                  selectedVersion === "current" ? "bg-blue-50 text-blue-600 border border-blue-200" : "bg-purple-50 text-purple-600 border border-purple-200"
+                )}>
+                  {selectedVersion === "current" ? "Current" : "Future"}
+                </span>
+              )}
             </div>
           </div>
 
