@@ -75,6 +75,24 @@ const CHANNEL_CONFIG_FIELDS: Record<ChannelType, { key: string; label: string; p
     { key: "password", label: "Password", placeholder: "Enter password", sensitive: true },
     { key: "systemType", label: "System Type (optional)", placeholder: "transceiver" },
   ],
+  twilio: [
+    { key: "accountSid", label: "Account SID", placeholder: "AC..." },
+    { key: "authToken", label: "Auth Token", placeholder: "Enter auth token", sensitive: true },
+    { key: "fromNumber", label: "Twilio Phone Number", placeholder: "+15551234567" },
+    { key: "messagingServiceSid", label: "Messaging Service SID (optional)", placeholder: "MG..." },
+  ],
+  instagram: [
+    { key: "pageId", label: "Instagram Business Account ID", placeholder: "17841400..." },
+    { key: "appId", label: "Facebook App ID", placeholder: "987654321" },
+    { key: "accessToken", label: "Page Access Token", placeholder: "EAABsbC...", sensitive: true },
+    { key: "webhookVerifyToken", label: "Webhook Verify Token", placeholder: "your_verify_token", sensitive: true },
+  ],
+  tiktok: [
+    { key: "appId", label: "TikTok App ID", placeholder: "7123456789" },
+    { key: "appSecret", label: "App Secret", placeholder: "Enter app secret", sensitive: true },
+    { key: "accessToken", label: "Access Token", placeholder: "act.xxxx...", sensitive: true },
+    { key: "businessId", label: "Business Account ID", placeholder: "7198765432" },
+  ],
 };
 
 type SortKey = "name" | "status" | "sent" | "delivery" | "lastActive";
@@ -711,26 +729,31 @@ const AddChannelModal = ({ isOpen, onClose, onAdd }: {
   const typeInfo = selectedType ? CHANNEL_TYPES.find(c => c.id === selectedType) : null;
 
   return (
-    <Modal isOpen={isOpen} onClose={handleClose} title="Add Delivery Channel" size="2xl">
-      {/* Progress */}
-      <div className="flex items-center gap-2 mb-6">
+    <Modal isOpen={isOpen} onClose={handleClose} title="Add Channel" size="2xl">
+      {/* Stepper */}
+      <div className="flex items-center gap-0 mb-6">
         {[
           { n: 1, label: "Channel Type" },
           { n: 2, label: "Configuration" },
           { n: 3, label: "Review" },
         ].map((s, i) => (
           <div key={s.n} className="contents">
-            <div className="flex items-center gap-1.5">
+            <div className="flex items-center gap-2">
               <div className={cn(
-                "w-6 h-6 flex items-center justify-center text-xs font-bold border transition-all",
+                "w-7 h-7 flex items-center justify-center text-xs font-bold border transition-all",
                 step > s.n ? "bg-primary text-primary-foreground border-primary" :
                 step === s.n ? "border-foreground text-foreground" : "border-muted-foreground/30 text-muted-foreground/40"
               )}>
-                {step > s.n ? <Check className="w-3 h-3" /> : s.n}
+                {step > s.n ? <Check className="w-3.5 h-3.5" /> : s.n}
               </div>
-              <span className={cn("text-xs font-semibold", step >= s.n ? "text-foreground" : "text-muted-foreground/40")}>{s.label}</span>
+              <span className={cn("text-sm font-medium", step >= s.n ? "text-foreground" : "text-muted-foreground/40")}>{s.label}</span>
             </div>
-            {i < 2 && <div className={cn("flex-1 h-px", step > s.n ? "bg-primary" : "bg-border")} />}
+            {i < 2 && (
+              <div className={cn(
+                "flex-1 h-px mx-3 border-t border-dashed",
+                step > s.n ? "border-primary" : "border-muted-foreground/30"
+              )} />
+            )}
           </div>
         ))}
       </div>
@@ -739,23 +762,25 @@ const AddChannelModal = ({ isOpen, onClose, onAdd }: {
         {/* Step 1: Type selection */}
         {step === 1 && (
           <motion.div key="s1" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} transition={{ duration: 0.2 }}>
-            <p className="text-sm text-muted-foreground mb-4">Select the messaging platform to connect.</p>
             <div className="grid grid-cols-2 gap-3">
               {CHANNEL_TYPES.map(ct => (
                 <button
                   key={ct.id}
                   onClick={() => { setSelectedType(ct.id); setStep(2); }}
-                  className="flex items-start gap-3 p-4 border text-left transition-all hover:border-primary/40 hover:bg-muted/30"
+                  className="flex items-center gap-3 p-4 border text-left transition-all hover:border-primary/40 hover:bg-muted/30 group"
                 >
-                  <div className={cn("w-10 h-10 flex items-center justify-center shrink-0 border", ct.bgColor, ct.borderColor)}>
+                  <div className={cn("w-10 h-10 flex items-center justify-center shrink-0 rounded-lg", ct.bgColor)}>
                     <ct.icon className={cn("w-5 h-5", ct.color)} />
                   </div>
                   <div>
                     <p className="text-sm font-semibold text-foreground">{ct.label}</p>
-                    <p className="text-xs text-muted-foreground mt-0.5">{ct.description}</p>
+                    <p className="text-xs text-muted-foreground">{ct.description}</p>
                   </div>
                 </button>
               ))}
+            </div>
+            <div className="flex justify-end pt-4 mt-4 border-t">
+              <Button variant="outline" size="sm" onClick={handleClose}>Cancel</Button>
             </div>
           </motion.div>
         )}
