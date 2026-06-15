@@ -326,7 +326,7 @@ export default function App() {
       ]
     },
     {
-      label: "GCM Ethiopia",
+      label: "Reporting",
       items: [
         { id: "growth_metrics",  name: "Growth Metrics",   icon: TrendingUp },
         { id: "vital_analytics", name: "VITAL Analytics",  icon: Activity },
