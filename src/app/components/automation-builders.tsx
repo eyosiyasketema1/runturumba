@@ -12,7 +12,8 @@ import {
   ArrowLeft, Save, MessageSquare, Check, Plus, Trash2, ChevronUp,
   ChevronDown, Hash, Zap, Bell, AlertCircle, Clock, Sparkles,
   Send, Smartphone, Globe, MessageCircle, GripVertical,
-  Eye, MousePointerClick, Users, TrendingDown, BarChart3, Activity
+  Eye, MousePointerClick, Users, TrendingDown, BarChart3, Activity,
+  Reply, Droplet, Workflow, Megaphone
 } from "lucide-react";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
@@ -989,32 +990,36 @@ function Section({
 
 export function AutomationTypePicker({
   onPick,
-}: { onPick: (type: "basic" | "sequence" | "flow") => void }) {
+}: { onPick: (type: "basic" | "sequence" | "flow" | "broadcast") => void }) {
   const types = [
-    { id: "basic" as const,    label: "Basic automation", description: "A single trigger paired with a single reply — welcomes, keyword replies, default messages.",    icon: Zap,          tint: "bg-blue-50 text-blue-700" },
-    { id: "sequence" as const, label: "Sequence",         description: "A drip series of messages sent at scheduled intervals.",                                         icon: ListClockIcon, tint: "bg-emerald-50 text-emerald-700" },
-    { id: "flow" as const,     label: "Journey",          description: "A branching, multi-step visual journey with milestones, webhooks, conditions, and AI personalization.", icon: GripVertical, tint: "bg-violet-50 text-violet-700" },
+    { id: "basic" as const,     label: "Auto-Reply",  description: "Reply to keywords, welcome messages, or custom events.",                    icon: Reply,     tint: "bg-blue-50 text-blue-600" },
+    { id: "sequence" as const,  label: "Drip",         description: "Send a timed sequence of messages.",                                        icon: Droplet,   tint: "bg-blue-50 text-blue-500" },
+    { id: "flow" as const,      label: "Flow",         description: "Build a full DAG workflow with branching.",                                 icon: Workflow,  tint: "bg-blue-50 text-blue-600" },
+    { id: "broadcast" as const, label: "Broadcast",    description: "One message to many on a schedule.",                                        icon: Megaphone, tint: "bg-amber-50 text-amber-600" },
   ];
   return (
-    <div className="space-y-2">
-      {types.map(t => {
-        const Icon = t.icon;
-        return (
-          <button
-            key={t.id}
-            onClick={() => onPick(t.id)}
-            className="w-full flex items-start gap-3 p-4 rounded-lg border border-border hover:border-primary hover:bg-primary/5 transition-all text-left"
-          >
-            <div className={cn("w-10 h-10 rounded-md flex items-center justify-center shrink-0", t.tint)}>
-              <Icon className="w-5 h-5" />
-            </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-semibold text-foreground">{t.label}</p>
-              <p className="text-xs text-muted-foreground mt-0.5 leading-snug">{t.description}</p>
-            </div>
-          </button>
-        );
-      })}
+    <div className="space-y-4">
+      <p className="text-sm text-muted-foreground">Choose the type of automation you want to build.</p>
+      <div className="grid grid-cols-2 gap-3">
+        {types.map(t => {
+          const Icon = t.icon;
+          return (
+            <button
+              key={t.id}
+              onClick={() => onPick(t.id)}
+              className="flex items-start gap-3 p-5 border border-border hover:border-primary/40 hover:bg-muted/30 transition-all text-left"
+            >
+              <div className={cn("w-10 h-10 rounded-lg flex items-center justify-center shrink-0", t.tint)}>
+                <Icon className="w-5 h-5" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-semibold text-foreground">{t.label}</p>
+                <p className="text-xs text-muted-foreground mt-1 leading-snug">{t.description}</p>
+              </div>
+            </button>
+          );
+        })}
+      </div>
     </div>
   );
 }

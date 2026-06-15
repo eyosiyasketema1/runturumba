@@ -758,12 +758,17 @@ export const AutomationView = ({
       <Modal
         isOpen={isTypePickerOpen}
         onClose={() => setIsTypePickerOpen(false)}
-        title="What do you want to create?"
-        size="lg"
+        title="New automation"
+        size="xl"
       >
         <AutomationTypePicker onPick={(t) => {
           setIsTypePickerOpen(false);
-          setBuilderState({ kind: t, mode: "new" });
+          if (t === "broadcast") {
+            // Broadcast reuses sequence builder pattern for now
+            setBuilderState({ kind: "sequence", mode: "new" });
+          } else {
+            setBuilderState({ kind: t, mode: "new" });
+          }
         }} />
       </Modal>
 
