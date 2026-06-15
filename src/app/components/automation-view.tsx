@@ -34,7 +34,7 @@ import {
 import { AutomationCanvas, type AutomationDraft } from "./automation-v2";
 import {
   BasicAutomationBuilder, SequenceBuilder, AutomationTypePicker,
-  type BasicAutomationDraft, type SequenceDraft,
+  type BasicAutomationDraft, type SequenceDraft, type SequenceStep,
 } from "./automation-builders";
 
 const TRIGGER_OPTIONS: { id: AutomationTrigger; label: string; icon: any; description: string }[] = [
@@ -75,6 +75,10 @@ interface AutomationTemplate {
   trigger: string;
   action: string;
   tags: string[];
+  // Pre-built content for builders
+  basicDraft?: Partial<BasicAutomationDraft>;
+  sequenceDraft?: Partial<SequenceDraft>;
+  flowNodes?: { name: string; description: string; nodeLabels: string[] };
 }
 
 const TEMPLATE_CATEGORIES: { id: TemplateCategory | "all"; label: string }[] = [
@@ -97,28 +101,101 @@ const TEMPLATE_TYPE_CONFIG: Record<TemplateType, { label: string; icon: any; col
 
 const AUTOMATION_TEMPLATES: AutomationTemplate[] = [
   // ── Auto-Reply (basic) ──
-  { id: "tpl-1",  name: "Welcome Message",         description: "Greet new contacts with a personalized welcome message when they first reach out.", type: "basic", category: "onboarding", icon: HandHeart, iconTint: "bg-emerald-50 text-emerald-600",  popular: true, trigger: "First message received", action: "Send welcome reply", tags: ["welcome", "greeting"] },
-  { id: "tpl-2",  name: "Keyword FAQ Bot",          description: "Auto-respond to common questions like 'hours', 'location', or 'price' with instant answers.", type: "basic", category: "support", icon: MessageSquare, iconTint: "bg-blue-50 text-blue-600", popular: true, trigger: "Keyword match", action: "Send templated reply", tags: ["faq", "keywords", "support"] },
-  { id: "tpl-3",  name: "After-Hours Reply",        description: "Let contacts know you're away and when they can expect a response.", type: "basic", category: "support", icon: Clock, iconTint: "bg-gray-50 text-gray-600", trigger: "Message outside hours", action: "Send away message", tags: ["away", "hours", "oof"] },
-  { id: "tpl-4",  name: "New Subscriber Greeting",  description: "Automatically welcome new subscribers and share key resources or next steps.", type: "basic", category: "onboarding", icon: UserPlus, iconTint: "bg-violet-50 text-violet-600", trigger: "Contact added", action: "Send greeting + resource links", tags: ["subscribe", "welcome"] },
+  { id: "tpl-1",  name: "Welcome Message",         description: "Greet new contacts with a personalized welcome message when they first reach out.", type: "basic", category: "onboarding", icon: HandHeart, iconTint: "bg-emerald-50 text-emerald-600",  popular: true, trigger: "First message received", action: "Send welcome reply", tags: ["welcome", "greeting"],
+    basicDraft: { name: "Welcome Message", triggerKind: "welcome", message: "Welcome! We're so glad you reached out. Whether you're looking for community, prayer support, or just have questions — we're here for you.\n\nHow can we help you today?", quickReplies: ["Prayer Request", "Join a Group", "Learn More"] }
+  },
+  { id: "tpl-2",  name: "Keyword FAQ Bot",          description: "Auto-respond to common questions like 'hours', 'location', or 'price' with instant answers.", type: "basic", category: "support", icon: MessageSquare, iconTint: "bg-blue-50 text-blue-600", popular: true, trigger: "Keyword match", action: "Send templated reply", tags: ["faq", "keywords", "support"],
+    basicDraft: { name: "Keyword FAQ Bot", triggerKind: "keyword", keyword: "hours, location, price, contact", message: "Thanks for reaching out! Here are some quick answers:\n\n📍 Location: 123 Faith Avenue, Addis Ababa\n🕐 Hours: Mon-Fri 9 AM - 5 PM, Sun 8 AM - 12 PM\n📞 Phone: +251-11-123-4567\n\nNeed something else? Just ask!", quickReplies: ["Directions", "Service Times", "Talk to Someone"] }
+  },
+  { id: "tpl-3",  name: "After-Hours Reply",        description: "Let contacts know you're away and when they can expect a response.", type: "basic", category: "support", icon: Clock, iconTint: "bg-gray-50 text-gray-600", trigger: "Message outside hours", action: "Send away message", tags: ["away", "hours", "oof"],
+    basicDraft: { name: "After-Hours Reply", triggerKind: "default_reply", message: "Thank you for your message! Our team is currently offline.\n\nOur office hours are Monday - Friday, 9 AM to 5 PM (EAT). We'll respond to your message first thing when we're back.\n\nIf this is urgent, please call our emergency line: +251-11-999-0000", quickReplies: ["Leave a Message", "Emergency Contact"] }
+  },
+  { id: "tpl-4",  name: "New Subscriber Greeting",  description: "Automatically welcome new subscribers and share key resources or next steps.", type: "basic", category: "onboarding", icon: UserPlus, iconTint: "bg-violet-50 text-violet-600", trigger: "Contact added", action: "Send greeting + resource links", tags: ["subscribe", "welcome"],
+    basicDraft: { name: "New Subscriber Greeting", triggerKind: "event", eventName: "intake_complete", message: "Hi there! 👋 Welcome to our community. We're excited to have you here.\n\nHere are a few things to get you started:\n📖 Daily Devotionals — delivered each morning\n🙏 Prayer Wall — share and support others\n👥 Small Groups — find your people\n\nWhich would you like to explore first?", quickReplies: ["Devotionals", "Prayer Wall", "Small Groups", "All of the Above"] }
+  },
 
   // ── Drip (sequence) ──
-  { id: "tpl-5",  name: "7-Day Onboarding",         description: "Guide new contacts through your platform with a 7-day drip sequence of tips and resources.", type: "sequence", category: "onboarding", icon: BookOpen, iconTint: "bg-blue-50 text-blue-600", popular: true, steps: 7, trigger: "Contact added", action: "Send daily message", tags: ["onboarding", "drip", "welcome"] },
-  { id: "tpl-6",  name: "Re-Engagement Campaign",   description: "Win back inactive contacts with a 3-message sequence offering value and a personal check-in.", type: "sequence", category: "engagement", icon: Heart, iconTint: "bg-rose-50 text-rose-600", steps: 3, trigger: "30 days inactive", action: "Send re-engagement series", tags: ["re-engage", "inactive", "winback"] },
-  { id: "tpl-7",  name: "Course Follow-Up",         description: "Drip additional resources and check-ins after someone completes a course or event.", type: "sequence", category: "nurture", icon: GraduationCap, iconTint: "bg-amber-50 text-amber-600", steps: 5, trigger: "Tag 'course-complete' added", action: "Send follow-up series", tags: ["course", "follow-up", "learning"] },
-  { id: "tpl-8",  name: "Discipleship Journey",     description: "A 14-day guided devotional sequence with daily scripture, reflection, and mentor check-ins.", type: "sequence", category: "discipleship", icon: Sparkles, iconTint: "bg-purple-50 text-purple-600", popular: true, steps: 14, trigger: "Opted into discipleship", action: "Daily devotional message", tags: ["discipleship", "devotional", "faith"] },
+  { id: "tpl-5",  name: "7-Day Onboarding",         description: "Guide new contacts through your platform with a 7-day drip sequence of tips and resources.", type: "sequence", category: "onboarding", icon: BookOpen, iconTint: "bg-blue-50 text-blue-600", popular: true, steps: 7, trigger: "Contact added", action: "Send daily message", tags: ["onboarding", "drip", "welcome"],
+    sequenceDraft: { name: "7-Day Onboarding", trigger: "intake_complete", steps: [
+      { id: "s1", delay: { amount: 0, unit: "days" as const }, message: "Welcome to the family! 🎉 Over the next 7 days, we'll walk you through everything you need to know. Today, take a moment to explore the app and set up your profile.", aiPersonalize: false, quickReplies: ["Done!", "Help me"] },
+      { id: "s2", delay: { amount: 1, unit: "days" as const }, message: "Day 2: Community is at the heart of what we do. Today, try joining a small group that interests you. We have groups for Bible study, prayer, young adults, and more!", aiPersonalize: false, quickReplies: ["Show groups", "Not yet"] },
+      { id: "s3", delay: { amount: 1, unit: "days" as const }, message: "Day 3: Did you know you can request prayer anytime? Our prayer team responds within 24 hours. Try submitting a prayer request today — no request is too big or small.", aiPersonalize: true, quickReplies: ["Submit prayer", "I'm good"] },
+      { id: "s4", delay: { amount: 1, unit: "days" as const }, message: "Day 4: Dive into today's devotional! We publish fresh content every morning to help you grow in faith. Check it out and let us know what resonates with you.", aiPersonalize: false, quickReplies: ["Read devotional", "Remind me later"] },
+      { id: "s5", delay: { amount: 1, unit: "days" as const }, message: "Day 5: Want to serve? We have volunteering opportunities in outreach, media, worship, and hospitality. Serving is one of the best ways to connect!", aiPersonalize: false, quickReplies: ["Volunteer", "Tell me more"] },
+      { id: "s6", delay: { amount: 1, unit: "days" as const }, message: "Day 6: Have questions about faith, the Bible, or life? Our mentors are here to help. You can connect with a mentor for one-on-one guidance anytime.", aiPersonalize: true, quickReplies: ["Connect me", "Maybe later"] },
+      { id: "s7", delay: { amount: 1, unit: "days" as const }, message: "Day 7: You made it through your first week! 🙌 We're so glad you're here. What would you like to focus on going forward?", aiPersonalize: false, quickReplies: ["Bible Study", "Prayer", "Volunteering", "Mentorship"] },
+    ] }
+  },
+  { id: "tpl-6",  name: "Re-Engagement Campaign",   description: "Win back inactive contacts with a 3-message sequence offering value and a personal check-in.", type: "sequence", category: "engagement", icon: Heart, iconTint: "bg-rose-50 text-rose-600", steps: 3, trigger: "30 days inactive", action: "Send re-engagement series", tags: ["re-engage", "inactive", "winback"],
+    sequenceDraft: { name: "Re-Engagement Campaign", trigger: "tag_added", steps: [
+      { id: "s1", delay: { amount: 0, unit: "days" as const }, message: "Hey, we've missed you! 💛 It's been a while since we connected. Just wanted to check in and let you know we're still here for you. How are you doing?", aiPersonalize: true, quickReplies: ["I'm great!", "Could use prayer", "Tell me what's new"] },
+      { id: "s2", delay: { amount: 3, unit: "days" as const }, message: "Here's something we thought you'd enjoy — this week's most popular devotional has been inspiring so many people. Give it a read and let us know what you think!", aiPersonalize: false, quickReplies: ["Read it", "Not now"] },
+      { id: "s3", delay: { amount: 5, unit: "days" as const }, message: "We'd love to have you back in the community. Here's what's coming up: Sunday Service, a new small group series starting next week, and a community prayer night. Would any of these interest you?", aiPersonalize: false, quickReplies: ["Sunday Service", "Small Group", "Prayer Night", "All of them!"] },
+    ] }
+  },
+  { id: "tpl-7",  name: "Course Follow-Up",         description: "Drip additional resources and check-ins after someone completes a course or event.", type: "sequence", category: "nurture", icon: GraduationCap, iconTint: "bg-amber-50 text-amber-600", steps: 5, trigger: "Tag 'course-complete' added", action: "Send follow-up series", tags: ["course", "follow-up", "learning"],
+    sequenceDraft: { name: "Course Follow-Up", trigger: "tag_added", steps: [
+      { id: "s1", delay: { amount: 0, unit: "days" as const }, message: "Congratulations on completing the course! 🎓 We hope it was a meaningful experience. Here's a PDF summary of the key takeaways for you to revisit anytime.", aiPersonalize: false, quickReplies: ["Thanks!", "What's next?"] },
+      { id: "s2", delay: { amount: 2, unit: "days" as const }, message: "Quick check-in: Have you had a chance to apply anything you learned? Sometimes it helps to pick just one takeaway and practice it this week.", aiPersonalize: true, quickReplies: ["Yes!", "Need ideas", "Remind me later"] },
+      { id: "s3", delay: { amount: 4, unit: "days" as const }, message: "Here are some additional resources that go deeper into the topics we covered. Pick one that resonates with you!", aiPersonalize: false, quickReplies: ["Show resources", "I'm good"] },
+      { id: "s4", delay: { amount: 7, unit: "days" as const }, message: "One week later — how are things going? We'd love to hear your reflections. Feel free to share or ask any questions.", aiPersonalize: true, quickReplies: ["Share reflection", "Ask a question"] },
+      { id: "s5", delay: { amount: 14, unit: "days" as const }, message: "Ready for the next step? We have more courses and small groups that build on what you've learned. Want us to recommend something?", aiPersonalize: false, quickReplies: ["Yes please!", "Browse courses", "Maybe later"] },
+    ] }
+  },
+  { id: "tpl-8",  name: "Discipleship Journey",     description: "A 14-day guided devotional sequence with daily scripture, reflection, and mentor check-ins.", type: "sequence", category: "discipleship", icon: Sparkles, iconTint: "bg-purple-50 text-purple-600", popular: true, steps: 14, trigger: "Opted into discipleship", action: "Daily devotional message", tags: ["discipleship", "devotional", "faith"],
+    sequenceDraft: { name: "Discipleship Journey", trigger: "manual", steps: [
+      { id: "s1", delay: { amount: 0, unit: "days" as const }, message: "Welcome to the Discipleship Journey! 🌱 Over the next 14 days, we'll explore the foundations of faith together. Today's focus: What does it mean to follow Jesus?\n\n📖 Read: Matthew 4:18-22", aiPersonalize: false, quickReplies: ["I read it", "Tell me more"] },
+      { id: "s2", delay: { amount: 1, unit: "days" as const }, message: "Day 2: Prayer — your direct line to God. Prayer isn't about perfect words; it's about honest conversation. Try spending 5 minutes today just talking to God.\n\n📖 Read: Matthew 6:5-13", aiPersonalize: false, quickReplies: ["Done", "Need help praying"] },
+      { id: "s3", delay: { amount: 1, unit: "days" as const }, message: "Day 3: The Bible — God's love letter to you. Today, read John 3:16-21. What stands out to you? Share your thoughts!", aiPersonalize: true, quickReplies: ["Share thoughts", "Read again"] },
+      { id: "s4", delay: { amount: 1, unit: "days" as const }, message: "Day 4: Community matters. God designed us to grow together, not alone. Who in your life encourages your faith?\n\n📖 Read: Hebrews 10:24-25", aiPersonalize: false, quickReplies: ["I have someone", "I need community"] },
+      { id: "s5", delay: { amount: 1, unit: "days" as const }, message: "Day 5: Serving others. When we serve, we reflect God's love in action. What's one small way you could serve someone today?\n\n📖 Read: Galatians 5:13-14", aiPersonalize: true, quickReplies: ["I served!", "Give me ideas"] },
+      { id: "s6", delay: { amount: 1, unit: "days" as const }, message: "Day 6: Forgiveness — one of the hardest but most freeing parts of faith. Is there someone you need to forgive, or do you need to receive forgiveness?\n\n📖 Read: Colossians 3:12-14", aiPersonalize: true, quickReplies: ["I'm reflecting", "This is hard"] },
+      { id: "s7", delay: { amount: 1, unit: "days" as const }, message: "Day 7: Week 1 complete! 🎉 You've been exploring prayer, Scripture, community, service, and forgiveness. Which one resonated most with you?", aiPersonalize: false, quickReplies: ["Prayer", "Scripture", "Community", "All of them"] },
+      { id: "s8", delay: { amount: 1, unit: "days" as const }, message: "Day 8: Worship — it's more than singing. Worship is a lifestyle of gratitude. What are 3 things you're thankful for today?\n\n📖 Read: Psalm 100", aiPersonalize: false, quickReplies: ["I listed them!", "Help me think"] },
+      { id: "s9", delay: { amount: 1, unit: "days" as const }, message: "Day 9: Trusting God in difficult times. Life isn't always easy, but God promises to be with us.\n\n📖 Read: Isaiah 41:10\n\nWhat's something you need to trust God with right now?", aiPersonalize: true, quickReplies: ["Share", "Just praying"] },
+      { id: "s10", delay: { amount: 1, unit: "days" as const }, message: "Day 10: Sharing your faith. You don't need to have all the answers — just share what God has done in your life.\n\n📖 Read: 1 Peter 3:15", aiPersonalize: false, quickReplies: ["I shared!", "I'm nervous"] },
+      { id: "s11", delay: { amount: 1, unit: "days" as const }, message: "Day 11: Spiritual disciplines. Fasting, journaling, silence — these are tools to deepen your relationship with God. Want to try one this week?\n\n📖 Read: Matthew 6:16-18", aiPersonalize: false, quickReplies: ["Fasting", "Journaling", "Silence"] },
+      { id: "s12", delay: { amount: 1, unit: "days" as const }, message: "Day 12: God's purpose for you. You were created with a unique purpose. What gifts and passions has God given you?\n\n📖 Read: Jeremiah 29:11-13", aiPersonalize: true, quickReplies: ["Share gifts", "Still discovering"] },
+      { id: "s13", delay: { amount: 1, unit: "days" as const }, message: "Day 13: Perseverance. The Christian life is a marathon, not a sprint. Keep going — God is faithful.\n\n📖 Read: James 1:2-4", aiPersonalize: false, quickReplies: ["Encouraged!", "Need prayer"] },
+      { id: "s14", delay: { amount: 1, unit: "days" as const }, message: "Day 14: You did it! 🌟 14 days of growing in faith. This isn't the end — it's just the beginning. Want to continue with a mentor or join a small group?\n\nWe're so proud of you!", aiPersonalize: false, quickReplies: ["Connect with mentor", "Join a group", "Both!"] },
+    ] }
+  },
 
   // ── Flow (journey) ──
-  { id: "tpl-9",  name: "Lead Qualification",       description: "Ask qualifying questions, score responses, and route contacts to the right team member.", type: "flow", category: "outreach", icon: Target, iconTint: "bg-orange-50 text-orange-600", popular: true, steps: 6, trigger: "New lead message", action: "Qualify → Route → Assign", tags: ["lead", "qualification", "routing"] },
-  { id: "tpl-10", name: "Event Registration",       description: "Collect RSVPs, send confirmations, reminders, and post-event follow-ups — all automated.", type: "flow", category: "events", icon: CalendarDays, iconTint: "bg-cyan-50 text-cyan-600", steps: 8, trigger: "Keyword 'register'", action: "Collect info → Confirm → Remind", tags: ["event", "registration", "rsvp"] },
-  { id: "tpl-11", name: "Survey + Smart Routing",   description: "Run a survey, branch on answers, and route contacts to different paths based on responses.", type: "flow", category: "engagement", icon: GitBranch, iconTint: "bg-indigo-50 text-indigo-600", steps: 5, trigger: "Survey started", action: "Branch on answers → Route", tags: ["survey", "routing", "branch"] },
-  { id: "tpl-12", name: "Seeker Follow-Up Path",    description: "A multi-step journey that guides seekers from initial interest to connection with a mentor.", type: "flow", category: "discipleship", icon: TrendingUp, iconTint: "bg-emerald-50 text-emerald-600", steps: 10, trigger: "Campaign response", action: "Nurture → Match mentor → Check-in", tags: ["seeker", "mentor", "follow-up"] },
+  { id: "tpl-9",  name: "Lead Qualification",       description: "Ask qualifying questions, score responses, and route contacts to the right team member.", type: "flow", category: "outreach", icon: Target, iconTint: "bg-orange-50 text-orange-600", popular: true, steps: 6, trigger: "New lead message", action: "Qualify → Route → Assign", tags: ["lead", "qualification", "routing"],
+    flowNodes: { name: "Lead Qualification", description: "Qualify and route new leads", nodeLabels: ["Trigger: New Message", "Ask: What brings you here?", "Ask: How did you hear about us?", "Score Responses", "Route: High Interest → Team Lead", "Route: Low Interest → Nurture Sequence"] }
+  },
+  { id: "tpl-10", name: "Event Registration",       description: "Collect RSVPs, send confirmations, reminders, and post-event follow-ups — all automated.", type: "flow", category: "events", icon: CalendarDays, iconTint: "bg-cyan-50 text-cyan-600", steps: 8, trigger: "Keyword 'register'", action: "Collect info → Confirm → Remind", tags: ["event", "registration", "rsvp"],
+    flowNodes: { name: "Event Registration Flow", description: "Full event registration journey", nodeLabels: ["Trigger: Keyword 'register'", "Ask: Full Name", "Ask: Email Address", "Ask: Number of Guests", "Send: Confirmation Message", "Wait: 1 Day Before Event", "Send: Reminder + Location", "Send: Post-Event Thank You"] }
+  },
+  { id: "tpl-11", name: "Survey + Smart Routing",   description: "Run a survey, branch on answers, and route contacts to different paths based on responses.", type: "flow", category: "engagement", icon: GitBranch, iconTint: "bg-indigo-50 text-indigo-600", steps: 5, trigger: "Survey started", action: "Branch on answers → Route", tags: ["survey", "routing", "branch"],
+    flowNodes: { name: "Survey + Smart Routing", description: "Branch contacts based on survey answers", nodeLabels: ["Trigger: Survey Started", "Ask: Rate your experience (1-5)", "Branch: Score ≥ 4 → Testimonial Request", "Branch: Score ≤ 3 → Follow-Up Support", "Send: Thank You Message"] }
+  },
+  { id: "tpl-12", name: "Seeker Follow-Up Path",    description: "A multi-step journey that guides seekers from initial interest to connection with a mentor.", type: "flow", category: "discipleship", icon: TrendingUp, iconTint: "bg-emerald-50 text-emerald-600", steps: 10, trigger: "Campaign response", action: "Nurture → Match mentor → Check-in", tags: ["seeker", "mentor", "follow-up"],
+    flowNodes: { name: "Seeker Follow-Up Path", description: "Guide seekers from interest to mentorship", nodeLabels: ["Trigger: Campaign Response", "Send: Welcome & Ask Interest", "Branch: Interested → Continue", "Send: Share Testimony Video", "Wait: 2 Days", "Ask: Would you like a mentor?", "Branch: Yes → Match Mentor", "Send: Mentor Introduction", "Wait: 7 Days", "Send: Check-In & Next Steps"] }
+  },
 
   // ── Broadcast ──
-  { id: "tpl-13", name: "Weekly Newsletter",        description: "Send a weekly update to all active contacts with news, events, and encouragement.", type: "broadcast", category: "outreach", icon: Send, iconTint: "bg-blue-50 text-blue-600", popular: true, trigger: "Every Monday 9 AM", action: "Broadcast to all active", tags: ["newsletter", "weekly", "update"] },
-  { id: "tpl-14", name: "Event Announcement",       description: "Blast an upcoming event to your audience with date, location, and registration link.", type: "broadcast", category: "events", icon: Bell, iconTint: "bg-amber-50 text-amber-600", trigger: "Manual or scheduled", action: "Broadcast to segment", tags: ["event", "announcement", "invite"] },
-  { id: "tpl-15", name: "Holiday Greeting",         description: "Send a warm holiday or special occasion greeting to all contacts.", type: "broadcast", category: "outreach", icon: Gift, iconTint: "bg-pink-50 text-pink-600", trigger: "Scheduled date", action: "Broadcast greeting", tags: ["holiday", "greeting", "seasonal"] },
-  { id: "tpl-16", name: "Promotion / Campaign",     description: "Announce a promotion, campaign launch, or special offer to a targeted segment.", type: "broadcast", category: "engagement", icon: Star, iconTint: "bg-yellow-50 text-yellow-600", trigger: "Manual trigger", action: "Broadcast to tagged segment", tags: ["promo", "campaign", "offer"] },
+  { id: "tpl-13", name: "Weekly Newsletter",        description: "Send a weekly update to all active contacts with news, events, and encouragement.", type: "broadcast", category: "outreach", icon: Send, iconTint: "bg-blue-50 text-blue-600", popular: true, trigger: "Every Monday 9 AM", action: "Broadcast to all active", tags: ["newsletter", "weekly", "update"],
+    sequenceDraft: { name: "Weekly Newsletter", trigger: "manual", steps: [
+      { id: "s1", delay: { amount: 0, unit: "minutes" as const }, message: "📬 Weekly Update — [Date]\n\n🙏 This Week's Verse: \"For I know the plans I have for you...\" — Jeremiah 29:11\n\n📅 Upcoming Events:\n• Sunday Service — 10 AM\n• Midweek Prayer — Wednesday 7 PM\n• Youth Night — Friday 6 PM\n\n💡 Tip of the Week: Take 5 minutes today to write down 3 things you're grateful for.\n\nBlessings from the GCM Team!", aiPersonalize: false, quickReplies: ["Register for event", "Share with a friend"] },
+    ] }
+  },
+  { id: "tpl-14", name: "Event Announcement",       description: "Blast an upcoming event to your audience with date, location, and registration link.", type: "broadcast", category: "events", icon: Bell, iconTint: "bg-amber-50 text-amber-600", trigger: "Manual or scheduled", action: "Broadcast to segment", tags: ["event", "announcement", "invite"],
+    sequenceDraft: { name: "Event Announcement", trigger: "manual", steps: [
+      { id: "s1", delay: { amount: 0, unit: "minutes" as const }, message: "🎉 You're Invited!\n\n[Event Name]\n📅 Date: [Date & Time]\n📍 Location: [Venue Address]\n\nJoin us for an incredible time of worship, fellowship, and inspiration. Bring a friend!\n\nReply 'REGISTER' to save your spot. Space is limited!", aiPersonalize: false, quickReplies: ["Register", "More Info", "Share"] },
+    ] }
+  },
+  { id: "tpl-15", name: "Holiday Greeting",         description: "Send a warm holiday or special occasion greeting to all contacts.", type: "broadcast", category: "outreach", icon: Gift, iconTint: "bg-pink-50 text-pink-600", trigger: "Scheduled date", action: "Broadcast greeting", tags: ["holiday", "greeting", "seasonal"],
+    sequenceDraft: { name: "Holiday Greeting", trigger: "manual", steps: [
+      { id: "s1", delay: { amount: 0, unit: "minutes" as const }, message: "✨ Wishing you and your loved ones a blessed [Holiday Name]!\n\nMay this season fill your heart with joy, peace, and gratitude. You are loved and valued.\n\n\"The Lord bless you and keep you; the Lord make His face shine on you and be gracious to you.\" — Numbers 6:24-25\n\nWith love from the GCM Family 💛", aiPersonalize: false, quickReplies: ["Thank you!", "Share blessings"] },
+    ] }
+  },
+  { id: "tpl-16", name: "Promotion / Campaign",     description: "Announce a promotion, campaign launch, or special offer to a targeted segment.", type: "broadcast", category: "engagement", icon: Star, iconTint: "bg-yellow-50 text-yellow-600", trigger: "Manual trigger", action: "Broadcast to tagged segment", tags: ["promo", "campaign", "offer"],
+    sequenceDraft: { name: "Promotion / Campaign", trigger: "manual", steps: [
+      { id: "s1", delay: { amount: 0, unit: "minutes" as const }, message: "🚀 Exciting News!\n\n[Campaign Name] is here! We're launching [describe campaign/initiative] and we'd love for you to be part of it.\n\n🎯 Goal: [Campaign goal]\n📅 Dates: [Start] — [End]\n\nReady to join? Reply 'YES' to get involved!", aiPersonalize: false, quickReplies: ["Count me in!", "Tell me more", "Share with friends"] },
+    ] }
+  },
 ];
 
 interface AutomationViewProps {
@@ -183,24 +260,68 @@ const getTypeBadge = (a: AutomationRule): TypeBadgeInfo => {
   return { label: "Auto-Reply", icon: CornerDownRight, color: "text-blue-700", bg: "bg-blue-50", border: "border-blue-200" };
 };
 
+// Build pre-populated flow nodes from template labels
+const buildTemplateFlowNodes = (labels: string[]) => {
+  const nodeTypeMap: Record<string, { type: "trigger" | "action" | "condition" | "delay" | "end"; category: string; icon: any; iconColor: string; iconBg: string }> = {
+    "Trigger": { type: "trigger", category: "message_received", icon: MessageSquare, iconColor: "text-blue-400", iconBg: "bg-blue-500/20" },
+    "Ask":     { type: "action",  category: "send_message",     icon: Send,           iconColor: "text-blue-400", iconBg: "bg-blue-500/20" },
+    "Send":    { type: "action",  category: "send_message",     icon: Send,           iconColor: "text-blue-400", iconBg: "bg-blue-500/20" },
+    "Wait":    { type: "delay",   category: "wait",             icon: Clock,          iconColor: "text-teal-400", iconBg: "bg-teal-500/20" },
+    "Branch":  { type: "condition", category: "if_else",        icon: GitBranch,      iconColor: "text-orange-400", iconBg: "bg-orange-500/20" },
+    "Route":   { type: "condition", category: "filter",         icon: Filter,         iconColor: "text-sky-400",  iconBg: "bg-sky-500/20" },
+    "Score":   { type: "action",  category: "update_stage",     icon: ArrowRight,     iconColor: "text-sky-400",  iconBg: "bg-sky-500/20" },
+  };
+
+  return labels.map((label, i) => {
+    const prefix = label.split(":")[0]?.trim() ?? "";
+    const match = nodeTypeMap[prefix] ?? nodeTypeMap["Send"];
+    return {
+      id: `tpl-node-${i}`,
+      type: match.type,
+      category: match.category,
+      label,
+      description: "",
+      icon: match.icon,
+      iconColor: match.iconColor,
+      iconBg: match.iconBg,
+      config: {},
+      position: { x: 100, y: 80 + i * 120 },
+    };
+  });
+};
+
+const buildTemplateFlowConnections = (nodeCount: number) => {
+  return Array.from({ length: nodeCount - 1 }, (_, i) => ({
+    id: `tpl-conn-${i}`,
+    from: `tpl-node-${i}`,
+    to: `tpl-node-${i + 1}`,
+  }));
+};
+
 // Wrapper that manages journey draft state so nodes persist across renders
-const JourneyCanvasWrapper = ({ rule, onBack, onPersist }: {
+const JourneyCanvasWrapper = ({ rule, onBack, onPersist, templateName, templateNodeLabels }: {
   rule?: AutomationRule;
   onBack: () => void;
   onPersist: (data: Partial<AutomationRule>) => void;
+  templateName?: string;
+  templateNodeLabels?: string[];
 }) => {
-  const [draft, setDraft] = useState<AutomationDraft>(() => ({
-    id: rule?.id ?? `auto-${Date.now()}`,
-    name: rule?.name ?? "New Journey",
-    description: rule?.description ?? "Journey",
-    nodes: [],
-    connections: [],
-    enabled: rule?.enabled ?? false,
-    createdAt: rule?.createdAt ?? new Date().toISOString(),
-    runs: rule?.triggerCount ?? 0,
-    mode: "journey",
-    folderId: null,
-  }));
+  const [draft, setDraft] = useState<AutomationDraft>(() => {
+    const tplNodes = templateNodeLabels ? buildTemplateFlowNodes(templateNodeLabels) : [];
+    const tplConns = templateNodeLabels ? buildTemplateFlowConnections(templateNodeLabels.length) : [];
+    return {
+      id: rule?.id ?? `auto-${Date.now()}`,
+      name: rule?.name ?? templateName ?? "New Journey",
+      description: rule?.description ?? "Journey",
+      nodes: tplNodes,
+      connections: tplConns,
+      enabled: rule?.enabled ?? false,
+      createdAt: rule?.createdAt ?? new Date().toISOString(),
+      runs: rule?.triggerCount ?? 0,
+      mode: "journey",
+      folderId: null,
+    };
+  });
   return (
     <AutomationCanvas
       automation={draft}
@@ -235,9 +356,9 @@ export const AutomationView = ({
   // Builders are full-page overlays. `builderState` carries the kind + mode;
   // null means the list view is showing.
   const [builderState, setBuilderState] = useState<
-    | { kind: "basic";    mode: "new" | "edit"; rule?: AutomationRule }
-    | { kind: "sequence"; mode: "new" | "edit"; rule?: AutomationRule }
-    | { kind: "flow";     mode: "new" | "edit"; rule?: AutomationRule }
+    | { kind: "basic";    mode: "new" | "edit"; rule?: AutomationRule; template?: AutomationTemplate }
+    | { kind: "sequence"; mode: "new" | "edit"; rule?: AutomationRule; template?: AutomationTemplate }
+    | { kind: "flow";     mode: "new" | "edit"; rule?: AutomationRule; template?: AutomationTemplate }
     | null
   >(null);
   const [isTypePickerOpen, setIsTypePickerOpen] = useState(false);
@@ -385,7 +506,7 @@ export const AutomationView = ({
 
   // Full-page builders take over when active, short-circuiting the list view.
   if (builderState) {
-    const { kind, mode, rule } = builderState;
+    const { kind, mode, rule, template } = builderState;
     const isEdit = mode === "edit";
     const close = () => setBuilderState(null);
 
@@ -410,11 +531,14 @@ export const AutomationView = ({
     const statusFor = (r?: AutomationRule) => r ? (r.enabled ? "active" : r.triggerCount === 0 ? "draft" : "stopped") : "draft";
 
     if (kind === "basic") {
+      const initialData: Partial<BasicAutomationDraft> | undefined = rule
+        ? { id: rule.id, name: rule.name }
+        : template?.basicDraft ?? undefined;
       return (
         <BasicAutomationBuilder
           status={statusFor(rule)}
           runs={rule?.triggerCount}
-          initial={rule ? { id: rule.id, name: rule.name } : undefined}
+          initial={initialData}
           onBack={close}
           onSave={(draft) => persist({ name: draft.name, description: `Basic · ${draft.triggerKind}`, trigger: draft.triggerKind === "keyword" ? "message_received" : draft.triggerKind === "event" ? "webhook_received" : "message_received", action: "send_message", enabled: false })}
           onPublish={(draft) => { persist({ name: draft.name, description: `Basic · ${draft.triggerKind}`, trigger: draft.triggerKind === "keyword" ? "message_received" : draft.triggerKind === "event" ? "webhook_received" : "message_received", action: "send_message", enabled: true }); close(); }}
@@ -422,11 +546,14 @@ export const AutomationView = ({
       );
     }
     if (kind === "sequence") {
+      const initialData: Partial<SequenceDraft> | undefined = rule
+        ? { id: rule.id, name: rule.name }
+        : template?.sequenceDraft ?? undefined;
       return (
         <SequenceBuilder
           status={statusFor(rule)}
           runs={rule?.triggerCount}
-          initial={rule ? { id: rule.id, name: rule.name } : undefined}
+          initial={initialData}
           onBack={close}
           onSave={(draft) => persist({ name: draft.name, description: `Sequence · ${draft.steps.length} step${draft.steps.length === 1 ? "" : "s"}`, trigger: "scheduled", action: "send_message", enabled: false })}
           onPublish={(draft) => { persist({ name: draft.name, description: `Sequence · ${draft.steps.length} step${draft.steps.length === 1 ? "" : "s"}`, trigger: "scheduled", action: "send_message", enabled: true }); close(); }}
@@ -435,7 +562,7 @@ export const AutomationView = ({
     }
     // kind === "flow" → Journey Builder (v2 React Flow canvas)
     return (
-      <JourneyCanvasWrapper rule={rule} onBack={() => { close(); }} onPersist={persist} />
+      <JourneyCanvasWrapper rule={rule} onBack={() => { close(); }} onPersist={persist} templateName={template?.flowNodes?.name} templateNodeLabels={template?.flowNodes?.nodeLabels} />
     );
   }
 
@@ -487,9 +614,9 @@ export const AutomationView = ({
           onUseTemplate={(tpl) => {
             setViewMode("automations");
             if (tpl.type === "broadcast") {
-              setBuilderState({ kind: "sequence", mode: "new" });
+              setBuilderState({ kind: "sequence", mode: "new", template: tpl });
             } else {
-              setBuilderState({ kind: tpl.type, mode: "new" });
+              setBuilderState({ kind: tpl.type, mode: "new", template: tpl });
             }
             toast.success(`Started new ${TEMPLATE_TYPE_CONFIG[tpl.type].label} from "${tpl.name}"`);
           }}
