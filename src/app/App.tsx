@@ -63,7 +63,7 @@ import { Button } from "./components/ui/button";
 import { Input } from "./components/ui/input";
 import { Label } from "./components/ui/label";
 import { Textarea } from "./components/ui/textarea";
-import turumbaLogo from "../assets/turumba-logo.svg";
+import turumbaLogo from "../assets/turumba-logo.png";
 
 // Extracted views
 import { DashboardView } from "./components/dashboard-view";
@@ -702,10 +702,6 @@ export default function App() {
                 </div>
               </button>
             </div>
-
-            <p className="text-xs text-muted-foreground mt-8">
-              Both versions share the same feature set for this demo.
-            </p>
           </motion.div>
         </div>
       </>
