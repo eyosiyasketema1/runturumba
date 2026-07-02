@@ -335,7 +335,7 @@ export const DashboardView = ({
         /* Analytics paywall for free plan */
         <div className="bg-card p-8 rounded-lg border border-border shadow-sm text-center">
           <div className="w-14 h-14 bg-muted rounded-xl flex items-center justify-center mx-auto mb-4 border border-border">
-            <BarChart3 className="w-7 h-7 text-muted-foreground/40" />
+            <BarChart3 className="w-7 h-7 text-muted-foreground" />
           </div>
           <h3 className="text-sm font-bold text-foreground">Unlock Analytics Charts</h3>
           <p className="text-xs text-muted-foreground mt-1 max-w-xs mx-auto">

@@ -210,7 +210,7 @@ export const TeamManagement = ({
                     {filteredUsers.length === 0 ? (
                       <tr>
                         <td colSpan={5} className="px-6 py-12 text-center">
-                          <UsersIcon className="w-8 h-8 text-muted-foreground/30 mx-auto mb-2" />
+                          <UsersIcon className="w-8 h-8 text-muted-foreground mx-auto mb-2" />
                           <p className="text-sm text-muted-foreground">No members match your filters.</p>
                         </td>
                       </tr>
@@ -602,7 +602,7 @@ const AuditLogTab = ({ auditLog, searchQuery }: { auditLog: AuditLogEntry[]; sea
         <div className="divide-y divide-border">
           {filtered.length === 0 ? (
             <div className="p-12 text-center">
-              <FileText className="w-8 h-8 text-muted-foreground/30 mx-auto mb-2" />
+              <FileText className="w-8 h-8 text-muted-foreground mx-auto mb-2" />
               <p className="text-sm text-muted-foreground">No audit entries match your filters.</p>
             </div>
           ) : (

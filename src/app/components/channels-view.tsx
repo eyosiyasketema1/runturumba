@@ -266,7 +266,7 @@ export const ChannelsView = ({
                 <ChevronLeft className="w-4 h-4" />
                 Channels
               </button>
-              <span className="text-muted-foreground/40 text-sm">/</span>
+              <span className="text-muted-foreground text-sm">/</span>
               <div className="flex items-center gap-2">
                 <Bot className="w-4 h-4 text-primary" />
                 <span className="text-sm font-bold text-foreground">Chat Endpoints</span>
@@ -423,7 +423,7 @@ export const ChannelsView = ({
             <motion.div key="empty" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
               <Card>
                 <CardContent className="p-12 text-center">
-                  <Signal className="w-10 h-10 text-muted-foreground/30 mx-auto mb-3" />
+                  <Signal className="w-10 h-10 text-muted-foreground mx-auto mb-3" />
                   <p className="text-sm font-medium text-muted-foreground">No channels found</p>
                   <p className="text-xs text-muted-foreground/70 mt-1">Try adjusting your filters or add a new channel.</p>
                   <Button size="sm" className="mt-4" onClick={() => setIsAddModalOpen(true)}>
@@ -541,7 +541,7 @@ const FilterButton = ({ active, onClick, children }: { active: boolean; onClick:
 
 const SensitiveField = ({ value }: { value: string }) => {
   const [visible, setVisible] = useState(false);
-  if (!value) return <span className="text-muted-foreground/50 text-xs italic">Not set</span>;
+  if (!value) return <span className="text-muted-foreground text-xs italic">Not set</span>;
   return (
     <span className="flex items-center gap-1.5 font-mono text-xs">
       {visible ? value : "•".repeat(Math.min(value.length, 16))}
@@ -751,16 +751,16 @@ const AddChannelModal = ({ isOpen, onClose, onAdd }: {
               <div className={cn(
                 "w-7 h-7 flex items-center justify-center text-xs font-bold border transition-all",
                 step > s.n ? "bg-primary text-primary-foreground border-primary" :
-                step === s.n ? "border-foreground text-foreground" : "border-muted-foreground/30 text-muted-foreground/40"
+                step === s.n ? "border-foreground text-foreground" : "border-muted-foreground text-muted-foreground"
               )}>
                 {step > s.n ? <Check className="w-3.5 h-3.5" /> : s.n}
               </div>
-              <span className={cn("text-sm font-medium", step >= s.n ? "text-foreground" : "text-muted-foreground/40")}>{s.label}</span>
+              <span className={cn("text-sm font-medium", step >= s.n ? "text-foreground" : "text-muted-foreground")}>{s.label}</span>
             </div>
             {i < 2 && (
               <div className={cn(
                 "flex-1 h-px mx-3 border-t border-dashed",
-                step > s.n ? "border-primary" : "border-muted-foreground/30"
+                step > s.n ? "border-primary" : "border-muted-foreground"
               )} />
             )}
           </div>
@@ -1209,7 +1209,7 @@ const ChannelDetailDrawer = ({ isOpen, onClose, channel, onToggle, onEdit, onDel
                     <span className="text-muted-foreground text-xs">{f.label}</span>
                     {f.sensitive
                       ? <SensitiveField value={channel.config[f.key] || ""} />
-                      : <span className="font-mono text-xs text-foreground">{channel.config[f.key] || <span className="text-muted-foreground/50 italic">Not set</span>}</span>}
+                      : <span className="font-mono text-xs text-foreground">{channel.config[f.key] || <span className="text-muted-foreground italic">Not set</span>}</span>}
                   </div>
                 ))}
               </div>
@@ -1463,13 +1463,13 @@ const TestChannelModal = ({ isOpen, onClose, channel, onStatusChange }: {
                   ) : isActive ? (
                     <Loader2 className="w-4 h-4 text-primary animate-spin" />
                   ) : isAborted ? (
-                    <X className="w-3.5 h-3.5 text-muted-foreground/30" />
+                    <X className="w-3.5 h-3.5 text-muted-foreground" />
                   ) : (
-                    <div className={cn("w-3 h-3 border", overallResult === "idle" ? "border-muted-foreground/30" : "border-muted-foreground/20")} />
+                    <div className={cn("w-3 h-3 border", overallResult === "idle" ? "border-muted-foreground" : "border-muted-foreground/20")} />
                   )}
                 </div>
                 <div className="flex-1">
-                  <p className={cn("text-xs font-semibold", isActive ? "text-foreground" : result ? "text-foreground" : "text-muted-foreground/50")}>
+                  <p className={cn("text-xs font-semibold", isActive ? "text-foreground" : result ? "text-foreground" : "text-muted-foreground")}>
                     {p.label}
                   </p>
                   {(isActive || result) && (

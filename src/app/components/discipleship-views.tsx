@@ -5594,7 +5594,7 @@ function MilestonesCards({ people }: { people: MilestonePerson[] }) {
   const stateIcon = (s: MilestoneState) =>
     s === "done"     ? <CheckCircle2 className="w-4 h-4 text-emerald-600" />
   : s === "progress" ? <Clock className="w-4 h-4 text-amber-600" />
-                     : <div className="w-4 h-4 rounded-full border-2 border-muted-foreground/30" />;
+                     : <div className="w-4 h-4 rounded-full border-2 border-muted-foreground" />;
 
   if (people.length === 0) {
     return (

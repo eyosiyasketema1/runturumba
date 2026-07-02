@@ -735,7 +735,7 @@ export function SequenceBuilder({
                         >
                           {/* Drag handle on left */}
                           <div className="flex flex-col items-center gap-1 shrink-0 pt-0.5">
-                            <div className="cursor-grab text-muted-foreground/40 hover:text-muted-foreground transition-colors">
+                            <div className="cursor-grab text-muted-foreground hover:text-muted-foreground transition-colors">
                               <GripVertical className="w-4 h-4" />
                             </div>
                             <div className="w-8 h-8 rounded-full bg-primary/10 text-primary flex items-center justify-center font-bold text-sm">

@@ -259,19 +259,19 @@ export const OnboardingFlow = ({ onComplete }: OnboardingFlowProps) => {
                 <div key={step.id} className="flex items-center">
                   <div className={cn(
                     "flex items-center gap-1.5 px-2.5 py-1 text-xs font-semibold transition-all",
-                    isDone ? "text-primary" : isActive ? "text-foreground" : "text-muted-foreground/50"
+                    isDone ? "text-primary" : isActive ? "text-foreground" : "text-muted-foreground"
                   )}>
                     <div className={cn(
                       "w-5 h-5 flex items-center justify-center text-xs font-bold border transition-all",
                       isDone ? "bg-primary text-primary-foreground border-primary" :
-                      isActive ? "border-foreground text-foreground" : "border-muted-foreground/30 text-muted-foreground/50"
+                      isActive ? "border-foreground text-foreground" : "border-muted-foreground text-muted-foreground"
                     )}>
                       {isDone ? <Check className="w-3 h-3" /> : stepIdx}
                     </div>
                     <span className="hidden lg:inline">{step.label}</span>
                   </div>
                   {i < STEPS.length - 3 && (
-                    <ChevronRight className="w-3 h-3 text-muted-foreground/30 mx-0.5" />
+                    <ChevronRight className="w-3 h-3 text-muted-foreground mx-0.5" />
                   )}
                 </div>
               );
@@ -642,7 +642,7 @@ const ChannelSelectStep = ({ selectedChannels, onToggle }: {
             {/* Checkbox indicator */}
             <div className={cn(
               "absolute top-3 right-3 w-5 h-5 flex items-center justify-center border transition-all",
-              isSelected ? "bg-primary border-primary" : "border-muted-foreground/30"
+              isSelected ? "bg-primary border-primary" : "border-muted-foreground"
             )}>
               {isSelected && <Check className="w-3 h-3 text-primary-foreground" />}
             </div>
@@ -981,7 +981,7 @@ const ContactsStep = ({ data, updateData, onAddContact, onUpdateContact, onRemov
       <Card>
         <CardContent className="p-8">
           <div className="border-2 border-dashed border-border p-10 text-center hover:border-primary/40 transition-all cursor-pointer">
-            <Upload className="w-8 h-8 text-muted-foreground/40 mx-auto mb-3" />
+            <Upload className="w-8 h-8 text-muted-foreground mx-auto mb-3" />
             <p className="text-sm font-semibold text-foreground mb-1">Drop your CSV file here</p>
             <p className="text-xs text-muted-foreground mb-4">or click to browse. Columns: name, phone, email</p>
             <Button variant="outline" size="sm" onClick={() => fileInputRef.current?.click()}>
@@ -1003,7 +1003,7 @@ const ContactsStep = ({ data, updateData, onAddContact, onUpdateContact, onRemov
     {data.contactMethod === "skip" && (
       <Card>
         <CardContent className="p-8 text-center">
-          <Clock className="w-8 h-8 text-muted-foreground/30 mx-auto mb-3" />
+          <Clock className="w-8 h-8 text-muted-foreground mx-auto mb-3" />
           <p className="text-sm font-medium text-muted-foreground mb-1">No worries!</p>
           <p className="text-xs text-muted-foreground">You can import contacts anytime from the Contacts page.</p>
         </CardContent>

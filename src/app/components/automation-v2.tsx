@@ -1633,7 +1633,7 @@ const NewAutomationModal = ({ isOpen, onClose, onCreate, folders }: {
                 return (
                   <button key={m.mode} onClick={() => setSelectedMode(m.mode)} className={cn(
                     "flex items-start gap-3.5 p-4 rounded-xl border-2 text-left transition-all",
-                    selectedMode === m.mode ? `${m.bg} ring-2 ring-offset-1 ring-current ${m.color}` : "border-border hover:border-muted-foreground/30 hover:bg-muted/30"
+                    selectedMode === m.mode ? `${m.bg} ring-2 ring-offset-1 ring-current ${m.color}` : "border-border hover:border-muted-foreground hover:bg-muted/30"
                   )}>
                     <div className={cn("w-10 h-10 rounded-xl flex items-center justify-center shrink-0", m.bg)}><MIcon className={cn("w-5 h-5", m.color)} /></div>
                     <div className="flex-1 min-w-0">
@@ -1761,7 +1761,7 @@ const FolderSidebar = ({ folders, selectedFolderId, automations, onSelectFolder,
               onBlur={handleCreateSubmit}
               onKeyDown={(e) => { if (e.key === "Enter") handleCreateSubmit(); if (e.key === "Escape") { setIsCreating(false); setNewFolderName(""); } }}
               placeholder="Folder name..."
-              className="flex-1 text-sm bg-transparent border-b border-primary outline-none px-1 py-0.5 placeholder:text-muted-foreground/50" />
+              className="flex-1 text-sm bg-transparent border-b border-primary outline-none px-1 py-0.5 placeholder:text-muted-foreground/80" />
           </div>
         )}
 

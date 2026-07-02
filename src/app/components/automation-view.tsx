@@ -658,7 +658,7 @@ export const AutomationView = ({
         <select
           value={filterType}
           onChange={(e) => { setFilterType(e.target.value as any); setCurrentPage(1); }}
-          className="h-10 px-3 pr-8 rounded-lg border border-border bg-background text-sm text-foreground appearance-none cursor-pointer hover:border-muted-foreground/40 transition-colors"
+          className="h-10 px-3 pr-8 rounded-lg border border-border bg-background text-sm text-foreground appearance-none cursor-pointer hover:border-muted-foreground transition-colors"
           style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%239ca3af' stroke-width='2'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E")`, backgroundRepeat: "no-repeat", backgroundPosition: "right 10px center" }}
         >
           <option value="all">All types</option>
@@ -669,7 +669,7 @@ export const AutomationView = ({
         <select
           value={filterStatus}
           onChange={(e) => { setFilterStatus(e.target.value as any); setCurrentPage(1); }}
-          className="h-10 px-3 pr-8 rounded-lg border border-border bg-background text-sm text-foreground appearance-none cursor-pointer hover:border-muted-foreground/40 transition-colors"
+          className="h-10 px-3 pr-8 rounded-lg border border-border bg-background text-sm text-foreground appearance-none cursor-pointer hover:border-muted-foreground transition-colors"
           style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%239ca3af' stroke-width='2'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E")`, backgroundRepeat: "no-repeat", backgroundPosition: "right 10px center" }}
         >
           <option value="all">All statuses</option>
@@ -1146,7 +1146,7 @@ const AutomationTemplatesTab = ({ onUseTemplate }: { onUseTemplate: (tpl: Automa
         <select
           value={typeFilter}
           onChange={(e) => setTypeFilter(e.target.value as any)}
-          className="h-10 px-3 pr-8 rounded-lg border border-border bg-background text-sm text-foreground appearance-none cursor-pointer hover:border-muted-foreground/40 transition-colors"
+          className="h-10 px-3 pr-8 rounded-lg border border-border bg-background text-sm text-foreground appearance-none cursor-pointer hover:border-muted-foreground transition-colors"
           style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%239ca3af' stroke-width='2'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E")`, backgroundRepeat: "no-repeat", backgroundPosition: "right 10px center" }}
         >
           <option value="all">All Types</option>
@@ -1200,7 +1200,7 @@ const AutomationTemplatesTab = ({ onUseTemplate }: { onUseTemplate: (tpl: Automa
         )}
         {filtered.length === 0 ? (
           <div className="text-center py-16">
-            <LayoutTemplate className="w-10 h-10 text-muted-foreground/30 mx-auto mb-3" />
+            <LayoutTemplate className="w-10 h-10 text-muted-foreground mx-auto mb-3" />
             <p className="text-sm font-medium text-muted-foreground">No templates match your filters</p>
             <p className="text-xs text-muted-foreground/70 mt-1">Try a different search or category.</p>
             <Button variant="outline" size="sm" className="mt-4" onClick={() => { setSearch(""); setTypeFilter("all"); setCategoryFilter("all"); }}>

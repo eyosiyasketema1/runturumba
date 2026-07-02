@@ -1411,7 +1411,7 @@ function ReengagementTab({ accountId }: { accountId: string }) {
                         <div key={i} className="flex items-center gap-1 text-xs text-muted-foreground bg-muted/30 px-2 py-1 rounded">
                           <Clock className="w-3 h-3" />
                           <span>{s.delay_hours}h</span>
-                          <span className="text-muted-foreground/60">·</span>
+                          <span className="text-muted-foreground">·</span>
                           <span>{s.channel}</span>
                         </div>
                       ))}

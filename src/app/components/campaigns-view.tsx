@@ -91,7 +91,7 @@ const QuestionCard = ({ question, index, onUpdate, onDelete, isActive, onSelect,
       <div className="flex items-start gap-3 px-4 py-3">
         {/* Drag handle */}
         <div className="pt-2 shrink-0 cursor-grab active:cursor-grabbing">
-          <GripVertical className="w-4 h-4 text-muted-foreground/40 hover:text-muted-foreground transition-colors" />
+          <GripVertical className="w-4 h-4 text-muted-foreground hover:text-muted-foreground transition-colors" />
         </div>
 
         {/* Question number */}
@@ -106,7 +106,7 @@ const QuestionCard = ({ question, index, onUpdate, onDelete, isActive, onSelect,
               value={question.questionText}
               onChange={(e) => onUpdate({ ...question, questionText: e.target.value })}
               placeholder="Type your question here..."
-              className="w-full text-sm font-semibold text-foreground bg-transparent border-none outline-none placeholder:text-muted-foreground/50"
+              className="w-full text-sm font-semibold text-foreground bg-transparent border-none outline-none placeholder:text-muted-foreground/80"
               autoFocus
             />
           ) : (
@@ -171,7 +171,7 @@ const QuestionCard = ({ question, index, onUpdate, onDelete, isActive, onSelect,
               <Label className="text-xs text-muted-foreground">Answer Options</Label>
               {(question.config.options || []).map((opt: any, i: number) => (
                 <div key={i} className="flex items-center gap-2 group/opt">
-                  <div className="w-4 h-4 rounded-full border-2 border-muted-foreground/30 shrink-0" />
+                  <div className="w-4 h-4 rounded-full border-2 border-muted-foreground shrink-0" />
                   <Input
                     value={opt.label}
                     placeholder={`Option ${i + 1}`}
@@ -185,7 +185,7 @@ const QuestionCard = ({ question, index, onUpdate, onDelete, isActive, onSelect,
                   />
                   <button
                     onClick={() => onUpdate({ ...question, config: { ...question.config, options: (question.config.options || []).filter((_: any, j: number) => j !== i) } })}
-                    className="p-1 text-muted-foreground/40 hover:text-destructive opacity-0 group-hover/opt:opacity-100 transition-all"
+                    className="p-1 text-muted-foreground hover:text-destructive opacity-0 group-hover/opt:opacity-100 transition-all"
                   ><X className="w-3.5 h-3.5" /></button>
                 </div>
               ))}
@@ -228,7 +228,7 @@ const QuestionCard = ({ question, index, onUpdate, onDelete, isActive, onSelect,
                 <Input type="number" value={question.config.maxLength || 500} onChange={(e) => onUpdate({ ...question, config: { ...question.config, maxLength: parseInt(e.target.value) || 500 } })} />
               </div>
               {/* Text preview */}
-              <div className="border border-border rounded-lg px-3 py-2 bg-muted/20 text-sm text-muted-foreground/50 min-h-[60px]">
+              <div className="border border-border rounded-lg px-3 py-2 bg-muted/20 text-sm text-muted-foreground min-h-[60px]">
                 {question.config.placeholder || "Participant's answer will appear here..."}
               </div>
             </div>

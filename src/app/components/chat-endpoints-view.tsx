@@ -705,7 +705,7 @@ function EndpointFormModal({
                   onClick={() => headerImgInputRef.current?.click()}
                   className="w-full border-2 border-dashed border-border hover:border-primary/50 bg-muted/20 hover:bg-muted/40 transition-all flex flex-col items-center justify-center gap-2 py-6 group"
                 >
-                  <div className="w-8 h-8 border-2 border-dashed border-muted-foreground/40 group-hover:border-primary/50 flex items-center justify-center transition-colors">
+                  <div className="w-8 h-8 border-2 border-dashed border-muted-foreground group-hover:border-primary/50 flex items-center justify-center transition-colors">
                     <Plus className="w-4 h-4 text-muted-foreground group-hover:text-primary transition-colors" />
                   </div>
                   <div className="text-center">
@@ -981,7 +981,7 @@ function EndpointFormModal({
                       "flex items-center gap-1.5 text-xs cursor-pointer",
                       form.preChatFields[field].enabled
                         ? "text-muted-foreground"
-                        : "text-muted-foreground/40 pointer-events-none"
+                        : "text-muted-foreground pointer-events-none"
                     )}>
                       <input
                         type="checkbox"
@@ -2277,7 +2277,7 @@ export const ChatEndpointsView = ({
       {/* Table */}
       {filteredEndpoints.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-20 border border-dashed border-border bg-muted/5">
-          <Monitor className="w-10 h-10 text-muted-foreground/30 mb-3" />
+          <Monitor className="w-10 h-10 text-muted-foreground mb-3" />
           <p className="text-sm font-semibold text-muted-foreground">No chat endpoints found</p>
           <p className="text-xs text-muted-foreground/70 mt-1">
             {hasActiveFilters || searchQuery ? "Try adjusting your filters." : "Create your first chat widget to get started."}
@@ -2515,7 +2515,7 @@ export const ChatEndpointsView = ({
 
           {filteredRules.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-20 border border-dashed border-border bg-muted/10">
-              <Bot className="w-10 h-10 text-muted-foreground/40 mb-3" />
+              <Bot className="w-10 h-10 text-muted-foreground mb-3" />
               <p className="text-sm font-semibold text-muted-foreground">No routing rules yet</p>
               <p className="text-xs text-muted-foreground/70 mt-1">
                 Rules determine how inbound conversations are created and routed.

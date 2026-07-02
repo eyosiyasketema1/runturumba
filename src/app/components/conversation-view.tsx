@@ -358,7 +358,7 @@ function ThreadMessage({ entry }: { entry: ThreadEntry }) {
     return (
       <div className="flex items-center gap-3 py-2.5 px-5">
         <div className="flex-1 h-px bg-border/60" />
-        <span className="text-xs font-semibold text-muted-foreground/60 uppercase tracking-widest whitespace-nowrap px-3">
+        <span className="text-xs font-semibold text-muted-foreground uppercase tracking-widest whitespace-nowrap px-3">
           {entry.content}
         </span>
         <div className="flex-1 h-px bg-border/60" />
@@ -1381,7 +1381,7 @@ function ConversationContextPanel({
                 onChange={(e) => setNewNote(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && handleAddNote()}
                 placeholder="Add a note..."
-                className="flex-1 bg-background border border-input rounded-sm px-3 py-2.5 text-sm focus:ring-1 focus:ring-ring outline-none placeholder:text-muted-foreground/50"
+                className="flex-1 bg-background border border-input rounded-sm px-3 py-2.5 text-sm focus:ring-1 focus:ring-ring outline-none placeholder:text-muted-foreground/80"
               />
               <button onClick={handleAddNote} disabled={!newNote.trim()} className="bg-primary text-primary-foreground p-2.5 rounded-sm hover:bg-primary/90 transition-all shrink-0 disabled:opacity-50">
                 <Plus className="w-4 h-4" />
@@ -1390,7 +1390,7 @@ function ConversationContextPanel({
 
             <div className="space-y-3">
               {filteredNotes.length === 0 && (
-                <p className="text-xs text-muted-foreground/50 italic p-2">{filterDate ? "No notes found for this date." : "No notes yet. Type a note above to add one."}</p>
+                <p className="text-xs text-muted-foreground italic p-2">{filterDate ? "No notes found for this date." : "No notes yet. Type a note above to add one."}</p>
               )}
               {filteredNotes.map(note => {
                 const author = users.find(u => u.id === note.authorId);
@@ -1745,7 +1745,7 @@ function AISuggestionPills({
       <div className="flex items-center gap-1.5 mb-1.5">
         <Sparkles className="w-3 h-3 text-amber-500" />
         <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">AI Suggestions</span>
-        <button onClick={() => setDismissed(true)} className="ml-auto p-0.5 text-muted-foreground/50 hover:text-muted-foreground transition-colors" title="Dismiss suggestions">
+        <button onClick={() => setDismissed(true)} className="ml-auto p-0.5 text-muted-foreground hover:text-muted-foreground transition-colors" title="Dismiss suggestions">
           <X className="w-3 h-3" />
         </button>
       </div>
@@ -2075,7 +2075,7 @@ function ComposeArea({
           </div>
         </div>
         <div className="flex items-center justify-between mt-1.5">
-          <p className="text-xs text-muted-foreground/50">Enter to send · Shift+Enter for new line</p>
+          <p className="text-xs text-muted-foreground">Enter to send · Shift+Enter for new line</p>
           <p className="text-xs font-medium text-muted-foreground/70">
             Replying via <span className="font-bold capitalize">{CHANNEL_LABEL[port] || port}</span>
           </p>
@@ -2756,7 +2756,7 @@ export const ConversationView = ({
               <div className="w-20 h-20 bg-muted flex items-center justify-center opacity-20"><MessageSquare className="w-10 h-10" /></div>
               <div>
                 <h3 className="text-lg font-bold text-muted-foreground">Select a conversation</h3>
-                <p className="text-sm text-muted-foreground/60 max-w-xs mt-1">Choose a contact from the sidebar to view messages and reply.</p>
+                <p className="text-sm text-muted-foreground max-w-xs mt-1">Choose a contact from the sidebar to view messages and reply.</p>
               </div>
             </div>
           )}

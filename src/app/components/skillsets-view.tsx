@@ -372,7 +372,7 @@ function SkillSetsList({
       {/* Cards Grid — 3 columns */}
       {filtered.length === 0 ? (
         <div className="rounded-xl border-2 border-dashed border-border bg-muted/20 p-16 text-center">
-          <Search className="h-10 w-10 mx-auto text-muted-foreground/50 mb-3" />
+          <Search className="h-10 w-10 mx-auto text-muted-foreground mb-3" />
           <p className="text-sm font-medium text-foreground mb-1">No skill sets found</p>
           <p className="text-xs text-muted-foreground">Try adjusting your search or filters</p>
         </div>
@@ -655,7 +655,7 @@ function SkillSetEditor({
                     placeholder={"# Getting Started\n\nWrite your instructions here using Markdown...\n\n## Guidelines\n- Be specific about AI behavior\n- Include examples when helpful\n- Reference Scripture where appropriate"}
                     value={instructions}
                     onChange={(e) => setInstructions(e.target.value)}
-                    className="w-full min-h-[400px] p-4 font-mono text-sm bg-background text-foreground resize-y outline-none placeholder:text-muted-foreground/50"
+                    className="w-full min-h-[400px] p-4 font-mono text-sm bg-background text-foreground resize-y outline-none placeholder:text-muted-foreground/80"
                   />
                 </div>
               ) : (
@@ -683,7 +683,7 @@ function SkillSetEditor({
                 onClick={handleSimulateUpload}
                 className="rounded-lg border-2 border-dashed border-border bg-muted/20 p-6 text-center cursor-pointer hover:border-primary/40 hover:bg-muted/30 transition-all"
               >
-                <Upload className="h-6 w-6 mx-auto text-muted-foreground/60 mb-1.5" />
+                <Upload className="h-6 w-6 mx-auto text-muted-foreground mb-1.5" />
                 <p className="text-xs font-medium text-foreground">Upload file</p>
                 <p className="text-[10px] text-muted-foreground mt-0.5">PDF, DOCX, TXT · 10MB max</p>
               </div>

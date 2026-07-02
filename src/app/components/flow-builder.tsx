@@ -1006,7 +1006,7 @@ function TemplateGalleryModal({
         <div className="flex-1 overflow-y-auto p-6">
           {filtered.length === 0 ? (
             <div className="flex flex-col items-center justify-center h-full text-center">
-              <LayoutTemplate className="w-10 h-10 text-muted-foreground/30 mb-3" />
+              <LayoutTemplate className="w-10 h-10 text-muted-foreground mb-3" />
               <p className="text-sm font-semibold text-muted-foreground">No templates found</p>
               <p className="text-xs text-muted-foreground/70 mt-1">Try a different search term or category.</p>
             </div>

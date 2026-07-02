@@ -284,7 +284,7 @@ const OrganizationSection = ({ tenant, onUpdate }: { tenant: Tenant; onUpdate: (
                 <p className="text-xl font-bold text-foreground">{stat.value}</p>
                 <p className="text-xs text-muted-foreground font-medium mt-0.5">
                   {stat.label}
-                  {stat.max && <span className="text-muted-foreground/60"> / {stat.max}</span>}
+                  {stat.max && <span className="text-muted-foreground"> / {stat.max}</span>}
                 </p>
               </div>
             ))}
@@ -1329,7 +1329,7 @@ const ActivityAuditTab = () => {
                   </div>
                   <div className="text-right shrink-0">
                     <p className="text-xs font-medium text-muted-foreground">{timeAgo}</p>
-                    <p className="text-[10px] text-muted-foreground/60">{date.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}</p>
+                    <p className="text-[10px] text-muted-foreground">{date.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}</p>
                   </div>
                 </div>
               );
@@ -1715,7 +1715,7 @@ export const SettingsView = ({
                       <span className="truncate">{item.label}</span>
                       <span className={cn(
                         "text-xs truncate transition-colors",
-                        isActive ? "text-muted-foreground" : "text-muted-foreground/60"
+                        isActive ? "text-muted-foreground" : "text-muted-foreground"
                       )}>
                         {item.description}
                       </span>
@@ -2637,7 +2637,7 @@ const AISection = () => {
                         >
                           {newKeyFeatures.includes(feature)
                             ? <CheckCircle2 className="w-4 h-4 text-primary shrink-0" />
-                            : <div className="w-4 h-4 rounded-full border-2 border-muted-foreground/30 shrink-0" />
+                            : <div className="w-4 h-4 rounded-full border-2 border-muted-foreground shrink-0" />
                           }
                           {feature}
                         </button>
@@ -2729,7 +2729,7 @@ const AISection = () => {
                         >
                           {editFeatures.includes(feature)
                             ? <CheckCircle2 className="w-3.5 h-3.5 text-primary shrink-0" />
-                            : <div className="w-3.5 h-3.5 rounded-full border-2 border-muted-foreground/30 shrink-0" />
+                            : <div className="w-3.5 h-3.5 rounded-full border-2 border-muted-foreground shrink-0" />
                           }
                           {feature}
                         </button>

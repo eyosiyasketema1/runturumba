@@ -518,7 +518,7 @@ export const NotificationDropdown = ({
                     {!notif.read && <div className="w-1.5 h-1.5 bg-primary rounded-full shrink-0 mt-1.5" />}
                   </div>
                   <p className="text-xs text-muted-foreground mt-0.5 line-clamp-1">{notif.description}</p>
-                  <p className="text-xs text-muted-foreground/60 font-bold uppercase mt-1 tracking-wider">{notif.time}</p>
+                  <p className="text-xs text-muted-foreground font-bold uppercase mt-1 tracking-wider">{notif.time}</p>
                 </div>
               </button>
             ))

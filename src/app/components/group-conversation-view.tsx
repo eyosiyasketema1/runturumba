@@ -2583,12 +2583,12 @@ export function GroupConversationView() {
                                 </p>
                               )}
                               <div className="px-4 py-3 rounded-2xl bg-muted/30 border border-border/50 border-dashed">
-                                <p className="text-sm text-muted-foreground/60 italic flex items-center gap-2">
+                                <p className="text-sm text-muted-foreground italic flex items-center gap-2">
                                   <Trash2 className="h-3.5 w-3.5" />
                                   {msg.senderName} deleted this message
                                 </p>
                               </div>
-                              <p className="text-xs text-muted-foreground/40 mt-1">
+                              <p className="text-xs text-muted-foreground mt-1">
                                 {formatFullTime(msg.timestamp)}
                               </p>
                             </div>
@@ -2613,7 +2613,7 @@ export function GroupConversationView() {
                                 'w-5 h-5 rounded-md border-2 flex items-center justify-center transition-colors',
                                 selectedMessages.has(msg.id)
                                   ? 'bg-primary border-primary'
-                                  : 'border-muted-foreground/40 hover:border-primary'
+                                  : 'border-muted-foreground hover:border-primary'
                               )}>
                                 {selectedMessages.has(msg.id) && (
                                   <Check className="h-3 w-3 text-primary-foreground" />
@@ -3161,7 +3161,7 @@ export function GroupConversationView() {
                   </div>
                 </div>
                 <div className="flex items-center justify-between mt-1.5">
-                  <p className="text-xs text-muted-foreground/50">Enter to send · Shift+Enter for new line</p>
+                  <p className="text-xs text-muted-foreground">Enter to send · Shift+Enter for new line</p>
                   {isAnnouncing && (
                     <p className="text-xs font-medium text-amber-600/70">
                       📢 Sending as <span className="font-bold">Announcement</span>
