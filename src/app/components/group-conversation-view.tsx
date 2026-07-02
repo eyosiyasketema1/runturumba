@@ -702,8 +702,11 @@ function CreateGroupModal({ isOpen, onClose, onCreateGroup, availableMentors }: 
           </label>
 
           {/* Tabs */}
-          <div className="flex gap-1 bg-muted/50 rounded-lg p-1 mb-3">
+          <div className="flex gap-1 bg-muted/50 rounded-lg p-1 mb-3" role="tablist" aria-label="Add members">
             <button
+              role="tab"
+              id="tab-individual"
+              aria-selected={activeTab === 'individual'}
               onClick={() => setActiveTab('individual')}
               className={cn(
                 'flex-1 text-xs font-semibold py-2 px-3 rounded-md transition-colors',
@@ -716,6 +719,9 @@ function CreateGroupModal({ isOpen, onClose, onCreateGroup, availableMentors }: 
               Individual
             </button>
             <button
+              role="tab"
+              id="tab-groups"
+              aria-selected={activeTab === 'groups'}
               onClick={() => setActiveTab('groups')}
               className={cn(
                 'flex-1 text-xs font-semibold py-2 px-3 rounded-md transition-colors',
@@ -731,7 +737,7 @@ function CreateGroupModal({ isOpen, onClose, onCreateGroup, availableMentors }: 
 
           {/* Individual tab */}
           {activeTab === 'individual' && (
-            <div>
+            <div role="tabpanel" aria-labelledby="tab-individual">
               <div className="flex items-center gap-2 mb-2">
                 <div className="relative flex-1">
                   <Search className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none" />
@@ -815,7 +821,7 @@ function CreateGroupModal({ isOpen, onClose, onCreateGroup, availableMentors }: 
 
           {/* From Groups tab */}
           {activeTab === 'groups' && (
-            <div>
+            <div role="tabpanel" aria-labelledby="tab-groups">
               {(() => {
                 const allGroupMemberIds = [...new Set(MENTOR_GROUPS.flatMap((g) => g.memberIds).filter((id) => id !== 'm1'))];
                 const allGroupsAdded = allGroupMemberIds.length > 0 && allGroupMemberIds.every((id) => selectedMentors.includes(id));

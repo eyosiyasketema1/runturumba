@@ -1508,13 +1508,16 @@ const ChildOrgsSection = ({
       </div>
 
       {/* Tab bar */}
-      <div className="flex items-center gap-1 border-b border-border">
+      <div className="flex items-center gap-1 border-b border-border" role="tablist" aria-label="Organization settings">
         {ORG_TABS.map(tab => {
           const isActive = activeOrgTab === tab.id;
           const TabIcon = tab.icon;
           return (
             <button
               key={tab.id}
+              role="tab"
+              id={`tab-org-${tab.id}`}
+              aria-selected={isActive}
               onClick={() => setActiveOrgTab(tab.id)}
               className={cn(
                 "flex items-center gap-2 px-4 py-2.5 text-sm font-medium border-b-2 transition-all -mb-px",
@@ -1531,16 +1534,16 @@ const ChildOrgsSection = ({
       </div>
 
       {/* Rules & Policies tab */}
-      {activeOrgTab === "rules" && <RulesPoliciesTab />}
+      {activeOrgTab === "rules" && <div role="tabpanel" aria-labelledby="tab-org-rules"><RulesPoliciesTab /></div>}
 
       {/* Shared Resources tab */}
-      {activeOrgTab === "resources" && <SharedResourcesTab childOrgCount={childOrgs.length} />}
+      {activeOrgTab === "resources" && <div role="tabpanel" aria-labelledby="tab-org-resources"><SharedResourcesTab childOrgCount={childOrgs.length} /></div>}
 
       {/* Activity & Audit tab */}
-      {activeOrgTab === "activity" && <ActivityAuditTab />}
+      {activeOrgTab === "activity" && <div role="tabpanel" aria-labelledby="tab-org-activity"><ActivityAuditTab /></div>}
 
       {/* Overview tab — original content below */}
-      {activeOrgTab === "overview" && (<>
+      {activeOrgTab === "overview" && (<div role="tabpanel" aria-labelledby="tab-org-overview">
 
 
       {/* Summary stats */}
@@ -1622,7 +1625,7 @@ const ChildOrgsSection = ({
           </table>
         </CardContent>
       </Card>
-      </>)}
+      </div>)}
 
       {/* Create org dialog */}
       {isCreateOpen && (

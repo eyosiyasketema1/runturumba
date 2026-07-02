@@ -930,10 +930,13 @@ function ConversationContextPanel({
       </div>
 
       {/* Tab bar */}
-      <div className="flex items-center gap-0.5 px-4 py-1.5 border-b border-border bg-muted/20 shrink-0 overflow-x-auto no-scrollbar">
+      <div className="flex items-center gap-0.5 px-4 py-1.5 border-b border-border bg-muted/20 shrink-0 overflow-x-auto no-scrollbar" role="tablist" aria-label="Contact info">
         {INFO_TABS.map(tab => (
           <button
             key={tab.id}
+            role="tab"
+            id={`tab-info-${tab.id}`}
+            aria-selected={activeTab === tab.id}
             onClick={() => setActiveTab(tab.id)}
             className={cn(
               "px-3 py-1.5 text-xs font-semibold rounded-sm transition-all whitespace-nowrap",
@@ -952,7 +955,7 @@ function ConversationContextPanel({
 
         {/* ──── PROFILE TAB ──── */}
         {activeTab === "profile" && (
-          <div className="space-y-0">
+          <div className="space-y-0" role="tabpanel" aria-labelledby="tab-info-profile">
             {/* Stats Row */}
             <div className="grid grid-cols-4 border-b border-border">
               {[
@@ -1175,7 +1178,7 @@ function ConversationContextPanel({
 
         {/* ──── JOURNEY TAB ──── */}
         {activeTab === "journey" && (
-          <div className="p-6 space-y-5">
+          <div className="p-6 space-y-5" role="tabpanel" aria-labelledby="tab-info-journey">
             {journey ? (
               <>
                 {/* Journey card */}
@@ -1251,7 +1254,7 @@ function ConversationContextPanel({
 
         {/* ──── MILESTONES TAB ──── */}
         {activeTab === "milestones" && (
-          <div className="p-6 space-y-3">
+          <div className="p-6 space-y-3" role="tabpanel" aria-labelledby="tab-info-milestones">
             {milestoneRecord ? (
               milestoneRecord.milestones.map(ms => {
                 const cls = MS_STATE_CLS[ms.state] || MS_STATE_CLS.pending;
@@ -1296,7 +1299,7 @@ function ConversationContextPanel({
 
         {/* ──── MATCH TAB ──── */}
         {activeTab === "match" && (
-          <div className="p-6 space-y-4">
+          <div className="p-6 space-y-4" role="tabpanel" aria-labelledby="tab-info-match">
             {contactMatches.length > 0 ? (
               contactMatches.map(m => {
                 const seeker = contacts.find(c => c.id === m.seekerContactId);
@@ -1358,7 +1361,7 @@ function ConversationContextPanel({
 
         {/* ──── NOTES TAB ──── */}
         {activeTab === "notes" && (
-          <div className="p-6 space-y-4">
+          <div className="p-6 space-y-4" role="tabpanel" aria-labelledby="tab-info-notes">
             <div className="flex items-center justify-between">
               <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Notes ({contactNotes.length})</h3>
               <div className="flex items-center gap-2">
@@ -2500,9 +2503,9 @@ export const ConversationView = ({
 
           {/* Status tabs — hidden in Agent mode */}
           {!isAgent && (
-            <div className="flex border-b border-border">
+            <div className="flex border-b border-border" role="tablist" aria-label="Conversation status filter">
               {(["all", "open", "assigned", "pending", "resolved"] as const).map(f => (
-                <button key={f} onClick={() => setStatusFilter(f)}
+                <button key={f} role="tab" id={`tab-status-${f}`} aria-selected={statusFilter === f} onClick={() => setStatusFilter(f)}
                   className={cn(
                     "flex-1 px-1 py-3 text-xs font-bold uppercase tracking-wider transition-colors border-b-2 whitespace-nowrap",
                     statusFilter === f ? "border-primary text-primary bg-primary/5" : "border-transparent text-muted-foreground hover:text-foreground hover:bg-muted/30"

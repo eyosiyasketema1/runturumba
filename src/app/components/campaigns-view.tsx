@@ -612,14 +612,14 @@ const CampaignBuilder = ({ campaign, onBack, onSave }: {
         <div className="flex-1 overflow-y-auto flex flex-col">
           {/* Builder tabs — inside editor column so they center with content */}
           <div className="border-b border-border bg-muted/20 shrink-0">
-            <div className="flex items-center justify-center gap-1">
+            <div className="flex items-center justify-center gap-1" role="tablist" aria-label="Campaign builder">
               {([
                 { id: "questions" as const, label: "Questions", icon: ClipboardList },
                 { id: "settings" as const, label: "Settings", icon: Settings2 },
                 { id: "outcomes" as const, label: "Outcomes", icon: Zap },
                 { id: "share" as const, label: "Share", icon: Link2 },
               ]).map(tab => (
-                <button key={tab.id} onClick={() => setBuilderTab(tab.id)}
+                <button key={tab.id} role="tab" id={`tab-builder-${tab.id}`} aria-selected={builderTab === tab.id} onClick={() => setBuilderTab(tab.id)}
                   className={cn("flex items-center gap-2 px-4 py-2.5 text-sm font-medium border-b-2 transition-all -mb-px",
                     builderTab === tab.id ? "border-primary text-primary" : "border-transparent text-muted-foreground hover:text-foreground")}>
                   <tab.icon className="w-3.5 h-3.5" /> {tab.label}
@@ -630,7 +630,7 @@ const CampaignBuilder = ({ campaign, onBack, onSave }: {
 
           <div className="flex-1 overflow-y-auto p-6">
           {builderTab === "questions" && (
-            <div className="space-y-4 max-w-2xl mx-auto">
+            <div className="space-y-4 max-w-2xl mx-auto" role="tabpanel" aria-labelledby="tab-builder-questions">
               <h3 className="text-base font-semibold text-foreground">Questions ({draft.questions.length})</h3>
 
               {draft.questions.length === 0 ? (
@@ -683,7 +683,7 @@ const CampaignBuilder = ({ campaign, onBack, onSave }: {
           )}
 
           {builderTab === "settings" && (
-            <div className="space-y-6 max-w-2xl mx-auto">
+            <div className="space-y-6 max-w-2xl mx-auto" role="tabpanel" aria-labelledby="tab-builder-settings">
               <Card>
                 <CardHeader><CardTitle className="text-sm font-semibold">General</CardTitle></CardHeader>
                 <CardContent className="space-y-4">
@@ -889,7 +889,7 @@ const CampaignBuilder = ({ campaign, onBack, onSave }: {
           )}
 
           {builderTab === "share" && (
-            <div className="space-y-6 max-w-2xl mx-auto">
+            <div className="space-y-6 max-w-2xl mx-auto" role="tabpanel" aria-labelledby="tab-builder-share">
               {/* Campaign URL */}
               <Card>
                 <CardHeader>
@@ -961,7 +961,7 @@ const CampaignBuilder = ({ campaign, onBack, onSave }: {
           )}
 
           {builderTab === "outcomes" && (
-            <div className="space-y-6 max-w-2xl mx-auto">
+            <div className="space-y-6 max-w-2xl mx-auto" role="tabpanel" aria-labelledby="tab-builder-outcomes">
               <Card>
                 <CardHeader>
                   <CardTitle className="text-sm font-semibold">Post-Completion Actions</CardTitle>

@@ -2756,10 +2756,13 @@ export function MentorsView({
       />
 
       {/* Tabs */}
-      <div className="flex border-b border-border">
+      <div className="flex border-b border-border" role="tablist" aria-label="Mentor management">
         {TABS.map(t => (
           <button
             key={t.key}
+            role="tab"
+            id={`tab-mentor-${t.key}`}
+            aria-selected={activeTab === t.key}
             onClick={() => { setActiveTab(t.key); closeResponses(); }}
             className={cn(
               "flex items-center gap-2 px-4 py-2.5 text-sm font-semibold border-b-2 transition-colors",
@@ -2779,7 +2782,7 @@ export function MentorsView({
 
       {/* ═══════════════ TAB: ALL MENTORS ═══════════════ */}
       {activeTab === "all" && (
-        <>
+        <div role="tabpanel" aria-labelledby="tab-mentor-all">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
             <StatCard label="Total Mentors"   value={mentors.length} icon={ShieldCheck}  tone="blue" />
             <StatCard label="Active"          value={totalActive}    icon={CheckCircle2} tone="green" />
@@ -2835,11 +2838,11 @@ export function MentorsView({
               </tbody>
             </table>
           </div>
-        </>
+        </div>
       )}
 
       {/* ═══════════════ TAB: GROUPS ═══════════════ */}
-      {activeTab === "groups" && (() => {
+      {activeTab === "groups" && (<div role="tabpanel" aria-labelledby="tab-mentor-groups">{(() => {
         const managingGroup = mentorGroups.find(g => g.id === selectedGroupId) || null;
         const filteredMentorsForGroup = mentors.filter(m => {
           const q = groupMemberSearch.toLowerCase();
@@ -3066,10 +3069,10 @@ export function MentorsView({
             })()}
           </>
         );
-      })()}
+      })()}</div>)}
 
       {/* ═══════════════ TAB: FORMS ═══════════════ */}
-      {activeTab === "forms" && (() => {
+      {activeTab === "forms" && (<div role="tabpanel" aria-labelledby="tab-mentor-forms">{(() => {
         const userForms = formTemplates.filter(f => !INITIAL_FORM_TEMPLATES.some(t => t.id === f.id));
         const builtInTemplates = INITIAL_FORM_TEMPLATES;
         const allForms = [...builtInTemplates, ...userForms];
@@ -3610,11 +3613,11 @@ export function MentorsView({
             )}
           </>
         );
-      })()}
+      })()}</div>)}
 
       {/* ═══════════════ TAB: INVITATIONS ═══════════════ */}
       {activeTab === "invitations" && (
-        <>
+        <div role="tabpanel" aria-labelledby="tab-mentor-invitations">
           <div className="grid grid-cols-1 md:grid-cols-5 gap-3">
             <StatCard label="Total Sent" value={invitations.length} icon={Mail} tone="blue" />
             <StatCard label="Pending" value={invitations.filter(i => i.status === "sent" || i.status === "opened").length} icon={Clock} tone="amber" subtitle="awaiting response" />
@@ -3701,7 +3704,7 @@ export function MentorsView({
             </table>
           </div>
 
-        </>
+        </div>
       )}
 
       {/* Send Invitation Modal — rendered outside tabs so it works from Forms or Invitations */}

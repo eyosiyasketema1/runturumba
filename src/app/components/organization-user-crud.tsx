@@ -140,8 +140,11 @@ export const TeamManagement = ({
 
       {/* Tabs */}
       <div className="flex flex-col sm:flex-row gap-3">
-        <div className="flex gap-1 p-1 bg-muted border border-border">
+        <div className="flex gap-1 p-1 bg-muted border border-border" role="tablist" aria-label="Team management">
           <button
+            role="tab"
+            id="tab-members"
+            aria-selected={activeTab === "members"}
             onClick={() => setActiveTab("members")}
             className={cn(
               "px-4 py-2 text-xs font-semibold transition-all flex items-center gap-2",
@@ -153,6 +156,9 @@ export const TeamManagement = ({
             <Badge variant="secondary" className="text-xs ml-1">{users.length}</Badge>
           </button>
           <button
+            role="tab"
+            id="tab-audit"
+            aria-selected={activeTab === "audit"}
             onClick={() => setActiveTab("audit")}
             className={cn(
               "px-4 py-2 text-xs font-semibold transition-all flex items-center gap-2",
@@ -178,7 +184,7 @@ export const TeamManagement = ({
 
       <AnimatePresence mode="wait">
         {activeTab === "members" ? (
-          <motion.div key="members" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+          <motion.div key="members" role="tabpanel" aria-labelledby="tab-members" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
             {/* Filters */}
             <div className="flex gap-3 mb-4 flex-wrap">
               <div className="flex gap-1 p-1 bg-muted border border-border">
@@ -273,7 +279,7 @@ export const TeamManagement = ({
             </Card>
           </motion.div>
         ) : (
-          <motion.div key="audit" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+          <motion.div key="audit" role="tabpanel" aria-labelledby="tab-audit" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
             <AuditLogTab auditLog={auditLog} searchQuery={searchQuery} />
           </motion.div>
         )}

@@ -63,12 +63,15 @@ export function GamificationAdminView({ accountId }: { accountId: string }) {
       </div>
 
       {/* Tab Switcher */}
-      <div className="inline-flex items-center gap-1 bg-muted/60 border border-border rounded-full p-1">
+      <div className="inline-flex items-center gap-1 bg-muted/60 border border-border rounded-full p-1" role="tablist" aria-label="Gamification">
         {TABS.map(({ id, label, icon: Icon }) => {
           const active = tab === id;
           return (
             <button
               key={id}
+              role="tab"
+              id={`tab-gamify-${id}`}
+              aria-selected={active}
               onClick={() => setTab(id)}
               className={cn(
                 "flex items-center gap-2 px-4 py-1.5 text-sm font-semibold rounded-full transition-all",
@@ -83,11 +86,11 @@ export function GamificationAdminView({ accountId }: { accountId: string }) {
       </div>
 
       {/* Tab Content */}
-      {tab === "rules" && <RulesTab accountId={accountId} />}
-      {tab === "badges" && <BadgesTab accountId={accountId} />}
-      {tab === "leaderboard" && <LeaderboardTab accountId={accountId} />}
-      {tab === "analytics" && <AnalyticsTab accountId={accountId} />}
-      {tab === "reengagement" && <ReengagementTab accountId={accountId} />}
+      {tab === "rules" && <div role="tabpanel" aria-labelledby="tab-gamify-rules"><RulesTab accountId={accountId} /></div>}
+      {tab === "badges" && <div role="tabpanel" aria-labelledby="tab-gamify-badges"><BadgesTab accountId={accountId} /></div>}
+      {tab === "leaderboard" && <div role="tabpanel" aria-labelledby="tab-gamify-leaderboard"><LeaderboardTab accountId={accountId} /></div>}
+      {tab === "analytics" && <div role="tabpanel" aria-labelledby="tab-gamify-analytics"><AnalyticsTab accountId={accountId} /></div>}
+      {tab === "reengagement" && <div role="tabpanel" aria-labelledby="tab-gamify-reengagement"><ReengagementTab accountId={accountId} /></div>}
     </div>
   );
 }

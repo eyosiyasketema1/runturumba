@@ -229,10 +229,13 @@ export const MessagesView = ({
         </div>
 
         {/* ---------- TABS ---------- */}
-        <div className="flex items-center gap-1 p-1 bg-muted/50 rounded-sm border border-border overflow-x-auto no-scrollbar w-fit">
+        <div className="flex items-center gap-1 p-1 bg-muted/50 rounded-sm border border-border overflow-x-auto no-scrollbar w-fit" role="tablist" aria-label="Message views">
           {tabItems.map(tab => (
             <button
               key={tab.id}
+              role="tab"
+              id={`tab-msg-${tab.id}`}
+              aria-selected={activeTab === tab.id}
               onClick={() => { setActiveTab(tab.id); setPage(1); }}
               className={cn(
                 "inline-flex items-center gap-2 px-4 h-8 text-xs font-semibold rounded-sm transition-all whitespace-nowrap",
@@ -329,7 +332,7 @@ export const MessagesView = ({
       {/* ---------- CONTENT ---------- */}
       <div className="flex-1 flex overflow-hidden">
         {activeTab === "messages" && (
-          <div className="flex-1 overflow-auto px-6 lg:px-10 pb-10 custom-scrollbar">
+          <div className="flex-1 overflow-auto px-6 lg:px-10 pb-10 custom-scrollbar" role="tabpanel" aria-labelledby="tab-msg-messages">
             <div className="bg-card border border-border rounded-sm overflow-hidden">
               <div className="overflow-x-auto">
                 <table className="w-full text-left">
@@ -507,7 +510,7 @@ export const MessagesView = ({
         )}
 
         {activeTab === "group" && (
-          <div className="flex-1 overflow-auto px-6 lg:px-10 pb-10 custom-scrollbar">
+          <div className="flex-1 overflow-auto px-6 lg:px-10 pb-10 custom-scrollbar" role="tabpanel" aria-labelledby="tab-msg-group">
             <div className="bg-card border border-border rounded-sm overflow-hidden">
               <div className="overflow-x-auto">
                 <table className="w-full text-left">
@@ -610,34 +613,38 @@ export const MessagesView = ({
         )}
 
         {activeTab === "scheduled" && (
-          <ScheduledTab
-            scheduledMessages={scheduledMessages}
-            scheduledBroadcasts={scheduledBroadcasts}
-            contacts={contacts}
-            groups={groups}
-            PortBadge={PortBadge}
-            onEditMessage={onEditMessage}
-            onCancelScheduled={onCancelScheduled}
-            onEditBroadcast={onEditBroadcast}
-            onDeleteBroadcast={onDeleteBroadcast}
-            onNewMessage={() => setIsNewMessageFlowOpen(true)}
-          />
+          <div className="flex-1 overflow-hidden" role="tabpanel" aria-labelledby="tab-msg-scheduled">
+            <ScheduledTab
+              scheduledMessages={scheduledMessages}
+              scheduledBroadcasts={scheduledBroadcasts}
+              contacts={contacts}
+              groups={groups}
+              PortBadge={PortBadge}
+              onEditMessage={onEditMessage}
+              onCancelScheduled={onCancelScheduled}
+              onEditBroadcast={onEditBroadcast}
+              onDeleteBroadcast={onDeleteBroadcast}
+              onNewMessage={() => setIsNewMessageFlowOpen(true)}
+            />
+          </div>
         )}
 
         {activeTab === "templates" && (
-          <TemplatesTab
-            templates={templates}
-            filteredTemplates={templates}
-            templateCategory="all"
-            setTemplateCategory={() => {}}
-            onCreateTemplate={onCreateTemplate}
-            onEditTemplate={onEditTemplate}
-            onDeleteTemplate={onDeleteTemplate}
-            onUseTemplate={(content: string) => {
-              setNewMessage(content);
-              setActiveTab("messages");
-            }}
-          />
+          <div className="flex-1 overflow-hidden" role="tabpanel" aria-labelledby="tab-msg-templates">
+            <TemplatesTab
+              templates={templates}
+              filteredTemplates={templates}
+              templateCategory="all"
+              setTemplateCategory={() => {}}
+              onCreateTemplate={onCreateTemplate}
+              onEditTemplate={onEditTemplate}
+              onDeleteTemplate={onDeleteTemplate}
+              onUseTemplate={(content: string) => {
+                setNewMessage(content);
+                setActiveTab("messages");
+              }}
+            />
+          </div>
         )}
       </div>
 
