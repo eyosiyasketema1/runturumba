@@ -1033,11 +1033,11 @@ function GroupInfoPanel({
         <h2 className="text-lg font-bold">Group Info</h2>
         <div className="flex items-center gap-1">
           {currentUserIsAdmin && !isEditing && (
-            <Button variant="ghost" size="icon" onClick={() => { setIsEditing(true); setEditName(group.name); setEditDescription(group.description || ''); }} className="h-8 w-8" title="Edit Group">
+            <Button variant="ghost" size="icon" onClick={() => { setIsEditing(true); setEditName(group.name); setEditDescription(group.description || ''); }} title="Edit Group">
               <Pencil className="h-4 w-4" />
             </Button>
           )}
-          <Button variant="ghost" size="icon" onClick={onClose} className="h-8 w-8">
+          <Button variant="ghost" size="icon" onClick={onClose}>
             <X className="h-4 w-4" />
           </Button>
         </div>
@@ -1476,7 +1476,7 @@ function ForwardModal({
               {messages.length} message{messages.length > 1 ? 's' : ''} selected
             </p>
           </div>
-          <button onClick={onClose} className="p-1 text-muted-foreground hover:text-foreground transition-colors">
+          <button onClick={onClose} className="min-w-[44px] min-h-[44px] flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors rounded-md">
             <X className="h-5 w-5" />
           </button>
         </div>
@@ -1611,7 +1611,7 @@ function PollResultsModal({ poll, onClose }: { poll: Poll; onClose: () => void }
                 <BarChart3 className="w-5 h-5 text-muted-foreground" />
                 <h3 className="font-bold text-base">Poll Results</h3>
               </div>
-              <button onClick={onClose} className="p-1 text-muted-foreground hover:text-foreground transition-colors">
+              <button onClick={onClose} className="min-w-[44px] min-h-[44px] flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors rounded-md">
                 <X className="w-5 h-5" />
               </button>
             </div>
@@ -2491,7 +2491,7 @@ export function GroupConversationView() {
                     )}
                     <button
                       onClick={() => { setChatSearchOpen(false); setChatSearchQuery(''); }}
-                      className="p-1 text-muted-foreground hover:text-foreground transition-colors shrink-0"
+                      className="min-w-[44px] min-h-[44px] flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors shrink-0 rounded-md"
                     >
                       <X className="h-4 w-4" />
                     </button>
@@ -2741,7 +2741,7 @@ export function GroupConversationView() {
                                       setActiveReactionMsgId(activeReactionMsgId === msg.id ? null : msg.id);
                                       setActiveMenuMsgId(null);
                                     }}
-                                    className="p-1.5 rounded-full hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
+                                    className="min-w-[44px] min-h-[44px] flex items-center justify-center rounded-full hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
                                     title="React"
                                   >
                                     <Smile className="h-4 w-4" />
@@ -2762,7 +2762,7 @@ export function GroupConversationView() {
                                       setActiveMenuMsgId(activeMenuMsgId === msg.id ? null : msg.id);
                                       setActiveReactionMsgId(null);
                                     }}
-                                    className="p-1.5 rounded-full hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
+                                    className="min-w-[44px] min-h-[44px] flex items-center justify-center rounded-full hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
                                     title="More options"
                                   >
                                     <MoreVertical className="h-4 w-4" />
@@ -2913,7 +2913,7 @@ export function GroupConversationView() {
                         <Mic className="w-4 h-4 text-primary shrink-0" />
                         <audio src={voiceUrl} controls className="h-8 flex-1" style={{ maxHeight: '32px' }} />
                         <span className="text-xs text-muted-foreground font-medium shrink-0">{formatDuration(recordingDuration)}</span>
-                        <button type="button" onClick={discardVoice} className="p-1 text-muted-foreground hover:text-red-500 transition-colors shrink-0" title="Discard recording">
+                        <button type="button" onClick={discardVoice} className="min-w-[44px] min-h-[44px] flex items-center justify-center text-muted-foreground hover:text-red-500 transition-colors shrink-0 rounded-md" title="Discard recording">
                           <Trash2 className="w-3.5 h-3.5" />
                         </button>
                       </>
@@ -2968,7 +2968,7 @@ export function GroupConversationView() {
                           {pollOptions.length > 2 && (
                             <button
                               onClick={() => setPollOptions(pollOptions.filter((_, i) => i !== idx))}
-                              className="p-1 text-muted-foreground hover:text-red-500 transition-colors"
+                              className="relative p-1 text-muted-foreground hover:text-red-500 transition-colors after:absolute after:content-[''] after:-inset-2"
                             >
                               <X className="w-3.5 h-3.5" />
                             </button>
@@ -3062,7 +3062,7 @@ export function GroupConversationView() {
                         setReplyToMessage(null);
                       }
                     }}
-                    className="p-1 text-muted-foreground hover:text-foreground transition-colors"
+                    className="min-w-[44px] min-h-[44px] flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors rounded-md"
                   >
                     <X className="h-4 w-4" />
                   </button>

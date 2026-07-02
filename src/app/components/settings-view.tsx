@@ -96,7 +96,7 @@ const ProfileSection = ({ user, onUpdate }: { user: UserType; onUpdate: (data: P
                   </AvatarFallback>
                 )}
               </Avatar>
-              <button aria-label="Change profile photo" className="absolute inset-0 rounded-full bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer">
+              <button aria-label="Change profile photo" className="absolute inset-0 rounded-full bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 focus-visible:opacity-100 transition-opacity cursor-pointer">
                 <Camera className="w-5 h-5 text-white" />
               </button>
             </div>
@@ -397,7 +397,14 @@ const BillingSection = ({ tenant, onUpgrade }: { tenant: Tenant; onUpgrade: (pla
                         {meter.used.toLocaleString()} / {meter.max.toLocaleString()}
                       </span>
                     </div>
-                    <div className="h-1.5 w-full bg-muted rounded-full overflow-hidden">
+                    <div
+                      className="h-1.5 w-full bg-muted rounded-full overflow-hidden"
+                      role="progressbar"
+                      aria-valuenow={meter.used}
+                      aria-valuemin={0}
+                      aria-valuemax={meter.max}
+                      aria-label={`${meter.label}: ${meter.used.toLocaleString()} of ${meter.max.toLocaleString()} used (${meter.pct}%)`}
+                    >
                       <div
                         className={cn(
                           "h-full rounded-full transition-all duration-700",
@@ -1064,7 +1071,7 @@ const RulesPoliciesTab = () => {
                   </div>
                   <div className="flex items-center gap-2">
                     <Badge variant="outline" className="text-xs">{automationRules.lockEnforcedAutomations ? "Locked" : "Customizable"}</Badge>
-                    <button onClick={() => { setAutomationRules(p => ({ ...p, enforcedAutomations: p.enforcedAutomations.filter((_, j) => j !== i) })); toast.success("Removed"); }} className="p-1 text-muted-foreground hover:text-destructive transition-colors"><X className="w-3 h-3" /></button>
+                    <button onClick={() => { setAutomationRules(p => ({ ...p, enforcedAutomations: p.enforcedAutomations.filter((_, j) => j !== i) })); toast.success("Removed"); }} className="relative p-1 text-muted-foreground hover:text-destructive transition-colors after:absolute after:content-[''] after:-inset-2"><X className="w-3 h-3" /></button>
                   </div>
                 </div>
               ))}
@@ -1950,7 +1957,7 @@ const ApiSection = () => {
                   <Button variant="ghost" size="sm" className="h-7 px-2 text-xs text-amber-600 hover:text-amber-700 hover:bg-amber-50" onClick={() => handleRevokeKey(ak.id)}>
                     Revoke
                   </Button>
-                  <Button variant="ghost" size="sm" className="h-7 w-7 p-0 text-muted-foreground hover:text-red-600" onClick={() => setDeleteKeyId(ak.id)}>
+                  <Button variant="ghost" size="sm" className="h-7 w-7 p-0 relative after:absolute after:content-[''] after:-inset-2 text-muted-foreground hover:text-red-600" onClick={() => setDeleteKeyId(ak.id)}>
                     <Trash2 className="w-3.5 h-3.5" />
                   </Button>
                 </div>
@@ -1960,10 +1967,10 @@ const ApiSection = () => {
                 <code className="text-xs font-mono text-foreground flex-1 select-all">
                   {showKey[ak.id] ? ak.key : ak.prefix + "_" + "•".repeat(32)}
                 </code>
-                <Button variant="ghost" size="sm" className="h-7 w-7 p-0" onClick={() => toggleShowKey(ak.id)} title={showKey[ak.id] ? "Hide" : "Reveal"}>
+                <Button variant="ghost" size="sm" className="h-7 w-7 p-0 relative after:absolute after:content-[''] after:-inset-2" onClick={() => toggleShowKey(ak.id)} title={showKey[ak.id] ? "Hide" : "Reveal"}>
                   {showKey[ak.id] ? <EyeOff className="w-3.5 h-3.5 text-muted-foreground" /> : <Eye className="w-3.5 h-3.5 text-muted-foreground" />}
                 </Button>
-                <Button variant="ghost" size="sm" className="h-7 w-7 p-0" onClick={() => { navigator.clipboard?.writeText(ak.key); toast.success("Key copied to clipboard"); }} title="Copy">
+                <Button variant="ghost" size="sm" className="h-7 w-7 p-0 relative after:absolute after:content-[''] after:-inset-2" onClick={() => { navigator.clipboard?.writeText(ak.key); toast.success("Key copied to clipboard"); }} title="Copy">
                   <Copy className="w-3.5 h-3.5 text-muted-foreground" />
                 </Button>
               </div>
@@ -1996,7 +2003,7 @@ const ApiSection = () => {
                 </div>
                 <div className="flex items-center gap-2">
                   <Badge variant="outline" className="text-xs text-red-600 border-red-200 bg-red-50">Revoked</Badge>
-                  <Button variant="ghost" size="sm" className="h-7 w-7 p-0 text-muted-foreground hover:text-red-600" onClick={() => setDeleteKeyId(ak.id)}>
+                  <Button variant="ghost" size="sm" className="h-7 w-7 p-0 relative after:absolute after:content-[''] after:-inset-2 text-muted-foreground hover:text-red-600" onClick={() => setDeleteKeyId(ak.id)}>
                     <Trash2 className="w-3.5 h-3.5" />
                   </Button>
                 </div>
@@ -2017,13 +2024,13 @@ const ApiSection = () => {
             <code className="text-xs font-mono text-foreground flex-1">
               {showKey["webhook"] ? webhookSecret : "whsec_" + "•".repeat(24)}
             </code>
-            <Button variant="ghost" size="sm" className="h-7 w-7 p-0" onClick={() => toggleShowKey("webhook")}>
+            <Button variant="ghost" size="sm" className="h-7 w-7 p-0 relative after:absolute after:content-[''] after:-inset-2" onClick={() => toggleShowKey("webhook")}>
               {showKey["webhook"] ? <EyeOff className="w-3.5 h-3.5 text-muted-foreground" /> : <Eye className="w-3.5 h-3.5 text-muted-foreground" />}
             </Button>
-            <Button variant="ghost" size="sm" className="h-7 w-7 p-0" onClick={() => { navigator.clipboard?.writeText(webhookSecret); toast.success("Secret copied"); }}>
+            <Button variant="ghost" size="sm" className="h-7 w-7 p-0 relative after:absolute after:content-[''] after:-inset-2" onClick={() => { navigator.clipboard?.writeText(webhookSecret); toast.success("Secret copied"); }}>
               <Copy className="w-3.5 h-3.5 text-muted-foreground" />
             </Button>
-            <Button variant="ghost" size="sm" className="h-7 w-7 p-0" onClick={() => toast.info("Secret regenerated (mock)")}>
+            <Button variant="ghost" size="sm" className="h-7 w-7 p-0 relative after:absolute after:content-[''] after:-inset-2" onClick={() => toast.info("Secret regenerated (mock)")}>
               <RefreshCw className="w-3.5 h-3.5 text-muted-foreground" />
             </Button>
           </div>
@@ -2798,13 +2805,13 @@ const AISection = () => {
                   </div>
                 </div>
                 <div className="flex items-center gap-1 shrink-0">
-                  <Button variant="ghost" size="sm" className="h-7 w-7 p-0" title={showKeyValues[k.id] ? "Hide key" : "Show key"} onClick={() => setShowKeyValues(prev => ({ ...prev, [k.id]: !prev[k.id] }))}>
+                  <Button variant="ghost" size="sm" className="h-7 w-7 p-0 relative after:absolute after:content-[''] after:-inset-2" title={showKeyValues[k.id] ? "Hide key" : "Show key"} onClick={() => setShowKeyValues(prev => ({ ...prev, [k.id]: !prev[k.id] }))}>
                     <Eye className="w-3.5 h-3.5" />
                   </Button>
-                  <Button variant="ghost" size="sm" className="h-7 w-7 p-0" title="Edit" onClick={() => startEditing(k)}>
+                  <Button variant="ghost" size="sm" className="h-7 w-7 p-0 relative after:absolute after:content-[''] after:-inset-2" title="Edit" onClick={() => startEditing(k)}>
                     <Pencil className="w-3.5 h-3.5" />
                   </Button>
-                  <Button variant="ghost" size="sm" className="h-7 w-7 p-0" title="Re-verify" onClick={() => reverifyKey(k.id)}>
+                  <Button variant="ghost" size="sm" className="h-7 w-7 p-0 relative after:absolute after:content-[''] after:-inset-2" title="Re-verify" onClick={() => reverifyKey(k.id)}>
                     <RotateCcw className="w-3.5 h-3.5" />
                   </Button>
                   <Switch
@@ -2812,7 +2819,7 @@ const AISection = () => {
                     onCheckedChange={v => { setAiKeys(prev => prev.map(x => x.id === k.id ? { ...x, active: v } : x)); toast.success(`${k.label} ${v ? "activated" : "deactivated"}`); }}
                     aria-label={`Toggle ${k.label}`}
                   />
-                  <Button variant="ghost" size="sm" className="h-7 w-7 p-0 text-muted-foreground hover:text-red-500" onClick={() => { setAiKeys(prev => prev.filter(x => x.id !== k.id)); toast.success("Key removed"); }}>
+                  <Button variant="ghost" size="sm" className="h-7 w-7 p-0 relative after:absolute after:content-[''] after:-inset-2 text-muted-foreground hover:text-red-500" onClick={() => { setAiKeys(prev => prev.filter(x => x.id !== k.id)); toast.success("Key removed"); }}>
                     <Trash2 className="w-3.5 h-3.5" />
                   </Button>
                 </div>
@@ -2901,7 +2908,7 @@ const AISection = () => {
                   onCheckedChange={v => { setRules(prev => prev.map(x => x.id === r.id ? { ...x, enabled: v } : x)); toast.success(`Rule ${v ? "enabled" : "disabled"}`); }}
                   aria-label={`Toggle rule ${idx + 1}`}
                 />
-                <Button variant="ghost" size="sm" className="h-7 w-7 p-0 text-muted-foreground hover:text-red-500" onClick={() => { setRules(prev => prev.filter(x => x.id !== r.id)); toast.success("Rule removed"); }}>
+                <Button variant="ghost" size="sm" className="h-7 w-7 p-0 relative after:absolute after:content-[''] after:-inset-2 text-muted-foreground hover:text-red-500" onClick={() => { setRules(prev => prev.filter(x => x.id !== r.id)); toast.success("Rule removed"); }}>
                   <Trash2 className="w-3.5 h-3.5" />
                 </Button>
               </div>
@@ -3107,7 +3114,7 @@ const TerminologySection = () => {
                           </Button>
                         )}
                         {!isBuiltIn && (
-                          <Button variant="ghost" size="sm" className="h-7 w-7 p-0 text-muted-foreground hover:text-red-500" onClick={() => { setTerms(prev => prev.filter(x => x.id !== t.id)); toast.success(`"${t.defaultLabel}" removed`); }}>
+                          <Button variant="ghost" size="sm" className="h-7 w-7 p-0 relative after:absolute after:content-[''] after:-inset-2 text-muted-foreground hover:text-red-500" onClick={() => { setTerms(prev => prev.filter(x => x.id !== t.id)); toast.success(`"${t.defaultLabel}" removed`); }}>
                             <Trash2 className="w-3.5 h-3.5" />
                           </Button>
                         )}

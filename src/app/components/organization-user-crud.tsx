@@ -257,13 +257,13 @@ export const TeamManagement = ({
                             </span>
                           </td>
                           <td className="px-6 py-4 text-right">
-                            <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 focus-within:opacity-100 transition-opacity">
                               {isAdmin && (
                                 <>
-                                  <Button variant="ghost" size="sm" className="h-8 w-8 p-0" onClick={() => setSelectedUser(user)}>
+                                  <Button variant="ghost" size="sm" className="h-8 w-8 p-0 relative after:absolute after:content-[''] after:-inset-1" onClick={() => setSelectedUser(user)}>
                                     <Edit2 className="w-3.5 h-3.5 text-muted-foreground" />
                                   </Button>
-                                  <Button variant="ghost" size="sm" className="h-8 w-8 p-0" onClick={() => setDeleteConfirmUser(user)}>
+                                  <Button variant="ghost" size="sm" className="h-8 w-8 p-0 relative after:absolute after:content-[''] after:-inset-1" onClick={() => setDeleteConfirmUser(user)}>
                                     <Trash2 className="w-3.5 h-3.5 text-muted-foreground" />
                                   </Button>
                                 </>
@@ -440,10 +440,10 @@ const ManageGroups = ({
                       </td>
                       <td className="px-6 py-4 text-right">
                         <div className="flex items-center justify-end gap-2">
-                          <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-foreground" onClick={() => handleOpenEdit(group)}>
+                          <Button variant="ghost" size="icon" className="h-8 w-8 relative after:absolute after:content-[''] after:-inset-1 text-muted-foreground hover:text-foreground" onClick={() => handleOpenEdit(group)}>
                             <Edit2 className="w-4 h-4" />
                           </Button>
-                          <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-destructive" onClick={() => onDeleteGroup(group.id)}>
+                          <Button variant="ghost" size="icon" className="h-8 w-8 relative after:absolute after:content-[''] after:-inset-1 text-muted-foreground hover:text-destructive" onClick={() => onDeleteGroup(group.id)}>
                             <Trash2 className="w-4 h-4" />
                           </Button>
                         </div>
@@ -501,7 +501,7 @@ const GroupFormModal = ({
       <Card className="w-full max-w-md shadow-2xl overflow-hidden border-border/50">
         <div className="p-5 border-b border-border flex items-center justify-between bg-muted/30">
           <h3 className="font-bold text-lg text-foreground">{group ? "Edit Group" : "Create Group"}</h3>
-          <Button variant="ghost" size="icon" onClick={onClose} className="h-8 w-8 rounded-full">
+          <Button variant="ghost" size="icon" onClick={onClose} className="rounded-full">
             <X className="w-4 h-4 text-muted-foreground" />
           </Button>
         </div>

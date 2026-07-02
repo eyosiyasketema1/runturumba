@@ -305,7 +305,7 @@ function RuleBuilderModal({ isOpen, onClose, onSaved, editRule, accountId }: {
                   {CONDITION_OPS.map(op => <option key={op} value={op}>{op}</option>)}
                 </select>
                 <Input aria-label="Condition value" value={c.value} onChange={e => updateCondition(i, "value", e.target.value)} placeholder="value" className="flex-1" />
-                <button onClick={() => removeCondition(i)} className="p-1 text-muted-foreground hover:text-destructive"><X className="w-3.5 h-3.5" /></button>
+                <button onClick={() => removeCondition(i)} className="min-w-[44px] min-h-[44px] flex items-center justify-center text-muted-foreground hover:text-destructive rounded-md"><X className="w-3.5 h-3.5" /></button>
               </div>
             ))}
           </div>
@@ -347,7 +347,7 @@ function RuleBuilderModal({ isOpen, onClose, onSaved, editRule, accountId }: {
                     <Input aria-label="Milestone state" value={a.state || ""} onChange={e => updateAction(i, "state", e.target.value)} placeholder="state" className="w-24" />
                   </>
                 )}
-                <button onClick={() => removeAction(i)} className="p-1 text-muted-foreground hover:text-destructive"><X className="w-3.5 h-3.5" /></button>
+                <button onClick={() => removeAction(i)} className="min-w-[44px] min-h-[44px] flex items-center justify-center text-muted-foreground hover:text-destructive rounded-md"><X className="w-3.5 h-3.5" /></button>
               </div>
             ))}
           </div>
@@ -792,11 +792,11 @@ function BadgesTab({ accountId }: { accountId: string }) {
                     </div>
                     <div className="flex items-center gap-1">
                       <button onClick={() => { setEditingBadge(badge); setShowForm(true); }}
-                        className="p-1 text-muted-foreground hover:text-primary transition-colors opacity-0 group-hover:opacity-100">
+                        className="min-w-[44px] min-h-[44px] flex items-center justify-center text-muted-foreground hover:text-primary transition-colors opacity-0 group-hover:opacity-100 focus-visible:opacity-100 rounded-md">
                         <Edit2 className="w-3.5 h-3.5" />
                       </button>
                       <button onClick={() => handleDelete(badge.id)}
-                        className="p-1 text-muted-foreground hover:text-destructive transition-colors opacity-0 group-hover:opacity-100">
+                        className="min-w-[44px] min-h-[44px] flex items-center justify-center text-muted-foreground hover:text-destructive transition-colors opacity-0 group-hover:opacity-100 focus-visible:opacity-100 rounded-md">
                         <Trash2 className="w-3.5 h-3.5" />
                       </button>
                       <Switch aria-label={`Toggle ${badge.name} active state`} checked={badge.is_active} onCheckedChange={() => handleToggle(badge)} />
@@ -972,30 +972,34 @@ function AnalyticsTab({ accountId }: { accountId: string }) {
         {/* XP Distribution */}
         <div className="rounded-sm bg-card border border-border p-5">
           <h3 className="text-sm font-bold text-foreground mb-4">XP Distribution</h3>
-          <ResponsiveContainer width="100%" height={200}>
-            <BarChart data={data.xp_distribution}>
-              <XAxis dataKey="label" tick={{ fontSize: 11 }} />
-              <YAxis tick={{ fontSize: 11 }} />
-              <Tooltip />
-              <Bar dataKey="count" fill="#3b82f6" radius={[4, 4, 0, 0]} />
-            </BarChart>
-          </ResponsiveContainer>
+          <div role="img" aria-label={`Bar chart showing XP distribution across ${data.xp_distribution.length} ranges: ${data.xp_distribution.map((d: any) => `${d.label}: ${d.count}`).join(", ")}.`}>
+            <ResponsiveContainer width="100%" height={200}>
+              <BarChart data={data.xp_distribution}>
+                <XAxis dataKey="label" tick={{ fontSize: 11 }} />
+                <YAxis tick={{ fontSize: 11 }} />
+                <Tooltip />
+                <Bar dataKey="count" fill="#3b82f6" radius={[4, 4, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
         </div>
 
         {/* Tier Distribution */}
         <div className="rounded-sm bg-card border border-border p-5">
           <h3 className="text-sm font-bold text-foreground mb-4">Tier Distribution</h3>
           <div className="flex items-center justify-center gap-8">
-            <ResponsiveContainer width={160} height={160}>
-              <PieChart>
-                <Pie data={tierData} cx="50%" cy="50%" innerRadius={40} outerRadius={70} dataKey="value" stroke="none">
-                  {tierData.map((_, i) => (
-                    <Cell key={i} fill={PIE_COLORS[i]} />
-                  ))}
-                </Pie>
-                <Tooltip />
-              </PieChart>
-            </ResponsiveContainer>
+            <div role="img" aria-label={`Donut chart showing tier distribution: ${tierData.map(t => `${t.name} ${t.value}`).join(", ")}.`}>
+              <ResponsiveContainer width={160} height={160}>
+                <PieChart>
+                  <Pie data={tierData} cx="50%" cy="50%" innerRadius={40} outerRadius={70} dataKey="value" stroke="none">
+                    {tierData.map((_, i) => (
+                      <Cell key={i} fill={PIE_COLORS[i]} />
+                    ))}
+                  </Pie>
+                  <Tooltip />
+                </PieChart>
+              </ResponsiveContainer>
+            </div>
             <div className="space-y-2">
               {tierData.map((t, i) => (
                 <div key={t.name} className="flex items-center gap-2">
@@ -1011,27 +1015,31 @@ function AnalyticsTab({ accountId }: { accountId: string }) {
         {/* Streak Distribution */}
         <div className="rounded-sm bg-card border border-border p-5">
           <h3 className="text-sm font-bold text-foreground mb-4">Streak Distribution</h3>
-          <ResponsiveContainer width="100%" height={200}>
-            <BarChart data={data.streak_distribution}>
-              <XAxis dataKey="label" tick={{ fontSize: 11 }} />
-              <YAxis tick={{ fontSize: 11 }} />
-              <Tooltip />
-              <Bar dataKey="count" fill="#f59e0b" radius={[4, 4, 0, 0]} />
-            </BarChart>
-          </ResponsiveContainer>
+          <div role="img" aria-label={`Bar chart showing streak distribution across ${data.streak_distribution.length} ranges: ${data.streak_distribution.map((d: any) => `${d.label}: ${d.count}`).join(", ")}.`}>
+            <ResponsiveContainer width="100%" height={200}>
+              <BarChart data={data.streak_distribution}>
+                <XAxis dataKey="label" tick={{ fontSize: 11 }} />
+                <YAxis tick={{ fontSize: 11 }} />
+                <Tooltip />
+                <Bar dataKey="count" fill="#f59e0b" radius={[4, 4, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
         </div>
 
         {/* XP Timeline */}
         <div className="rounded-sm bg-card border border-border p-5">
           <h3 className="text-sm font-bold text-foreground mb-4">XP Awarded (Last 7 Days)</h3>
-          <ResponsiveContainer width="100%" height={200}>
-            <AreaChart data={data.xp_timeline}>
-              <XAxis dataKey="date" tick={{ fontSize: 11 }} />
-              <YAxis tick={{ fontSize: 11 }} />
-              <Tooltip />
-              <Area type="monotone" dataKey="xp" fill="#a855f7" fillOpacity={0.15} stroke="#a855f7" strokeWidth={2} />
-            </AreaChart>
-          </ResponsiveContainer>
+          <div role="img" aria-label={`Area chart showing XP awarded over the last 7 days: ${data.xp_timeline.map((d: any) => `${d.date}: ${d.xp} XP`).join(", ")}.`}>
+            <ResponsiveContainer width="100%" height={200}>
+              <AreaChart data={data.xp_timeline}>
+                <XAxis dataKey="date" tick={{ fontSize: 11 }} />
+                <YAxis tick={{ fontSize: 11 }} />
+                <Tooltip />
+                <Area type="monotone" dataKey="xp" fill="#a855f7" fillOpacity={0.15} stroke="#a855f7" strokeWidth={2} />
+              </AreaChart>
+            </ResponsiveContainer>
+          </div>
         </div>
       </div>
 
@@ -1058,7 +1066,7 @@ function AnalyticsTab({ accountId }: { accountId: string }) {
             "Decision":   "#a855f7",
           };
           return (
-            <div className="space-y-2">
+            <div className="space-y-2" role="img" aria-label={`Milestone funnel chart: ${funnel.map((f: any) => `${f.stage} ${f.count}`).join(", ")}. Overall conversion from ${funnel[0]?.stage} to ${funnel[funnel.length - 1]?.stage}: ${top > 0 ? Math.round((funnel[funnel.length - 1]?.count / top) * 100) : 0}%.`}>
               {funnel.map((f, i) => {
                 const widthPct = (f.count / max) * 100;
                 const prev = i > 0 ? funnel[i - 1].count : 0;
@@ -1077,7 +1085,14 @@ function AnalyticsTab({ accountId }: { accountId: string }) {
                     )}
                     <div className="flex items-center gap-3">
                       <div className="w-32 shrink-0 text-xs font-semibold text-foreground">{f.stage}</div>
-                      <div className="flex-1 h-8 bg-muted/30 rounded-md overflow-hidden">
+                      <div
+                        className="flex-1 h-8 bg-muted/30 rounded-md overflow-hidden"
+                        role="progressbar"
+                        aria-valuenow={f.count}
+                        aria-valuemin={0}
+                        aria-valuemax={max}
+                        aria-label={`${f.stage}: ${f.count} people, ${overallConversion}% of total`}
+                      >
                         <div
                           className="h-full flex items-center justify-end pr-3 transition-all"
                           style={{ width: `${Math.max(widthPct, 4)}%`, backgroundColor: color }}
@@ -1134,6 +1149,7 @@ function AnalyticsTab({ accountId }: { accountId: string }) {
               })),
           }));
           return (
+            <div role="img" aria-label={`Scatter plot showing engagement correlation for ${points.length} seekers across ${tiers.join(", ")} tiers. Each dot represents one seeker, with engagement events on the X axis and total XP on the Y axis.`}>
             <ResponsiveContainer width="100%" height={300}>
               <ScatterChart margin={{ top: 10, right: 16, bottom: 24, left: 8 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
@@ -1176,6 +1192,7 @@ function AnalyticsTab({ accountId }: { accountId: string }) {
                 ))}
               </ScatterChart>
             </ResponsiveContainer>
+            </div>
           );
         })()}
       </div>
@@ -1194,7 +1211,14 @@ function AnalyticsTab({ accountId }: { accountId: string }) {
                 <div className="flex-1 min-w-0">
                   <div className="text-xs font-semibold text-foreground truncate">{b.name}</div>
                   <div className="flex items-center gap-2 mt-0.5">
-                    <div className="flex-1 h-1.5 bg-muted rounded-full overflow-hidden">
+                    <div
+                      className="flex-1 h-1.5 bg-muted rounded-full overflow-hidden"
+                      role="progressbar"
+                      aria-valuenow={b.rate}
+                      aria-valuemin={0}
+                      aria-valuemax={100}
+                      aria-label={`${b.name} earning rate: ${b.rate}%`}
+                    >
                       <div className="h-full rounded-full" style={{ width: `${b.rate}%`, backgroundColor: color }} />
                     </div>
                     <span className="text-xs font-semibold text-muted-foreground">{b.rate}%</span>
@@ -1422,10 +1446,10 @@ function ReengagementTab({ accountId }: { accountId: string }) {
                     </div>
                   </div>
                   <div className="flex items-center gap-1">
-                    <button onClick={() => openEditTemplate(t)} className="p-1.5 text-muted-foreground hover:text-primary transition-colors opacity-0 group-hover:opacity-100">
+                    <button onClick={() => openEditTemplate(t)} className="p-1.5 text-muted-foreground hover:text-primary transition-colors opacity-0 group-hover:opacity-100 focus-visible:opacity-100">
                       <Edit2 className="w-3.5 h-3.5" />
                     </button>
-                    <button onClick={() => handleDeleteTemplate(t.id)} className="p-1.5 text-muted-foreground hover:text-destructive transition-colors opacity-0 group-hover:opacity-100">
+                    <button onClick={() => handleDeleteTemplate(t.id)} className="p-1.5 text-muted-foreground hover:text-destructive transition-colors opacity-0 group-hover:opacity-100 focus-visible:opacity-100">
                       <Trash2 className="w-3.5 h-3.5" />
                     </button>
                     <Switch aria-label={`Toggle ${t.name} active state`} checked={t.is_active} onCheckedChange={() => handleToggleTemplate(t)} />
@@ -1609,7 +1633,7 @@ function ReengagementTab({ accountId }: { accountId: string }) {
                         </select>
                       </div>
                     </div>
-                    <button onClick={() => removeStep(i)} className="p-1 text-muted-foreground hover:text-destructive self-start mt-4">
+                    <button onClick={() => removeStep(i)} className="min-w-[44px] min-h-[44px] flex items-center justify-center text-muted-foreground hover:text-destructive self-start mt-4 rounded-md">
                       <X className="w-3.5 h-3.5" />
                     </button>
                   </div>

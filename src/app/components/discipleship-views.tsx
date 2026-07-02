@@ -354,7 +354,7 @@ export function DiscipleshipDashboardView({ onNavigate, stats, gamificationStats
               <LegendDotBold color="#10b981" label="Decisions" />
             </div>
           </div>
-          <div className="px-2 pb-4 h-[240px]">
+          <div className="px-2 pb-4 h-[240px]" role="img" aria-label="Area chart showing 30-day engagement trend with active seekers and decisions over time.">
             <ResponsiveContainer width="100%" height="100%">
               <AreaChart data={ENGAGEMENT_30D} margin={{ top: 8, right: 12, left: 0, bottom: 0 }}>
                 <defs>
@@ -395,7 +395,7 @@ export function DiscipleshipDashboardView({ onNavigate, stats, gamificationStats
             <h3 className="text-xl font-bold text-foreground mt-1">How seekers engage</h3>
           </div>
           <div className="flex items-center gap-4 px-5 pb-5">
-            <div className="relative w-[140px] h-[140px] shrink-0">
+            <div className="relative w-[140px] h-[140px] shrink-0" role="img" aria-label={`Donut chart showing journey type distribution: ${JOURNEY_DIST.map(j => `${j.name} ${j.value}%`).join(", ")}. Total 1,247 active.`}>
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
                   <Pie data={JOURNEY_DIST} cx="50%" cy="50%" innerRadius={42} outerRadius={66} paddingAngle={2} dataKey="value" stroke="none">
@@ -609,7 +609,8 @@ function HeroStat({
         </div>
         {/* Sparkline — raw SVG with draw-in animation */}
         <div className="h-[35px] -mx-1">
-          <svg viewBox={`0 0 ${svgW} ${svgH}`} preserveAspectRatio="none" className="w-full h-full overflow-visible">
+          <svg viewBox={`0 0 ${svgW} ${svgH}`} preserveAspectRatio="none" className="w-full h-full overflow-visible" role="img" aria-label={`Sparkline trend for ${label}: ${value}, change ${delta}`}>
+            <title>{`${label} trend sparkline showing recent data points`}</title>
             <defs>
               <linearGradient id={gradId} x1="0" y1="0" x2="0" y2="1">
                 <stop offset="0%" stopColor={sparkColor} stopOpacity={0.15} />
@@ -658,7 +659,7 @@ function QuickActionTile({
         </span>
         <p className="text-base font-bold text-foreground tracking-tight">{title}</p>
         <p className="text-xs text-muted-foreground mt-0.5">{description}</p>
-        <div className="flex items-center gap-1 mt-3 text-xs font-semibold text-primary opacity-0 group-hover:opacity-100 transition-opacity">
+        <div className="flex items-center gap-1 mt-3 text-xs font-semibold text-primary opacity-0 group-hover:opacity-100 group-focus-visible:opacity-100 transition-opacity">
           Open <ArrowRight className="w-3 h-3" />
         </div>
       </div>
@@ -3421,7 +3422,7 @@ export function MentorsView({
                                       <div key={oi} className="flex items-center gap-2">
                                         <span className="text-xs text-muted-foreground w-4">{oi + 1}.</span>
                                         <Input value={opt} onChange={e => { const o = [...f.options!]; o[oi] = e.target.value; updateField(f.id, { options: o }); }} className="h-7 text-xs flex-1" aria-label={`Option ${oi + 1}`} />
-                                        <button onClick={() => { const o = f.options!.filter((_, i) => i !== oi); updateField(f.id, { options: o }); }} className="text-muted-foreground hover:text-red-500"><X className="w-3 h-3" /></button>
+                                        <button onClick={() => { const o = f.options!.filter((_, i) => i !== oi); updateField(f.id, { options: o }); }} className="relative text-muted-foreground hover:text-red-500 after:absolute after:content-[''] after:-inset-3"><X className="w-3 h-3" /></button>
                                       </div>
                                     ))}
                                     <button onClick={() => updateField(f.id, { options: [...(f.options || []), `Option ${(f.options?.length || 0) + 1}`] })} className="text-xs font-semibold text-primary hover:text-primary/80">+ Add option</button>
@@ -3440,7 +3441,7 @@ export function MentorsView({
                                       <input type="checkbox" checked={f.required} onChange={e => updateField(f.id, { required: e.target.checked })} className="accent-primary" aria-label="Required field" />
                                       Req
                                     </label>
-                                    <button onClick={() => removeField(f.id)} className="text-muted-foreground hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity"><Trash2 className="w-3.5 h-3.5" /></button>
+                                    <button onClick={() => removeField(f.id)} className="relative text-muted-foreground hover:text-red-500 opacity-0 group-hover:opacity-100 focus-visible:opacity-100 transition-opacity after:absolute after:content-[''] after:-inset-3"><Trash2 className="w-3.5 h-3.5" /></button>
                                   </>
                                 )}
                               </div>
@@ -3734,7 +3735,7 @@ export function MentorsView({
                   {invEmails.map(email => (
                     <span key={email} className="inline-flex items-center gap-1 px-2 py-1 bg-primary/10 text-primary text-xs font-medium rounded-full">
                       {email}
-                      <button onClick={() => removeInvEmail(email)} className="hover:text-red-500 transition-colors"><X className="w-3 h-3" /></button>
+                      <button onClick={() => removeInvEmail(email)} className="relative hover:text-red-500 transition-colors after:absolute after:content-[''] after:-inset-3"><X className="w-3 h-3" /></button>
                     </span>
                   ))}
                 </div>
@@ -8221,7 +8222,7 @@ export function MainDashboardView({ onNavigate, stats }: {
                   t.tone === "purple" && "bg-violet-100 text-violet-700",
                   t.tone === "pink"   && "bg-pink-100 text-pink-700",
                 )}>{t.value}</span>
-                <ArrowRight className="w-4 h-4 text-muted-foreground opacity-0 group-hover:opacity-100 group-hover:translate-x-0.5 transition-all" />
+                <ArrowRight className="w-4 h-4 text-muted-foreground opacity-0 group-hover:opacity-100 group-focus-visible:opacity-100 group-hover:translate-x-0.5 transition-all" />
               </div>
               <p className="text-sm font-semibold text-foreground mt-3 leading-tight">{t.label}</p>
               <p className="text-xs text-muted-foreground mt-0.5">{t.hint}</p>
@@ -8244,7 +8245,7 @@ export function MainDashboardView({ onNavigate, stats }: {
               <LegendDotBold color="#10b981" label="Sent" />
             </div>
           </div>
-          <div className="px-2 pb-4 h-[240px]">
+          <div className="px-2 pb-4 h-[240px]" role="img" aria-label="Area chart showing weekly contact growth and message volume trends over the past week.">
             <ResponsiveContainer width="100%" height="100%">
               <AreaChart data={MAIN_TREND} margin={{ top: 8, right: 12, left: 0, bottom: 0 }}>
                 <defs>
@@ -8521,7 +8522,7 @@ export function VitalDashboardView({ onNavigate, stats }: {
               <LegendDotBold color="#10b981"  label="L Loyal" />
             </div>
           </div>
-          <div className="px-2 pb-4 h-[240px]">
+          <div className="px-2 pb-4 h-[240px]" role="img" aria-label="Area chart showing VITAL funnel progression over the last 5 weeks across Volume, Interaction, Transaction, Active, and Loyal stages.">
             <ResponsiveContainer width="100%" height="100%">
               <AreaChart data={VITAL_TREND} margin={{ top: 8, right: 12, left: 0, bottom: 0 }}>
                 <defs>

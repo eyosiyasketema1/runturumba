@@ -188,7 +188,7 @@ const QuestionCard = ({ question, index, onUpdate, onDelete, isActive, onSelect,
                   />
                   <button
                     onClick={() => onUpdate({ ...question, config: { ...question.config, options: (question.config.options || []).filter((_: any, j: number) => j !== i) } })}
-                    className="p-1 text-muted-foreground hover:text-destructive opacity-0 group-hover/opt:opacity-100 transition-all"
+                    className="relative p-1 text-muted-foreground hover:text-destructive opacity-0 group-hover/opt:opacity-100 transition-all after:absolute after:content-[''] after:-inset-2"
                   ><X className="w-3.5 h-3.5" /></button>
                 </div>
               ))}
@@ -331,7 +331,14 @@ const LivePreview = ({ campaign }: { campaign: Campaign }) => {
           </div>
           {/* Progress */}
           {previewStep > 0 && previewStep < totalSteps - 1 && (
-            <div className="mt-2 h-1.5 bg-gray-200 rounded-full overflow-hidden">
+            <div
+              className="mt-2 h-1.5 bg-gray-200 rounded-full overflow-hidden"
+              role="progressbar"
+              aria-valuenow={previewStep}
+              aria-valuemin={1}
+              aria-valuemax={totalSteps - 2}
+              aria-label={`Campaign progress: step ${previewStep} of ${totalSteps - 2}`}
+            >
               <div className="h-full rounded-full transition-all" style={{ width: `${(previewStep / (totalSteps - 2)) * 100}%`, backgroundColor: branding.primaryColor }} />
             </div>
           )}
@@ -423,7 +430,7 @@ const LivePreview = ({ campaign }: { campaign: Campaign }) => {
       {/* Step indicator */}
       <div className="flex items-center gap-1 mt-3">
         {Array.from({ length: totalSteps }, (_, i) => (
-          <button key={i} onClick={() => setPreviewStep(i)} className={cn("w-2 h-2 rounded-full transition-all", i === previewStep ? "w-5" : "")} style={{ backgroundColor: i === previewStep ? branding.primaryColor : "#D1D5DB" }} />
+          <button key={i} onClick={() => setPreviewStep(i)} className={cn("relative w-2 h-2 rounded-full transition-all after:absolute after:content-[''] after:-inset-5", i === previewStep ? "w-5" : "")} style={{ backgroundColor: i === previewStep ? branding.primaryColor : "#D1D5DB" }} />
         ))}
       </div>
     </div>
@@ -478,7 +485,7 @@ const ShareDialog = ({ campaign, isOpen, onClose }: { campaign: Campaign; isOpen
             <h3 className="text-base font-semibold text-foreground">Share Campaign</h3>
             <p className="text-xs text-muted-foreground mt-0.5">{campaign.name}</p>
           </div>
-          <button onClick={onClose} className="p-1.5 rounded-md hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"><X className="w-4 h-4" /></button>
+          <button onClick={onClose} className="min-w-[44px] min-h-[44px] flex items-center justify-center rounded-md hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"><X className="w-4 h-4" /></button>
         </div>
 
         <div className="px-6 py-5 space-y-5">
@@ -800,7 +807,7 @@ const CampaignBuilder = ({ campaign, onBack, onSave }: {
                       {draft.settings.branding.logoUrl ? (
                         <div className="relative w-16 h-16 rounded-xl border border-border overflow-hidden bg-muted/30 shrink-0">
                           <img src={draft.settings.branding.logoUrl} alt="Logo" className="w-full h-full object-contain p-1" />
-                          <button onClick={() => updateBranding({ logoUrl: "" })} className="absolute -top-1 -right-1 p-0.5 rounded-full bg-destructive text-white shadow-sm"><X className="w-3 h-3" /></button>
+                          <button onClick={() => updateBranding({ logoUrl: "" })} className="absolute -top-1 -right-1 p-1 rounded-full bg-destructive text-white shadow-sm after:absolute after:content-[''] after:-inset-2"><X className="w-3 h-3" /></button>
                         </div>
                       ) : (
                         <div
@@ -833,7 +840,7 @@ const CampaignBuilder = ({ campaign, onBack, onSave }: {
                     {draft.settings.branding.headerImageUrl ? (
                       <div className="relative w-full aspect-[3/1] rounded-lg border border-border overflow-hidden bg-muted/30">
                         <img src={draft.settings.branding.headerImageUrl} alt="Header" className="w-full h-full object-cover" />
-                        <button onClick={() => updateBranding({ headerImageUrl: "" })} className="absolute top-2 right-2 p-1.5 rounded-md bg-black/60 text-white hover:bg-black/80 transition-colors"><X className="w-4 h-4" /></button>
+                        <button onClick={() => updateBranding({ headerImageUrl: "" })} className="absolute top-2 right-2 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-md bg-black/60 text-white hover:bg-black/80 transition-colors"><X className="w-4 h-4" /></button>
                       </div>
                     ) : (
                       <div

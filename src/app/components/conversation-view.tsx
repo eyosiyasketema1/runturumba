@@ -894,7 +894,7 @@ function ConversationContextPanel({
             </button>
             {isStatusOpen && (
               <>
-                <div className="fixed inset-0 z-40" onClick={() => setIsStatusOpen(false)} />
+                <div className="fixed inset-0 z-40" onClick={() => setIsStatusOpen(false)} aria-hidden="true" />
                 <div className="absolute right-0 top-full mt-1 z-50 w-44 bg-background border border-border shadow-xl rounded-sm py-1">
                   <div className="px-3 py-1.5 border-b border-border">
                     <span className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Maturity</span>
@@ -1409,7 +1409,7 @@ function ConversationContextPanel({
                         {author?.name || "System"} · {new Date(note.createdAt).toLocaleDateString("en-US", { month: "short", day: "numeric" })} {new Date(note.createdAt).toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" })}
                       </p>
                       {onDeleteNote && (
-                        <button onClick={() => onDeleteNote(note.id)} className="opacity-0 group-hover:opacity-100 p-1 text-muted-foreground hover:text-destructive transition-all">
+                        <button onClick={() => onDeleteNote(note.id)} className="opacity-0 group-hover:opacity-100 focus-visible:opacity-100 relative p-1 text-muted-foreground hover:text-destructive transition-all after:absolute after:content-[''] after:-inset-2">
                           <X className="w-3 h-3" />
                         </button>
                       )}
@@ -1583,7 +1583,7 @@ function ConversationToolbar({
                               <p className="text-xs font-bold text-foreground">{form.label}</p>
                               <p className="text-xs text-muted-foreground leading-snug">{form.desc}</p>
                             </div>
-                            <Send className="w-3.5 h-3.5 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity mt-1 shrink-0" />
+                            <Send className="w-3.5 h-3.5 text-muted-foreground opacity-0 group-hover:opacity-100 group-focus-visible:opacity-100 transition-opacity mt-1 shrink-0" />
                           </button>
                         ))}
                       </div>
@@ -1604,7 +1604,7 @@ function ConversationToolbar({
                               <p className="text-xs font-bold text-foreground">{series.label} <span className="font-normal text-muted-foreground">· {series.lessons} lessons</span></p>
                               <p className="text-xs text-muted-foreground leading-snug">{series.desc}</p>
                             </div>
-                            <ChevronRight className="w-3.5 h-3.5 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity mt-1 shrink-0" />
+                            <ChevronRight className="w-3.5 h-3.5 text-muted-foreground opacity-0 group-hover:opacity-100 group-focus-visible:opacity-100 transition-opacity mt-1 shrink-0" />
                           </button>
                         ))}
                       </div>
@@ -1638,7 +1638,7 @@ function ConversationToolbar({
                                   <span className="text-xs text-muted-foreground">{item.readTimeMin} min read</span>
                                 </div>
                               </div>
-                              <Send className="w-3.5 h-3.5 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity mt-1 shrink-0" />
+                              <Send className="w-3.5 h-3.5 text-muted-foreground opacity-0 group-hover:opacity-100 group-focus-visible:opacity-100 transition-opacity mt-1 shrink-0" />
                             </button>
                           ))
                         )}
@@ -1947,7 +1947,7 @@ function ComposeArea({
               <button
                 type="button"
                 onClick={() => removeImage(img.id)}
-                className="absolute -top-1.5 -right-1.5 w-5 h-5 bg-red-500 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow-sm"
+                className="absolute -top-1.5 -right-1.5 w-5 h-5 bg-red-500 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 focus-visible:opacity-100 transition-opacity shadow-sm"
               >
                 <X className="w-3 h-3" />
               </button>
@@ -1993,7 +1993,7 @@ function ComposeArea({
                 <Mic className="w-4 h-4 text-primary shrink-0" />
                 <audio src={voiceUrl} controls className="h-8 flex-1" style={{ maxHeight: "32px" }} />
                 <span className="text-xs text-muted-foreground font-medium shrink-0">{formatDuration(recordingDuration)}</span>
-                <button type="button" onClick={discardVoice} className="p-1 text-muted-foreground hover:text-red-500 transition-colors shrink-0" title="Discard recording">
+                <button type="button" onClick={discardVoice} className="min-w-[44px] min-h-[44px] flex items-center justify-center text-muted-foreground hover:text-red-500 transition-colors shrink-0 rounded-md" title="Discard recording">
                   <Trash2 className="w-3.5 h-3.5" />
                 </button>
               </>
@@ -2164,7 +2164,7 @@ function NewConversationModal({ isOpen, onClose, contacts, onStart }: {
                 <p className="text-xs text-muted-foreground">Start a fresh conversation with any contact</p>
               </div>
             </div>
-            <button onClick={onClose} className="p-1.5 text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"><X className="w-4 h-4" /></button>
+            <button onClick={onClose} className="min-w-[44px] min-h-[44px] flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-colors rounded-md"><X className="w-4 h-4" /></button>
           </div>
           <form onSubmit={handleSubmit} className="p-5 space-y-4">
             <div className="space-y-1.5">
@@ -2177,7 +2177,7 @@ function NewConversationModal({ isOpen, onClose, contacts, onStart }: {
                       <p className="text-sm font-semibold text-foreground">{selected.name}</p>
                       <p className="text-xs text-muted-foreground">{selected.phone || selected.email}</p>
                     </div>
-                    <button type="button" onClick={() => { setSelected(null); setSearch(""); setTimeout(() => searchRef.current?.focus(), 50); }} className="p-1 text-muted-foreground hover:text-destructive transition-colors shrink-0"><X className="w-3.5 h-3.5" /></button>
+                    <button type="button" onClick={() => { setSelected(null); setSearch(""); setTimeout(() => searchRef.current?.focus(), 50); }} className="min-w-[44px] min-h-[44px] flex items-center justify-center text-muted-foreground hover:text-destructive transition-colors shrink-0"><X className="w-3.5 h-3.5" /></button>
                   </div>
                 ) : (
                   <div className="relative">
