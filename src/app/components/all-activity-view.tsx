@@ -299,7 +299,7 @@ export function AllActivityView({
                                     <span className={cn("text-sm leading-tight", !e.read ? "font-bold text-foreground" : "font-semibold text-foreground")}>
                                       {e.title}
                                     </span>
-                                    <Badge variant="outline" className={cn("text-[10px] font-semibold border-transparent", CATEGORY_META[e.category].chipBg)}>
+                                    <Badge variant="outline" className={cn("text-xs font-semibold border-transparent", CATEGORY_META[e.category].chipBg)}>
                                       {CATEGORY_META[e.category].label}
                                     </Badge>
                                     {!e.read && <span className="w-1.5 h-1.5 rounded-full bg-primary" />}
@@ -328,7 +328,7 @@ export function AllActivityView({
 
             {/* Footer */}
             <div className="px-6 py-3 border-t border-border bg-muted/30 flex items-center justify-between">
-              <p className="text-xs text-muted-foreground">Press <kbd className="px-1.5 py-0.5 bg-background border border-border rounded text-[10px] font-mono">Esc</kbd> to close</p>
+              <p className="text-xs text-muted-foreground">Press <kbd className="px-1.5 py-0.5 bg-background border border-border rounded text-xs font-mono">Esc</kbd> to close</p>
               <Button size="sm" variant="outline" onClick={onClose}>Close</Button>
             </div>
           </motion.div>

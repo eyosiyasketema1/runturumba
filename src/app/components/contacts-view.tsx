@@ -364,7 +364,7 @@ export const ContactsView = ({
                               <span
                                 key={g.id}
                                 className={cn(
-                                  "inline-flex items-center gap-1 px-2 py-0.5 rounded-sm text-[11px] font-semibold",
+                                  "inline-flex items-center gap-1 px-2 py-0.5 rounded-sm text-xs font-semibold",
                                   GROUP_BADGE_CLASS,
                                 )}
                               >
@@ -376,7 +376,7 @@ export const ContactsView = ({
                               <span
                                 key={tag}
                                 className={cn(
-                                  "inline-flex items-center px-2 py-0.5 rounded-sm text-[11px] font-medium",
+                                  "inline-flex items-center px-2 py-0.5 rounded-sm text-xs font-medium",
                                   tagColor(tag),
                                 )}
                               >
@@ -384,7 +384,7 @@ export const ContactsView = ({
                               </span>
                             ))}
                             {hidden > 0 && (
-                              <span className="text-[11px] font-semibold text-muted-foreground">+{hidden}</span>
+                              <span className="text-xs font-semibold text-muted-foreground">+{hidden}</span>
                             )}
                           </div>
                         );

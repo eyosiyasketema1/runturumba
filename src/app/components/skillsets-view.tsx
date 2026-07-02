@@ -399,7 +399,7 @@ function SkillSetsList({
                         <CardTitle className="text-sm font-semibold leading-tight truncate">{skillSet.name}</CardTitle>
                       </div>
                       <span className={cn(
-                        "inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold border",
+                        "inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold border",
                         ACCENT_BADGES[skillSet.accentColor] || "bg-muted text-muted-foreground border-border"
                       )}>
                         {skillSet.type === 'global' ? 'System' : 'Custom'}
@@ -413,7 +413,7 @@ function SkillSetsList({
 
                 <CardContent className="flex-1 flex flex-col justify-end pt-0">
                   {/* Stats */}
-                  <div className="flex items-center gap-4 text-[11px] text-muted-foreground mb-4">
+                  <div className="flex items-center gap-4 text-xs text-muted-foreground mb-4">
                     <div className="flex items-center gap-1.5">
                       <Paperclip className="h-3 w-3" />
                       <span><span className="font-semibold text-foreground">{skillSet.attachments.length}</span> files</span>
@@ -431,12 +431,12 @@ function SkillSetsList({
                           onCheckedChange={(checked) => onToggle(skillSet.id, checked)}
                           aria-label={`Toggle ${skillSet.name}`}
                         />
-                        <span className="text-[11px] text-muted-foreground">{skillSet.enabled ? 'Active' : 'Disabled'}</span>
+                        <span className="text-xs text-muted-foreground">{skillSet.enabled ? 'Active' : 'Disabled'}</span>
                       </div>
                     ) : (
                       <div className="flex items-center gap-1.5">
                         <div className={cn("w-2 h-2 rounded-full", ACCENT_DOTS[skillSet.accentColor] || "bg-muted-foreground")} />
-                        <span className="text-[11px] text-muted-foreground">System</span>
+                        <span className="text-xs text-muted-foreground">System</span>
                       </div>
                     )}
                     <Button
@@ -486,7 +486,7 @@ function SkillSetView({
           <div className="flex items-center gap-2">
             <Lock className="h-4 w-4 text-muted-foreground" />
             <h1 className="text-lg font-semibold">{skillSet.name}</h1>
-            <Badge variant="secondary" className="text-[10px]">System</Badge>
+            <Badge variant="secondary" className="text-xs">System</Badge>
           </div>
         </div>
         <Button variant="outline" size="sm" className="gap-1.5" onClick={() => onClone(skillSet)}>
@@ -690,7 +690,7 @@ function SkillSetEditor({
               >
                 <Upload className="h-6 w-6 mx-auto text-muted-foreground mb-1.5" />
                 <p className="text-xs font-medium text-foreground">Upload file</p>
-                <p className="text-[10px] text-muted-foreground mt-0.5">PDF, DOCX, TXT · 10MB max</p>
+                <p className="text-xs text-muted-foreground mt-0.5">PDF, DOCX, TXT · 10MB max</p>
               </div>
 
               {attachments.length > 0 && (
@@ -701,7 +701,7 @@ function SkillSetEditor({
                         <FileText className="h-4 w-4 text-muted-foreground shrink-0" />
                         <div className="min-w-0">
                           <p className="text-xs font-medium truncate">{file.name}</p>
-                          <p className="text-[10px] text-muted-foreground">{file.size}</p>
+                          <p className="text-xs text-muted-foreground">{file.size}</p>
                         </div>
                       </div>
                       <Button variant="ghost" size="sm" className="h-6 w-6 p-0 text-muted-foreground hover:text-red-500 shrink-0" onClick={() => handleRemoveAttachment(file.id)}>
@@ -718,7 +718,7 @@ function SkillSetEditor({
           <Card className="bg-muted/20">
             <CardContent className="pt-5">
               <p className="text-xs font-semibold text-foreground mb-2">Writing Tips</p>
-              <div className="space-y-2 text-[11px] text-muted-foreground leading-relaxed">
+              <div className="space-y-2 text-xs text-muted-foreground leading-relaxed">
                 <p>• Start with a clear <span className="font-medium text-foreground">## Purpose</span> section</p>
                 <p>• Use headings to organize guidelines, rules, and flows</p>
                 <p>• Be specific about what the AI should and shouldn't do</p>

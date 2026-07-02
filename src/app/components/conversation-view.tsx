@@ -344,8 +344,8 @@ function VoiceMessagePlayer({ duration, isAgent }: { duration: string; isAgent: 
 
       {/* Time display */}
       <div className={cn("flex flex-col items-end shrink-0", timeColor)}>
-        <span className="text-[10px] font-bold tabular-nums">{formatTime(currentTime)}</span>
-        <span className="text-[9px] opacity-60 tabular-nums">{duration}</span>
+        <span className="text-xs font-bold tabular-nums">{formatTime(currentTime)}</span>
+        <span className="text-xs opacity-60 tabular-nums">{duration}</span>
       </div>
     </div>
   );
@@ -401,7 +401,7 @@ function ThreadMessage({ entry }: { entry: ThreadEntry }) {
                 return (
                   <div key={i} className={cn("w-40 h-28 rounded-md flex flex-col items-center justify-center gap-1", isAgent ? "bg-primary-foreground/10" : "bg-muted")}>
                     <Image className={cn("w-6 h-6", isAgent ? "text-primary-foreground/60" : "text-muted-foreground")} />
-                    <span className={cn("text-[10px] px-1 truncate max-w-full", isAgent ? "text-primary-foreground/70" : "text-muted-foreground")}>{name}</span>
+                    <span className={cn("text-xs px-1 truncate max-w-full", isAgent ? "text-primary-foreground/70" : "text-muted-foreground")}>{name}</span>
                   </div>
                 );
               })}
@@ -484,7 +484,7 @@ const InboxListItem = React.memo(function InboxListItem({
           {contact.name.charAt(0)}
         </div>
         {assignee && (
-          <div className="absolute -bottom-1 -right-1 w-4 h-4 rounded-full bg-violet-500 flex items-center justify-center text-[8px] font-bold text-white border-2 border-background">
+          <div className="absolute -bottom-1 -right-1 w-4 h-4 rounded-full bg-violet-500 flex items-center justify-center text-xs font-bold text-white border-2 border-background">
             {assignee.name.charAt(0)}
           </div>
         )}
@@ -885,7 +885,7 @@ function ConversationContextPanel({
             <button
               onClick={() => setIsStatusOpen(!isStatusOpen)}
               className={cn(
-                "flex items-center gap-1 px-2 py-0.5 rounded-sm text-[10px] font-bold cursor-pointer transition-all",
+                "flex items-center gap-1 px-2 py-0.5 rounded-sm text-xs font-bold cursor-pointer transition-all",
                 MATURITY_COLORS[contact.maturity || "Seeker"]
               )}
             >
@@ -897,7 +897,7 @@ function ConversationContextPanel({
                 <div className="fixed inset-0 z-40" onClick={() => setIsStatusOpen(false)} />
                 <div className="absolute right-0 top-full mt-1 z-50 w-44 bg-background border border-border shadow-xl rounded-sm py-1">
                   <div className="px-3 py-1.5 border-b border-border">
-                    <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Maturity</span>
+                    <span className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Maturity</span>
                   </div>
                   {MATURITY_OPTIONS.map(opt => {
                     const isActive = (contact.maturity || "Seeker") === opt.id;
@@ -963,7 +963,7 @@ function ConversationContextPanel({
               ].map(s => (
                 <div key={s.label} className="flex flex-col items-center py-3 border-r border-border last:border-r-0">
                   <span className="text-lg font-bold text-primary">{s.value}</span>
-                  <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mt-0.5">{s.label}</span>
+                  <span className="text-xs font-bold text-muted-foreground uppercase tracking-widest mt-0.5">{s.label}</span>
                 </div>
               ))}
             </div>
@@ -1013,16 +1013,16 @@ function ConversationContextPanel({
               <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-2.5">Groups & Tags</h3>
               <div className="flex flex-wrap gap-1.5">
                 {contactGroups.map((g: any) => (
-                  <span key={g.id} className="inline-flex items-center gap-1 px-2 py-0.5 rounded-sm text-[11px] font-semibold bg-blue-50 text-blue-700 ring-1 ring-inset ring-blue-200">
+                  <span key={g.id} className="inline-flex items-center gap-1 px-2 py-0.5 rounded-sm text-xs font-semibold bg-blue-50 text-blue-700 ring-1 ring-inset ring-blue-200">
                     <span className="w-1.5 h-1.5 rounded-full bg-blue-500" />
                     {g.name}
                   </span>
                 ))}
                 {meta.labels.map(label => (
-                  <span key={label} className="px-2 py-0.5 bg-muted border border-border rounded-sm text-[11px] font-medium text-foreground">{label}</span>
+                  <span key={label} className="px-2 py-0.5 bg-muted border border-border rounded-sm text-xs font-medium text-foreground">{label}</span>
                 ))}
                 {(contact.tags || []).map(tag => (
-                  <span key={tag} className="px-2 py-0.5 bg-primary/10 border border-primary/20 rounded-sm text-[11px] font-medium text-primary">#{tag}</span>
+                  <span key={tag} className="px-2 py-0.5 bg-primary/10 border border-primary/20 rounded-sm text-xs font-medium text-primary">#{tag}</span>
                 ))}
                 {contactGroups.length === 0 && meta.labels.length === 0 && (!contact.tags || contact.tags.length === 0) && (
                   <span className="text-xs text-muted-foreground italic">No groups or tags</span>
@@ -1044,7 +1044,7 @@ function ConversationContextPanel({
                 <div className="min-w-0 flex-1">
                   <p className="text-sm font-semibold text-foreground">{assignedMentor?.name || "No mentor assigned"}</p>
                   {assignedMentor?.mentorProfile && (
-                    <p className="text-[11px] text-muted-foreground">{assignedMentor.mentorProfile.specialty} · {assignedMentor.mentorProfile.experience}</p>
+                    <p className="text-xs text-muted-foreground">{assignedMentor.mentorProfile.specialty} · {assignedMentor.mentorProfile.experience}</p>
                   )}
                 </div>
               </div>
@@ -1059,17 +1059,17 @@ function ConversationContextPanel({
                       <AlertCircle className="w-4 h-4 text-amber-600 mt-0.5 shrink-0" />
                       <div className="flex-1 min-w-0">
                         <p className="text-xs font-bold text-amber-800">Reassignment Pending</p>
-                        <p className="text-[11px] text-amber-700 mt-0.5">
+                        <p className="text-xs text-amber-700 mt-0.5">
                           Requested by {fromMentor?.name || "Unknown"}: "{req.reason}"
                         </p>
-                        <p className="text-[10px] text-amber-600 mt-1">{formatTimeAgo(req.createdAt)}</p>
+                        <p className="text-xs text-amber-600 mt-1">{formatTimeAgo(req.createdAt)}</p>
                       </div>
                     </div>
 
                     {/* Mentor Coach controls — only visible to mentor_coach / admin / super_admin */}
                     {(viewMode === "mentor_coach" || viewMode === "admin" || viewMode === "super_admin") && (
                       <div className="pt-2 border-t border-amber-200 space-y-2">
-                        <label className="text-[11px] font-semibold text-amber-800 block">Assign to new mentor</label>
+                        <label className="text-xs font-semibold text-amber-800 block">Assign to new mentor</label>
                         <select
                           value={selectedNewMentor}
                           onChange={e => setSelectedNewMentor(e.target.value)}
@@ -1133,7 +1133,7 @@ function ConversationContextPanel({
                       <X className="w-3.5 h-3.5" />
                     </button>
                   </div>
-                  <p className="text-[11px] text-muted-foreground leading-snug">
+                  <p className="text-xs text-muted-foreground leading-snug">
                     Submit a reason and the mentor coach will review and assign a new mentor.
                   </p>
                   <textarea
@@ -1181,10 +1181,10 @@ function ConversationContextPanel({
                 {/* Journey card */}
                 <div className="bg-muted/30 rounded-sm border border-border p-4 space-y-4">
                   <div className="flex items-center justify-between">
-                    <span className={cn("px-2 py-0.5 rounded-sm text-[11px] font-bold", STAGE_COLORS[journey.stage] || "bg-muted text-muted-foreground")}>
+                    <span className={cn("px-2 py-0.5 rounded-sm text-xs font-bold", STAGE_COLORS[journey.stage] || "bg-muted text-muted-foreground")}>
                       {journey.stage}
                     </span>
-                    <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">{journey.type}</span>
+                    <span className="text-xs font-bold text-muted-foreground uppercase tracking-wider">{journey.type}</span>
                   </div>
 
                   <div>
@@ -1219,7 +1219,7 @@ function ConversationContextPanel({
                         <React.Fragment key={stage}>
                           {i > 0 && <div className={cn("flex-1 h-0.5", isPast || isActive ? "bg-primary" : "bg-muted")} />}
                           <div className={cn(
-                            "w-8 h-8 rounded-full flex items-center justify-center text-[10px] font-bold shrink-0 border-2 transition-all",
+                            "w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold shrink-0 border-2 transition-all",
                             isActive ? "bg-primary text-primary-foreground border-primary" :
                             isPast ? "bg-primary/10 text-primary border-primary/30" :
                             "bg-muted text-muted-foreground border-border"
@@ -1232,7 +1232,7 @@ function ConversationContextPanel({
                   </div>
                   <div className="flex justify-between mt-1.5 px-1">
                     {["Touch", "Engaged", "Active", "Decision"].map(s => (
-                      <span key={s} className="text-[9px] text-muted-foreground font-medium">{s}</span>
+                      <span key={s} className="text-xs text-muted-foreground font-medium">{s}</span>
                     ))}
                   </div>
                 </div>
@@ -1264,7 +1264,7 @@ function ConversationContextPanel({
                          <Circle className={cn("w-4 h-4", cls.icon)} />}
                         <span className="text-sm font-bold text-foreground">{ms.label}</span>
                       </div>
-                      <span className={cn("text-[10px] font-bold uppercase tracking-wider", cls.icon)}>
+                      <span className={cn("text-xs font-bold uppercase tracking-wider", cls.icon)}>
                         {ms.state === "done" ? "Complete" : ms.state === "progress" ? "In Progress" : "Pending"}
                       </span>
                     </div>
@@ -1307,38 +1307,38 @@ function ConversationContextPanel({
                 return (
                   <div key={m.id} className="bg-muted/30 rounded-sm border border-border p-4 space-y-3">
                     <div className="flex items-center justify-between">
-                      <span className={cn("px-2 py-0.5 rounded-sm text-[11px] font-bold", statusCls)}>{m.status}</span>
+                      <span className={cn("px-2 py-0.5 rounded-sm text-xs font-bold", statusCls)}>{m.status}</span>
                       <span className={cn("px-2.5 py-0.5 rounded-sm text-sm font-black ring-1 ring-inset", scoreCls)}>{m.score}%</span>
                     </div>
 
                     <div className="grid grid-cols-2 gap-3">
                       <div>
-                        <span className="text-[10px] text-muted-foreground uppercase tracking-wider font-bold">Seeker</span>
+                        <span className="text-xs text-muted-foreground uppercase tracking-wider font-bold">Seeker</span>
                         <p className="text-sm font-semibold text-foreground mt-0.5">{seeker?.name || "Unknown"}</p>
                       </div>
                       <div>
-                        <span className="text-[10px] text-muted-foreground uppercase tracking-wider font-bold">Mentor</span>
+                        <span className="text-xs text-muted-foreground uppercase tracking-wider font-bold">Mentor</span>
                         <p className="text-sm font-semibold text-foreground mt-0.5">{mentor?.name || "Unknown"}</p>
                       </div>
                     </div>
 
                     {/* Factors */}
                     <div className="space-y-1.5">
-                      <span className="text-[10px] text-muted-foreground uppercase tracking-wider font-bold">Factors</span>
+                      <span className="text-xs text-muted-foreground uppercase tracking-wider font-bold">Factors</span>
                       {m.factors.map(([name, score, tone], i) => (
                         <div key={i} className="flex items-center gap-2">
                           <span className="text-xs text-foreground font-medium w-20 shrink-0">{name}</span>
                           <div className="flex-1 h-1.5 bg-muted rounded-full overflow-hidden">
                             <div className={cn("h-full rounded-full", tone === "green" ? "bg-emerald-500" : tone === "blue" ? "bg-blue-500" : tone === "amber" ? "bg-amber-500" : "bg-rose-500")} style={{ width: `${score}%` }} />
                           </div>
-                          <span className="text-[10px] font-bold text-muted-foreground w-8 text-right">{score}%</span>
+                          <span className="text-xs font-bold text-muted-foreground w-8 text-right">{score}%</span>
                         </div>
                       ))}
                     </div>
 
                     {/* Reasoning */}
                     <div className="bg-background rounded-sm border border-border p-3">
-                      <span className="text-[10px] text-muted-foreground uppercase tracking-wider font-bold block mb-1">AI Reasoning</span>
+                      <span className="text-xs text-muted-foreground uppercase tracking-wider font-bold block mb-1">AI Reasoning</span>
                       <p className="text-xs text-foreground leading-relaxed">{m.reasoning}</p>
                     </div>
                   </div>
@@ -1547,7 +1547,7 @@ function ConversationToolbar({
                     )}
                   >
                     <action.icon className="w-4 h-4" />
-                    <span className="text-[11px] font-semibold leading-tight">{action.label}</span>
+                    <span className="text-xs font-semibold leading-tight">{action.label}</span>
                   </button>
                 );
               })}
@@ -1578,7 +1578,7 @@ function ConversationToolbar({
                             </div>
                             <div className="min-w-0 flex-1">
                               <p className="text-xs font-bold text-foreground">{form.label}</p>
-                              <p className="text-[11px] text-muted-foreground leading-snug">{form.desc}</p>
+                              <p className="text-xs text-muted-foreground leading-snug">{form.desc}</p>
                             </div>
                             <Send className="w-3.5 h-3.5 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity mt-1 shrink-0" />
                           </button>
@@ -1599,7 +1599,7 @@ function ConversationToolbar({
                             </div>
                             <div className="min-w-0 flex-1">
                               <p className="text-xs font-bold text-foreground">{series.label} <span className="font-normal text-muted-foreground">· {series.lessons} lessons</span></p>
-                              <p className="text-[11px] text-muted-foreground leading-snug">{series.desc}</p>
+                              <p className="text-xs text-muted-foreground leading-snug">{series.desc}</p>
                             </div>
                             <ChevronRight className="w-3.5 h-3.5 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity mt-1 shrink-0" />
                           </button>
@@ -1614,7 +1614,7 @@ function ConversationToolbar({
                           <Sparkles className="w-3.5 h-3.5 text-amber-500" />
                           <p className="text-xs font-bold text-foreground">AI picks for {contact.name.split(" ")[0]}</p>
                           {contact.maturity && (
-                            <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-sm bg-muted text-muted-foreground">{contact.maturity}</span>
+                            <span className="text-xs font-semibold px-1.5 py-0.5 rounded-sm bg-muted text-muted-foreground">{contact.maturity}</span>
                           )}
                         </div>
                         {suggestions.length === 0 ? (
@@ -1629,10 +1629,10 @@ function ConversationToolbar({
                               </div>
                               <div className="min-w-0 flex-1">
                                 <p className="text-xs font-bold text-foreground">{item.title}</p>
-                                <p className="text-[11px] text-muted-foreground leading-snug line-clamp-2">{item.summary}</p>
+                                <p className="text-xs text-muted-foreground leading-snug line-clamp-2">{item.summary}</p>
                                 <div className="flex items-center gap-2 mt-1">
-                                  <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-sm bg-muted text-muted-foreground">{item.type}</span>
-                                  <span className="text-[10px] text-muted-foreground">{item.readTimeMin} min read</span>
+                                  <span className="text-xs font-semibold px-1.5 py-0.5 rounded-sm bg-muted text-muted-foreground">{item.type}</span>
+                                  <span className="text-xs text-muted-foreground">{item.readTimeMin} min read</span>
                                 </div>
                               </div>
                               <Send className="w-3.5 h-3.5 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity mt-1 shrink-0" />
@@ -1748,7 +1748,7 @@ function AISuggestionPills({
     <div className="shrink-0 px-3 py-2 border-t border-border bg-background/80 backdrop-blur-sm">
       <div className="flex items-center gap-1.5 mb-1.5">
         <Sparkles className="w-3 h-3 text-amber-500" />
-        <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">AI Suggestions</span>
+        <span className="text-xs font-bold text-muted-foreground uppercase tracking-wider">AI Suggestions</span>
         <button onClick={() => setDismissed(true)} className="ml-auto p-0.5 text-muted-foreground hover:text-muted-foreground transition-colors" title="Dismiss suggestions">
           <X className="w-3 h-3" />
         </button>
@@ -1948,7 +1948,7 @@ function ComposeArea({
               >
                 <X className="w-3 h-3" />
               </button>
-              <span className="absolute bottom-0 left-0 right-0 bg-black/50 text-white text-[9px] px-1 py-0.5 rounded-b-md truncate">{img.file.name}</span>
+              <span className="absolute bottom-0 left-0 right-0 bg-black/50 text-white text-xs px-1 py-0.5 rounded-b-md truncate">{img.file.name}</span>
             </div>
           ))}
         </div>

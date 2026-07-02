@@ -762,7 +762,7 @@ export default function App() {
               <>
                 <div className="flex flex-col min-w-0 flex-1 text-left">
                   <span className="text-sm font-bold text-sidebar-foreground tracking-tight leading-tight truncate">{activeTenant.name}</span>
-                  <span className="text-[10px] text-muted-foreground">Workspace</span>
+                  <span className="text-xs text-muted-foreground">Workspace</span>
                 </div>
                 <ChevronDown className={cn("w-4 h-4 text-muted-foreground shrink-0 transition-transform", isOrgSwitcherOpen && "rotate-180")} />
               </>
@@ -805,7 +805,7 @@ export default function App() {
                           </div>
                           <div className="flex-1 min-w-0">
                             <span className={cn("text-sm font-bold truncate block", isSelected ? "text-primary" : "text-foreground")}>{org.name}</span>
-                            <span className="text-[11px] text-muted-foreground">Workspace</span>
+                            <span className="text-xs text-muted-foreground">Workspace</span>
                           </div>
                           {isSelected && <Check className="w-4 h-4 text-primary shrink-0" />}
                         </button>
@@ -832,7 +832,7 @@ export default function App() {
           {filteredNavSections.map((section) => (
             <div key={section.label} className="space-y-0.5">
               {(!isSidebarCollapsed || isMobileSidebarOpen) && (
-                <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider px-2 pb-1.5 pt-2">{section.label}</p>
+                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider px-2 pb-1.5 pt-2">{section.label}</p>
               )}
               {isSidebarCollapsed && !isMobileSidebarOpen && <div className="h-px bg-sidebar-border mx-2 mb-2" />}
               {section.items.map((item) => {
@@ -902,7 +902,7 @@ export default function App() {
                     localStorage.setItem("turumba_version", next);
                   }}
                   className={cn(
-                    "text-[10px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded-full cursor-pointer transition-colors",
+                    "text-xs font-bold uppercase tracking-wider px-1.5 py-0.5 rounded-full cursor-pointer transition-colors",
                     selectedVersion === "current"
                       ? "bg-blue-50 text-blue-600 border border-blue-200 hover:bg-blue-100"
                       : "bg-purple-50 text-purple-600 border border-purple-200 hover:bg-purple-100"
@@ -930,7 +930,7 @@ export default function App() {
                 )}
                 title="Switch role to preview its view"
               >
-                <span className="hidden sm:inline text-[10px] font-bold uppercase tracking-wider text-muted-foreground">View as</span>
+                <span className="hidden sm:inline text-xs font-bold uppercase tracking-wider text-muted-foreground">View as</span>
                 <currentRole.icon className="w-3.5 h-3.5 text-primary" />
                 <span className="max-w-[120px] truncate">{currentRole.label}</span>
                 {isRoleMenuOpen
@@ -951,7 +951,7 @@ export default function App() {
                       role="listbox"
                     >
                       <div className="px-3 py-2 border-b border-border bg-muted/30">
-                        <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Preview Role</p>
+                        <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Preview Role</p>
                         <p className="text-xs text-muted-foreground mt-0.5">Switch to see what each role sees</p>
                       </div>
                       <div className="py-1">
@@ -1113,7 +1113,7 @@ export default function App() {
                             >
                               <div className="px-3 py-2 border-b border-border bg-muted/30">
                                 <p className="text-xs font-bold text-foreground">Sub-Organizations</p>
-                                <p className="text-[11px] text-muted-foreground">View data for a specific chapter</p>
+                                <p className="text-xs text-muted-foreground">View data for a specific chapter</p>
                               </div>
                               <div className="py-1 max-h-[320px] overflow-y-auto">
                                 {/* HQ */}
@@ -1126,7 +1126,7 @@ export default function App() {
                                   </div>
                                   <div className="flex-1 min-w-0">
                                     <span className={cn("text-sm font-semibold truncate block", !viewingOrgId ? "text-primary" : "text-foreground")}>{activeTenant.name}</span>
-                                    <span className="text-[11px] text-muted-foreground">HQ · All data</span>
+                                    <span className="text-xs text-muted-foreground">HQ · All data</span>
                                   </div>
                                   {!viewingOrgId && <Check className="w-4 h-4 text-primary shrink-0" />}
                                 </button>
@@ -1147,7 +1147,7 @@ export default function App() {
                                       </div>
                                       <div className="flex-1 min-w-0">
                                         <span className={cn("text-sm font-semibold truncate block", isSelected ? "text-primary" : "text-foreground")}>{org.name}</span>
-                                        <span className="text-[11px] text-muted-foreground">{org.region} · {org.stats.contacts.toLocaleString()} contacts</span>
+                                        <span className="text-xs text-muted-foreground">{org.region} · {org.stats.contacts.toLocaleString()} contacts</span>
                                       </div>
                                       {isSelected && <Check className="w-4 h-4 text-primary shrink-0" />}
                                     </button>

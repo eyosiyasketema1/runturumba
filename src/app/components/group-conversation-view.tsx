@@ -799,7 +799,7 @@ function CreateGroupModal({ isOpen, onClose, onCreateGroup, availableMentors }: 
                             mentor.online ? 'bg-emerald-500' : 'bg-slate-300'
                           )}
                         />
-                        <span className="text-[11px] text-muted-foreground">
+                        <span className="text-xs text-muted-foreground">
                           {mentor.online ? 'Online' : 'Offline'}
                         </span>
                       </div>
@@ -1652,7 +1652,7 @@ function PollResultsModal({ poll, onClose }: { poll: Poll; onClose: () => void }
                     <div className="flex flex-wrap gap-1.5 pt-1">
                       {option.votedBy.map(id => (
                         <span key={id} className="inline-flex items-center gap-1 px-2 py-0.5 bg-muted text-xs font-medium text-foreground rounded-full">
-                          <div className="w-4 h-4 rounded-full bg-muted-foreground/20 flex items-center justify-center text-[8px] font-bold text-muted-foreground">
+                          <div className="w-4 h-4 rounded-full bg-muted-foreground/20 flex items-center justify-center text-xs font-bold text-muted-foreground">
                             {getMentorDisplayName(id).charAt(0)}
                           </div>
                           {getMentorDisplayName(id)}

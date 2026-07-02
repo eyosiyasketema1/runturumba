@@ -405,7 +405,7 @@ export function DiscipleshipDashboardView({ onNavigate, stats, gamificationStats
               </ResponsiveContainer>
               <div className="absolute inset-0 flex flex-col items-center justify-center">
                 <span className="text-2xl font-bold tracking-tight text-foreground tabular-nums leading-none">1,247</span>
-                <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-widest mt-0.5">Active</span>
+                <span className="text-xs font-semibold text-muted-foreground uppercase tracking-widest mt-0.5">Active</span>
               </div>
             </div>
             <div className="flex-1 space-y-2 min-w-0">
@@ -598,14 +598,14 @@ function HeroStat({
 
       <div className="relative p-[17.5px] flex flex-col gap-[10.5px]">
         <div className="flex items-start justify-between">
-          <span className="text-[10.5px] font-semibold text-slate-500 uppercase tracking-[0.12em] leading-[14px]">{label}</span>
+          <span className="text-xs font-semibold text-slate-500 uppercase tracking-[0.12em] leading-[14px]">{label}</span>
           <span className="w-7 h-7 rounded-sm flex items-center justify-center text-white shadow-md" style={{ backgroundColor: iconColor }}>
             <Icon className="w-3.5 h-3.5" />
           </span>
         </div>
         <div className="flex items-baseline gap-2">
           <span className="text-[31.5px] font-bold text-slate-900 tracking-tight tabular-nums leading-[35px]">{value}</span>
-          <span className="text-[10.5px] font-bold px-[5.25px] py-[1.75px] rounded-sm leading-[14px]" style={{ backgroundColor: deltaBg, color: deltaColor }}>{deltaTone === "up" ? "↑" : "↓"} {delta}</span>
+          <span className="text-xs font-bold px-[5.25px] py-[1.75px] rounded-sm leading-[14px]" style={{ backgroundColor: deltaBg, color: deltaColor }}>{deltaTone === "up" ? "↑" : "↓"} {delta}</span>
         </div>
         {/* Sparkline — raw SVG with draw-in animation */}
         <div className="h-[35px] -mx-1">
@@ -2877,9 +2877,9 @@ export function MentorsView({
                     {g.tags.length > 0 && (
                       <div className="flex flex-wrap gap-1 mb-3">
                         {g.tags.slice(0, 3).map(t => (
-                          <span key={t} className="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-primary/8 text-primary">{t}</span>
+                          <span key={t} className="text-xs font-semibold px-1.5 py-0.5 rounded bg-primary/8 text-primary">{t}</span>
                         ))}
-                        {g.tags.length > 3 && <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-muted text-muted-foreground">+{g.tags.length - 3}</span>}
+                        {g.tags.length > 3 && <span className="text-xs font-semibold px-1.5 py-0.5 rounded bg-muted text-muted-foreground">+{g.tags.length - 3}</span>}
                       </div>
                     )}
                     <div className="flex items-center justify-between">
@@ -2888,14 +2888,14 @@ export function MentorsView({
                       ) : (
                         <div className="flex -space-x-2">
                           {members.slice(0, 5).map(m => (
-                            <div key={m.id} className={cn("w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-bold ring-2 ring-card",
+                            <div key={m.id} className={cn("w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold ring-2 ring-card",
                               { "bg-blue-100 text-blue-700": m.avatarTone === "blue", "bg-violet-100 text-violet-700": m.avatarTone === "purple", "bg-rose-100 text-rose-700": m.avatarTone === "rose", "bg-amber-100 text-amber-700": m.avatarTone === "amber", "bg-emerald-100 text-emerald-700": m.avatarTone === "green", "bg-slate-200 text-slate-700": m.avatarTone === "slate" }
                             )} title={m.name}>
                               {m.name.split(" ").map(n => n[0]).slice(0, 2).join("").toUpperCase()}
                             </div>
                           ))}
                           {members.length > 5 && (
-                            <div className="w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-bold ring-2 ring-card bg-muted text-muted-foreground">+{members.length - 5}</div>
+                            <div className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold ring-2 ring-card bg-muted text-muted-foreground">+{members.length - 5}</div>
                           )}
                         </div>
                       )}
@@ -2951,7 +2951,7 @@ export function MentorsView({
                       ))}
                     </div>
                     {editGroupTags.length > 0 && (
-                      <p className="text-[11px] text-muted-foreground mt-1.5">Selected: {editGroupTags.join(", ")}</p>
+                      <p className="text-xs text-muted-foreground mt-1.5">Selected: {editGroupTags.join(", ")}</p>
                     )}
                   </div>
                   <div className="flex justify-end gap-2 pt-2 border-t border-border">
@@ -3474,15 +3474,15 @@ export function MentorsView({
                             <h4 className="text-sm font-bold text-foreground">{tpl.name}</h4>
                             <div className="flex items-center gap-1.5 mt-0.5">
                               <Chip tone="blue">{tpl.specialty}</Chip>
-                              <span className="text-[11px] text-muted-foreground">{tpl.fields.length} fields</span>
+                              <span className="text-xs text-muted-foreground">{tpl.fields.length} fields</span>
                             </div>
                           </div>
                         </div>
                         <div className="flex flex-wrap gap-1 mb-3">
                           {tpl.fields.slice(0, 3).map(f => (
-                            <span key={f.id} className="text-[10px] font-medium px-1.5 py-0.5 rounded bg-muted text-muted-foreground">{f.label || f.type}</span>
+                            <span key={f.id} className="text-xs font-medium px-1.5 py-0.5 rounded bg-muted text-muted-foreground">{f.label || f.type}</span>
                           ))}
-                          {tpl.fields.length > 3 && <span className="text-[10px] font-medium px-1.5 py-0.5 rounded bg-muted text-muted-foreground">+{tpl.fields.length - 3}</span>}
+                          {tpl.fields.length > 3 && <span className="text-xs font-medium px-1.5 py-0.5 rounded bg-muted text-muted-foreground">+{tpl.fields.length - 3}</span>}
                         </div>
                         <div className="flex gap-1.5 flex-wrap">
                           <Button size="sm" className="flex-1 text-xs h-8" onClick={() => openInviteWithForm(tpl.id)}>
@@ -3495,7 +3495,7 @@ export function MentorsView({
                             <Eye className="w-3.5 h-3.5" /> Preview
                           </Button>
                           <Button variant="outline" size="sm" className="text-xs h-8" onClick={() => openResponses(tpl.id)}>
-                            <BarChart3 className="w-3.5 h-3.5" /> Responses {submissions.filter(s => s.formId === tpl.id).length > 0 && <span className="ml-0.5 px-1.5 py-0.5 bg-primary/10 text-primary rounded-full text-[10px] font-bold">{submissions.filter(s => s.formId === tpl.id).length}</span>}
+                            <BarChart3 className="w-3.5 h-3.5" /> Responses {submissions.filter(s => s.formId === tpl.id).length > 0 && <span className="ml-0.5 px-1.5 py-0.5 bg-primary/10 text-primary rounded-full text-xs font-bold">{submissions.filter(s => s.formId === tpl.id).length}</span>}
                           </Button>
                         </div>
                       </div>
@@ -3514,15 +3514,15 @@ export function MentorsView({
                               <h4 className="text-sm font-bold text-foreground">{tpl.name}</h4>
                               <div className="flex items-center gap-1.5 mt-0.5">
                                 <Chip tone="amber">{tpl.specialty}</Chip>
-                                <span className="text-[11px] text-muted-foreground">{tpl.fields.length} fields</span>
+                                <span className="text-xs text-muted-foreground">{tpl.fields.length} fields</span>
                               </div>
                             </div>
                           </div>
                           <div className="flex flex-wrap gap-1 mb-3">
                             {tpl.fields.slice(0, 3).map(f => (
-                              <span key={f.id} className="text-[10px] font-medium px-1.5 py-0.5 rounded bg-muted text-muted-foreground">{f.label || f.type}</span>
+                              <span key={f.id} className="text-xs font-medium px-1.5 py-0.5 rounded bg-muted text-muted-foreground">{f.label || f.type}</span>
                             ))}
-                            {tpl.fields.length > 3 && <span className="text-[10px] font-medium px-1.5 py-0.5 rounded bg-muted text-muted-foreground">+{tpl.fields.length - 3}</span>}
+                            {tpl.fields.length > 3 && <span className="text-xs font-medium px-1.5 py-0.5 rounded bg-muted text-muted-foreground">+{tpl.fields.length - 3}</span>}
                           </div>
                           <div className="flex gap-1.5 flex-wrap">
                             <Button size="sm" className="flex-1 text-xs h-8" variant="outline" onClick={() => openInviteWithForm(tpl.id)}>
@@ -3535,7 +3535,7 @@ export function MentorsView({
                               <Eye className="w-3.5 h-3.5" /> Preview
                             </Button>
                             <Button variant="outline" size="sm" className="text-xs h-8" onClick={() => openResponses(tpl.id)}>
-                              <BarChart3 className="w-3.5 h-3.5" /> Responses {submissions.filter(s => s.formId === tpl.id).length > 0 && <span className="ml-0.5 px-1.5 py-0.5 bg-primary/10 text-primary rounded-full text-[10px] font-bold">{submissions.filter(s => s.formId === tpl.id).length}</span>}
+                              <BarChart3 className="w-3.5 h-3.5" /> Responses {submissions.filter(s => s.formId === tpl.id).length > 0 && <span className="ml-0.5 px-1.5 py-0.5 bg-primary/10 text-primary rounded-full text-xs font-bold">{submissions.filter(s => s.formId === tpl.id).length}</span>}
                             </Button>
                           </div>
                         </div>
@@ -3575,17 +3575,17 @@ export function MentorsView({
                                 <h4 className="text-sm font-bold text-foreground">{tpl.name}</h4>
                                 <div className="flex items-center gap-1.5 mt-0.5">
                                   <Chip tone="purple">{tpl.specialty}</Chip>
-                                  <span className="text-[11px] text-muted-foreground">{tpl.fields.length} fields</span>
-                                  <span className="text-[11px] text-muted-foreground">· {tpl.submissions} submissions</span>
+                                  <span className="text-xs text-muted-foreground">{tpl.fields.length} fields</span>
+                                  <span className="text-xs text-muted-foreground">· {tpl.submissions} submissions</span>
                                 </div>
                               </div>
                             </div>
                           </div>
                           <div className="flex flex-wrap gap-1 mb-3">
                             {tpl.fields.slice(0, 3).map(f => (
-                              <span key={f.id} className="text-[10px] font-medium px-1.5 py-0.5 rounded bg-muted text-muted-foreground">{f.label || f.type}</span>
+                              <span key={f.id} className="text-xs font-medium px-1.5 py-0.5 rounded bg-muted text-muted-foreground">{f.label || f.type}</span>
                             ))}
-                            {tpl.fields.length > 3 && <span className="text-[10px] font-medium px-1.5 py-0.5 rounded bg-muted text-muted-foreground">+{tpl.fields.length - 3}</span>}
+                            {tpl.fields.length > 3 && <span className="text-xs font-medium px-1.5 py-0.5 rounded bg-muted text-muted-foreground">+{tpl.fields.length - 3}</span>}
                           </div>
                           <div className="flex gap-1.5 flex-wrap">
                             <Button size="sm" className="flex-1 text-xs h-8" onClick={() => openInviteWithForm(tpl.id)}>
@@ -3598,7 +3598,7 @@ export function MentorsView({
                               <Eye className="w-3.5 h-3.5" /> Preview
                             </Button>
                             <Button variant="outline" size="sm" className="text-xs h-8" onClick={() => openResponses(tpl.id)}>
-                              <BarChart3 className="w-3.5 h-3.5" /> Responses {submissions.filter(s => s.formId === tpl.id).length > 0 && <span className="ml-0.5 px-1.5 py-0.5 bg-primary/10 text-primary rounded-full text-[10px] font-bold">{submissions.filter(s => s.formId === tpl.id).length}</span>}
+                              <BarChart3 className="w-3.5 h-3.5" /> Responses {submissions.filter(s => s.formId === tpl.id).length > 0 && <span className="ml-0.5 px-1.5 py-0.5 bg-primary/10 text-primary rounded-full text-xs font-bold">{submissions.filter(s => s.formId === tpl.id).length}</span>}
                             </Button>
                           </div>
                         </div>
@@ -3736,7 +3736,7 @@ export function MentorsView({
                   ))}
                 </div>
               )}
-              <p className="text-[11px] text-muted-foreground mt-1">Type an email and press Enter or click Add. You can send to multiple recipients.</p>
+              <p className="text-xs text-muted-foreground mt-1">Type an email and press Enter or click Add. You can send to multiple recipients.</p>
             </div>
             <div>
               <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-1.5 block">Select Form <span className="text-red-500">*</span></label>
@@ -8452,10 +8452,10 @@ export function VitalDashboardView({ onNavigate, stats }: {
                 className="pointer-events-none absolute right-0 top-full mt-2 w-[240px] rounded-sm border border-border bg-slate-950 text-white p-3 shadow-[0_16px_40px_-18px_rgba(15,23,42,0.6)] opacity-0 -translate-y-1 group-hover/tip:opacity-100 group-hover/tip:translate-y-0 group-focus-within/tip:opacity-100 group-focus-within/tip:translate-y-0 transition-all duration-150 z-30"
               >
                 <div className="flex items-center gap-1.5 mb-1.5">
-                  <span className={cn("w-5 h-5 rounded-sm flex items-center justify-center font-bold text-[10px] text-white", s.color)}>{s.letter}</span>
-                  <span className="text-[10px] font-semibold uppercase tracking-wider text-slate-300">{s.label}</span>
+                  <span className={cn("w-5 h-5 rounded-sm flex items-center justify-center font-bold text-xs text-white", s.color)}>{s.letter}</span>
+                  <span className="text-xs font-semibold uppercase tracking-wider text-slate-300">{s.label}</span>
                 </div>
-                <p className="text-[11px] leading-snug text-slate-100">{s.definition}</p>
+                <p className="text-xs leading-snug text-slate-100">{s.definition}</p>
                 {/* Arrow */}
                 <span className="absolute -top-1 right-2 w-2 h-2 rotate-45 bg-slate-950 border-l border-t border-border" />
               </div>

@@ -477,7 +477,7 @@ function EndpointFormModal({
               ) : (
                 <div className="flex flex-col items-center gap-0.5">
                   <Bot className="w-5 h-5 text-muted-foreground group-hover:text-primary transition-colors" />
-                  <span className="text-[8px] text-muted-foreground group-hover:text-primary transition-colors font-bold">DEFAULT</span>
+                  <span className="text-xs text-muted-foreground group-hover:text-primary transition-colors font-bold">DEFAULT</span>
                 </div>
               )}
               <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
@@ -1172,7 +1172,7 @@ function EndpointFormModal({
                         {form.name || "Support Chat"}
                       </p>
                       {form.description && (
-                        <p className="text-white/70 text-[8px] leading-tight truncate mt-0.5">
+                        <p className="text-white/70 text-xs leading-tight truncate mt-0.5">
                           {form.description}
                         </p>
                       )}

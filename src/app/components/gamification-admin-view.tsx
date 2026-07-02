@@ -957,7 +957,7 @@ function AnalyticsTab({ accountId }: { accountId: string }) {
           <div key={label} className="rounded-sm bg-card border border-border p-3">
             <div className="flex items-center gap-1.5 mb-1">
               <Icon className="w-3.5 h-3.5 text-muted-foreground" />
-              <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">{label}</span>
+              <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">{label}</span>
             </div>
             <p className="text-xl font-bold text-foreground">{value}</p>
           </div>
@@ -1036,7 +1036,7 @@ function AnalyticsTab({ accountId }: { accountId: string }) {
       <div className="rounded-sm bg-card border border-border p-5">
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-sm font-bold text-foreground">Milestone Funnel</h3>
-          <span className="text-[10px] text-muted-foreground uppercase tracking-wider">
+          <span className="text-xs text-muted-foreground uppercase tracking-wider">
             Touchpoint → Decision
           </span>
         </div>
@@ -1067,7 +1067,7 @@ function AnalyticsTab({ accountId }: { accountId: string }) {
                     {i > 0 && stepConversion !== null && (
                       <div className="flex items-center gap-2 pl-3 py-1">
                         <div className="w-px h-3 bg-border" />
-                        <span className="text-[10px] text-muted-foreground font-medium">
+                        <span className="text-xs text-muted-foreground font-medium">
                           {stepConversion}% continued
                         </span>
                       </div>
@@ -1099,11 +1099,11 @@ function AnalyticsTab({ accountId }: { accountId: string }) {
         <div className="flex items-center justify-between mb-4">
           <div>
             <h3 className="text-sm font-bold text-foreground">Engagement Correlation</h3>
-            <p className="text-[10px] text-muted-foreground mt-0.5">
+            <p className="text-xs text-muted-foreground mt-0.5">
               Each dot is one seeker. X = engagement events (last 30 days), Y = total XP.
             </p>
           </div>
-          <div className="flex items-center gap-3 text-[10px]">
+          <div className="flex items-center gap-3 text-xs">
             {(["bronze", "silver", "gold", "platinum"] as const).map((t) => (
               <div key={t} className="flex items-center gap-1.5">
                 <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: TIER_COLORS[t] }} />
@@ -1194,7 +1194,7 @@ function AnalyticsTab({ accountId }: { accountId: string }) {
                     <div className="flex-1 h-1.5 bg-muted rounded-full overflow-hidden">
                       <div className="h-full rounded-full" style={{ width: `${b.rate}%`, backgroundColor: color }} />
                     </div>
-                    <span className="text-[10px] font-semibold text-muted-foreground">{b.rate}%</span>
+                    <span className="text-xs font-semibold text-muted-foreground">{b.rate}%</span>
                   </div>
                 </div>
               </div>
@@ -1399,10 +1399,10 @@ function ReengagementTab({ accountId }: { accountId: string }) {
                   <div className="flex-1">
                     <div className="flex items-center gap-2 mb-1">
                       <h4 className="font-semibold text-foreground text-sm">{t.name}</h4>
-                      <span className="px-2 py-0.5 text-[10px] font-semibold rounded-full uppercase" style={{ backgroundColor: trigConf.bg, color: trigConf.color }}>
+                      <span className="px-2 py-0.5 text-xs font-semibold rounded-full uppercase" style={{ backgroundColor: trigConf.bg, color: trigConf.color }}>
                         {trigConf.label}
                       </span>
-                      <code className="text-[10px] bg-muted px-1.5 py-0.5 rounded text-muted-foreground">{t.slug}</code>
+                      <code className="text-xs bg-muted px-1.5 py-0.5 rounded text-muted-foreground">{t.slug}</code>
                     </div>
                     {t.description && <p className="text-xs text-muted-foreground mb-2">{t.description}</p>}
                     {/* Steps preview */}
@@ -1592,11 +1592,11 @@ function ReengagementTab({ accountId }: { accountId: string }) {
                     <span className="text-xs font-bold text-muted-foreground w-16">Step {i + 1}</span>
                     <div className="flex-1 grid grid-cols-2 gap-2">
                       <div>
-                        <label className="text-[10px] text-muted-foreground">Delay (hours)</label>
+                        <label className="text-xs text-muted-foreground">Delay (hours)</label>
                         <Input aria-label="Step delay hours" type="number" value={s.delay_hours} onChange={e => updateStep(i, "delay_hours", Number(e.target.value))} className="mt-0.5" />
                       </div>
                       <div>
-                        <label className="text-[10px] text-muted-foreground">Channel</label>
+                        <label className="text-xs text-muted-foreground">Channel</label>
                         <select aria-label="Step channel" value={s.channel} onChange={e => updateStep(i, "channel", e.target.value)}
                           className="mt-0.5 w-full h-9 rounded-md border border-input bg-background px-2 text-sm">
                           <option value="in_app">In-App</option>
@@ -1611,7 +1611,7 @@ function ReengagementTab({ accountId }: { accountId: string }) {
                     </button>
                   </div>
                   <div>
-                    <label className="text-[10px] text-muted-foreground">Message</label>
+                    <label className="text-xs text-muted-foreground">Message</label>
                     <Input aria-label="Step message" value={s.message} onChange={e => updateStep(i, "message", e.target.value)} placeholder="Hey {FIRST_NAME}, we noticed..." className="mt-0.5" />
                   </div>
                 </div>

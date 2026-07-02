@@ -245,7 +245,7 @@ export const MessagesView = ({
               <span>{tab.label}</span>
               {tab.count !== undefined && (
                 <span className={cn(
-                  "inline-flex items-center justify-center min-w-[18px] h-[18px] px-1.5 rounded-sm text-[10px] font-bold",
+                  "inline-flex items-center justify-center min-w-[18px] h-[18px] px-1.5 rounded-sm text-xs font-bold",
                   activeTab === tab.id ? "bg-primary/10 text-primary" : "bg-muted-foreground/10 text-muted-foreground"
                 )}>
                   {tab.count}
@@ -335,13 +335,13 @@ export const MessagesView = ({
                 <table className="w-full text-left">
                   <thead>
                     <tr className="border-b border-border bg-muted/30">
-                      <th className="px-4 py-3 text-[11px] font-bold text-muted-foreground uppercase tracking-wider">Contact</th>
-                      <th className="px-4 py-3 text-[11px] font-bold text-muted-foreground uppercase tracking-wider">Message</th>
-                      <th className="px-4 py-3 text-[11px] font-bold text-muted-foreground uppercase tracking-wider">Channel</th>
-                      <th className="px-4 py-3 text-[11px] font-bold text-muted-foreground uppercase tracking-wider">Status</th>
-                      <th className="px-4 py-3 text-[11px] font-bold text-muted-foreground uppercase tracking-wider">Direction</th>
-                      <th className="px-4 py-3 text-[11px] font-bold text-muted-foreground uppercase tracking-wider">Time</th>
-                      <th className="px-4 py-3 text-[11px] font-bold text-muted-foreground uppercase tracking-wider text-right w-28">Actions</th>
+                      <th className="px-4 py-3 text-xs font-bold text-muted-foreground uppercase tracking-wider">Contact</th>
+                      <th className="px-4 py-3 text-xs font-bold text-muted-foreground uppercase tracking-wider">Message</th>
+                      <th className="px-4 py-3 text-xs font-bold text-muted-foreground uppercase tracking-wider">Channel</th>
+                      <th className="px-4 py-3 text-xs font-bold text-muted-foreground uppercase tracking-wider">Status</th>
+                      <th className="px-4 py-3 text-xs font-bold text-muted-foreground uppercase tracking-wider">Direction</th>
+                      <th className="px-4 py-3 text-xs font-bold text-muted-foreground uppercase tracking-wider">Time</th>
+                      <th className="px-4 py-3 text-xs font-bold text-muted-foreground uppercase tracking-wider text-right w-28">Actions</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -378,7 +378,7 @@ export const MessagesView = ({
                           </td>
                           <td className="px-4 py-3">
                             <span className={cn(
-                              "inline-flex items-center px-2 py-0.5 rounded-sm text-[11px] font-semibold lowercase",
+                              "inline-flex items-center px-2 py-0.5 rounded-sm text-xs font-semibold lowercase",
                               CHANNEL_PILL[msg.port as ChannelType] || CHANNEL_PILL.smpp,
                             )}>
                               {CHANNEL_LABEL[msg.port as ChannelType] || msg.port}
@@ -386,7 +386,7 @@ export const MessagesView = ({
                           </td>
                           <td className="px-4 py-3">
                             <span className={cn(
-                              "inline-flex items-center px-2 py-0.5 rounded-sm text-[11px] font-semibold capitalize",
+                              "inline-flex items-center px-2 py-0.5 rounded-sm text-xs font-semibold capitalize",
                               STATUS_PILL[msg.status as MessageStatus] || STATUS_PILL.sent,
                             )}>
                               {msg.status}
@@ -394,7 +394,7 @@ export const MessagesView = ({
                           </td>
                           <td className="px-4 py-3">
                             <span className={cn(
-                              "inline-flex items-center px-2 py-0.5 rounded-sm text-[11px] font-bold uppercase tracking-wider",
+                              "inline-flex items-center px-2 py-0.5 rounded-sm text-xs font-bold uppercase tracking-wider",
                               isOutgoing
                                 ? "bg-blue-50 text-blue-700 ring-1 ring-inset ring-blue-200"
                                 : "bg-emerald-50 text-emerald-700 ring-1 ring-inset ring-emerald-200",
@@ -516,13 +516,13 @@ export const MessagesView = ({
                       <th className="px-4 py-3 w-10 text-center">
                         <input type="checkbox" className="w-3.5 h-3.5 rounded-sm border-input cursor-pointer" aria-label="Select all broadcasts" />
                       </th>
-                      <th className="px-4 py-3 text-[11px] font-bold text-muted-foreground uppercase tracking-wider">Message</th>
-                      <th className="px-4 py-3 text-[11px] font-bold text-muted-foreground uppercase tracking-wider">Channel</th>
-                      <th className="px-4 py-3 text-[11px] font-bold text-muted-foreground uppercase tracking-wider">Status</th>
-                      <th className="px-4 py-3 text-[11px] font-bold text-muted-foreground uppercase tracking-wider">Target</th>
-                      <th className="px-4 py-3 text-[11px] font-bold text-muted-foreground uppercase tracking-wider">Stat (S/D/R/F)</th>
-                      <th className="px-4 py-3 text-[11px] font-bold text-muted-foreground uppercase tracking-wider">Date</th>
-                      <th className="px-4 py-3 text-[11px] font-bold text-muted-foreground uppercase tracking-wider text-right w-28">Actions</th>
+                      <th className="px-4 py-3 text-xs font-bold text-muted-foreground uppercase tracking-wider">Message</th>
+                      <th className="px-4 py-3 text-xs font-bold text-muted-foreground uppercase tracking-wider">Channel</th>
+                      <th className="px-4 py-3 text-xs font-bold text-muted-foreground uppercase tracking-wider">Status</th>
+                      <th className="px-4 py-3 text-xs font-bold text-muted-foreground uppercase tracking-wider">Target</th>
+                      <th className="px-4 py-3 text-xs font-bold text-muted-foreground uppercase tracking-wider">Stat (S/D/R/F)</th>
+                      <th className="px-4 py-3 text-xs font-bold text-muted-foreground uppercase tracking-wider">Date</th>
+                      <th className="px-4 py-3 text-xs font-bold text-muted-foreground uppercase tracking-wider text-right w-28">Actions</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -539,7 +539,7 @@ export const MessagesView = ({
                         </td>
                         <td className="px-4 py-3">
                           <span className={cn(
-                            "inline-flex items-center px-2 py-0.5 rounded-sm text-[11px] font-semibold lowercase",
+                            "inline-flex items-center px-2 py-0.5 rounded-sm text-xs font-semibold lowercase",
                             CHANNEL_PILL[bc.port as ChannelType] || CHANNEL_PILL.smpp,
                           )}>
                             {CHANNEL_LABEL[bc.port as ChannelType] || bc.port}
@@ -547,7 +547,7 @@ export const MessagesView = ({
                         </td>
                         <td className="px-4 py-3">
                           <span className={cn(
-                            "inline-flex items-center px-2 py-0.5 rounded-sm text-[11px] font-semibold capitalize",
+                            "inline-flex items-center px-2 py-0.5 rounded-sm text-xs font-semibold capitalize",
                             STATUS_PILL[bc.status as MessageStatus] || STATUS_PILL.sent,
                           )}>
                             {bc.status}
@@ -571,7 +571,7 @@ export const MessagesView = ({
                                   <div className={cn("w-1.5 h-1.5 rounded-full", stat.color)} />
                                   <span className="text-xs font-bold text-foreground">{stat.value}</span>
                                 </div>
-                                <span className="text-[8px] font-black text-muted-foreground uppercase opacity-40">{stat.label}</span>
+                                <span className="text-xs font-black text-muted-foreground uppercase opacity-40">{stat.label}</span>
                               </div>
                             ))}
                           </div>

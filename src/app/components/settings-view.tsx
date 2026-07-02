@@ -1063,7 +1063,7 @@ const RulesPoliciesTab = () => {
                     <span className="text-sm font-medium text-foreground">{name}</span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <Badge variant="outline" className="text-[10px]">{automationRules.lockEnforcedAutomations ? "Locked" : "Customizable"}</Badge>
+                    <Badge variant="outline" className="text-xs">{automationRules.lockEnforcedAutomations ? "Locked" : "Customizable"}</Badge>
                     <button onClick={() => { setAutomationRules(p => ({ ...p, enforcedAutomations: p.enforcedAutomations.filter((_, j) => j !== i) })); toast.success("Removed"); }} className="p-1 text-muted-foreground hover:text-destructive transition-colors"><X className="w-3 h-3" /></button>
                   </div>
                 </div>
@@ -1199,7 +1199,7 @@ const SharedResourcesTab = ({ childOrgCount }: { childOrgCount: number }) => {
         ].map(s => (
           <div key={s.label} className="bg-muted/30 border border-border rounded-lg px-4 py-3 text-center">
             <p className={cn("text-xl font-bold", s.color)}>{s.value}</p>
-            <p className="text-[11px] text-muted-foreground">{s.label}</p>
+            <p className="text-xs text-muted-foreground">{s.label}</p>
           </div>
         ))}
       </div>
@@ -1228,7 +1228,7 @@ const SharedResourcesTab = ({ childOrgCount }: { childOrgCount: number }) => {
                         <span className="font-medium text-foreground">{res.name}</span>
                       </div>
                     </td>
-                    <td className="px-4 py-3"><Badge variant="outline" className="text-[10px] capitalize">{res.type}</Badge></td>
+                    <td className="px-4 py-3"><Badge variant="outline" className="text-xs capitalize">{res.type}</Badge></td>
                     <td className="px-4 py-3">
                       {res.status === "pushed"
                         ? <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-emerald-700"><CheckCircle2 className="w-3 h-3" /> Pushed</span>
@@ -1337,7 +1337,7 @@ const ActivityAuditTab = () => {
                   </div>
                   <div className="text-right shrink-0">
                     <p className="text-xs font-medium text-muted-foreground">{timeAgo}</p>
-                    <p className="text-[10px] text-muted-foreground">{date.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}</p>
+                    <p className="text-xs text-muted-foreground">{date.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}</p>
                   </div>
                 </div>
               );
@@ -1555,7 +1555,7 @@ const ChildOrgsSection = ({
             <s.icon className={cn("w-4 h-4", s.color)} />
             <div>
               <p className="text-lg font-bold text-foreground leading-none">{s.value}</p>
-              <p className="text-[11px] text-muted-foreground mt-0.5">{s.label}</p>
+              <p className="text-xs text-muted-foreground mt-0.5">{s.label}</p>
             </div>
           </div>
         ))}
@@ -1600,7 +1600,7 @@ const ChildOrgsSection = ({
                       </span>
                     </td>
                     <td className="px-4 py-3">
-                      <span className={cn("inline-flex items-center gap-1.5 px-2 py-0.5 text-[11px] font-semibold rounded-full border", statusCfg.color)}>
+                      <span className={cn("inline-flex items-center gap-1.5 px-2 py-0.5 text-xs font-semibold rounded-full border", statusCfg.color)}>
                         <span className={cn("w-1.5 h-1.5 rounded-full", statusCfg.dot)} />
                         {statusCfg.label}
                       </span>
@@ -1608,7 +1608,7 @@ const ChildOrgsSection = ({
                     <td className="px-4 py-3 text-right font-medium text-foreground tabular-nums">{org.stats.contacts.toLocaleString()}</td>
                     <td className="px-4 py-3 text-right font-medium text-foreground tabular-nums">{org.stats.activeUsers}</td>
                     <td className="px-4 py-3 text-right">
-                      <Badge variant="outline" className="text-[10px] capitalize">{org.plan}</Badge>
+                      <Badge variant="outline" className="text-xs capitalize">{org.plan}</Badge>
                     </td>
                     <td className="px-4 py-3 text-right" onClick={(e) => e.stopPropagation()}>
                       <button className="p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted transition-colors" onClick={() => setSelectedOrg(org)}>
@@ -1929,7 +1929,7 @@ const ApiSection = () => {
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2">
                     <p className="text-sm font-semibold text-foreground truncate">{ak.name}</p>
-                    <Badge variant="outline" className="text-[10px] text-emerald-600 border-emerald-200 bg-emerald-50 shrink-0">Active</Badge>
+                    <Badge variant="outline" className="text-xs text-emerald-600 border-emerald-200 bg-emerald-50 shrink-0">Active</Badge>
                   </div>
                   <div className="flex items-center gap-3 mt-1 text-xs text-muted-foreground">
                     <span>Created {ak.created}</span>
@@ -1967,7 +1967,7 @@ const ApiSection = () => {
               {/* Row 3: Scopes */}
               <div className="flex flex-wrap gap-1.5">
                 {ak.scopes.map(scope => (
-                  <span key={scope} className="inline-flex items-center px-2 py-0.5 text-[10px] font-medium rounded-full bg-muted border border-border text-muted-foreground">
+                  <span key={scope} className="inline-flex items-center px-2 py-0.5 text-xs font-medium rounded-full bg-muted border border-border text-muted-foreground">
                     {ALL_SCOPES.find(s => s.id === scope)?.label ?? scope}
                   </span>
                 ))}
@@ -1992,7 +1992,7 @@ const ApiSection = () => {
                   <p className="text-xs text-muted-foreground">Revoked · Created {ak.created}</p>
                 </div>
                 <div className="flex items-center gap-2">
-                  <Badge variant="outline" className="text-[10px] text-red-600 border-red-200 bg-red-50">Revoked</Badge>
+                  <Badge variant="outline" className="text-xs text-red-600 border-red-200 bg-red-50">Revoked</Badge>
                   <Button variant="ghost" size="sm" className="h-7 w-7 p-0 text-muted-foreground hover:text-red-600" onClick={() => setDeleteKeyId(ak.id)}>
                     <Trash2 className="w-3.5 h-3.5" />
                   </Button>
@@ -2505,7 +2505,7 @@ const AISection = () => {
                   const isDone = (addStep === "key" && num === 1) || (addStep === "assign" && num <= 2);
                   return (
                     <div key={step} className={cn("flex items-center gap-2 px-4 py-2.5 text-xs font-semibold flex-1 border-r border-border last:border-0", isCurrent ? "bg-background text-foreground" : isDone ? "text-foreground/70" : "text-muted-foreground")}>
-                      {isDone ? <CheckCircle2 className="w-3.5 h-3.5 text-primary" /> : <span className={cn("w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold", isCurrent ? "bg-foreground text-background" : "bg-muted text-muted-foreground")}>{num}</span>}
+                      {isDone ? <CheckCircle2 className="w-3.5 h-3.5 text-primary" /> : <span className={cn("w-5 h-5 rounded-full flex items-center justify-center text-xs font-bold", isCurrent ? "bg-foreground text-background" : "bg-muted text-muted-foreground")}>{num}</span>}
                       {label}
                     </div>
                   );
@@ -2526,7 +2526,7 @@ const AISection = () => {
                         >
                           <span className="flex items-center justify-center">{p.icon}</span>
                           <span className="text-sm font-bold text-foreground">{p.name}</span>
-                          <span className="text-[10px] text-muted-foreground leading-tight">{p.features.slice(0, 2).join(", ")}</span>
+                          <span className="text-xs text-muted-foreground leading-tight">{p.features.slice(0, 2).join(", ")}</span>
                         </button>
                       ))}
                     </div>
@@ -2715,7 +2715,7 @@ const AISection = () => {
                         </Button>
                       )}
                     </div>
-                    {!editKeyChanged && <p className="text-[11px] text-muted-foreground mt-1">Change the key value to re-verify.</p>}
+                    {!editKeyChanged && <p className="text-xs text-muted-foreground mt-1">Change the key value to re-verify.</p>}
                   </FormField>
 
                   {editVerifyState === "error" && (
@@ -2767,13 +2767,13 @@ const AISection = () => {
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-2 flex-wrap">
                       <p className="text-sm font-bold text-foreground">{k.label}</p>
-                      <Badge variant="secondary" className="text-[10px]">{provider?.name || k.provider}</Badge>
+                      <Badge variant="secondary" className="text-xs">{provider?.name || k.provider}</Badge>
                       {k.verified ? (
-                        <span className="inline-flex items-center gap-0.5 text-[10px] font-medium text-primary">
+                        <span className="inline-flex items-center gap-0.5 text-xs font-medium text-primary">
                           <CheckCircle2 className="w-3 h-3" /> Verified
                         </span>
                       ) : (
-                        <span className="inline-flex items-center gap-0.5 text-[10px] font-medium text-amber-600">
+                        <span className="inline-flex items-center gap-0.5 text-xs font-medium text-amber-600">
                           <AlertCircle className="w-3 h-3" /> Unverified
                         </span>
                       )}
@@ -2782,13 +2782,13 @@ const AISection = () => {
                       {showKeyValues[k.id] ? k.key : k.key.slice(0, 8) + "•••••••••••••••"}
                     </p>
                     <div className="flex items-center gap-3 mt-1">
-                      <span className="text-[11px] text-muted-foreground">Added {k.addedAt}</span>
-                      {k.verifiedAt && <span className="text-[11px] text-muted-foreground">· Verified {k.verifiedAt}</span>}
+                      <span className="text-xs text-muted-foreground">Added {k.addedAt}</span>
+                      {k.verifiedAt && <span className="text-xs text-muted-foreground">· Verified {k.verifiedAt}</span>}
                     </div>
                     {k.assignedFeatures && k.assignedFeatures.length > 0 && (
                       <div className="flex flex-wrap gap-1 mt-1.5">
                         {k.assignedFeatures.map(f => (
-                          <span key={f} className="px-1.5 py-0.5 text-[10px] font-medium rounded bg-muted text-muted-foreground border border-border">{f}</span>
+                          <span key={f} className="px-1.5 py-0.5 text-xs font-medium rounded bg-muted text-muted-foreground border border-border">{f}</span>
                         ))}
                       </div>
                     )}
@@ -3073,10 +3073,10 @@ const TerminologySection = () => {
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-2">
                         <span className="text-sm font-semibold text-foreground">{t.defaultLabel}</span>
-                        {t.customLabel.trim() && <Badge variant="default" className="text-[10px]">Customized</Badge>}
-                        {!isBuiltIn && <Badge variant="secondary" className="text-[10px]">Custom</Badge>}
+                        {t.customLabel.trim() && <Badge variant="default" className="text-xs">Customized</Badge>}
+                        {!isBuiltIn && <Badge variant="secondary" className="text-xs">Custom</Badge>}
                       </div>
-                      <span className="text-[11px] text-muted-foreground font-mono">{t.key}</span>
+                      <span className="text-xs text-muted-foreground font-mono">{t.key}</span>
                     </td>
                     <td className="px-4 py-3">
                       <Input
@@ -3096,7 +3096,7 @@ const TerminologySection = () => {
                           </Button>
                         )}
                         {t.customLabel.trim() && !isDirty(t) && (
-                          <Badge variant="secondary" className="text-[10px] mr-1">Saved</Badge>
+                          <Badge variant="secondary" className="text-xs mr-1">Saved</Badge>
                         )}
                         {t.customLabel.trim() && (
                           <Button variant="ghost" size="sm" className="h-7 text-xs text-muted-foreground hover:text-foreground" onClick={() => resetTerm(t.id)}>

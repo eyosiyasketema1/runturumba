@@ -114,10 +114,10 @@ const QuestionCard = ({ question, index, onUpdate, onDelete, isActive, onSelect,
             <p className="text-sm font-medium text-foreground truncate">{question.questionText || "Untitled question"}</p>
           )}
           <div className="flex items-center gap-2 mt-1">
-            <span className={cn("inline-flex items-center gap-1 text-[11px] font-medium", qtCfg.color)}>
+            <span className={cn("inline-flex items-center gap-1 text-xs font-medium", qtCfg.color)}>
               <QIcon className="w-3 h-3" /> {qtCfg.label}
             </span>
-            {question.required && <span className="text-[10px] text-rose-500 font-medium">Required</span>}
+            {question.required && <span className="text-xs text-rose-500 font-medium">Required</span>}
           </div>
         </div>
 
@@ -264,7 +264,7 @@ const QuestionCard = ({ question, index, onUpdate, onDelete, isActive, onSelect,
                               }}
                               aria-label={`${fieldOpt.label} required`}
                             />
-                            <span className="text-[11px] text-muted-foreground">Required</span>
+                            <span className="text-xs text-muted-foreground">Required</span>
                           </div>
                         )}
                         <Switch
@@ -357,7 +357,7 @@ const LivePreview = ({ campaign }: { campaign: Campaign }) => {
                 <div>
                   <p className="text-sm font-semibold text-gray-800">{q.questionText}</p>
                   {q.description && <p className="text-xs text-gray-500 mt-1">{q.description}</p>}
-                  {q.required && <span className="text-[10px] text-red-500">*Required</span>}
+                  {q.required && <span className="text-xs text-red-500">*Required</span>}
                 </div>
                 {q.type === "multiple_choice" && (
                   <div className="space-y-2">
@@ -374,7 +374,7 @@ const LivePreview = ({ campaign }: { campaign: Campaign }) => {
                 )}
                 {q.type === "scale" && (
                   <div className="space-y-2">
-                    <div className="flex justify-between text-[10px] text-gray-500">
+                    <div className="flex justify-between text-xs text-gray-500">
                       <span>{q.config.minLabel || q.config.min || 1}</span>
                       <span>{q.config.maxLabel || q.config.max || 10}</span>
                     </div>
@@ -829,7 +829,7 @@ const CampaignBuilder = ({ campaign, onBack, onSave }: {
                   {/* Header Image Upload */}
                   <div className="space-y-2">
                     <Label className="text-xs font-medium">Header Image</Label>
-                    <p className="text-[11px] text-muted-foreground">Displayed at the top of the campaign page. Recommended size: 1200 x 400px (3:1 ratio).</p>
+                    <p className="text-xs text-muted-foreground">Displayed at the top of the campaign page. Recommended size: 1200 x 400px (3:1 ratio).</p>
                     {draft.settings.branding.headerImageUrl ? (
                       <div className="relative w-full aspect-[3/1] rounded-lg border border-border overflow-hidden bg-muted/30">
                         <img src={draft.settings.branding.headerImageUrl} alt="Header" className="w-full h-full object-cover" />
@@ -842,7 +842,7 @@ const CampaignBuilder = ({ campaign, onBack, onSave }: {
                       >
                         <Image className="w-8 h-8 text-muted-foreground mb-2" />
                         <p className="text-xs font-medium text-foreground">Upload header image</p>
-                        <p className="text-[11px] text-muted-foreground mt-0.5">1200 x 400px · PNG, JPG</p>
+                        <p className="text-xs text-muted-foreground mt-0.5">1200 x 400px · PNG, JPG</p>
                       </div>
                     )}
                     {draft.settings.branding.headerImageUrl && (
@@ -866,7 +866,7 @@ const CampaignBuilder = ({ campaign, onBack, onSave }: {
                       <input type="color" value={draft.settings.branding.primaryColor} onChange={(e) => updateBranding({ primaryColor: e.target.value, backgroundColor: e.target.value + "1A" })} className="w-10 h-10 rounded-lg border cursor-pointer" aria-label="Brand color picker" />
                       <Input value={draft.settings.branding.primaryColor} onChange={(e) => updateBranding({ primaryColor: e.target.value, backgroundColor: e.target.value + "1A" })} className="flex-1" aria-label="Brand color hex value" />
                     </div>
-                    <p className="text-[11px] text-muted-foreground">Background color is automatically set to 10% of primary</p>
+                    <p className="text-xs text-muted-foreground">Background color is automatically set to 10% of primary</p>
                   </div>
                   {/* Preview swatch */}
                   <div className="flex items-center gap-3">
@@ -1147,10 +1147,10 @@ export const CampaignsView = () => {
                       </div>
                     </td>
                     <td className="px-4 py-3.5">
-                      <Badge variant="outline" className="text-[10px]">{c.type === "video_quiz" ? "Video + Quiz" : "Survey"}</Badge>
+                      <Badge variant="outline" className="text-xs">{c.type === "video_quiz" ? "Video + Quiz" : "Survey"}</Badge>
                     </td>
                     <td className="px-4 py-3.5">
-                      <span className={cn("inline-flex items-center gap-1.5 px-2 py-0.5 text-[11px] font-semibold rounded-full border", stCfg.color)}>
+                      <span className={cn("inline-flex items-center gap-1.5 px-2 py-0.5 text-xs font-semibold rounded-full border", stCfg.color)}>
                         <span className={cn("w-1.5 h-1.5 rounded-full", stCfg.dot)} />
                         {stCfg.label}
                       </span>

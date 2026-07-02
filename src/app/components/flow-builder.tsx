@@ -114,7 +114,7 @@ function FlowNode({ data, selected }: NodeProps) {
                 key={i}
                 variant="outline"
                 className={cn(
-                  "text-[10px] font-semibold border-transparent",
+                  "text-xs font-semibold border-transparent",
                   b.tone === "yes" && "bg-emerald-50 text-emerald-700",
                   b.tone === "no" && "bg-rose-50 text-rose-700",
                   b.tone === "neutral" && "bg-muted text-muted-foreground"
@@ -623,7 +623,7 @@ function FlowBuilderInner({
               <Badge
                 variant="outline"
                 className={cn(
-                  "text-[10px] font-bold uppercase tracking-wider border-transparent",
+                  "text-xs font-bold uppercase tracking-wider border-transparent",
                   status === "active" && "bg-emerald-50 text-emerald-700",
                   status === "draft" && "bg-amber-50 text-amber-700",
                   status === "stopped" && "bg-rose-50 text-rose-700"
@@ -695,7 +695,7 @@ function FlowBuilderInner({
               <span className="flex items-center gap-1.5">
                 <Webhook className="w-3.5 h-3.5" />
                 Webhooks
-                <Badge variant="secondary" className="text-[10px] ml-0.5">{webhooks.length}</Badge>
+                <Badge variant="secondary" className="text-xs ml-0.5">{webhooks.length}</Badge>
               </span>
               {webhooksOpen ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronRight className="w-3.5 h-3.5" />}
             </button>
@@ -726,19 +726,19 @@ function FlowBuilderInner({
                           </button>
                         </div>
                       </div>
-                      <code className="text-[10px] text-muted-foreground font-mono truncate block">{wh.url}</code>
+                      <code className="text-xs text-muted-foreground font-mono truncate block">{wh.url}</code>
                       <div className="flex items-center gap-1 flex-wrap">
                         {wh.events.slice(0, 2).map(ev => (
-                          <span key={ev} className="px-1.5 py-0.5 text-[9px] bg-background border border-border rounded font-medium">{ev}</span>
+                          <span key={ev} className="px-1.5 py-0.5 text-xs bg-background border border-border rounded font-medium">{ev}</span>
                         ))}
                         {wh.events.length > 2 && (
-                          <span className="text-[9px] text-muted-foreground">+{wh.events.length - 2}</span>
+                          <span className="text-xs text-muted-foreground">+{wh.events.length - 2}</span>
                         )}
                       </div>
                       {wh.failureCount > 5 && (
                         <div className="flex items-center gap-1 text-destructive">
                           <AlertCircle className="w-2.5 h-2.5" />
-                          <span className="text-[10px] font-medium">{wh.failureCount} failures</span>
+                          <span className="text-xs font-medium">{wh.failureCount} failures</span>
                         </div>
                       )}
                     </div>
@@ -768,9 +768,9 @@ function FlowBuilderInner({
             >
               <LayoutTemplate className="w-4 h-4 text-primary" />
               Browse Templates
-              <Badge variant="secondary" className="text-[10px] ml-auto">{JOURNEY_TEMPLATES.length}</Badge>
+              <Badge variant="secondary" className="text-xs ml-auto">{JOURNEY_TEMPLATES.length}</Badge>
             </Button>
-            <p className="text-[10px] text-muted-foreground mt-2 leading-relaxed">
+            <p className="text-xs text-muted-foreground mt-2 leading-relaxed">
               Choose from pre-built journey templates to get started quickly.
             </p>
           </div>
@@ -995,7 +995,7 @@ function TemplateGalleryModal({
             >
               {cat.label}
               <span className={cn(
-                "text-[10px] tabular-nums",
+                "text-xs tabular-nums",
                 category === cat.id ? "opacity-80" : "opacity-50"
               )}>
                 {categoryCounts[cat.id] || 0}
@@ -1031,11 +1031,11 @@ function TemplateGalleryModal({
                       </div>
                       <div className="min-w-0 flex-1">
                         <p className="text-sm font-bold leading-snug">{tpl.name}</p>
-                        <p className="text-[11px] opacity-70 leading-relaxed mt-1 line-clamp-2">{tpl.description}</p>
+                        <p className="text-xs opacity-70 leading-relaxed mt-1 line-clamp-2">{tpl.description}</p>
                         <div className="flex items-center gap-2 mt-2">
-                          <span className="text-[10px] opacity-50 font-semibold">{tpl.nodeCount} nodes</span>
-                          <span className="text-[10px] opacity-40">·</span>
-                          <span className="text-[10px] opacity-50 font-medium">{tpl.category}</span>
+                          <span className="text-xs opacity-50 font-semibold">{tpl.nodeCount} nodes</span>
+                          <span className="text-xs opacity-40">·</span>
+                          <span className="text-xs opacity-50 font-medium">{tpl.category}</span>
                         </div>
                       </div>
                     </div>

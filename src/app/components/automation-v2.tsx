@@ -417,10 +417,10 @@ const AutomationNodeComponent = ({ data, selected }: NodeProps) => {
               <p className="text-[13px] font-semibold text-foreground leading-tight truncate flex-1">{node.label}</p>
               {isExecMode && execStatus !== "idle" && <ExecStatusIcon status={execStatus} />}
             </div>
-            <p className="text-[11px] text-muted-foreground mt-0.5 truncate">{node.description}</p>
+            <p className="text-xs text-muted-foreground mt-0.5 truncate">{node.description}</p>
             {/* Exec duration */}
             {isExecMode && execData?.durationMs != null && (
-              <p className="text-[10px] text-muted-foreground mt-1 flex items-center gap-1">
+              <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
                 <Clock className="w-2.5 h-2.5" /> {execData.durationMs < 1000 ? `${execData.durationMs}ms` : `${(execData.durationMs / 1000).toFixed(1)}s`}
               </p>
             )}
@@ -428,7 +428,7 @@ const AutomationNodeComponent = ({ data, selected }: NodeProps) => {
         </div>
         {/* Stats row shown in exec mode */}
         {isExecMode && execData?.stats && (
-          <div className="px-3.5 pb-2 flex items-center gap-2.5 text-[10px] text-muted-foreground border-t border-border/50 pt-1.5 mt-0.5">
+          <div className="px-3.5 pb-2 flex items-center gap-2.5 text-xs text-muted-foreground border-t border-border/50 pt-1.5 mt-0.5">
             <span className="flex items-center gap-0.5"><Users className="w-2.5 h-2.5 text-blue-500" />{execData.stats.reached}</span>
             <span className="flex items-center gap-0.5"><Send className="w-2.5 h-2.5 text-emerald-500" />{execData.stats.sent}</span>
             <span className="flex items-center gap-0.5"><Eye className="w-2.5 h-2.5 text-violet-500" />{execData.stats.delivered > 0 ? Math.round((execData.stats.seen / execData.stats.delivered) * 100) : 0}%</span>
@@ -446,10 +446,10 @@ const AutomationNodeComponent = ({ data, selected }: NodeProps) => {
           <Handle type="source" position={Position.Right} id="true" className="!w-2.5 !h-2.5 !bg-emerald-500 !border-2 !border-background !-right-1.5 !top-[30%]" />
           <Handle type="source" position={Position.Right} id="false" className="!w-2.5 !h-2.5 !bg-red-500 !border-2 !border-background !-right-1.5 !top-[70%]" />
           <div className="absolute -bottom-6 left-1/3">
-            <span className="text-[9px] font-bold text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200">TRUE</span>
+            <span className="text-xs font-bold text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200">TRUE</span>
           </div>
           <div className="absolute -bottom-6 right-1/3">
-            <span className="text-[9px] font-bold text-red-600 bg-red-50 px-1.5 py-0.5 rounded border border-red-200">FALSE</span>
+            <span className="text-xs font-bold text-red-600 bg-red-50 px-1.5 py-0.5 rounded border border-red-200">FALSE</span>
           </div>
         </>
       )}
@@ -457,7 +457,7 @@ const AutomationNodeComponent = ({ data, selected }: NodeProps) => {
       {/* Exec error badge */}
       {isExecMode && execStatus === "error" && (
         <div className="absolute -bottom-5 left-1/2 -translate-x-1/2 whitespace-nowrap">
-          <span className="text-[9px] font-bold text-red-600 bg-red-50 px-2 py-0.5 rounded-full border border-red-200 flex items-center gap-1">
+          <span className="text-xs font-bold text-red-600 bg-red-50 px-2 py-0.5 rounded-full border border-red-200 flex items-center gap-1">
             <XCircle className="w-2.5 h-2.5" /> Error
           </span>
         </div>
@@ -582,7 +582,7 @@ const NodeInspector = ({ node, onUpdate, onClose, onDelete, isJourney, execData,
             <div className={cn("w-8 h-8 rounded-lg flex items-center justify-center", node.iconBg)}><Icon className={cn("w-4 h-4", node.iconColor)} /></div>
             <div>
               <p className="text-sm font-bold text-foreground">{node.label}</p>
-              <Badge variant="outline" className={cn("text-[10px] mt-0.5", colors.badge)}>{node.type}</Badge>
+              <Badge variant="outline" className={cn("text-xs mt-0.5", colors.badge)}>{node.type}</Badge>
             </div>
           </div>
           <button onClick={onClose} className="p-1.5 rounded-md hover:bg-muted text-muted-foreground hover:text-foreground"><X className="w-4 h-4" /></button>
@@ -640,7 +640,7 @@ const NodeInspector = ({ node, onUpdate, onClose, onDelete, isJourney, execData,
                   <Split className="w-4 h-4 text-orange-500 mt-0.5 shrink-0" />
                   <div>
                     <p className="text-xs font-semibold text-orange-700 dark:text-orange-400">Branching Node</p>
-                    <p className="text-[11px] text-orange-600 dark:text-orange-400/80 mt-0.5">TRUE path goes up, FALSE path goes down. Add nodes after each branch.</p>
+                    <p className="text-xs text-orange-600 dark:text-orange-400/80 mt-0.5">TRUE path goes up, FALSE path goes down. Add nodes after each branch.</p>
                   </div>
                 </div>
               </div>
@@ -665,7 +665,7 @@ const NodeInspector = ({ node, onUpdate, onClose, onDelete, isJourney, execData,
           <div className="space-y-1.5">
             <Label className="text-xs font-semibold text-foreground">Keyword Filter</Label>
             <Input value={node.config.keyword || ""} onChange={(e) => onUpdate({ config: { ...node.config, keyword: e.target.value } })} className="h-9 text-sm" placeholder="e.g. help, info, start" aria-label="Keyword filter" />
-            <p className="text-[11px] text-muted-foreground">Leave empty to trigger on any message.</p>
+            <p className="text-xs text-muted-foreground">Leave empty to trigger on any message.</p>
           </div>
         )}
         {node.category === "schedule" && (
@@ -813,7 +813,7 @@ const NodeConfigModal = ({ node, onSave, onCancel, onDelete, isJourney }: {
             <div className="flex-1">
               <h3 className="text-base font-bold text-foreground">{node.label}</h3>
               <div className="flex items-center gap-2 mt-0.5">
-                <Badge variant="outline" className={cn("text-[10px]", colors.badge)}>{node.type}</Badge>
+                <Badge variant="outline" className={cn("text-xs", colors.badge)}>{node.type}</Badge>
                 <span className="text-xs text-muted-foreground">{node.description}</span>
               </div>
             </div>
@@ -859,7 +859,7 @@ const NodeConfigModal = ({ node, onSave, onCancel, onDelete, isJourney }: {
                   {field.options.map(opt => <option key={opt.value} value={opt.value}>{opt.label}</option>)}
                 </select>
               )}
-              {field.hint && <p className="text-[11px] text-muted-foreground">{field.hint}</p>}
+              {field.hint && <p className="text-xs text-muted-foreground">{field.hint}</p>}
             </div>
           ))}
 
@@ -869,7 +869,7 @@ const NodeConfigModal = ({ node, onSave, onCancel, onDelete, isJourney }: {
                 <Split className="w-4 h-4 text-orange-500 mt-0.5 shrink-0" />
                 <div>
                   <p className="text-xs font-semibold text-orange-700 dark:text-orange-400">Branching Node</p>
-                  <p className="text-[11px] text-orange-600 dark:text-orange-400/80 mt-0.5">TRUE path goes up, FALSE path goes down.</p>
+                  <p className="text-xs text-orange-600 dark:text-orange-400/80 mt-0.5">TRUE path goes up, FALSE path goes down.</p>
                 </div>
               </div>
             </div>
@@ -970,7 +970,7 @@ const LogDrawer = ({ logs, isOpen, onToggle, onClear, onClickLog }: {
         className="w-full shrink-0 h-9 bg-card border-t border-border flex items-center justify-center gap-2 text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-muted transition-colors">
         <Terminal className="w-3.5 h-3.5" />
         Execution Logs ({logs.length})
-        {errorCount > 0 && <span className="px-1.5 py-0.5 rounded-full bg-red-100 text-red-600 text-[10px] font-bold">{errorCount} error{errorCount > 1 ? "s" : ""}</span>}
+        {errorCount > 0 && <span className="px-1.5 py-0.5 rounded-full bg-red-100 text-red-600 text-xs font-bold">{errorCount} error{errorCount > 1 ? "s" : ""}</span>}
         <ChevronUp className="w-3.5 h-3.5" />
       </button>
     );
@@ -983,14 +983,14 @@ const LogDrawer = ({ logs, isOpen, onToggle, onClear, onClickLog }: {
         <div className="flex items-center gap-3">
           <Terminal className="w-4 h-4 text-muted-foreground" />
           <span className="text-sm font-bold text-foreground">Execution Logs</span>
-          <Badge variant="secondary" className="text-[10px]">{filtered.length}</Badge>
-          {errorCount > 0 && <Badge variant="destructive" className="text-[10px]">{errorCount} error{errorCount > 1 ? "s" : ""}</Badge>}
+          <Badge variant="secondary" className="text-xs">{filtered.length}</Badge>
+          {errorCount > 0 && <Badge variant="destructive" className="text-xs">{errorCount} error{errorCount > 1 ? "s" : ""}</Badge>}
         </div>
         <div className="flex items-center gap-2">
           {/* Filter tabs */}
           {(["all", "success", "error", "warning"] as const).map(f => (
             <button key={f} onClick={() => setFilter(f)}
-              className={cn("px-2.5 py-1 rounded-md text-[10px] font-medium transition-colors",
+              className={cn("px-2.5 py-1 rounded-md text-xs font-medium transition-colors",
                 filter === f ? "bg-foreground/10 text-foreground" : "text-muted-foreground hover:text-foreground")}>
               {f === "all" ? "All" : f.charAt(0).toUpperCase() + f.slice(1)}
             </button>
@@ -1009,7 +1009,7 @@ const LogDrawer = ({ logs, isOpen, onToggle, onClear, onClickLog }: {
           filtered.map(log => (
             <button key={log.id} onClick={() => onClickLog(log.nodeId)}
               className="w-full flex items-center gap-3 px-4 py-1.5 hover:bg-muted/50 transition-colors text-left border-b border-border/30">
-              <span className="text-[10px] text-muted-foreground w-[70px] shrink-0">{new Date(log.timestamp).toLocaleTimeString()}</span>
+              <span className="text-xs text-muted-foreground w-[70px] shrink-0">{new Date(log.timestamp).toLocaleTimeString()}</span>
               <span className={cn("w-1.5 h-1.5 rounded-full shrink-0",
                 log.status === "success" ? "bg-emerald-500" : log.status === "error" ? "bg-red-500" : log.status === "warning" ? "bg-amber-500" : "bg-blue-500"
               )} />
@@ -1067,7 +1067,7 @@ const NodeExecDetail = ({ node, execData }: { node: FlowNode; execData?: NodeExe
               <XCircle className="w-3.5 h-3.5 mt-0.5 shrink-0" />
               <div>
                 <p className="font-semibold">Error</p>
-                <p className="mt-0.5 font-mono text-[11px]">{execData.error}</p>
+                <p className="mt-0.5 font-mono text-xs">{execData.error}</p>
               </div>
             </div>
           </div>
@@ -1076,16 +1076,16 @@ const NodeExecDetail = ({ node, execData }: { node: FlowNode; execData?: NodeExe
         {/* Input / Output data — primary focus for debugging */}
         {execData.inputData && (
           <div>
-            <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mb-1.5">Input Data</p>
-            <pre className="text-[11px] bg-muted/50 rounded-lg p-3 border border-border overflow-x-auto max-h-[140px] overflow-y-auto font-mono text-foreground">
+            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1.5">Input Data</p>
+            <pre className="text-xs bg-muted/50 rounded-lg p-3 border border-border overflow-x-auto max-h-[140px] overflow-y-auto font-mono text-foreground">
               {JSON.stringify(execData.inputData, null, 2)}
             </pre>
           </div>
         )}
         {execData.outputData && (
           <div>
-            <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mb-1.5">Output Data</p>
-            <pre className="text-[11px] bg-muted/50 rounded-lg p-3 border border-border overflow-x-auto max-h-[140px] overflow-y-auto font-mono text-foreground">
+            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1.5">Output Data</p>
+            <pre className="text-xs bg-muted/50 rounded-lg p-3 border border-border overflow-x-auto max-h-[140px] overflow-y-auto font-mono text-foreground">
               {JSON.stringify(execData.outputData, null, 2)}
             </pre>
           </div>
@@ -1094,7 +1094,7 @@ const NodeExecDetail = ({ node, execData }: { node: FlowNode; execData?: NodeExe
         {/* Stats — compact summary row */}
         {execData.stats && (
           <div>
-            <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mb-1.5">Throughput</p>
+            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1.5">Throughput</p>
             <div className="flex items-center gap-3 text-xs text-muted-foreground">
               <span className="flex items-center gap-1"><Users className="w-3 h-3 text-blue-500" /> {execData.stats.reached}</span>
               <span className="flex items-center gap-1"><Send className="w-3 h-3 text-emerald-500" /> {execData.stats.sent}</span>
@@ -1424,16 +1424,16 @@ export const AutomationCanvas = ({ automation, onBack, onSave, onUpdate }: {
               <Edit2 className="w-3 h-3 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
             </button>
           )}
-          <Badge variant="outline" className={cn("text-[10px]", modeInfo.bg, modeInfo.color, modeInfo.border)}>
+          <Badge variant="outline" className={cn("text-xs", modeInfo.bg, modeInfo.color, modeInfo.border)}>
             <modeInfo.icon className="w-3 h-3 mr-1" /> {modeInfo.label}
           </Badge>
-          <Badge variant="secondary" className="text-[10px]">{automation.nodes.length} node{automation.nodes.length !== 1 ? "s" : ""}</Badge>
+          <Badge variant="secondary" className="text-xs">{automation.nodes.length} node{automation.nodes.length !== 1 ? "s" : ""}</Badge>
         </div>
         <div className="flex items-center gap-2">
           {/* Test controls */}
           {isExecMode ? (
             <>
-              <Badge variant="outline" className={cn("text-[10px] font-semibold",
+              <Badge variant="outline" className={cn("text-xs font-semibold",
                 testRun?.status === "running" ? "bg-blue-50 text-blue-700 border-blue-200" :
                 testRun?.status === "completed" ? "bg-emerald-50 text-emerald-700 border-emerald-200" :
                 testRun?.status === "failed" ? "bg-red-50 text-red-700 border-red-200" :
@@ -1640,7 +1640,7 @@ const NewAutomationModal = ({ isOpen, onClose, onCreate, folders }: {
                     <div className="flex-1 min-w-0">
                       <p className={cn("text-sm font-bold", selectedMode === m.mode ? m.color : "text-foreground")}>{m.title}</p>
                       <p className="text-xs text-muted-foreground mt-0.5">{m.desc}</p>
-                      <p className="text-[11px] text-muted-foreground/70 mt-1 italic">{m.example}</p>
+                      <p className="text-xs text-muted-foreground/70 mt-1 italic">{m.example}</p>
                     </div>
                     {selectedMode === m.mode && <CheckCircle2 className={cn("w-5 h-5 shrink-0 mt-0.5", m.color)} />}
                   </button>
@@ -1710,7 +1710,7 @@ const FolderSidebar = ({ folders, selectedFolderId, automations, onSelectFolder,
         )}>
           <Inbox className="w-4 h-4 shrink-0" />
           <span className="text-sm flex-1 truncate">All Automations</span>
-          <span className={cn("text-[11px] tabular-nums", selectedFolderId === null ? "text-primary" : "text-muted-foreground")}>{totalCount}</span>
+          <span className={cn("text-xs tabular-nums", selectedFolderId === null ? "text-primary" : "text-muted-foreground")}>{totalCount}</span>
         </button>
 
         <div className="h-px bg-border my-2" />
@@ -1742,7 +1742,7 @@ const FolderSidebar = ({ folders, selectedFolderId, automations, onSelectFolder,
                 {isSelected ? <FolderOpen className="w-4 h-4 shrink-0" /> : <Folder className="w-4 h-4 shrink-0 text-muted-foreground" />}
                 <span className="text-sm flex-1 truncate">{folder.name}</span>
                 {/* Count hides on hover, edit/delete show instead */}
-                <span className={cn("text-[11px] tabular-nums group-hover:hidden", isSelected ? "text-primary" : "text-muted-foreground")}>{count}</span>
+                <span className={cn("text-xs tabular-nums group-hover:hidden", isSelected ? "text-primary" : "text-muted-foreground")}>{count}</span>
                 <span className="hidden group-hover:flex items-center gap-0.5">
                   <span role="button" onClick={(e) => { e.stopPropagation(); setEditingId(folder.id); setEditName(folder.name); }}
                     className="p-1 rounded hover:bg-muted text-muted-foreground hover:text-foreground"><Pencil className="w-3 h-3" /></span>
@@ -1940,9 +1940,9 @@ export const AutomationV2View = () => {
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2">
                           <h3 className="text-sm font-semibold text-foreground group-hover:text-primary transition-colors truncate">{a.name}</h3>
-                          <Badge variant="outline" className={cn("text-[10px] shrink-0", mInfo.bg, mInfo.color, mInfo.border)}>{mInfo.label}</Badge>
+                          <Badge variant="outline" className={cn("text-xs shrink-0", mInfo.bg, mInfo.color, mInfo.border)}>{mInfo.label}</Badge>
                           {folderObj && (
-                            <Badge variant="secondary" className="text-[10px] shrink-0 gap-1">
+                            <Badge variant="secondary" className="text-xs shrink-0 gap-1">
                               <Folder className="w-2.5 h-2.5" /> {folderObj.name}
                             </Badge>
                           )}
@@ -1960,7 +1960,7 @@ export const AutomationV2View = () => {
                             </React.Fragment>
                           );
                         })}
-                        {a.nodes.length > 5 && <span className="text-[10px] text-muted-foreground ml-1">+{a.nodes.length - 5}</span>}
+                        {a.nodes.length > 5 && <span className="text-xs text-muted-foreground ml-1">+{a.nodes.length - 5}</span>}
                       </div>
                       {/* Meta */}
                       <div className="flex items-center gap-4 shrink-0">
@@ -2024,7 +2024,7 @@ export const AutomationV2View = () => {
                   className="w-full flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-muted/70 transition-colors text-left">
                   <Folder className="w-4 h-4 text-muted-foreground" />
                   <span className="text-sm font-medium">{f.name}</span>
-                  <span className="text-[11px] text-muted-foreground ml-auto">{automations.filter(a => a.folderId === f.id).length}</span>
+                  <span className="text-xs text-muted-foreground ml-auto">{automations.filter(a => a.folderId === f.id).length}</span>
                 </button>
               ))}
             </div>

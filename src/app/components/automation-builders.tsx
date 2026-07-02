@@ -99,7 +99,7 @@ function BuilderHeader({
             <Badge
               variant="outline"
               className={cn(
-                "text-[10px] font-bold uppercase tracking-wider border-transparent",
+                "text-xs font-bold uppercase tracking-wider border-transparent",
                 status === "active" && "bg-emerald-50 text-emerald-700",
                 status === "draft" && "bg-amber-50 text-amber-700",
                 status === "stopped" && "bg-rose-50 text-rose-700"
@@ -875,7 +875,7 @@ function StepAnalytics({ stepIndex }: { stepIndex: number }) {
               <m.icon className={cn("w-3.5 h-3.5", m.color)} />
             </div>
             <span className="text-lg font-bold text-foreground leading-none">{m.value.toLocaleString()}</span>
-            <span className="text-[10px] text-muted-foreground uppercase tracking-wider font-medium">{m.label}</span>
+            <span className="text-xs text-muted-foreground uppercase tracking-wider font-medium">{m.label}</span>
             {m.sub && <span className={cn("text-xs font-semibold", m.color)}>{m.sub}</span>}
           </div>
         ))}
@@ -883,13 +883,13 @@ function StepAnalytics({ stepIndex }: { stepIndex: number }) {
 
       {/* Funnel bar */}
       <div className="mt-4 space-y-1.5">
-        <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-medium">Delivery funnel</p>
+        <p className="text-xs text-muted-foreground uppercase tracking-wider font-medium">Delivery funnel</p>
         <div className="h-2.5 rounded-full bg-muted overflow-hidden flex">
           <div className="bg-emerald-400 h-full transition-all" style={{ width: `${stats.delivered > 0 ? Math.round((stats.delivered / stats.reached) * 100) : 0}%` }} />
           <div className="bg-violet-400 h-full transition-all" style={{ width: `${stats.reached > 0 ? Math.round((stats.seen / stats.reached) * 100) : 0}%` }} />
           <div className="bg-orange-400 h-full transition-all" style={{ width: `${stats.reached > 0 ? Math.round((stats.clicked / stats.reached) * 100) : 0}%` }} />
         </div>
-        <div className="flex items-center gap-3 text-[10px] text-muted-foreground">
+        <div className="flex items-center gap-3 text-xs text-muted-foreground">
           <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-emerald-400" /> Delivered</span>
           <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-violet-400" /> Seen</span>
           <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-orange-400" /> Clicked</span>
@@ -909,7 +909,7 @@ function StepStatsBar({ stepIndex }: { stepIndex: number }) {
   const stats = useMemo(() => generateMockStats(stepIndex), [stepIndex]);
   const seenRate = stats.delivered > 0 ? Math.round((stats.seen / stats.delivered) * 100) : 0;
   return (
-    <div className="flex items-center gap-3 mt-3 text-[11px] text-muted-foreground">
+    <div className="flex items-center gap-3 mt-3 text-xs text-muted-foreground">
       <span className="flex items-center gap-1"><Users className="w-3 h-3 text-blue-500" />{stats.reached}</span>
       <span className="flex items-center gap-1"><Send className="w-3 h-3 text-emerald-500" />{stats.sent}</span>
       <span className="flex items-center gap-1"><Eye className="w-3 h-3 text-violet-500" />{seenRate}%</span>

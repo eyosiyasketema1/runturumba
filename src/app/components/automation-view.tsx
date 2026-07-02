@@ -863,7 +863,7 @@ export const AutomationView = ({
                                     const f = customFolders.find(f => f.automationIds.includes(rule.id));
                                     if (!f) return null;
                                     return (
-                                      <span className="inline-flex items-center gap-1 px-1.5 py-0.5 text-[10px] font-medium bg-muted text-muted-foreground rounded">
+                                      <span className="inline-flex items-center gap-1 px-1.5 py-0.5 text-xs font-medium bg-muted text-muted-foreground rounded">
                                         <Folder className="w-2.5 h-2.5" />{f.name}
                                       </span>
                                     );
@@ -1313,7 +1313,7 @@ const TemplateCard = ({ template, onUse, onPreview }: {
             <p className="text-sm font-semibold text-foreground truncate">{template.name}</p>
             {template.popular && <Star className="w-3 h-3 text-amber-500 shrink-0" />}
           </div>
-          <span className={cn("inline-flex items-center gap-1 mt-1 px-2 py-0.5 text-[10px] font-medium rounded-full border", typeCfg.bg, typeCfg.color, typeCfg.border)}>
+          <span className={cn("inline-flex items-center gap-1 mt-1 px-2 py-0.5 text-xs font-medium rounded-full border", typeCfg.bg, typeCfg.color, typeCfg.border)}>
             <TypeIcon className="w-2.5 h-2.5" />
             {typeCfg.label}
           </span>
@@ -1322,7 +1322,7 @@ const TemplateCard = ({ template, onUse, onPreview }: {
       <p className="text-xs text-muted-foreground leading-relaxed flex-1 mb-3">{template.description}</p>
       <div className="flex items-center gap-2">
         {template.steps && (
-          <span className="text-[10px] text-muted-foreground font-medium">{template.steps} steps</span>
+          <span className="text-xs text-muted-foreground font-medium">{template.steps} steps</span>
         )}
         <div className="flex-1" />
         {/* Hover-only actions */}
@@ -1394,7 +1394,7 @@ const MoveToFolderModal = ({
               <Folder className="w-4 h-4 shrink-0" />
               <span className="flex-1 font-medium">{folder.name}</span>
               {alreadyIn && (
-                <Badge variant="secondary" className="text-[10px]">Current</Badge>
+                <Badge variant="secondary" className="text-xs">Current</Badge>
               )}
               <span className="text-xs text-muted-foreground">{folder.automationIds.length} item{folder.automationIds.length !== 1 ? "s" : ""}</span>
             </button>
