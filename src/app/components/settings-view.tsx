@@ -96,7 +96,7 @@ const ProfileSection = ({ user, onUpdate }: { user: UserType; onUpdate: (data: P
                   </AvatarFallback>
                 )}
               </Avatar>
-              <button className="absolute inset-0 rounded-full bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer">
+              <button aria-label="Change profile photo" className="absolute inset-0 rounded-full bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer">
                 <Camera className="w-5 h-5 text-white" />
               </button>
             </div>
@@ -642,6 +642,7 @@ const NotificationsSection = () => {
                 <Switch
                   checked={prefs[item.key]}
                   onCheckedChange={() => togglePref(item.key)}
+                  aria-label={item.label}
                 />
               </div>
             </div>
@@ -680,6 +681,7 @@ const NotificationsSection = () => {
                 <Switch
                   checked={prefs[item.key]}
                   onCheckedChange={() => togglePref(item.key)}
+                  aria-label={item.label}
                 />
               </div>
             </div>
@@ -709,6 +711,7 @@ const NotificationsSection = () => {
             <Switch
               checked={prefs.browserEnabled}
               onCheckedChange={handleBrowserEnable}
+              aria-label="Enable browser notifications"
             />
           </div>
           {prefs.browserEnabled && (
@@ -727,6 +730,7 @@ const NotificationsSection = () => {
                     <Switch
                       checked={prefs[item.key]}
                       onCheckedChange={() => togglePref(item.key)}
+                      aria-label={item.label}
                     />
                   </div>
                 </div>
@@ -758,6 +762,7 @@ const NotificationsSection = () => {
             <Switch
               checked={prefs.dndEnabled}
               onCheckedChange={() => togglePref("dndEnabled")}
+              aria-label="Enable quiet hours"
             />
           </div>
           {prefs.dndEnabled && (
@@ -769,6 +774,7 @@ const NotificationsSection = () => {
                   value={dndFrom}
                   onChange={(e) => setDndFrom(e.target.value)}
                   className="w-32 h-8 text-xs"
+                  aria-label="Quiet hours start time"
                 />
               </div>
               <span className="text-muted-foreground text-xs mt-5">to</span>
@@ -779,6 +785,7 @@ const NotificationsSection = () => {
                   value={dndTo}
                   onChange={(e) => setDndTo(e.target.value)}
                   className="w-32 h-8 text-xs"
+                  aria-label="Quiet hours end time"
                 />
               </div>
             </motion.div>
@@ -801,6 +808,7 @@ const NotificationsSection = () => {
             <Switch
               checked={prefs.marketingEmails}
               onCheckedChange={() => togglePref("marketingEmails")}
+              aria-label="Product updates and tips"
             />
           </div>
         </CardContent>
@@ -991,18 +999,18 @@ const RulesPoliciesTab = () => {
               <p className="text-sm font-medium text-foreground">Require Disclaimer</p>
               <p className="text-xs text-muted-foreground">All outgoing messages must include a disclaimer footer</p>
             </div>
-            <Switch checked={contentRules.requireDisclaimer} onCheckedChange={(v) => setContentRules(p => ({ ...p, requireDisclaimer: v }))} />
+            <Switch checked={contentRules.requireDisclaimer} onCheckedChange={(v) => setContentRules(p => ({ ...p, requireDisclaimer: v }))} aria-label="Require disclaimer" />
           </div>
           {contentRules.requireDisclaimer && (
             <FormField label="Disclaimer Text">
-              <Input value={contentRules.disclaimerText} onChange={(e) => setContentRules(p => ({ ...p, disclaimerText: e.target.value }))} />
+              <Input value={contentRules.disclaimerText} onChange={(e) => setContentRules(p => ({ ...p, disclaimerText: e.target.value }))} aria-label="Disclaimer text" />
             </FormField>
           )}
           <FormField label="Blocked Keywords" description="Comma-separated words that cannot appear in any outgoing message">
-            <Textarea value={contentRules.blockedKeywords} onChange={(e) => setContentRules(p => ({ ...p, blockedKeywords: e.target.value }))} rows={2} />
+            <Textarea value={contentRules.blockedKeywords} onChange={(e) => setContentRules(p => ({ ...p, blockedKeywords: e.target.value }))} rows={2} aria-label="Blocked keywords" />
           </FormField>
           <FormField label="Tone Guideline">
-            <select value={contentRules.toneGuideline} onChange={(e) => setContentRules(p => ({ ...p, toneGuideline: e.target.value as any }))} className="h-10 w-full px-3 rounded-md border border-input bg-background text-sm">
+            <select value={contentRules.toneGuideline} onChange={(e) => setContentRules(p => ({ ...p, toneGuideline: e.target.value as any }))} className="h-10 w-full px-3 rounded-md border border-input bg-background text-sm" aria-label="Tone guideline">
               <option value="formal">Formal</option>
               <option value="warm">Warm & Friendly</option>
               <option value="casual">Casual</option>
@@ -1013,11 +1021,11 @@ const RulesPoliciesTab = () => {
               <p className="text-sm font-medium text-foreground">Enforce Language Requirements</p>
               <p className="text-xs text-muted-foreground">Child orgs must support these languages</p>
             </div>
-            <Switch checked={contentRules.enforceLanguage} onCheckedChange={(v) => setContentRules(p => ({ ...p, enforceLanguage: v }))} />
+            <Switch checked={contentRules.enforceLanguage} onCheckedChange={(v) => setContentRules(p => ({ ...p, enforceLanguage: v }))} aria-label="Enforce language requirements" />
           </div>
           {contentRules.enforceLanguage && (
             <FormField label="Required Languages">
-              <Input value={contentRules.requiredLanguages} onChange={(e) => setContentRules(p => ({ ...p, requiredLanguages: e.target.value }))} />
+              <Input value={contentRules.requiredLanguages} onChange={(e) => setContentRules(p => ({ ...p, requiredLanguages: e.target.value }))} aria-label="Required languages" />
             </FormField>
           )}
           <Button size="sm" onClick={() => toast.success("Content rules saved")}><Save className="w-3.5 h-3.5 mr-1.5" /> Save Rules</Button>
@@ -1036,14 +1044,14 @@ const RulesPoliciesTab = () => {
               <p className="text-sm font-medium text-foreground">Auto-Push New Automations</p>
               <p className="text-xs text-muted-foreground">Newly created automations are automatically pushed to all child orgs</p>
             </div>
-            <Switch checked={automationRules.pushNewAutomations} onCheckedChange={(v) => setAutomationRules(p => ({ ...p, pushNewAutomations: v }))} />
+            <Switch checked={automationRules.pushNewAutomations} onCheckedChange={(v) => setAutomationRules(p => ({ ...p, pushNewAutomations: v }))} aria-label="Auto-push new automations" />
           </div>
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-foreground">Lock Enforced Automations</p>
               <p className="text-xs text-muted-foreground">Child orgs cannot edit or delete enforced automations (they can duplicate)</p>
             </div>
-            <Switch checked={automationRules.lockEnforcedAutomations} onCheckedChange={(v) => setAutomationRules(p => ({ ...p, lockEnforcedAutomations: v }))} />
+            <Switch checked={automationRules.lockEnforcedAutomations} onCheckedChange={(v) => setAutomationRules(p => ({ ...p, lockEnforcedAutomations: v }))} aria-label="Lock enforced automations" />
           </div>
           <div>
             <p className="text-sm font-medium text-foreground mb-2">Enforced Automations</p>
@@ -1074,21 +1082,21 @@ const RulesPoliciesTab = () => {
         </CardHeader>
         <CardContent className="space-y-4">
           <FormField label="Max Team Members Per Org" description="Set to 0 for unlimited">
-            <Input type="number" min={0} value={userRules.maxUsersPerOrg} onChange={(e) => setUserRules(p => ({ ...p, maxUsersPerOrg: parseInt(e.target.value) || 0 }))} />
+            <Input type="number" min={0} value={userRules.maxUsersPerOrg} onChange={(e) => setUserRules(p => ({ ...p, maxUsersPerOrg: parseInt(e.target.value) || 0 }))} aria-label="Maximum team members per organization" />
           </FormField>
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-foreground">Require At Least 1 Admin</p>
               <p className="text-xs text-muted-foreground">Every child org must have at least one admin user</p>
             </div>
-            <Switch checked={userRules.requireAdmin} onCheckedChange={(v) => setUserRules(p => ({ ...p, requireAdmin: v }))} />
+            <Switch checked={userRules.requireAdmin} onCheckedChange={(v) => setUserRules(p => ({ ...p, requireAdmin: v }))} aria-label="Require at least one admin" />
           </div>
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-foreground">Require Approval for Invites</p>
               <p className="text-xs text-muted-foreground">Child org invitations need super org approval before being sent</p>
             </div>
-            <Switch checked={userRules.requireApprovalForInvites} onCheckedChange={(v) => setUserRules(p => ({ ...p, requireApprovalForInvites: v }))} />
+            <Switch checked={userRules.requireApprovalForInvites} onCheckedChange={(v) => setUserRules(p => ({ ...p, requireApprovalForInvites: v }))} aria-label="Require approval for invites" />
           </div>
           <Button size="sm" onClick={() => toast.success("User rules saved")}><Save className="w-3.5 h-3.5 mr-1.5" /> Save Rules</Button>
         </CardContent>
@@ -1102,7 +1110,7 @@ const RulesPoliciesTab = () => {
         </CardHeader>
         <CardContent className="space-y-4">
           <FormField label="Data Retention Period (days)" description="How long contact and message data is kept">
-            <select value={dataRules.retentionDays} onChange={(e) => setDataRules(p => ({ ...p, retentionDays: parseInt(e.target.value) }))} className="h-10 w-full px-3 rounded-md border border-input bg-background text-sm">
+            <select value={dataRules.retentionDays} onChange={(e) => setDataRules(p => ({ ...p, retentionDays: parseInt(e.target.value) }))} className="h-10 w-full px-3 rounded-md border border-input bg-background text-sm" aria-label="Data retention period">
               <option value={30}>30 days</option><option value={60}>60 days</option><option value={90}>90 days</option>
               <option value={180}>180 days</option><option value={365}>1 year</option><option value={730}>2 years</option>
             </select>
@@ -1112,17 +1120,17 @@ const RulesPoliciesTab = () => {
               <p className="text-sm font-medium text-foreground">Allow Data Export</p>
               <p className="text-xs text-muted-foreground">Child orgs can export their contacts and message data</p>
             </div>
-            <Switch checked={dataRules.allowExport} onCheckedChange={(v) => setDataRules(p => ({ ...p, allowExport: v }))} />
+            <Switch checked={dataRules.allowExport} onCheckedChange={(v) => setDataRules(p => ({ ...p, allowExport: v }))} aria-label="Allow data export" />
           </div>
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-foreground">Allow Bulk Delete</p>
               <p className="text-xs text-muted-foreground">Child orgs can bulk-delete contacts (dangerous)</p>
             </div>
-            <Switch checked={dataRules.allowBulkDelete} onCheckedChange={(v) => setDataRules(p => ({ ...p, allowBulkDelete: v }))} />
+            <Switch checked={dataRules.allowBulkDelete} onCheckedChange={(v) => setDataRules(p => ({ ...p, allowBulkDelete: v }))} aria-label="Allow bulk delete" />
           </div>
           <FormField label="Audit Log Retention (days)">
-            <select value={dataRules.auditLogRetention} onChange={(e) => setDataRules(p => ({ ...p, auditLogRetention: parseInt(e.target.value) }))} className="h-10 w-full px-3 rounded-md border border-input bg-background text-sm">
+            <select value={dataRules.auditLogRetention} onChange={(e) => setDataRules(p => ({ ...p, auditLogRetention: parseInt(e.target.value) }))} className="h-10 w-full px-3 rounded-md border border-input bg-background text-sm" aria-label="Audit log retention period">
               <option value={30}>30 days</option><option value={60}>60 days</option><option value={90}>90 days</option><option value={365}>1 year</option>
             </select>
           </FormField>
@@ -1131,7 +1139,7 @@ const RulesPoliciesTab = () => {
               <p className="text-sm font-medium text-foreground">Super Org Full Access</p>
               <p className="text-xs text-muted-foreground">Super org admins can view all child org data at any time</p>
             </div>
-            <Switch checked={dataRules.superOrgCanAccess} onCheckedChange={(v) => setDataRules(p => ({ ...p, superOrgCanAccess: v }))} />
+            <Switch checked={dataRules.superOrgCanAccess} onCheckedChange={(v) => setDataRules(p => ({ ...p, superOrgCanAccess: v }))} aria-label="Super org full access" />
           </div>
           <Button size="sm" onClick={() => toast.success("Data rules saved")}><Save className="w-3.5 h-3.5 mr-1.5" /> Save Rules</Button>
         </CardContent>
@@ -1178,7 +1186,7 @@ const SharedResourcesTab = ({ childOrgCount }: { childOrgCount: number }) => {
           <h3 className="text-base font-semibold text-foreground">Shared Resources</h3>
           <p className="text-sm text-muted-foreground mt-0.5">Push automations, templates, and content to child organizations</p>
         </div>
-        <select value={filterType} onChange={(e) => setFilterType(e.target.value as any)} className="h-9 px-3 rounded-md border border-input bg-background text-sm">
+        <select value={filterType} onChange={(e) => setFilterType(e.target.value as any)} className="h-9 px-3 rounded-md border border-input bg-background text-sm" aria-label="Filter by resource type">
           <option value="all">All types</option><option value="automation">Automations</option><option value="template">Templates</option><option value="content">Content</option>
         </select>
       </div>
@@ -1283,7 +1291,7 @@ const ActivityAuditTab = () => {
           <h3 className="text-base font-semibold text-foreground">Activity & Audit Log</h3>
           <p className="text-sm text-muted-foreground mt-0.5">Track all super org actions across child organizations</p>
         </div>
-        <select value={filterAction} onChange={(e) => setFilterAction(e.target.value)} className="h-9 px-3 rounded-md border border-input bg-background text-sm">
+        <select value={filterAction} onChange={(e) => setFilterAction(e.target.value)} className="h-9 px-3 rounded-md border border-input bg-background text-sm" aria-label="Filter by action type">
           <option value="all">All actions</option>
           <option value="org_created">Org created</option>
           <option value="org_suspended">Org suspended</option>
@@ -1426,20 +1434,21 @@ const ChildOrgsSection = ({
           <CardContent className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
               <FormField label="Organization Name">
-                <Input value={org.name} onChange={(e) => onUpdateChildOrg?.(org.id, { name: e.target.value })} />
+                <Input value={org.name} onChange={(e) => onUpdateChildOrg?.(org.id, { name: e.target.value })} aria-label="Organization name" />
               </FormField>
               <FormField label="Region">
-                <Input value={org.region || ""} onChange={(e) => onUpdateChildOrg?.(org.id, { region: e.target.value })} />
+                <Input value={org.region || ""} onChange={(e) => onUpdateChildOrg?.(org.id, { region: e.target.value })} aria-label="Region" />
               </FormField>
             </div>
             <FormField label="Description">
-              <Textarea value={org.description || ""} onChange={(e) => onUpdateChildOrg?.(org.id, { description: e.target.value })} rows={3} />
+              <Textarea value={org.description || ""} onChange={(e) => onUpdateChildOrg?.(org.id, { description: e.target.value })} rows={3} aria-label="Description" />
             </FormField>
             <FormField label="Plan">
               <select
                 value={org.plan}
                 onChange={(e) => onUpdateChildOrg?.(org.id, { plan: e.target.value as Plan })}
                 className="h-10 w-full px-3 rounded-md border border-input bg-background text-sm"
+                aria-label="Plan"
               >
                 <option value="free">Free</option>
                 <option value="pro">Pro</option>
@@ -2102,7 +2111,7 @@ const ApiSection = () => {
 
                 {/* Key Name */}
                 <FormField label="Key Name" description="A descriptive label to identify this key (e.g., 'Partner CRM Integration').">
-                  <Input value={newKeyName} onChange={e => setNewKeyName(e.target.value)} placeholder="e.g., Mobile App - Production" />
+                  <Input value={newKeyName} onChange={e => setNewKeyName(e.target.value)} placeholder="e.g., Mobile App - Production" aria-label="Key name" />
                 </FormField>
 
                 {/* Environment */}
@@ -2539,7 +2548,7 @@ const AISection = () => {
                     </div>
 
                     <FormField label="Label (what's this key for?)">
-                      <Input value={newKeyLabel} onChange={e => setNewKeyLabel(e.target.value)} placeholder={`e.g. Production ${selectedProvider.name}`} />
+                      <Input value={newKeyLabel} onChange={e => setNewKeyLabel(e.target.value)} placeholder={`e.g. Production ${selectedProvider.name}`} aria-label="Key label" />
                     </FormField>
 
                     <FormField label="API Key">
@@ -2550,6 +2559,7 @@ const AISection = () => {
                           placeholder={selectedProvider.keyPrefix ? `${selectedProvider.keyPrefix}...` : "Paste your API key here"}
                           type="password"
                           className="flex-1 font-mono"
+                          aria-label="API key"
                         />
                         <Button
                           size="sm"
@@ -2675,7 +2685,7 @@ const AISection = () => {
                   </div>
 
                   <FormField label="Label">
-                    <Input value={editLabel} onChange={e => setEditLabel(e.target.value)} />
+                    <Input value={editLabel} onChange={e => setEditLabel(e.target.value)} aria-label="Key label" />
                   </FormField>
 
                   <FormField label="API Key">
@@ -2685,6 +2695,7 @@ const AISection = () => {
                         onChange={e => { setEditKeyValue(e.target.value); setEditKeyChanged(true); if (editVerifyState !== "idle") setEditVerifyState("idle"); }}
                         type="password"
                         className="flex-1 font-mono"
+                        aria-label="API key"
                       />
                       {editKeyChanged && (
                         <Button
@@ -2796,6 +2807,7 @@ const AISection = () => {
                   <Switch
                     checked={k.active}
                     onCheckedChange={v => { setAiKeys(prev => prev.map(x => x.id === k.id ? { ...x, active: v } : x)); toast.success(`${k.label} ${v ? "activated" : "deactivated"}`); }}
+                    aria-label={`Toggle ${k.label}`}
                   />
                   <Button variant="ghost" size="sm" className="h-7 w-7 p-0 text-muted-foreground hover:text-red-500" onClick={() => { setAiKeys(prev => prev.filter(x => x.id !== k.id)); toast.success("Key removed"); }}>
                     <Trash2 className="w-3.5 h-3.5" />
@@ -2829,6 +2841,7 @@ const AISection = () => {
             <Switch
               checked={sharedAI}
               onCheckedChange={v => { setSharedAI(v); toast.success(v ? "Shared AI enabled for child organizations" : "Shared AI disabled"); }}
+              aria-label="Enable shared AI usage"
             />
           </div>
           {sharedAI && (
@@ -2868,7 +2881,7 @@ const AISection = () => {
           {showAddRule && (
             <div className="p-4 border border-dashed border-amber-300 rounded-lg bg-amber-50 space-y-3">
               <FormField label="Rule Description">
-                <Textarea value={newRuleText} onChange={e => setNewRuleText(e.target.value)} placeholder="Describe the rule AI must follow..." rows={2} />
+                <Textarea value={newRuleText} onChange={e => setNewRuleText(e.target.value)} placeholder="Describe the rule AI must follow..." rows={2} aria-label="Rule description" />
               </FormField>
               <Button size="sm" onClick={addRule}><Check className="w-3.5 h-3.5" /> Add Rule</Button>
             </div>
@@ -2883,6 +2896,7 @@ const AISection = () => {
                 <Switch
                   checked={r.enabled}
                   onCheckedChange={v => { setRules(prev => prev.map(x => x.id === r.id ? { ...x, enabled: v } : x)); toast.success(`Rule ${v ? "enabled" : "disabled"}`); }}
+                  aria-label={`Toggle rule ${idx + 1}`}
                 />
                 <Button variant="ghost" size="sm" className="h-7 w-7 p-0 text-muted-foreground hover:text-red-500" onClick={() => { setRules(prev => prev.filter(x => x.id !== r.id)); toast.success("Rule removed"); }}>
                   <Trash2 className="w-3.5 h-3.5" />
@@ -3009,6 +3023,7 @@ const TerminologySection = () => {
             onChange={e => setSearchQ(e.target.value)}
             placeholder="Search terms..."
             className="w-full h-9 pl-3 pr-3 border border-input rounded-md bg-background text-sm focus:outline-none focus:ring-1 focus:ring-ring"
+            aria-label="Search terms"
           />
         </div>
         <Badge variant="secondary" className="text-xs shrink-0">{customizedCount} customized</Badge>
@@ -3023,14 +3038,14 @@ const TerminologySection = () => {
         <div className="p-4 border border-dashed border-primary/30 rounded-lg bg-primary/5 space-y-3">
           <div className="grid grid-cols-2 gap-3">
             <FormField label="Term Key" description="Internal identifier (e.g. small_group)">
-              <Input value={newKey} onChange={e => setNewKey(e.target.value)} placeholder="e.g. fellowship" />
+              <Input value={newKey} onChange={e => setNewKey(e.target.value)} placeholder="e.g. fellowship" aria-label="Term key" />
             </FormField>
             <FormField label="Default Label" description="The standard name for this term">
-              <Input value={newDefault} onChange={e => setNewDefault(e.target.value)} placeholder="e.g. Fellowship" />
+              <Input value={newDefault} onChange={e => setNewDefault(e.target.value)} placeholder="e.g. Fellowship" aria-label="Default label" />
             </FormField>
           </div>
           <FormField label="Description" description="What this term refers to">
-            <Input value={newDesc} onChange={e => setNewDesc(e.target.value)} placeholder="e.g. A gathering for worship and community" />
+            <Input value={newDesc} onChange={e => setNewDesc(e.target.value)} placeholder="e.g. A gathering for worship and community" aria-label="Term description" />
           </FormField>
           <Button size="sm" onClick={addCustomTerm}><Check className="w-3.5 h-3.5" /> Add Term</Button>
         </div>
@@ -3069,6 +3084,7 @@ const TerminologySection = () => {
                         onChange={e => updateTerm(t.id, e.target.value)}
                         placeholder={t.defaultLabel}
                         className="h-8 text-sm max-w-[200px]"
+                        aria-label={`Custom label for ${t.defaultLabel}`}
                       />
                     </td>
                     <td className="px-4 py-3 text-xs text-muted-foreground max-w-[240px]">{t.description}</td>

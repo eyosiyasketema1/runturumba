@@ -357,6 +357,7 @@ function QuickRepliesEditor({
           onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); add(); } }}
           placeholder="Add a quick reply (press Enter)"
           className="h-9 text-sm"
+          aria-label="Add a quick reply"
         />
         <Button variant="outline" size="sm" onClick={add} disabled={!draft.trim()}>
           <Plus className="w-3.5 h-3.5" /> Add
@@ -460,6 +461,7 @@ export function BasicAutomationBuilder({
                   onChange={(e) => setKeyword(e.target.value)}
                   placeholder="e.g. prayer, pray, praying"
                   className="h-10"
+                  aria-label="Trigger keywords"
                 />
                 <p className="text-xs text-muted-foreground">Separate multiple keywords with commas. Case-insensitive.</p>
               </Section>
@@ -510,6 +512,7 @@ export function BasicAutomationBuilder({
                 onChange={(e) => setMessage(e.target.value)}
                 className="min-h-[140px] text-sm"
                 placeholder="Hi {{name}}! Thanks for reaching out."
+                aria-label="Reply message"
               />
               <p className="text-xs text-muted-foreground">{message.length} characters</p>
             </Section>
@@ -695,12 +698,14 @@ export function SequenceBuilder({
                                 onClick={(e) => e.stopPropagation()}
                                 onChange={(e) => { e.stopPropagation(); updateStep(step.id, { delay: { ...step.delay, amount: Math.max(0, parseInt(e.target.value || "0", 10)) } }); }}
                                 className="w-16 h-9 text-center text-sm font-medium text-foreground bg-background border border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-ring"
+                                aria-label="Delay amount"
                               />
                               <select
                                 value={step.delay.unit}
                                 onClick={(e) => e.stopPropagation()}
                                 onChange={(e) => { e.stopPropagation(); updateStep(step.id, { delay: { ...step.delay, unit: e.target.value as SequenceStep["delay"]["unit"] } }); }}
                                 className="h-9 text-sm font-medium text-foreground bg-background border border-input rounded-lg px-3 focus:outline-none focus:ring-2 focus:ring-ring"
+                                aria-label="Delay unit"
                               >
                                 <option value="minutes">minutes</option>
                                 <option value="hours">hours</option>
@@ -935,6 +940,7 @@ function StepInspector({
           onChange={(e) => onUpdate({ message: e.target.value })}
           className="min-h-[140px] text-sm"
           placeholder="Type the message for this step..."
+          aria-label="Step message"
         />
         <div className="flex items-center gap-3 py-2">
           <Switch

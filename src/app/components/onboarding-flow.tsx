@@ -489,6 +489,7 @@ const AccountStep = ({ data, updateData, showPassword, setShowPassword }: {
           placeholder="Jane Smith"
           value={data.fullName}
           onChange={(e) => updateData({ fullName: e.target.value })}
+          aria-label="Full name"
           className="h-11"
         />
       </div>
@@ -499,6 +500,7 @@ const AccountStep = ({ data, updateData, showPassword, setShowPassword }: {
           placeholder="you@company.com"
           value={data.email}
           onChange={(e) => updateData({ email: e.target.value })}
+          aria-label="Email address"
           className="h-11"
         />
       </div>
@@ -510,6 +512,7 @@ const AccountStep = ({ data, updateData, showPassword, setShowPassword }: {
             placeholder="Min. 6 characters"
             value={data.password}
             onChange={(e) => updateData({ password: e.target.value })}
+            aria-label="Password"
             className="h-11 pr-10"
           />
           <button
@@ -562,6 +565,7 @@ const OrganizationStep = ({ data, updateData }: {
           placeholder="Acme Corp"
           value={data.orgName}
           onChange={(e) => updateData({ orgName: e.target.value })}
+          aria-label="Organization name"
           className="h-11"
         />
         <p className="text-xs text-muted-foreground">This will appear as your sender identity on some channels.</p>
@@ -794,6 +798,7 @@ const ChannelConfigStep = ({ selectedChannels, configs, onUpdateConfig, activeId
                     placeholder={field.placeholder}
                     value={channelConfig[field.key] || ""}
                     onChange={(e) => onUpdateConfig(activeChannel, field.key, e.target.value)}
+                    aria-label={field.label}
                     className="h-10 text-sm"
                   />
                 </div>
@@ -951,18 +956,21 @@ const ContactsStep = ({ data, updateData, onAddContact, onUpdateContact, onRemov
                   placeholder="Name"
                   value={contact.name}
                   onChange={(e) => onUpdateContact(i, "name", e.target.value)}
+                  aria-label={`Contact ${i + 1} name`}
                   className="h-9 text-sm"
                 />
                 <Input
                   placeholder="Phone"
                   value={contact.phone}
                   onChange={(e) => onUpdateContact(i, "phone", e.target.value)}
+                  aria-label={`Contact ${i + 1} phone`}
                   className="h-9 text-sm"
                 />
                 <Input
                   placeholder="Email"
                   value={contact.email}
                   onChange={(e) => onUpdateContact(i, "email", e.target.value)}
+                  aria-label={`Contact ${i + 1} email`}
                   className="h-9 text-sm"
                 />
               </div>
@@ -992,6 +1000,7 @@ const ContactsStep = ({ data, updateData, onAddContact, onUpdateContact, onRemov
               accept=".csv"
               ref={fileInputRef}
               onChange={handleCSVUpload}
+              aria-label="Upload CSV file"
               className="hidden"
             />
           </div>

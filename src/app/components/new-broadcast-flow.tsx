@@ -150,11 +150,12 @@ export const NewBroadcastFlow: React.FC<NewBroadcastFlowProps> = ({
 
               <div className="relative mb-6">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                <input 
+                <input
                   type="text"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   placeholder="Search groups by name..."
+                  aria-label="Search groups"
                   className="w-full pl-10 pr-4 py-3 bg-muted/30 border border-input rounded-lg focus:ring-2 focus:ring-primary/20 outline-none transition-all"
                 />
               </div>
@@ -231,11 +232,12 @@ export const NewBroadcastFlow: React.FC<NewBroadcastFlowProps> = ({
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-2">
                   <label className="text-xs font-bold text-muted-foreground uppercase tracking-widest px-1">Broadcast Title</label>
-                  <input 
+                  <input
                     type="text"
                     value={broadcastTitle}
                     onChange={(e) => setBroadcastTitle(e.target.value)}
                     placeholder="e.g. Monthly Newsletter"
+                    aria-label="Broadcast title"
                     className="w-full px-4 py-2.5 bg-muted/30 border border-input rounded-md text-sm focus:ring-2 focus:ring-primary/20 outline-none transition-all"
                   />
                 </div>
@@ -257,10 +259,11 @@ export const NewBroadcastFlow: React.FC<NewBroadcastFlowProps> = ({
                   </button>
                 </div>
                 <div className="relative flex-1 min-h-[250px] flex flex-col">
-                  <textarea 
+                  <textarea
                     value={messageContent}
                     onChange={(e) => setMessageContent(e.target.value)}
                     placeholder="Type your broadcast message here... Use {name} for personalization."
+                    aria-label="Message content"
                     className="flex-1 w-full p-4 bg-muted/30 border border-input rounded-md text-sm focus:ring-2 focus:ring-primary/20 outline-none transition-all resize-none"
                   />
                   <div className="absolute bottom-4 right-4 flex gap-4 text-xs font-bold text-muted-foreground bg-background/80 backdrop-blur px-2 py-1 rounded-md border border-border">
@@ -373,10 +376,11 @@ export const NewBroadcastFlow: React.FC<NewBroadcastFlowProps> = ({
                         <label className="text-xs font-bold text-muted-foreground uppercase tracking-widest px-1">Send Date & Time</label>
                         <div className="relative">
                           <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                          <input 
+                          <input
                             type="datetime-local"
                             value={scheduledAt}
                             onChange={(e) => setScheduledAt(e.target.value)}
+                            aria-label="Schedule date and time"
                             className="w-full pl-10 pr-4 py-2 bg-background border border-input rounded-md text-sm outline-none focus:ring-2 focus:ring-primary/20 transition-all"
                           />
                         </div>

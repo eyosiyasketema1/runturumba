@@ -361,6 +361,7 @@ export const ChannelsView = ({
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="pl-9 h-9 text-sm"
+              aria-label="Search channels"
             />
           </div>
           {/* Type filter */}
@@ -641,7 +642,7 @@ const ChannelRow = ({ channel, onToggle, onDetail, onEdit, onDelete, onDuplicate
 
             {/* Actions */}
             <div className="flex items-center gap-2" onClick={e => e.stopPropagation()}>
-              <Switch checked={channel.enabled} onCheckedChange={onToggle} />
+              <Switch checked={channel.enabled} onCheckedChange={onToggle} aria-label="Enable channel" />
               {/* Context menu */}
               <div className="relative" ref={menuRef}>
                 <Button variant="ghost" size="sm" className="h-8 w-8 p-0" onClick={() => setMenuOpen(!menuOpen)}>
@@ -816,11 +817,11 @@ const AddChannelModal = ({ isOpen, onClose, onAdd }: {
               {/* Basics */}
               <div className="grid gap-2">
                 <Label className="text-xs font-semibold">Channel Name <span className="text-destructive">*</span></Label>
-                <Input placeholder="e.g. Main WhatsApp, Support SMS" value={name} onChange={e => setName(e.target.value)} className="h-9 text-sm" />
+                <Input placeholder="e.g. Main WhatsApp, Support SMS" value={name} onChange={e => setName(e.target.value)} className="h-9 text-sm" aria-label="Channel name" />
               </div>
               <div className="grid gap-2">
                 <Label className="text-xs font-semibold">Sender Name</Label>
-                <Input placeholder="e.g. Acme Corp, support@acme.com" value={senderName} onChange={e => setSenderName(e.target.value)} className="h-9 text-sm" />
+                <Input placeholder="e.g. Acme Corp, support@acme.com" value={senderName} onChange={e => setSenderName(e.target.value)} className="h-9 text-sm" aria-label="Sender name" />
                 <p className="text-xs text-muted-foreground">The name or number recipients will see.</p>
               </div>
 
@@ -837,6 +838,7 @@ const AddChannelModal = ({ isOpen, onClose, onAdd }: {
                     value={config[f.key] || ""}
                     onChange={e => setConfig(prev => ({ ...prev, [f.key]: e.target.value }))}
                     className="h-9 text-sm"
+                    aria-label={f.label}
                   />
                   {f.hint && <p className="text-xs text-muted-foreground">{f.hint}</p>}
                 </div>
@@ -849,15 +851,15 @@ const AddChannelModal = ({ isOpen, onClose, onAdd }: {
               <div className="grid grid-cols-3 gap-3">
                 <div className="grid gap-2">
                   <Label className="text-xs font-semibold">Rate Limit</Label>
-                  <Input type="number" placeholder="msg/hr" value={rateLimit} onChange={e => setRateLimit(e.target.value)} className="h-9 text-sm" />
+                  <Input type="number" placeholder="msg/hr" value={rateLimit} onChange={e => setRateLimit(e.target.value)} className="h-9 text-sm" aria-label="Rate limit" />
                 </div>
                 <div className="grid gap-2">
                   <Label className="text-xs font-semibold">Priority</Label>
-                  <Input type="number" placeholder="1-10" value={priority} onChange={e => setPriority(e.target.value)} className="h-9 text-sm" />
+                  <Input type="number" placeholder="1-10" value={priority} onChange={e => setPriority(e.target.value)} className="h-9 text-sm" aria-label="Channel priority" />
                 </div>
                 <div className="grid gap-2">
                   <Label className="text-xs font-semibold">Country Code</Label>
-                  <Input placeholder="+1" value={countryCode} onChange={e => setCountryCode(e.target.value)} className="h-9 text-sm" />
+                  <Input placeholder="+1" value={countryCode} onChange={e => setCountryCode(e.target.value)} className="h-9 text-sm" aria-label="Country code" />
                 </div>
               </div>
             </div>
@@ -990,11 +992,11 @@ const EditChannelModal = ({ isOpen, onClose, channel, onSave }: {
         {/* Basics */}
         <div className="grid gap-2">
           <Label className="text-xs font-semibold">Channel Name</Label>
-          <Input value={name} onChange={e => setName(e.target.value)} className="h-9 text-sm" />
+          <Input value={name} onChange={e => setName(e.target.value)} className="h-9 text-sm" aria-label="Channel name" />
         </div>
         <div className="grid gap-2">
           <Label className="text-xs font-semibold">Sender Name</Label>
-          <Input value={senderName} onChange={e => setSenderName(e.target.value)} className="h-9 text-sm" />
+          <Input value={senderName} onChange={e => setSenderName(e.target.value)} className="h-9 text-sm" aria-label="Sender name" />
         </div>
 
         <Separator />
@@ -1010,6 +1012,7 @@ const EditChannelModal = ({ isOpen, onClose, channel, onSave }: {
               value={config[f.key] || ""}
               onChange={e => setConfig(prev => ({ ...prev, [f.key]: e.target.value }))}
               className="h-9 text-sm"
+              aria-label={f.label}
             />
           </div>
         ))}
@@ -1021,15 +1024,15 @@ const EditChannelModal = ({ isOpen, onClose, channel, onSave }: {
         <div className="grid grid-cols-3 gap-3">
           <div className="grid gap-2">
             <Label className="text-xs font-semibold">Rate Limit</Label>
-            <Input type="number" placeholder="msg/hr" value={rateLimit} onChange={e => setRateLimit(e.target.value)} className="h-9 text-sm" />
+            <Input type="number" placeholder="msg/hr" value={rateLimit} onChange={e => setRateLimit(e.target.value)} className="h-9 text-sm" aria-label="Rate limit" />
           </div>
           <div className="grid gap-2">
             <Label className="text-xs font-semibold">Priority</Label>
-            <Input type="number" placeholder="1-10" value={priority} onChange={e => setPriority(e.target.value)} className="h-9 text-sm" />
+            <Input type="number" placeholder="1-10" value={priority} onChange={e => setPriority(e.target.value)} className="h-9 text-sm" aria-label="Channel priority" />
           </div>
           <div className="grid gap-2">
             <Label className="text-xs font-semibold">Country Code</Label>
-            <Input placeholder="+1" value={countryCode} onChange={e => setCountryCode(e.target.value)} className="h-9 text-sm" />
+            <Input placeholder="+1" value={countryCode} onChange={e => setCountryCode(e.target.value)} className="h-9 text-sm" aria-label="Country code" />
           </div>
         </div>
       </div>
@@ -1110,7 +1113,7 @@ const ChannelDetailDrawer = ({ isOpen, onClose, channel, onToggle, onEdit, onDel
             </div>
           </div>
           <div className="flex items-center gap-2 shrink-0">
-            <Switch checked={channel.enabled} onCheckedChange={onToggle} />
+            <Switch checked={channel.enabled} onCheckedChange={onToggle} aria-label="Enable channel" />
             <span className="text-xs text-muted-foreground font-medium w-14">{channel.enabled ? "Enabled" : "Disabled"}</span>
           </div>
         </div>
@@ -1327,6 +1330,7 @@ const DeleteConfirmModal = ({ isOpen, channelName, onClose, onConfirm }: {
             onChange={e => setConfirmText(e.target.value)}
             placeholder="delete"
             className="h-9 text-sm"
+            aria-label="Confirmation text"
           />
         </div>
         <div className="flex justify-end gap-2">
@@ -1522,6 +1526,7 @@ const TestChannelModal = ({ isOpen, onClose, channel, onStatusChange }: {
                 value={testMessage}
                 onChange={e => setTestMessage(e.target.value)}
                 className="h-9 text-sm flex-1"
+                aria-label="Test message"
               />
               <Button
                 size="sm"

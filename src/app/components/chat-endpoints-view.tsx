@@ -500,7 +500,7 @@ function EndpointFormModal({
           <div className="flex-1 space-y-3">
             <div className="space-y-1.5">
               <Label>Name <span className="text-destructive">*</span></Label>
-              <Input placeholder="Support Chat" value={form.name} onChange={e => set("name", e.target.value)} />
+              <Input placeholder="Support Chat" value={form.name} onChange={e => set("name", e.target.value)} aria-label="Endpoint name" />
             </div>
             <div className="space-y-1.5">
               <Label>Description <span className="text-xs text-muted-foreground font-normal">(optional)</span></Label>
@@ -508,6 +508,7 @@ function EndpointFormModal({
                 placeholder="Help visitors with questions about our products…"
                 value={form.description}
                 onChange={e => set("description", e.target.value)}
+                aria-label="Endpoint description"
               />
             </div>
           </div>
@@ -516,7 +517,7 @@ function EndpointFormModal({
         {/* Launcher Text */}
         <div className="space-y-1.5">
           <Label>Launcher Text</Label>
-          <Input placeholder="Chat with us" value={form.launcherText} onChange={e => set("launcherText", e.target.value)} />
+          <Input placeholder="Chat with us" value={form.launcherText} onChange={e => set("launcherText", e.target.value)} aria-label="Launcher text" />
         </div>
 
         {/* ── Brand Color ──────────────────────────────────────────────────── */}
@@ -582,6 +583,7 @@ function EndpointFormModal({
                     value={form.brandColor}
                     onChange={e => set("brandColor", e.target.value)}
                     className="w-9 h-9 border-0 bg-transparent cursor-pointer p-0"
+                    aria-label="Brand color picker"
                   />
                   <div className="space-y-0.5">
                     <p className="text-xs font-semibold text-foreground">Custom Color</p>
@@ -625,6 +627,7 @@ function EndpointFormModal({
                     <input type="color" value={form.brandGradientFrom}
                       onChange={e => set("brandGradientFrom", e.target.value)}
                       className="w-7 h-7 border-0 bg-transparent cursor-pointer p-0"
+                      aria-label="Gradient from color picker"
                     />
                     <span className="text-xs font-mono text-foreground">{form.brandGradientFrom}</span>
                   </div>
@@ -635,6 +638,7 @@ function EndpointFormModal({
                     <input type="color" value={form.brandGradientTo}
                       onChange={e => set("brandGradientTo", e.target.value)}
                       className="w-7 h-7 border-0 bg-transparent cursor-pointer p-0"
+                      aria-label="Gradient to color picker"
                     />
                     <span className="text-xs font-mono text-foreground">{form.brandGradientTo}</span>
                   </div>
@@ -768,6 +772,7 @@ function EndpointFormModal({
                       value={form.brandColor}
                       onChange={e => set("brandColor", e.target.value)}
                       className="w-9 h-9 border-0 bg-transparent cursor-pointer p-0"
+                      aria-label="Brand color picker"
                     />
                     <div className="space-y-0.5">
                       <p className="text-xs font-semibold text-foreground">Custom Color</p>
@@ -860,6 +865,7 @@ function EndpointFormModal({
             value={form.cornerRadius}
             onChange={e => set("cornerRadius", Number(e.target.value))}
             className="w-full accent-primary h-1.5 cursor-pointer"
+            aria-label="Corner radius"
           />
           <div className="flex justify-between text-xs text-muted-foreground font-mono">
             <span>0</span><span>6</span><span>12</span><span>18</span><span>24</span>
@@ -913,6 +919,7 @@ function EndpointFormModal({
                 value={form.widgetWidth}
                 onChange={e => set("widgetWidth", Number(e.target.value))}
                 className="w-full accent-primary h-1.5 cursor-pointer"
+                aria-label="Widget width"
               />
             </div>
             <div className="space-y-1.5">
@@ -928,6 +935,7 @@ function EndpointFormModal({
                 value={form.widgetHeight}
                 onChange={e => set("widgetHeight", Number(e.target.value))}
                 className="w-full accent-primary h-1.5 cursor-pointer"
+                aria-label="Widget height"
               />
             </div>
           </div>
@@ -941,6 +949,7 @@ function EndpointFormModal({
             value={form.welcomeMessage}
             onChange={e => set("welcomeMessage", e.target.value)}
             rows={2}
+            aria-label="Welcome message"
           />
         </div>
         <div className="space-y-1.5">
@@ -950,6 +959,7 @@ function EndpointFormModal({
             value={form.offlineMessage}
             onChange={e => set("offlineMessage", e.target.value)}
             rows={2}
+            aria-label="Offline message"
           />
         </div>
 
@@ -960,7 +970,7 @@ function EndpointFormModal({
               <p className="text-sm font-semibold text-foreground">Pre-Chat Form</p>
               <p className="text-xs text-muted-foreground">Collect visitor info before starting chat</p>
             </div>
-            <Switch checked={form.preChatForm} onCheckedChange={v => set("preChatForm", v)} />
+            <Switch checked={form.preChatForm} onCheckedChange={v => set("preChatForm", v)} aria-label="Enable pre-chat form" />
           </div>
           {form.preChatForm && (
             <div className="space-y-2 pt-1 border-t border-border">
@@ -974,6 +984,7 @@ function EndpointFormModal({
                         checked={form.preChatFields[field].enabled}
                         onChange={e => setPreChatField(field, "enabled", e.target.checked)}
                         className="w-3.5 h-3.5 accent-primary"
+                        aria-label={`Enable ${field}`}
                       />
                       Enabled
                     </label>
@@ -989,6 +1000,7 @@ function EndpointFormModal({
                         onChange={e => setPreChatField(field, "required", e.target.checked)}
                         disabled={!form.preChatFields[field].enabled}
                         className="w-3.5 h-3.5 accent-primary"
+                        aria-label={`Require ${field}`}
                       />
                       Required
                     </label>
@@ -1009,6 +1021,7 @@ function EndpointFormModal({
               onChange={e => setOriginInput(e.target.value)}
               onKeyDown={e => { if (e.key === "Enter") { e.preventDefault(); addOrigin(); } }}
               className="flex-1"
+              aria-label="Allowed origins"
             />
             <Button type="button" variant="outline" onClick={addOrigin} size="sm">Add</Button>
           </div>
@@ -1039,6 +1052,7 @@ function EndpointFormModal({
             <Switch
               checked={form.status === "active"}
               onCheckedChange={v => set("status", v ? "active" : "inactive")}
+              aria-label="Endpoint status"
             />
           </div>
         </div>
@@ -1394,6 +1408,7 @@ function RuleFormModal({
               placeholder="VIP Telegram Support"
               value={form.name}
               onChange={e => set("name", e.target.value)}
+              aria-label="Rule name"
             />
           </div>
           <div className="space-y-1.5">
@@ -1403,6 +1418,7 @@ function RuleFormModal({
               min={1}
               value={form.priority}
               onChange={e => set("priority", Number(e.target.value))}
+              aria-label="Rule priority"
             />
             <p className="text-xs text-muted-foreground">Lower = evaluated first</p>
           </div>
@@ -1436,6 +1452,7 @@ function RuleFormModal({
                         checked={form.sources.includes(opt.id)}
                         onChange={() => toggleSource(opt.id)}
                         className="w-3.5 h-3.5 accent-primary"
+                        aria-label={`Select ${opt.label}`}
                       />
                       <opt.icon className={cn("w-3.5 h-3.5", opt.color)} />
                       <span className="text-foreground">{opt.label}</span>
@@ -1453,6 +1470,7 @@ function RuleFormModal({
                             checked={form.sources.includes(ep.id)}
                             onChange={() => toggleSource(ep.id)}
                             className="w-3.5 h-3.5 accent-primary"
+                            aria-label={`Select ${ep.name}`}
                           />
                           <Bot className="w-3.5 h-3.5 text-primary" />
                           <span className="text-foreground">{ep.name}</span>
@@ -1492,6 +1510,7 @@ function RuleFormModal({
             value={form.audienceMode}
             onChange={e => set("audienceMode", e.target.value as AudienceMode)}
             className="w-full h-10 border border-border bg-background px-3 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
+            aria-label="Audience mode"
           >
             {AUDIENCE_MODE_OPTIONS.map(o => (
               <option key={o.id} value={o.id}>{o.label} — {o.description}</option>
@@ -1511,6 +1530,7 @@ function RuleFormModal({
                     checked={form.allowedGroups.includes(g.id)}
                     onChange={() => toggleGroup(g.id)}
                     className="w-3.5 h-3.5 accent-primary"
+                    aria-label={`Select group ${g.name}`}
                   />
                   <span className="text-foreground">{g.name}</span>
                   <span className="text-muted-foreground text-xs">({g.contactCount})</span>
@@ -1531,6 +1551,7 @@ function RuleFormModal({
                 value={contactSearch}
                 onChange={e => setContactSearch(e.target.value)}
                 className="pl-8 text-sm h-9"
+                aria-label="Search contacts"
               />
             </div>
             <div className="max-h-36 overflow-y-auto space-y-0.5">
@@ -1545,6 +1566,7 @@ function RuleFormModal({
                       checked={form.allowedContacts.includes(u.id)}
                       onChange={() => toggleContact(u.id)}
                       className="w-3.5 h-3.5 accent-primary"
+                      aria-label={`Select contact ${u.name}`}
                     />
                     <span className="text-foreground">{u.name}</span>
                     <span className="text-muted-foreground text-xs">{u.email}</span>
@@ -1573,6 +1595,7 @@ function RuleFormModal({
                   checked={form.creationMode === mode}
                   onChange={() => set("creationMode", mode)}
                   className="mt-0.5 accent-primary"
+                  aria-label={`Creation mode: ${mode}`}
                 />
                 <div>
                   <p className="text-sm font-semibold capitalize text-foreground">{mode}</p>
@@ -1606,6 +1629,7 @@ function RuleFormModal({
                   checked={form.reopenPolicy === opt.id}
                   onChange={() => set("reopenPolicy", opt.id)}
                   className="accent-primary"
+                  aria-label={`Reopen policy: ${opt.label}`}
                 />
                 <div className="min-w-0">
                   <p className="text-sm font-semibold text-foreground">{opt.label}</p>
@@ -1623,6 +1647,7 @@ function RuleFormModal({
                 value={form.reopenWindowHours}
                 onChange={e => set("reopenWindowHours", Number(e.target.value))}
                 className="w-32"
+                aria-label="Reopen window hours"
               />
             </div>
           )}
@@ -1636,6 +1661,7 @@ function RuleFormModal({
               value={form.defaultTeam}
               onChange={e => set("defaultTeam", e.target.value)}
               className="w-full h-10 border border-border bg-background px-3 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
+              aria-label="Default team"
             >
               <option value="">No default team</option>
               {teamGroups.map(tg => <option key={tg.id} value={tg.id}>{tg.name}</option>)}
@@ -1647,6 +1673,7 @@ function RuleFormModal({
               value={form.defaultAssignee}
               onChange={e => set("defaultAssignee", e.target.value)}
               className="w-full h-10 border border-border bg-background px-3 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
+              aria-label="Default assignee"
             >
               <option value="">No default assignee</option>
               {users.filter(u => u.role !== "viewer").map(u => (
@@ -1666,7 +1693,7 @@ function RuleFormModal({
             <span className={cn("text-xs font-semibold", form.active ? "text-emerald-600" : "text-muted-foreground")}>
               {form.active ? "Active" : "Inactive"}
             </span>
-            <Switch checked={form.active} onCheckedChange={v => set("active", v)} />
+            <Switch checked={form.active} onCheckedChange={v => set("active", v)} aria-label="Rule active" />
           </div>
         </div>
 
@@ -1832,6 +1859,7 @@ function WidgetPreviewOverlay({
                         className="w-full border border-border px-3 py-1.5 text-sm bg-background outline-none focus:border-primary transition-colors"
                         style={{ borderRadius: Math.round(cr * 0.5) }}
                         placeholder="Jane Smith"
+                        aria-label="Your name"
                       />
                     </div>
                   )}
@@ -1845,6 +1873,7 @@ function WidgetPreviewOverlay({
                         className="w-full border border-border px-3 py-1.5 text-sm bg-background outline-none focus:border-primary transition-colors"
                         style={{ borderRadius: Math.round(cr * 0.5) }}
                         placeholder="jane@email.com"
+                        aria-label="Email address"
                       />
                     </div>
                   )}
@@ -1940,7 +1969,7 @@ function WidgetPreviewOverlay({
                           title="Attach file"
                         >
                           <Paperclip className="w-4 h-4" />
-                          <input ref={fileInputRef} type="file" className="hidden" />
+                          <input ref={fileInputRef} type="file" className="hidden" aria-label="Attach file" />
                         </label>
 
                         <input
@@ -1952,6 +1981,7 @@ function WidgetPreviewOverlay({
                           className="flex-1 bg-transparent text-sm py-0.5 outline-none placeholder:text-muted-foreground min-w-0"
                           placeholder="Type a message…"
                           autoFocus
+                          aria-label="Type a message"
                         />
 
                         {/* Emoji */}
@@ -2224,6 +2254,7 @@ export const ChatEndpointsView = ({
             value={searchQuery}
             onChange={e => { setSearchQuery(e.target.value); setCurrentPage(1); }}
             className="w-full h-9 pl-9 pr-3 text-sm border border-border bg-background outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 transition-colors placeholder:text-muted-foreground"
+            aria-label="Search by name or key"
           />
           {searchQuery && (
             <button
@@ -2241,6 +2272,7 @@ export const ChatEndpointsView = ({
             value={filterStatus}
             onChange={e => { setFilterStatus(e.target.value as typeof filterStatus); setCurrentPage(1); }}
             className="h-9 pl-3 pr-8 text-sm border border-border bg-background appearance-none outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 transition-colors cursor-pointer text-foreground"
+            aria-label="Filter by status"
           >
             <option value="all">All Status</option>
             <option value="active">Active</option>
@@ -2255,6 +2287,7 @@ export const ChatEndpointsView = ({
             value={filterPosition}
             onChange={e => { setFilterPosition(e.target.value as typeof filterPosition); setCurrentPage(1); }}
             className="h-9 pl-3 pr-8 text-sm border border-border bg-background appearance-none outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 transition-colors cursor-pointer text-foreground"
+            aria-label="Filter by position"
           >
             <option value="all">All position</option>
             <option value="bottom-right">Bottom Right</option>
@@ -2301,6 +2334,7 @@ export const ChatEndpointsView = ({
                     checked={allPageSelected}
                     onChange={toggleSelectAll}
                     className="w-4 h-4 accent-blue-600 cursor-pointer"
+                    aria-label="Select all endpoints"
                   />
                 </th>
                 <th className="px-4 py-3 text-left text-xs font-bold text-muted-foreground uppercase tracking-widest">Name</th>
@@ -2330,6 +2364,7 @@ export const ChatEndpointsView = ({
                         checked={selectedRows.has(ep.id)}
                         onChange={() => toggleRow(ep.id)}
                         className="w-4 h-4 accent-blue-600 cursor-pointer"
+                        aria-label={`Select ${ep.name}`}
                       />
                     </td>
 
@@ -2449,6 +2484,7 @@ export const ChatEndpointsView = ({
                   value={pageSize}
                   onChange={e => { setPageSize(Number(e.target.value)); setCurrentPage(1); }}
                   className="h-7 pl-2 pr-6 text-sm border border-border bg-background appearance-none outline-none focus:ring-1 focus:ring-blue-500 cursor-pointer text-foreground"
+                  aria-label="Rows per page"
                 >
                   {[5, 10, 25, 50].map(n => <option key={n} value={n}>{n}</option>)}
                 </select>

@@ -231,6 +231,7 @@ export function DiscipleshipDashboardView({ onNavigate, stats, gamificationStats
               <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
               <input
                 placeholder="Search seekers, mentors..."
+                aria-label="Search seekers, mentors"
                 className="pl-8 pr-3 py-2 text-sm bg-white/10 text-white placeholder:text-slate-400 border border-white/10 rounded-sm focus:outline-none focus:ring-2 focus:ring-blue-400/60 w-[260px] backdrop-blur-sm"
               />
             </div>
@@ -1346,6 +1347,7 @@ export function SeekersView({
             value={query}
             onChange={e => setQuery(e.target.value)}
             placeholder="Search seekers by name or email..."
+            aria-label="Search seekers"
             className="pl-9 h-10"
           />
         </div>
@@ -1374,7 +1376,7 @@ export function SeekersView({
         <table className="w-full">
           <thead>
             <tr className="bg-muted/40 border-b border-border text-xs uppercase tracking-wider text-muted-foreground">
-              <th className="px-4 py-3 text-left font-semibold w-10"><input type="checkbox" className="accent-primary" /></th>
+              <th className="px-4 py-3 text-left font-semibold w-10"><input type="checkbox" aria-label="Select all seekers" className="accent-primary" /></th>
               <th className="px-4 py-3 text-left font-semibold">Name</th>
               <th className="px-4 py-3 text-left font-semibold">Maturity</th>
               <th className="px-4 py-3 text-left font-semibold">Campaign</th>
@@ -1397,7 +1399,7 @@ export function SeekersView({
                 onClick={() => setSelectedId(s.id)}
               >
                 <td className="px-4 py-3" onClick={(e) => e.stopPropagation()}>
-                  <input type="checkbox" className="accent-primary" />
+                  <input type="checkbox" aria-label="Select seeker" className="accent-primary" />
                 </td>
                 <td className="px-4 py-3">
                   <div className="flex items-center gap-3">
@@ -1817,11 +1819,11 @@ function NewSeekerIntakeModal({
           <div className="space-y-4">
             <div className="grid gap-1.5">
               <Label className="text-xs font-semibold">Full name <span className="text-destructive">*</span></Label>
-              <Input value={draft.name} onChange={(e) => update("name", e.target.value)} placeholder="Abigail Johnson" />
+              <Input value={draft.name} onChange={(e) => update("name", e.target.value)} placeholder="Abigail Johnson" aria-label="Full name" />
             </div>
             <div className="grid gap-1.5">
               <Label className="text-xs font-semibold">Email <span className="text-muted-foreground font-normal">(optional)</span></Label>
-              <Input value={draft.email} onChange={(e) => update("email", e.target.value)} placeholder="abigail@example.com" type="email" />
+              <Input value={draft.email} onChange={(e) => update("email", e.target.value)} placeholder="abigail@example.com" type="email" aria-label="Email" />
             </div>
             <div className="grid gap-1.5">
               <Label className="text-xs font-semibold">Preferred language</Label>
@@ -1843,6 +1845,7 @@ function NewSeekerIntakeModal({
                 type="checkbox"
                 checked={draft.consent}
                 onChange={(e) => update("consent", e.target.checked)}
+                aria-label="Consent to participate"
                 className="mt-0.5 accent-primary"
               />
               <span className="text-xs text-muted-foreground leading-relaxed">
@@ -1860,17 +1863,18 @@ function NewSeekerIntakeModal({
                 value={draft.spiritualBackground}
                 onChange={(e) => update("spiritualBackground", e.target.value)}
                 placeholder="Church history, faith experience, current beliefs..."
+                aria-label="Spiritual background"
                 className="min-h-[90px] text-sm"
               />
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div className="grid gap-1.5">
                 <Label className="text-xs font-semibold">Location</Label>
-                <Input value={draft.location} onChange={(e) => update("location", e.target.value)} placeholder="Addis Ababa, Ethiopia" />
+                <Input value={draft.location} onChange={(e) => update("location", e.target.value)} placeholder="Addis Ababa, Ethiopia" aria-label="Location" />
               </div>
               <div className="grid gap-1.5">
                 <Label className="text-xs font-semibold">Timezone</Label>
-                <Input value={draft.timezone} onChange={(e) => update("timezone", e.target.value)} />
+                <Input value={draft.timezone} onChange={(e) => update("timezone", e.target.value)} aria-label="Timezone" />
               </div>
             </div>
           </div>
@@ -2786,7 +2790,7 @@ export function MentorsView({
           <div className="flex items-center gap-2 flex-wrap">
             <div className="flex-1 min-w-[240px] relative">
               <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none" />
-              <Input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Search by name, email, or specialty..." className="pl-9 h-10" />
+              <Input aria-label="Search mentors" value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Search by name, email, or specialty..." className="pl-9 h-10" />
             </div>
             <FilterDropdown label="Status" value={status} onChange={setStatus} options={[{ value: "all", label: "All statuses" }, ...MENTOR_STATUSES.map(s => ({ value: s, label: s }))]} />
             <FilterDropdown label="Experience" value={exp} onChange={setExp} options={[{ value: "all", label: "All experience" }, ...EXPERIENCE_LEVELS.map(s => ({ value: s, label: s }))]} />
@@ -2916,11 +2920,11 @@ export function MentorsView({
                 <div className="space-y-4">
                   <div>
                     <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-1.5 block">Group Name</label>
-                    <Input value={editGroupName} onChange={e => setEditGroupName(e.target.value)} placeholder="e.g. Youth Ministry" />
+                    <Input aria-label="Group name" value={editGroupName} onChange={e => setEditGroupName(e.target.value)} placeholder="e.g. Youth Ministry" />
                   </div>
                   <div>
                     <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-1.5 block">Description</label>
-                    <Input value={editGroupDesc} onChange={e => setEditGroupDesc(e.target.value)} placeholder="Brief description of this group" />
+                    <Input aria-label="Group description" value={editGroupDesc} onChange={e => setEditGroupDesc(e.target.value)} placeholder="Brief description of this group" />
                   </div>
                   <div>
                     <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-1.5 block">Icon</label>
@@ -2983,11 +2987,11 @@ export function MentorsView({
                       </div>
                       <div>
                         <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-1.5 block">Name</label>
-                        <Input value={editGroupName} onChange={e => setEditGroupName(e.target.value)} />
+                        <Input aria-label="Group name" value={editGroupName} onChange={e => setEditGroupName(e.target.value)} />
                       </div>
                       <div>
                         <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-1.5 block">Description</label>
-                        <Input value={editGroupDesc} onChange={e => setEditGroupDesc(e.target.value)} />
+                        <Input aria-label="Group description" value={editGroupDesc} onChange={e => setEditGroupDesc(e.target.value)} />
                       </div>
                       <div>
                         <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-1.5 block">Specialties</label>
@@ -3015,7 +3019,7 @@ export function MentorsView({
                         </p>
                         <div className="relative w-[200px]">
                           <Search className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none" />
-                          <Input value={groupMemberSearch} onChange={e => setGroupMemberSearch(e.target.value)} placeholder="Search mentors..." className="pl-8 h-8 text-xs" />
+                          <Input aria-label="Search mentors" value={groupMemberSearch} onChange={e => setGroupMemberSearch(e.target.value)} placeholder="Search mentors..." className="pl-8 h-8 text-xs" />
                         </div>
                       </div>
 
@@ -3028,7 +3032,7 @@ export function MentorsView({
                               "flex items-center gap-3 px-3 py-2.5 rounded-md cursor-pointer transition-colors",
                               isMember ? "bg-primary/8" : suggested ? "bg-amber-50/60" : "hover:bg-muted/40"
                             )}>
-                              <input type="checkbox" checked={isMember} onChange={() => toggleMentorInGroup(managingGroup.id, m.id)}
+                              <input type="checkbox" aria-label={`Toggle ${m.name} in group`} checked={isMember} onChange={() => toggleMentorInGroup(managingGroup.id, m.id)}
                                 className="w-4 h-4 rounded border-border accent-primary shrink-0"
                               />
                               <Avatar name={m.name} tone={m.avatarTone} />
@@ -3251,10 +3255,10 @@ export function MentorsView({
                     ) : (
                       <div className="space-y-2 flex-1">
                         <div className="flex items-center gap-3">
-                          <Input value={builderName} onChange={e => setBuilderName(e.target.value)} placeholder="Form name..." className="max-w-[280px] font-bold" />
-                          <Input value={builderSpecialty} onChange={e => setBuilderSpecialty(e.target.value)} placeholder="Specialty (e.g. Youth)" className="max-w-[180px]" />
+                          <Input value={builderName} onChange={e => setBuilderName(e.target.value)} placeholder="Form name..." className="max-w-[280px] font-bold" aria-label="Form name" />
+                          <Input value={builderSpecialty} onChange={e => setBuilderSpecialty(e.target.value)} placeholder="Specialty (e.g. Youth)" className="max-w-[180px]" aria-label="Form specialty" />
                         </div>
-                        <Input value={builderDescription} onChange={e => setBuilderDescription(e.target.value)} placeholder="Brief description of this form..." className="text-sm" />
+                        <Input value={builderDescription} onChange={e => setBuilderDescription(e.target.value)} placeholder="Brief description of this form..." className="text-sm" aria-label="Form description" />
                       </div>
                     )}
                   </div>
@@ -3296,9 +3300,10 @@ export function MentorsView({
                                 <textarea
                                   className="w-full h-24 border border-border rounded-md bg-background px-3 py-2 text-sm text-foreground resize-y focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-colors"
                                   placeholder={`Enter ${f.label?.toLowerCase() || "text"}...`}
+                                  aria-label={f.label || "Text input"}
                                 />
                               ) : f.type === "select" ? (
-                                <select className="w-full h-10 border border-border rounded-md bg-background px-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-colors appearance-none cursor-pointer">
+                                <select className="w-full h-10 border border-border rounded-md bg-background px-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-colors appearance-none cursor-pointer" aria-label={f.label || "Select option"}>
                                   <option value="">Select {f.label?.toLowerCase() || "option"}...</option>
                                   {f.options?.map((opt, oi) => (
                                     <option key={oi} value={opt}>{opt}</option>
@@ -3306,14 +3311,14 @@ export function MentorsView({
                                 </select>
                               ) : f.type === "checkbox" ? (
                                 <label className="flex items-center gap-2.5 cursor-pointer group">
-                                  <input type="checkbox" className="w-4 h-4 accent-primary rounded cursor-pointer" />
+                                  <input type="checkbox" className="w-4 h-4 accent-primary rounded cursor-pointer" aria-label={f.label} />
                                   <span className="text-sm text-foreground group-hover:text-primary transition-colors">{f.label}</span>
                                 </label>
                               ) : f.type === "checkbox_group" && f.options ? (
                                 <div className="space-y-2">
                                   {f.options.map((opt, oi) => (
                                     <label key={oi} className="flex items-center gap-2.5 cursor-pointer group">
-                                      <input type="checkbox" className="w-4 h-4 accent-primary rounded cursor-pointer" />
+                                      <input type="checkbox" className="w-4 h-4 accent-primary rounded cursor-pointer" aria-label={opt} />
                                       <span className="text-sm text-foreground group-hover:text-primary transition-colors">{opt}</span>
                                     </label>
                                   ))}
@@ -3322,30 +3327,34 @@ export function MentorsView({
                                 <label className="w-full h-24 border-2 border-dashed border-border rounded-md bg-muted/5 flex flex-col items-center justify-center cursor-pointer hover:border-primary/40 hover:bg-primary/5 transition-colors">
                                   <Download className="w-5 h-5 text-muted-foreground mb-1" />
                                   <span className="text-xs font-medium text-muted-foreground">Drop file here or click to upload</span>
-                                  <input type="file" className="hidden" />
+                                  <input type="file" className="hidden" aria-label={f.label || "File upload"} />
                                 </label>
                               ) : f.type === "number" ? (
                                 <input
                                   type="number"
                                   className="w-full h-10 border border-border rounded-md bg-background px-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-colors"
                                   placeholder={`Enter ${f.label?.toLowerCase() || "number"}...`}
+                                  aria-label={f.label || "Number input"}
                                 />
                               ) : f.type === "date" ? (
                                 <input
                                   type="date"
                                   className="w-full h-10 border border-border rounded-md bg-background px-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-colors cursor-pointer"
+                                  aria-label={f.label || "Date"}
                                 />
                               ) : f.type === "email" ? (
                                 <input
                                   type="email"
                                   className="w-full h-10 border border-border rounded-md bg-background px-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-colors"
                                   placeholder={`Enter ${f.label?.toLowerCase() || "email"}...`}
+                                  aria-label={f.label || "Email"}
                                 />
                               ) : (
                                 <input
                                   type="text"
                                   className="w-full h-10 border border-border rounded-md bg-background px-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-colors"
                                   placeholder={`Enter ${f.label?.toLowerCase() || "text"}...`}
+                                  aria-label={f.label || "Text input"}
                                 />
                               )}
                             </div>
@@ -3400,7 +3409,7 @@ export function MentorsView({
                                   {f.isDefault ? (
                                     <span className="h-8 flex items-center text-sm font-medium text-foreground flex-1">{f.label}</span>
                                   ) : (
-                                    <Input value={f.label} onChange={e => updateField(f.id, { label: e.target.value })} placeholder="Field label..." className="h-8 text-sm flex-1" />
+                                    <Input value={f.label} onChange={e => updateField(f.id, { label: e.target.value })} placeholder="Field label..." className="h-8 text-sm flex-1" aria-label="Field label" />
                                   )}
                                 </div>
                                 {(f.type === "select" || f.type === "checkbox_group") && f.options && (
@@ -3408,7 +3417,7 @@ export function MentorsView({
                                     {f.options.map((opt, oi) => (
                                       <div key={oi} className="flex items-center gap-2">
                                         <span className="text-xs text-muted-foreground w-4">{oi + 1}.</span>
-                                        <Input value={opt} onChange={e => { const o = [...f.options!]; o[oi] = e.target.value; updateField(f.id, { options: o }); }} className="h-7 text-xs flex-1" />
+                                        <Input value={opt} onChange={e => { const o = [...f.options!]; o[oi] = e.target.value; updateField(f.id, { options: o }); }} className="h-7 text-xs flex-1" aria-label={`Option ${oi + 1}`} />
                                         <button onClick={() => { const o = f.options!.filter((_, i) => i !== oi); updateField(f.id, { options: o }); }} className="text-muted-foreground hover:text-red-500"><X className="w-3 h-3" /></button>
                                       </div>
                                     ))}
@@ -3425,7 +3434,7 @@ export function MentorsView({
                                 ) : (
                                   <>
                                     <label className="flex items-center gap-1 text-xs text-muted-foreground">
-                                      <input type="checkbox" checked={f.required} onChange={e => updateField(f.id, { required: e.target.checked })} className="accent-primary" />
+                                      <input type="checkbox" checked={f.required} onChange={e => updateField(f.id, { required: e.target.checked })} className="accent-primary" aria-label="Required field" />
                                       Req
                                     </label>
                                     <button onClick={() => removeField(f.id)} className="text-muted-foreground hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity"><Trash2 className="w-3.5 h-3.5" /></button>
@@ -3618,10 +3627,10 @@ export function MentorsView({
           <div className="flex flex-wrap items-center gap-3">
             <div className="relative flex-1 min-w-[200px] max-w-xs">
               <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none" />
-              <Input value={invQuery} onChange={e => setInvQuery(e.target.value)} placeholder="Search by name, email, form..." className="pl-9 h-9 text-sm" />
+              <Input value={invQuery} onChange={e => setInvQuery(e.target.value)} placeholder="Search by name, email, form..." className="pl-9 h-9 text-sm" aria-label="Search invitations" />
             </div>
             <select value={invStatusFilter} onChange={e => setInvStatusFilter(e.target.value)}
-              className="h-9 rounded-md border border-input bg-background px-3 text-sm text-foreground focus:ring-1 focus:ring-ring outline-none">
+              className="h-9 rounded-md border border-input bg-background px-3 text-sm text-foreground focus:ring-1 focus:ring-ring outline-none" aria-label="Filter by status">
               <option value="all">All Statuses</option>
               <option value="sent">Sent</option>
               <option value="opened">Opened</option>
@@ -3631,7 +3640,7 @@ export function MentorsView({
               <option value="cancelled">Cancelled</option>
             </select>
             <select value={invFormFilter} onChange={e => setInvFormFilter(e.target.value)}
-              className="h-9 rounded-md border border-input bg-background px-3 text-sm text-foreground focus:ring-1 focus:ring-ring outline-none">
+              className="h-9 rounded-md border border-input bg-background px-3 text-sm text-foreground focus:ring-1 focus:ring-ring outline-none" aria-label="Filter by form">
               <option value="all">All Forms</option>
               {[...new Map(invitations.map(inv => [inv.formId, inv.formName])).entries()].map(([fId, fName]) => (
                 <option key={fId} value={fId}>{fName}</option>
@@ -3701,7 +3710,7 @@ export function MentorsView({
           <div className="space-y-4">
             <div>
               <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-1.5 block">Name <span className="text-xs font-normal normal-case text-muted-foreground">(optional)</span></label>
-              <Input value={invName} onChange={e => setInvName(e.target.value)} placeholder="Mentor's name" />
+              <Input value={invName} onChange={e => setInvName(e.target.value)} placeholder="Mentor's name" aria-label="Mentor name" />
             </div>
             <div>
               <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-1.5 block">Email Addresses <span className="text-red-500">*</span></label>
@@ -3713,6 +3722,7 @@ export function MentorsView({
                   placeholder="mentor@email.com"
                   type="email"
                   className="flex-1"
+                  aria-label="Email address"
                 />
                 <Button variant="outline" size="sm" onClick={addInvEmail}>Add</Button>
               </div>
@@ -3744,7 +3754,7 @@ export function MentorsView({
             <div>
               <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-1.5 block">Personal Message (optional)</label>
               <textarea rows={3} value={invMessage} onChange={e => setInvMessage(e.target.value)} placeholder="Add a personal note to the invitation email..."
-                className="w-full px-3 py-2 border border-input text-sm bg-background focus:ring-1 focus:ring-ring outline-none resize-none" />
+                className="w-full px-3 py-2 border border-input text-sm bg-background focus:ring-1 focus:ring-ring outline-none resize-none" aria-label="Personal message" />
             </div>
             <div className="flex items-center justify-between pt-2 border-t border-border">
               <div>
@@ -4127,11 +4137,11 @@ function MentorFormModal({
           <div className="space-y-4">
             <div className="grid gap-1.5">
               <Label className="text-xs font-semibold">Full name <span className="text-destructive">*</span></Label>
-              <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="Pastor James Kalu" />
+              <Input aria-label="Mentor name" value={name} onChange={(e) => setName(e.target.value)} placeholder="Pastor James Kalu" />
             </div>
             <div className="grid gap-1.5">
               <Label className="text-xs font-semibold">Email <span className="text-destructive">*</span></Label>
-              <Input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="james@example.com" />
+              <Input aria-label="Mentor email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="james@example.com" />
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div className="grid gap-1.5">
@@ -4168,6 +4178,7 @@ function MentorFormModal({
             <div className="grid gap-1.5">
               <Label className="text-xs font-semibold">Bio</Label>
               <Textarea
+                aria-label="Mentor bio"
                 value={bio}
                 onChange={(e) => setBio(e.target.value)}
                 placeholder="A short description shown on the mentor's profile."
@@ -4433,6 +4444,7 @@ export function MatchesView({
         <div className="flex-1 min-w-[240px] relative">
           <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none" />
           <Input
+            aria-label="Search matches"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Search seeker or mentor..."
@@ -4821,6 +4833,7 @@ function ManualMatchDialog({
             <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-2 block">Select Seeker</label>
             <input
               type="text"
+              aria-label="Search seekers"
               placeholder="Search seekers..."
               value={seekerSearch}
               onChange={e => setSeekerSearch(e.target.value)}
@@ -4865,6 +4878,7 @@ function ManualMatchDialog({
             <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-2 block">Select Mentor</label>
             <input
               type="text"
+              aria-label="Search mentors"
               placeholder="Search mentors..."
               value={mentorSearch}
               onChange={e => setMentorSearch(e.target.value)}
@@ -5126,6 +5140,7 @@ export function FaithJourneysView({
         <div className="flex-1 min-w-[240px] relative">
           <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none" />
           <Input
+            aria-label="Search journeys"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Search by person or milestone..."
@@ -5295,19 +5310,19 @@ function NewJourneyModal({
       <div className="space-y-4">
         <div className="grid gap-1.5">
           <Label className="text-xs font-semibold">Person's name <span className="text-destructive">*</span></Label>
-          <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. Hanna Tadesse" autoFocus />
+          <Input aria-label="Person name" value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. Hanna Tadesse" autoFocus />
         </div>
 
         <div className="grid grid-cols-2 gap-3">
           <div className="grid gap-1.5">
             <Label className="text-xs font-semibold">Journey type</Label>
-            <select value={type} onChange={(e) => setType(e.target.value as JourneyType)} className="h-10 px-3 rounded-md border border-input bg-background text-sm">
+            <select aria-label="Journey type" value={type} onChange={(e) => setType(e.target.value as JourneyType)} className="h-10 px-3 rounded-md border border-input bg-background text-sm">
               {JOURNEY_TYPES.map(t => <option key={t}>{t}</option>)}
             </select>
           </div>
           <div className="grid gap-1.5">
             <Label className="text-xs font-semibold">Source channel</Label>
-            <select value={source} onChange={(e) => setSource(e.target.value as JourneySource)} className="h-10 px-3 rounded-md border border-input bg-background text-sm">
+            <select aria-label="Source channel" value={source} onChange={(e) => setSource(e.target.value as JourneySource)} className="h-10 px-3 rounded-md border border-input bg-background text-sm">
               {JOURNEY_SOURCES.map(s => <option key={s}>{s}</option>)}
             </select>
           </div>
@@ -5328,7 +5343,7 @@ function NewJourneyModal({
           </div>
           <div className="grid gap-1.5">
             <Label className="text-xs font-semibold">Language</Label>
-            <select value={language} onChange={(e) => setLanguage(e.target.value as Journey["language"])} className="h-10 px-3 rounded-md border border-input bg-background text-sm">
+            <select aria-label="Language" value={language} onChange={(e) => setLanguage(e.target.value as Journey["language"])} className="h-10 px-3 rounded-md border border-input bg-background text-sm">
               <option>English</option>
               <option>Amharic</option>
               <option>Afaan Oromoo</option>
@@ -5519,6 +5534,7 @@ export function MilestonesView({
         <div className="flex-1 min-w-[240px] relative">
           <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none" />
           <Input
+            aria-label="Search milestones"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Search person..."
@@ -5905,6 +5921,7 @@ export function ContentLibraryView({
         <div className="flex-1 min-w-[240px] relative">
           <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none" />
           <Input
+            aria-label="Search content"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Search title, summary, or tag..."
@@ -6297,19 +6314,19 @@ function ContentFormModal({
       <div className="space-y-4">
         <div className="grid gap-1.5">
           <Label className="text-xs font-semibold">Title <span className="text-destructive">*</span></Label>
-          <Input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="e.g. Finding Peace in Prayer" />
+          <Input aria-label="Content title" value={title} onChange={(e) => setTitle(e.target.value)} placeholder="e.g. Finding Peace in Prayer" />
         </div>
 
         <div className="grid grid-cols-2 gap-3">
           <div className="grid gap-1.5">
             <Label className="text-xs font-semibold">Type</Label>
-            <select value={type} onChange={(e) => setType(e.target.value)} className="h-10 px-3 rounded-md border border-input bg-background text-sm">
+            <select aria-label="Content type" value={type} onChange={(e) => setType(e.target.value)} className="h-10 px-3 rounded-md border border-input bg-background text-sm">
               {CONTENT_TYPES.map(t => <option key={t.id}>{t.id}</option>)}
             </select>
           </div>
           <div className="grid gap-1.5">
             <Label className="text-xs font-semibold">Category</Label>
-            <select value={category} onChange={(e) => setCategory(e.target.value)} className="h-10 px-3 rounded-md border border-input bg-background text-sm">
+            <select aria-label="Content category" value={category} onChange={(e) => setCategory(e.target.value)} className="h-10 px-3 rounded-md border border-input bg-background text-sm">
               {CONTENT_CATEGORIES.map(c => <option key={c}>{c}</option>)}
             </select>
           </div>
@@ -6330,7 +6347,7 @@ function ContentFormModal({
           </div>
           <div className="grid gap-1.5">
             <Label className="text-xs font-semibold">Language</Label>
-            <select value={lang} onChange={(e) => setLang(e.target.value)} className="h-10 px-3 rounded-md border border-input bg-background text-sm">
+            <select aria-label="Content language" value={lang} onChange={(e) => setLang(e.target.value)} className="h-10 px-3 rounded-md border border-input bg-background text-sm">
               {CONTENT_LANGS.map(l => <option key={l}>{l}</option>)}
             </select>
           </div>
@@ -6338,12 +6355,13 @@ function ContentFormModal({
 
         <div className="grid gap-1.5">
           <Label className="text-xs font-semibold">Summary</Label>
-          <Input value={summary} onChange={(e) => setSummary(e.target.value)} placeholder="One-line preview used in lists and notifications." />
+          <Input aria-label="Content summary" value={summary} onChange={(e) => setSummary(e.target.value)} placeholder="One-line preview used in lists and notifications." />
         </div>
 
         <div className="grid gap-1.5">
           <Label className="text-xs font-semibold">Body <span className="text-destructive">*</span></Label>
           <Textarea
+            aria-label="Content body"
             value={body}
             onChange={(e) => setBody(e.target.value)}
             className="min-h-[180px] text-sm"
@@ -6354,11 +6372,11 @@ function ContentFormModal({
         <div className="grid grid-cols-2 gap-3">
           <div className="grid gap-1.5">
             <Label className="text-xs font-semibold">Tags <span className="text-muted-foreground font-normal">(comma-separated)</span></Label>
-            <Input value={tagsText} onChange={(e) => setTagsText(e.target.value)} placeholder="prayer, grace, john_3_16" />
+            <Input aria-label="Tags" value={tagsText} onChange={(e) => setTagsText(e.target.value)} placeholder="prayer, grace, john_3_16" />
           </div>
           <div className="grid gap-1.5">
             <Label className="text-xs font-semibold">Source <span className="text-muted-foreground font-normal">(optional)</span></Label>
-            <Input value={source} onChange={(e) => setSource(e.target.value)} placeholder="e.g. John 3:16" />
+            <Input aria-label="Source reference" value={source} onChange={(e) => setSource(e.target.value)} placeholder="e.g. John 3:16" />
           </div>
         </div>
 
@@ -6462,19 +6480,19 @@ function AiGenerateModal({
 
           <div className="grid gap-1.5">
             <Label className="text-xs font-semibold">Topic <span className="text-destructive">*</span></Label>
-            <Input value={topic} onChange={(e) => setTopic(e.target.value)} placeholder='e.g. "trusting God in uncertainty"' />
+            <Input aria-label="Topic" value={topic} onChange={(e) => setTopic(e.target.value)} placeholder='e.g. "trusting God in uncertainty"' />
           </div>
 
           <div className="grid grid-cols-2 gap-3">
             <div className="grid gap-1.5">
               <Label className="text-xs font-semibold">Type</Label>
-              <select value={type} onChange={(e) => setType(e.target.value)} className="h-10 px-3 rounded-md border border-input bg-background text-sm">
+              <select aria-label="Content type" value={type} onChange={(e) => setType(e.target.value)} className="h-10 px-3 rounded-md border border-input bg-background text-sm">
                 {CONTENT_TYPES.map(t => <option key={t.id}>{t.id}</option>)}
               </select>
             </div>
             <div className="grid gap-1.5">
               <Label className="text-xs font-semibold">Category</Label>
-              <select value={category} onChange={(e) => setCategory(e.target.value)} className="h-10 px-3 rounded-md border border-input bg-background text-sm">
+              <select aria-label="Content category" value={category} onChange={(e) => setCategory(e.target.value)} className="h-10 px-3 rounded-md border border-input bg-background text-sm">
                 {CONTENT_CATEGORIES.map(c => <option key={c}>{c}</option>)}
               </select>
             </div>
@@ -6495,7 +6513,7 @@ function AiGenerateModal({
             </div>
             <div className="grid gap-1.5">
               <Label className="text-xs font-semibold">Language</Label>
-              <select value={lang} onChange={(e) => setLang(e.target.value)} className="h-10 px-3 rounded-md border border-input bg-background text-sm">
+              <select aria-label="Content language" value={lang} onChange={(e) => setLang(e.target.value)} className="h-10 px-3 rounded-md border border-input bg-background text-sm">
                 {CONTENT_LANGS.map(l => <option key={l}>{l}</option>)}
               </select>
             </div>
@@ -7057,7 +7075,7 @@ function ShareReportModal({
         <div className="grid gap-1.5">
           <Label className="text-xs font-semibold">Shareable link</Label>
           <div className="flex items-center gap-2">
-            <Input value={link} readOnly className="font-mono text-xs" />
+            <Input aria-label="Shareable link" value={link} readOnly className="font-mono text-xs" />
             <Button variant="outline" size="sm" onClick={handleCopyLink}>Copy</Button>
           </div>
         </div>
@@ -7065,6 +7083,7 @@ function ShareReportModal({
         <div className="grid gap-1.5">
           <Label className="text-xs font-semibold">Email recipients</Label>
           <Input
+            aria-label="Email recipients"
             value={recipients}
             onChange={(e) => setRecipients(e.target.value)}
             placeholder="email1@example.com, email2@example.com"
@@ -7074,6 +7093,7 @@ function ShareReportModal({
         <div className="grid gap-1.5">
           <Label className="text-xs font-semibold">Message</Label>
           <Textarea
+            aria-label="Message note"
             value={note}
             onChange={(e) => setNote(e.target.value)}
             className="min-h-[80px] text-sm"
@@ -7409,7 +7429,7 @@ function GenerateReportModal({
                 ["raw",       "Raw data tables (CSV)",     includeRaw,       setIncludeRaw],
               ].map(([k, label, val, setVal]: any) => (
                 <label key={k} className="flex items-center gap-2 cursor-pointer">
-                  <input type="checkbox" className="accent-primary" checked={val} onChange={(e) => setVal(e.target.checked)} />
+                  <input type="checkbox" aria-label={label} className="accent-primary" checked={val} onChange={(e) => setVal(e.target.checked)} />
                   <span className="text-sm text-foreground">{label}</span>
                 </label>
               ))}
@@ -7692,6 +7712,7 @@ export function ValidationsView() {
         <div className="flex-1 min-w-[240px] relative">
           <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none" />
           <Input
+            aria-label="Search validations"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Search person, email, or validator..."

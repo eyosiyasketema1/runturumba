@@ -171,6 +171,7 @@ export const TeamManagement = ({
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="pl-9 h-9 text-sm"
+            aria-label={activeTab === "members" ? "Search members" : "Search audit log"}
           />
         </div>
       </div>
@@ -501,18 +502,18 @@ const GroupFormModal = ({
         <div className="p-6 space-y-5">
           <div className="space-y-2">
             <Label className="text-xs font-semibold">Group Name <span className="text-destructive">*</span></Label>
-            <Input value={name} onChange={e => setName(e.target.value)} placeholder="e.g. VIP Telegram Support" className="h-9" />
+            <Input value={name} onChange={e => setName(e.target.value)} placeholder="e.g. VIP Telegram Support" className="h-9" aria-label="Group name" />
           </div>
-          
+
           <div className="space-y-2">
             <Label className="text-xs font-semibold">Label / Tag <span className="text-destructive">*</span></Label>
-            <Input value={label} onChange={e => setLabel(e.target.value)} placeholder="e.g. VIP, Sales, Support" className="h-9" />
+            <Input value={label} onChange={e => setLabel(e.target.value)} placeholder="e.g. VIP, Sales, Support" className="h-9" aria-label="Group label" />
             <p className="text-xs text-muted-foreground">Used to categorize the group internally.</p>
           </div>
 
           <div className="space-y-2">
             <Label className="text-xs font-semibold">Description (optional)</Label>
-            <Input value={description} onChange={e => setDescription(e.target.value)} placeholder="e.g. Handles VIP customers" className="h-9" />
+            <Input value={description} onChange={e => setDescription(e.target.value)} placeholder="e.g. Handles VIP customers" className="h-9" aria-label="Group description" />
           </div>
 
           <div className="space-y-3">
@@ -685,11 +686,11 @@ const AddUserForm = ({ onAdd, onCancel }: { onAdd: (data: Partial<UserType>) => 
     <form onSubmit={handleSubmit} className="space-y-5">
       <div className="grid gap-2">
         <Label className="text-xs font-semibold">Full Name</Label>
-        <Input autoFocus value={formData.name} onChange={e => setFormData(p => ({ ...p, name: e.target.value }))} placeholder="e.g. John Doe" className="h-9 text-sm" />
+        <Input autoFocus value={formData.name} onChange={e => setFormData(p => ({ ...p, name: e.target.value }))} placeholder="e.g. John Doe" className="h-9 text-sm" aria-label="Full name" />
       </div>
       <div className="grid gap-2">
         <Label className="text-xs font-semibold">Email Address</Label>
-        <Input type="email" value={formData.email} onChange={e => setFormData(p => ({ ...p, email: e.target.value }))} placeholder="john@example.com" className="h-9 text-sm" />
+        <Input type="email" value={formData.email} onChange={e => setFormData(p => ({ ...p, email: e.target.value }))} placeholder="john@example.com" className="h-9 text-sm" aria-label="Email address" />
       </div>
       <div className="grid gap-2">
         <Label className="text-xs font-semibold">Organization Role</Label>
@@ -757,7 +758,7 @@ const EditUserForm = ({ user, onUpdate, onCancel }: {
 
       <div className="grid gap-2">
         <Label className="text-xs font-semibold">Full Name</Label>
-        <Input value={formData.name} onChange={e => setFormData(p => ({ ...p, name: e.target.value }))} className="h-9 text-sm" />
+        <Input value={formData.name} onChange={e => setFormData(p => ({ ...p, name: e.target.value }))} className="h-9 text-sm" aria-label="Full name" />
       </div>
 
       <div className="grid gap-2">

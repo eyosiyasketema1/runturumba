@@ -54,9 +54,10 @@ const DropdownPortSelector = ({ value, onChange, label }: { value: string, onCha
   return (
     <div className="space-y-2">
       <label className="text-xs font-bold text-muted-foreground uppercase tracking-widest px-1">{label}</label>
-      <select 
+      <select
         value={value}
         onChange={(e) => onChange(e.target.value)}
+        aria-label={label}
         className="w-full px-3 py-2 bg-background border border-input rounded-md text-sm ring-offset-background focus:ring-1 focus:ring-ring outline-none transition-all shadow-sm"
       >
         {ports.map(p => <option key={p} value={p}>{p}</option>)}
@@ -194,11 +195,12 @@ export const NewMessageFlow: React.FC<NewMessageFlowProps> = ({
               <div className="flex flex-col gap-4 mb-6 px-1">
                 <div className="relative">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                  <input 
+                  <input
                     type="text"
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     placeholder={`Search ${viewMode === "contacts" ? "contacts" : "groups"}...`}
+                    aria-label="Search contacts and groups"
                     className="w-full pl-9 pr-4 py-2.5 bg-background border border-input rounded-md text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 transition-all shadow-sm"
                   />
                 </div>
@@ -311,12 +313,13 @@ export const NewMessageFlow: React.FC<NewMessageFlowProps> = ({
                           className="w-full bg-muted/30 p-3 rounded-lg border border-border mb-4"
                         >
                           <div className="flex gap-2">
-                            <input 
+                            <input
                               autoFocus
                               type="text"
                               value={newGroupName}
                               onChange={(e) => setNewGroupName(e.target.value)}
                               placeholder="Group name..."
+                              aria-label="New group name"
                               className="flex-1 px-3 py-2 text-xs bg-background border border-input rounded-md outline-none focus:ring-1 focus:ring-ring transition-all"
                             />
                             <button 
@@ -477,11 +480,12 @@ export const NewMessageFlow: React.FC<NewMessageFlowProps> = ({
                     {totalRecipientsCount > 1 && (
                       <div className="space-y-3">
                         <label className="text-xs font-bold text-muted-foreground uppercase tracking-widest px-1">Broadcast Title</label>
-                        <input 
+                        <input
                           type="text"
                           value={broadcastName}
                           onChange={(e) => setBroadcastName(e.target.value)}
                           placeholder="e.g. VIP Newsletter Q1"
+                          aria-label="Broadcast title"
                           className="w-full px-4 py-2 bg-background border border-input rounded-md text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 transition-all shadow-sm"
                         />
                       </div>
@@ -513,10 +517,11 @@ export const NewMessageFlow: React.FC<NewMessageFlowProps> = ({
                     </button>
                   </div>
                   <div className="relative flex-1 flex flex-col min-h-[300px]">
-                    <textarea 
+                    <textarea
                       value={messageContent}
                       onChange={(e) => setMessageContent(e.target.value)}
                       placeholder="Type your message here..."
+                      aria-label="Message content"
                       className="flex-1 w-full p-4 bg-background border border-input rounded-md text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 transition-all resize-none shadow-sm"
                     />
                     <div className="absolute bottom-4 right-4 flex gap-4 text-xs font-bold text-muted-foreground pointer-events-none">
@@ -618,10 +623,11 @@ export const NewMessageFlow: React.FC<NewMessageFlowProps> = ({
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                           <div className="space-y-2">
                             <label className="text-xs font-bold text-muted-foreground uppercase tracking-widest px-1">Delivery Date & Time</label>
-                            <input 
+                            <input
                               type="datetime-local"
                               value={scheduledAt}
                               onChange={(e) => setScheduledAt(e.target.value)}
+                              aria-label="Schedule date and time"
                               className="w-full px-4 py-2.5 bg-background border border-input rounded-md text-sm outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all shadow-sm"
                             />
                           </div>

@@ -211,6 +211,7 @@ export const MessagesView = ({
                 placeholder="Search Messages..."
                 value={searchQuery}
                 onChange={(e) => { setSearchQuery(e.target.value); setPage(1); }}
+                aria-label="Search messages"
                 className="w-72 pl-10 pr-3 h-10 bg-background border border-input rounded-sm text-sm focus:outline-none focus:ring-2 focus:ring-ring transition-all"
               />
             </div>
@@ -284,6 +285,7 @@ export const MessagesView = ({
                   value={fromDate}
                   onChange={(e) => { setFromDate(e.target.value); setPage(1); }}
                   placeholder="dd/mm/yyyy"
+                  aria-label="Filter from date"
                   className="h-10 pl-8 pr-2 bg-background border border-input rounded-sm text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring transition-all w-[150px]"
                 />
               </div>
@@ -295,6 +297,7 @@ export const MessagesView = ({
                   value={toDate}
                   onChange={(e) => { setToDate(e.target.value); setPage(1); }}
                   placeholder="dd/mm/yyyy"
+                  aria-label="Filter to date"
                   className="h-10 pl-8 pr-2 bg-background border border-input rounded-sm text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring transition-all w-[150px]"
                 />
               </div>
@@ -451,6 +454,7 @@ export const MessagesView = ({
                   <select
                     value={pageSize}
                     onChange={(e) => { setPageSize(Number(e.target.value)); setPage(1); }}
+                    aria-label="Messages per page"
                     className="h-8 px-2 bg-background border border-input rounded-sm text-sm focus:outline-none focus:ring-2 focus:ring-ring"
                   >
                     {[10, 25, 50, 100].map(n => (
@@ -510,7 +514,7 @@ export const MessagesView = ({
                   <thead>
                     <tr className="border-b border-border bg-muted/30">
                       <th className="px-4 py-3 w-10 text-center">
-                        <input type="checkbox" className="w-3.5 h-3.5 rounded-sm border-input cursor-pointer" />
+                        <input type="checkbox" className="w-3.5 h-3.5 rounded-sm border-input cursor-pointer" aria-label="Select all broadcasts" />
                       </th>
                       <th className="px-4 py-3 text-[11px] font-bold text-muted-foreground uppercase tracking-wider">Message</th>
                       <th className="px-4 py-3 text-[11px] font-bold text-muted-foreground uppercase tracking-wider">Channel</th>
@@ -525,7 +529,7 @@ export const MessagesView = ({
                     {(broadcasts as any[]).map((bc: any) => (
                       <tr key={bc.id} className="border-b border-border last:border-0 hover:bg-muted/30 transition-colors">
                         <td className="px-4 py-3 text-center">
-                          <input type="checkbox" className="w-3.5 h-3.5 rounded-sm border-input cursor-pointer" />
+                          <input type="checkbox" className="w-3.5 h-3.5 rounded-sm border-input cursor-pointer" aria-label={`Select broadcast ${bc.name || "Message Title"}`} />
                         </td>
                         <td className="px-4 py-3">
                           <div className="min-w-0">
@@ -577,18 +581,20 @@ export const MessagesView = ({
                         </td>
                         <td className="px-4 py-3 text-right">
                           <div className="inline-flex items-center gap-0.5">
-                            <button className="p-2 text-muted-foreground hover:text-foreground hover:bg-muted rounded-sm transition-all">
+                            <button className="p-2 text-muted-foreground hover:text-foreground hover:bg-muted rounded-sm transition-all" aria-label="View broadcast">
                               <Eye className="w-4 h-4" />
                             </button>
                             <button
                               onClick={() => onEditBroadcast && onEditBroadcast(bc)}
                               className="p-2 text-muted-foreground hover:text-foreground hover:bg-muted rounded-sm transition-all"
+                              aria-label="Edit broadcast"
                             >
                               <Edit2 className="w-4 h-4" />
                             </button>
                             <button
                               onClick={() => onDeleteBroadcast && onDeleteBroadcast(bc.id)}
                               className="p-2 text-muted-foreground hover:text-destructive hover:bg-destructive/5 rounded-sm transition-all"
+                              aria-label="Delete broadcast"
                             >
                               <Trash2 className="w-4 h-4" />
                             </button>

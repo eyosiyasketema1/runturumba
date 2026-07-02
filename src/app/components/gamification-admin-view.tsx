@@ -250,11 +250,11 @@ function RuleBuilderModal({ isOpen, onClose, onSaved, editRule, accountId }: {
         <div className="grid grid-cols-2 gap-3">
           <div>
             <label className="text-xs font-semibold text-muted-foreground">Name *</label>
-            <Input value={form.name} onChange={e => setField("name", e.target.value)} placeholder="e.g. Content Viewed" className="mt-1" />
+            <Input aria-label="Rule name" value={form.name} onChange={e => setField("name", e.target.value)} placeholder="e.g. Content Viewed" className="mt-1" />
           </div>
           <div>
             <label className="text-xs font-semibold text-muted-foreground">Description</label>
-            <Input value={form.description} onChange={e => setField("description", e.target.value)} placeholder="What this rule does" className="mt-1" />
+            <Input aria-label="Rule description" value={form.description} onChange={e => setField("description", e.target.value)} placeholder="What this rule does" className="mt-1" />
           </div>
         </div>
 
@@ -262,14 +262,14 @@ function RuleBuilderModal({ isOpen, onClose, onSaved, editRule, accountId }: {
         <div className="grid grid-cols-3 gap-3">
           <div>
             <label className="text-xs font-semibold text-muted-foreground">Trigger Event *</label>
-            <select value={form.trigger_event} onChange={e => setField("trigger_event", e.target.value)}
+            <select aria-label="Trigger event" value={form.trigger_event} onChange={e => setField("trigger_event", e.target.value)}
               className="mt-1 w-full h-9 rounded-md border border-input bg-background px-3 text-sm">
               {TRIGGER_EVENTS.map(t => <option key={t} value={t}>{t}</option>)}
             </select>
           </div>
           <div>
             <label className="text-xs font-semibold text-muted-foreground">Actor Type</label>
-            <select value={form.actor_type} onChange={e => setField("actor_type", e.target.value)}
+            <select aria-label="Actor type" value={form.actor_type} onChange={e => setField("actor_type", e.target.value)}
               className="mt-1 w-full h-9 rounded-md border border-input bg-background px-3 text-sm">
               <option value="seeker">Seeker</option>
               <option value="mentor">Mentor</option>
@@ -278,7 +278,7 @@ function RuleBuilderModal({ isOpen, onClose, onSaved, editRule, accountId }: {
           </div>
           <div>
             <label className="text-xs font-semibold text-muted-foreground">Priority</label>
-            <Input type="number" value={form.priority} onChange={e => setField("priority", Number(e.target.value))} className="mt-1" />
+            <Input aria-label="Priority" type="number" value={form.priority} onChange={e => setField("priority", Number(e.target.value))} className="mt-1" />
           </div>
         </div>
 
@@ -296,12 +296,12 @@ function RuleBuilderModal({ isOpen, onClose, onSaved, editRule, accountId }: {
           <div className="space-y-2">
             {form.conditions.map((c, i) => (
               <div key={i} className="flex items-center gap-2">
-                <Input value={c.field} onChange={e => updateCondition(i, "field", e.target.value)} placeholder="field (e.g. event_type)" className="flex-1" />
-                <select value={c.op} onChange={e => updateCondition(i, "op", e.target.value)}
+                <Input aria-label="Condition field" value={c.field} onChange={e => updateCondition(i, "field", e.target.value)} placeholder="field (e.g. event_type)" className="flex-1" />
+                <select aria-label="Condition operator" value={c.op} onChange={e => updateCondition(i, "op", e.target.value)}
                   className="h-9 rounded-md border border-input bg-background px-2 text-sm w-20">
                   {CONDITION_OPS.map(op => <option key={op} value={op}>{op}</option>)}
                 </select>
-                <Input value={c.value} onChange={e => updateCondition(i, "value", e.target.value)} placeholder="value" className="flex-1" />
+                <Input aria-label="Condition value" value={c.value} onChange={e => updateCondition(i, "value", e.target.value)} placeholder="value" className="flex-1" />
                 <button onClick={() => removeCondition(i)} className="p-1 text-muted-foreground hover:text-destructive"><X className="w-3.5 h-3.5" /></button>
               </div>
             ))}
@@ -319,29 +319,29 @@ function RuleBuilderModal({ isOpen, onClose, onSaved, editRule, accountId }: {
           <div className="space-y-2">
             {form.actions.map((a, i) => (
               <div key={i} className="flex items-center gap-2 bg-muted/20 border border-border rounded-md p-2">
-                <select value={a.type} onChange={e => updateAction(i, "type", e.target.value)}
+                <select aria-label="Action type" value={a.type} onChange={e => updateAction(i, "type", e.target.value)}
                   className="h-9 rounded-md border border-input bg-background px-2 text-sm">
                   {ACTION_TYPES.map(at => <option key={at.value} value={at.value}>{at.label}</option>)}
                 </select>
                 {a.type === "award_xp" && (
-                  <Input type="number" value={a.points || ""} onChange={e => updateAction(i, "points", Number(e.target.value))} placeholder="XP points" className="w-24" />
+                  <Input aria-label="XP points" type="number" value={a.points || ""} onChange={e => updateAction(i, "points", Number(e.target.value))} placeholder="XP points" className="w-24" />
                 )}
                 {a.type === "check_badge" && (
-                  <Input value={a.badge_slug || ""} onChange={e => updateAction(i, "badge_slug", e.target.value)} placeholder="badge slug" className="flex-1" />
+                  <Input aria-label="Badge slug" value={a.badge_slug || ""} onChange={e => updateAction(i, "badge_slug", e.target.value)} placeholder="badge slug" className="flex-1" />
                 )}
                 {a.type === "send_notification" && (
-                  <Input value={a.template || ""} onChange={e => updateAction(i, "template", e.target.value)} placeholder="template name" className="flex-1" />
+                  <Input aria-label="Notification template" value={a.template || ""} onChange={e => updateAction(i, "template", e.target.value)} placeholder="template name" className="flex-1" />
                 )}
                 {a.type === "enroll_automation" && (
-                  <Input value={a.automation_id || ""} onChange={e => updateAction(i, "automation_id", e.target.value)} placeholder="automation ID" className="flex-1" />
+                  <Input aria-label="Automation ID" value={a.automation_id || ""} onChange={e => updateAction(i, "automation_id", e.target.value)} placeholder="automation ID" className="flex-1" />
                 )}
                 {a.type === "advance_journey" && (
-                  <Input value={a.journey_type || ""} onChange={e => updateAction(i, "journey_type", e.target.value)} placeholder="journey type" className="flex-1" />
+                  <Input aria-label="Journey type" value={a.journey_type || ""} onChange={e => updateAction(i, "journey_type", e.target.value)} placeholder="journey type" className="flex-1" />
                 )}
                 {a.type === "update_milestone" && (
                   <>
-                    <Input value={a.milestone_type || ""} onChange={e => updateAction(i, "milestone_type", e.target.value)} placeholder="milestone type" className="flex-1" />
-                    <Input value={a.state || ""} onChange={e => updateAction(i, "state", e.target.value)} placeholder="state" className="w-24" />
+                    <Input aria-label="Milestone type" value={a.milestone_type || ""} onChange={e => updateAction(i, "milestone_type", e.target.value)} placeholder="milestone type" className="flex-1" />
+                    <Input aria-label="Milestone state" value={a.state || ""} onChange={e => updateAction(i, "state", e.target.value)} placeholder="state" className="w-24" />
                   </>
                 )}
                 <button onClick={() => removeAction(i)} className="p-1 text-muted-foreground hover:text-destructive"><X className="w-3.5 h-3.5" /></button>
@@ -354,17 +354,17 @@ function RuleBuilderModal({ isOpen, onClose, onSaved, editRule, accountId }: {
         <div className="grid grid-cols-2 gap-3">
           <div>
             <label className="text-xs font-semibold text-muted-foreground">Cooldown (seconds)</label>
-            <Input type="number" value={form.cooldown_seconds ?? ""} onChange={e => setField("cooldown_seconds", e.target.value ? Number(e.target.value) : null)} placeholder="No cooldown" className="mt-1" />
+            <Input aria-label="Cooldown seconds" type="number" value={form.cooldown_seconds ?? ""} onChange={e => setField("cooldown_seconds", e.target.value ? Number(e.target.value) : null)} placeholder="No cooldown" className="mt-1" />
           </div>
           <div>
             <label className="text-xs font-semibold text-muted-foreground">Daily Cap</label>
-            <Input type="number" value={form.daily_cap ?? ""} onChange={e => setField("daily_cap", e.target.value ? Number(e.target.value) : null)} placeholder="Unlimited" className="mt-1" />
+            <Input aria-label="Daily cap" type="number" value={form.daily_cap ?? ""} onChange={e => setField("daily_cap", e.target.value ? Number(e.target.value) : null)} placeholder="Unlimited" className="mt-1" />
           </div>
         </div>
 
         {/* Active toggle */}
         <div className="flex items-center gap-2">
-          <Switch checked={form.is_active} onCheckedChange={(v) => setField("is_active", v)} />
+          <Switch aria-label="Toggle rule active state" checked={form.is_active} onCheckedChange={(v) => setField("is_active", v)} />
           <span className="text-sm text-foreground">{form.is_active ? "Active" : "Inactive"}</span>
         </div>
       </div>
@@ -429,7 +429,7 @@ function RulesTab({ accountId }: { accountId: string }) {
       <div className="flex items-center gap-3">
         <div className="relative flex-1 max-w-sm">
           <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-          <Input placeholder="Search rules..." value={search} onChange={e => setSearch(e.target.value)} className="pl-9" />
+          <Input aria-label="Search rules" placeholder="Search rules..." value={search} onChange={e => setSearch(e.target.value)} className="pl-9" />
         </div>
         <Badge variant="secondary">{rules.length} rules</Badge>
         <Button size="sm" onClick={() => { setEditingRule(null); setShowForm(true); }} className="ml-auto">
@@ -476,7 +476,7 @@ function RulesTab({ accountId }: { accountId: string }) {
                   <span className="text-xs font-mono text-muted-foreground">{rule.priority}</span>
                 </td>
                 <td className="px-4 py-3 text-center">
-                  <Switch checked={rule.is_active} onCheckedChange={() => handleToggle(rule)} />
+                  <Switch aria-label={`Toggle ${rule.name} active state`} checked={rule.is_active} onCheckedChange={() => handleToggle(rule)} />
                 </td>
                 <td className="px-4 py-3 text-right">
                   <div className="flex items-center justify-end gap-1">
@@ -586,39 +586,39 @@ function BadgeFormModal({ isOpen, onClose, onSaved, editBadge, accountId }: {
         <div className="grid grid-cols-2 gap-3">
           <div>
             <label className="text-xs font-semibold text-muted-foreground">Name *</label>
-            <Input value={form.name} onChange={e => { setField("name", e.target.value); if (!editBadge) setField("slug", autoSlug(e.target.value)); }} placeholder="e.g. Week Warrior" className="mt-1" />
+            <Input aria-label="Badge name" value={form.name} onChange={e => { setField("name", e.target.value); if (!editBadge) setField("slug", autoSlug(e.target.value)); }} placeholder="e.g. Week Warrior" className="mt-1" />
           </div>
           <div>
             <label className="text-xs font-semibold text-muted-foreground">Slug *</label>
-            <Input value={form.slug} onChange={e => setField("slug", e.target.value)} placeholder="week_warrior" className="mt-1" />
+            <Input aria-label="Badge slug" value={form.slug} onChange={e => setField("slug", e.target.value)} placeholder="week_warrior" className="mt-1" />
           </div>
         </div>
 
         {/* Description */}
         <div>
           <label className="text-xs font-semibold text-muted-foreground">Description</label>
-          <Input value={form.description} onChange={e => setField("description", e.target.value)} placeholder="Complete a 7-day streak" className="mt-1" />
+          <Input aria-label="Badge description" value={form.description} onChange={e => setField("description", e.target.value)} placeholder="Complete a 7-day streak" className="mt-1" />
         </div>
 
         {/* Category + Rarity + XP */}
         <div className="grid grid-cols-3 gap-3">
           <div>
             <label className="text-xs font-semibold text-muted-foreground">Category</label>
-            <select value={form.category} onChange={e => setField("category", e.target.value)}
+            <select aria-label="Badge category" value={form.category} onChange={e => setField("category", e.target.value)}
               className="mt-1 w-full h-9 rounded-md border border-input bg-background px-3 text-sm">
               {CATEGORY_OPTIONS.map(c => <option key={c} value={c}>{c}</option>)}
             </select>
           </div>
           <div>
             <label className="text-xs font-semibold text-muted-foreground">Rarity</label>
-            <select value={form.rarity} onChange={e => setField("rarity", e.target.value)}
+            <select aria-label="Badge rarity" value={form.rarity} onChange={e => setField("rarity", e.target.value)}
               className="mt-1 w-full h-9 rounded-md border border-input bg-background px-3 text-sm">
               {RARITY_OPTIONS.map(r => <option key={r} value={r}>{r}</option>)}
             </select>
           </div>
           <div>
             <label className="text-xs font-semibold text-muted-foreground">XP Reward</label>
-            <Input type="number" value={form.xp_reward} onChange={e => setField("xp_reward", Number(e.target.value))} className="mt-1" />
+            <Input aria-label="XP reward" type="number" value={form.xp_reward} onChange={e => setField("xp_reward", Number(e.target.value))} className="mt-1" />
           </div>
         </div>
 
@@ -641,7 +641,7 @@ function BadgeFormModal({ isOpen, onClose, onSaved, editBadge, accountId }: {
           <div className="bg-muted/20 border border-border rounded-md p-3 space-y-3">
             <div>
               <label className="text-xs text-muted-foreground">Type</label>
-              <select value={form.criteria.type || "threshold"} onChange={e => setField("criteria", { type: e.target.value })}
+              <select aria-label="Criteria type" value={form.criteria.type || "threshold"} onChange={e => setField("criteria", { type: e.target.value })}
                 className="mt-1 w-full h-9 rounded-md border border-input bg-background px-3 text-sm">
                 {CRITERIA_TYPES.map(ct => <option key={ct.value} value={ct.value}>{ct.label}</option>)}
               </select>
@@ -650,11 +650,11 @@ function BadgeFormModal({ isOpen, onClose, onSaved, editBadge, accountId }: {
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="text-xs text-muted-foreground">Profile field</label>
-                  <Input value={form.criteria.field || ""} onChange={e => setCriteria("field", e.target.value)} placeholder="total_xp" className="mt-1" />
+                  <Input aria-label="Profile field" value={form.criteria.field || ""} onChange={e => setCriteria("field", e.target.value)} placeholder="total_xp" className="mt-1" />
                 </div>
                 <div>
                   <label className="text-xs text-muted-foreground">Value</label>
-                  <Input type="number" value={form.criteria.value || ""} onChange={e => setCriteria("value", Number(e.target.value))} placeholder="500" className="mt-1" />
+                  <Input aria-label="Threshold value" type="number" value={form.criteria.value || ""} onChange={e => setCriteria("value", Number(e.target.value))} placeholder="500" className="mt-1" />
                 </div>
               </div>
             )}
@@ -662,30 +662,30 @@ function BadgeFormModal({ isOpen, onClose, onSaved, editBadge, accountId }: {
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="text-xs text-muted-foreground">Event type</label>
-                  <Input value={form.criteria.event_type || ""} onChange={e => setCriteria("event_type", e.target.value)} placeholder="content_viewed" className="mt-1" />
+                  <Input aria-label="Event type" value={form.criteria.event_type || ""} onChange={e => setCriteria("event_type", e.target.value)} placeholder="content_viewed" className="mt-1" />
                 </div>
                 <div>
                   <label className="text-xs text-muted-foreground">Count</label>
-                  <Input type="number" value={form.criteria.count || ""} onChange={e => setCriteria("count", Number(e.target.value))} placeholder="10" className="mt-1" />
+                  <Input aria-label="Event count" type="number" value={form.criteria.count || ""} onChange={e => setCriteria("count", Number(e.target.value))} placeholder="10" className="mt-1" />
                 </div>
               </div>
             )}
             {form.criteria.type === "milestone" && (
               <div>
                 <label className="text-xs text-muted-foreground">Milestone type</label>
-                <Input value={form.criteria.milestone_type || ""} onChange={e => setCriteria("milestone_type", e.target.value)} placeholder="salvation" className="mt-1" />
+                <Input aria-label="Milestone type" value={form.criteria.milestone_type || ""} onChange={e => setCriteria("milestone_type", e.target.value)} placeholder="salvation" className="mt-1" />
               </div>
             )}
             {form.criteria.type === "streak" && (
               <div>
                 <label className="text-xs text-muted-foreground">Minimum days</label>
-                <Input type="number" value={form.criteria.min_days || ""} onChange={e => setCriteria("min_days", Number(e.target.value))} placeholder="7" className="mt-1" />
+                <Input aria-label="Minimum days" type="number" value={form.criteria.min_days || ""} onChange={e => setCriteria("min_days", Number(e.target.value))} placeholder="7" className="mt-1" />
               </div>
             )}
             {form.criteria.type === "journey" && (
               <div>
                 <label className="text-xs text-muted-foreground">Journey type</label>
-                <Input value={form.criteria.journey_type || ""} onChange={e => setCriteria("journey_type", e.target.value)} placeholder="growth" className="mt-1" />
+                <Input aria-label="Journey type" value={form.criteria.journey_type || ""} onChange={e => setCriteria("journey_type", e.target.value)} placeholder="growth" className="mt-1" />
               </div>
             )}
           </div>
@@ -693,7 +693,7 @@ function BadgeFormModal({ isOpen, onClose, onSaved, editBadge, accountId }: {
 
         {/* Active toggle */}
         <div className="flex items-center gap-2">
-          <Switch checked={form.is_active} onCheckedChange={(v) => setField("is_active", v)} />
+          <Switch aria-label="Toggle badge active state" checked={form.is_active} onCheckedChange={(v) => setField("is_active", v)} />
           <span className="text-sm text-foreground">{form.is_active ? "Active" : "Inactive"}</span>
         </div>
       </div>
@@ -796,7 +796,7 @@ function BadgesTab({ accountId }: { accountId: string }) {
                         className="p-1 text-muted-foreground hover:text-destructive transition-colors opacity-0 group-hover:opacity-100">
                         <Trash2 className="w-3.5 h-3.5" />
                       </button>
-                      <Switch checked={badge.is_active} onCheckedChange={() => handleToggle(badge)} />
+                      <Switch aria-label={`Toggle ${badge.name} active state`} checked={badge.is_active} onCheckedChange={() => handleToggle(badge)} />
                     </div>
                   </div>
                   <h4 className="font-semibold text-foreground text-sm">{badge.name}</h4>
@@ -1425,7 +1425,7 @@ function ReengagementTab({ accountId }: { accountId: string }) {
                     <button onClick={() => handleDeleteTemplate(t.id)} className="p-1.5 text-muted-foreground hover:text-destructive transition-colors opacity-0 group-hover:opacity-100">
                       <Trash2 className="w-3.5 h-3.5" />
                     </button>
-                    <Switch checked={t.is_active} onCheckedChange={() => handleToggleTemplate(t)} />
+                    <Switch aria-label={`Toggle ${t.name} active state`} checked={t.is_active} onCheckedChange={() => handleToggleTemplate(t)} />
                   </div>
                 </div>
               </div>
@@ -1455,6 +1455,7 @@ function ReengagementTab({ accountId }: { accountId: string }) {
             </div>
             {templates.length > 0 && (
               <select
+                aria-label="Filter by template"
                 value={enrollmentTemplateFilter}
                 onChange={e => setEnrollmentTemplateFilter(e.target.value)}
                 className="h-8 text-xs rounded-md border border-input bg-background px-2"
@@ -1550,11 +1551,11 @@ function ReengagementTab({ accountId }: { accountId: string }) {
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="text-xs font-semibold text-muted-foreground">Name *</label>
-              <Input value={tForm.name} onChange={e => { setTForm(p => ({ ...p, name: e.target.value })); if (!editingTemplate) setTForm(p => ({ ...p, slug: autoSlug(e.target.value) })); }} placeholder="e.g. We Miss You" className="mt-1" />
+              <Input aria-label="Template name" value={tForm.name} onChange={e => { setTForm(p => ({ ...p, name: e.target.value })); if (!editingTemplate) setTForm(p => ({ ...p, slug: autoSlug(e.target.value) })); }} placeholder="e.g. We Miss You" className="mt-1" />
             </div>
             <div>
               <label className="text-xs font-semibold text-muted-foreground">Slug *</label>
-              <Input value={tForm.slug} onChange={e => setTForm(p => ({ ...p, slug: e.target.value }))} placeholder="we_miss_you" className="mt-1" />
+              <Input aria-label="Template slug" value={tForm.slug} onChange={e => setTForm(p => ({ ...p, slug: e.target.value }))} placeholder="we_miss_you" className="mt-1" />
             </div>
           </div>
 
@@ -1562,11 +1563,11 @@ function ReengagementTab({ accountId }: { accountId: string }) {
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="text-xs font-semibold text-muted-foreground">Description</label>
-              <Input value={tForm.description} onChange={e => setTForm(p => ({ ...p, description: e.target.value }))} placeholder="Re-engage silent seekers" className="mt-1" />
+              <Input aria-label="Template description" value={tForm.description} onChange={e => setTForm(p => ({ ...p, description: e.target.value }))} placeholder="Re-engage silent seekers" className="mt-1" />
             </div>
             <div>
               <label className="text-xs font-semibold text-muted-foreground">Trigger Type</label>
-              <select value={tForm.trigger_type} onChange={e => setTForm(p => ({ ...p, trigger_type: e.target.value }))}
+              <select aria-label="Trigger type" value={tForm.trigger_type} onChange={e => setTForm(p => ({ ...p, trigger_type: e.target.value }))}
                 className="mt-1 w-full h-9 rounded-md border border-input bg-background px-3 text-sm">
                 <option value="manual">Manual</option>
                 <option value="streak_broken">Streak Broken</option>
@@ -1592,11 +1593,11 @@ function ReengagementTab({ accountId }: { accountId: string }) {
                     <div className="flex-1 grid grid-cols-2 gap-2">
                       <div>
                         <label className="text-[10px] text-muted-foreground">Delay (hours)</label>
-                        <Input type="number" value={s.delay_hours} onChange={e => updateStep(i, "delay_hours", Number(e.target.value))} className="mt-0.5" />
+                        <Input aria-label="Step delay hours" type="number" value={s.delay_hours} onChange={e => updateStep(i, "delay_hours", Number(e.target.value))} className="mt-0.5" />
                       </div>
                       <div>
                         <label className="text-[10px] text-muted-foreground">Channel</label>
-                        <select value={s.channel} onChange={e => updateStep(i, "channel", e.target.value)}
+                        <select aria-label="Step channel" value={s.channel} onChange={e => updateStep(i, "channel", e.target.value)}
                           className="mt-0.5 w-full h-9 rounded-md border border-input bg-background px-2 text-sm">
                           <option value="in_app">In-App</option>
                           <option value="push">Push</option>
@@ -1611,7 +1612,7 @@ function ReengagementTab({ accountId }: { accountId: string }) {
                   </div>
                   <div>
                     <label className="text-[10px] text-muted-foreground">Message</label>
-                    <Input value={s.message} onChange={e => updateStep(i, "message", e.target.value)} placeholder="Hey {FIRST_NAME}, we noticed..." className="mt-0.5" />
+                    <Input aria-label="Step message" value={s.message} onChange={e => updateStep(i, "message", e.target.value)} placeholder="Hey {FIRST_NAME}, we noticed..." className="mt-0.5" />
                   </div>
                 </div>
               ))}
@@ -1620,7 +1621,7 @@ function ReengagementTab({ accountId }: { accountId: string }) {
 
           {/* Active toggle */}
           <div className="flex items-center gap-2">
-            <Switch checked={tForm.is_active} onCheckedChange={(v) => setTForm(p => ({ ...p, is_active: v }))} />
+            <Switch aria-label="Toggle template active state" checked={tForm.is_active} onCheckedChange={(v) => setTForm(p => ({ ...p, is_active: v }))} />
             <span className="text-sm text-foreground">{tForm.is_active ? "Active" : "Inactive"}</span>
           </div>
         </div>

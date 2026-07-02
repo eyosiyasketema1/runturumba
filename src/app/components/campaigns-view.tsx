@@ -108,6 +108,7 @@ const QuestionCard = ({ question, index, onUpdate, onDelete, isActive, onSelect,
               placeholder="Type your question here..."
               className="w-full text-sm font-semibold text-foreground bg-transparent border-none outline-none placeholder:text-muted-foreground/80"
               autoFocus
+              aria-label="Question text"
             />
           ) : (
             <p className="text-sm font-medium text-foreground truncate">{question.questionText || "Untitled question"}</p>
@@ -132,7 +133,7 @@ const QuestionCard = ({ question, index, onUpdate, onDelete, isActive, onSelect,
           {/* Description */}
           <div className="space-y-1">
             <Label className="text-xs text-muted-foreground">Description (optional)</Label>
-            <Input value={question.description || ""} onChange={(e) => onUpdate({ ...question, description: e.target.value })} placeholder="Add helper text for participants..." className="text-sm" />
+            <Input value={question.description || ""} onChange={(e) => onUpdate({ ...question, description: e.target.value })} placeholder="Add helper text for participants..." className="text-sm" aria-label="Question description" />
           </div>
 
           {/* Type selector + required toggle */}
@@ -152,6 +153,7 @@ const QuestionCard = ({ question, index, onUpdate, onDelete, isActive, onSelect,
                   onUpdate({ ...question, type: newType, config: defaults[newType] });
                 }}
                 className="h-9 px-3 text-sm rounded-lg border border-input bg-background"
+                aria-label="Question type"
               >
                 <option value="multiple_choice">Multiple Choice</option>
                 <option value="text">Open Text</option>
@@ -160,7 +162,7 @@ const QuestionCard = ({ question, index, onUpdate, onDelete, isActive, onSelect,
               </select>
             </div>
             <div className="flex items-center gap-2">
-              <Switch checked={question.required} onCheckedChange={(v) => onUpdate({ ...question, required: v })} />
+              <Switch checked={question.required} onCheckedChange={(v) => onUpdate({ ...question, required: v })} aria-label="Required" />
               <Label className="text-xs text-muted-foreground">Required</Label>
             </div>
           </div>
@@ -177,6 +179,7 @@ const QuestionCard = ({ question, index, onUpdate, onDelete, isActive, onSelect,
                     placeholder={`Option ${i + 1}`}
                     className="h-9 text-sm flex-1"
                     autoFocus={!opt.label}
+                    aria-label={`Option ${i + 1}`}
                     onChange={(e) => {
                       const opts = [...(question.config.options || [])];
                       opts[i] = { ...opts[i], label: e.target.value, value: e.target.value.toLowerCase().replace(/[^a-z0-9]+/g, "_") || `opt_${i}` };
@@ -201,10 +204,10 @@ const QuestionCard = ({ question, index, onUpdate, onDelete, isActive, onSelect,
           {question.type === "scale" && (
             <div className="space-y-3">
               <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-1"><Label className="text-xs text-muted-foreground">Min Value</Label><Input type="number" value={question.config.min || 1} onChange={(e) => onUpdate({ ...question, config: { ...question.config, min: parseInt(e.target.value) || 1 } })} /></div>
-                <div className="space-y-1"><Label className="text-xs text-muted-foreground">Max Value</Label><Input type="number" value={question.config.max || 5} onChange={(e) => onUpdate({ ...question, config: { ...question.config, max: parseInt(e.target.value) || 5 } })} /></div>
-                <div className="space-y-1"><Label className="text-xs text-muted-foreground">Low Label</Label><Input value={question.config.minLabel || ""} onChange={(e) => onUpdate({ ...question, config: { ...question.config, minLabel: e.target.value } })} placeholder="e.g. Not at all" /></div>
-                <div className="space-y-1"><Label className="text-xs text-muted-foreground">High Label</Label><Input value={question.config.maxLabel || ""} onChange={(e) => onUpdate({ ...question, config: { ...question.config, maxLabel: e.target.value } })} placeholder="e.g. Very much" /></div>
+                <div className="space-y-1"><Label className="text-xs text-muted-foreground">Min Value</Label><Input type="number" value={question.config.min || 1} onChange={(e) => onUpdate({ ...question, config: { ...question.config, min: parseInt(e.target.value) || 1 } })} aria-label="Minimum value" /></div>
+                <div className="space-y-1"><Label className="text-xs text-muted-foreground">Max Value</Label><Input type="number" value={question.config.max || 5} onChange={(e) => onUpdate({ ...question, config: { ...question.config, max: parseInt(e.target.value) || 5 } })} aria-label="Maximum value" /></div>
+                <div className="space-y-1"><Label className="text-xs text-muted-foreground">Low Label</Label><Input value={question.config.minLabel || ""} onChange={(e) => onUpdate({ ...question, config: { ...question.config, minLabel: e.target.value } })} placeholder="e.g. Not at all" aria-label="Low label" /></div>
+                <div className="space-y-1"><Label className="text-xs text-muted-foreground">High Label</Label><Input value={question.config.maxLabel || ""} onChange={(e) => onUpdate({ ...question, config: { ...question.config, maxLabel: e.target.value } })} placeholder="e.g. Very much" aria-label="High label" /></div>
               </div>
               {/* Scale preview */}
               <div className="flex items-center gap-1 pt-1">
@@ -221,11 +224,11 @@ const QuestionCard = ({ question, index, onUpdate, onDelete, isActive, onSelect,
             <div className="space-y-3">
               <div className="space-y-1">
                 <Label className="text-xs text-muted-foreground">Placeholder Text</Label>
-                <Input value={question.config.placeholder || ""} onChange={(e) => onUpdate({ ...question, config: { ...question.config, placeholder: e.target.value } })} placeholder="e.g. Share your thoughts..." />
+                <Input value={question.config.placeholder || ""} onChange={(e) => onUpdate({ ...question, config: { ...question.config, placeholder: e.target.value } })} placeholder="e.g. Share your thoughts..." aria-label="Placeholder text" />
               </div>
               <div className="space-y-1">
                 <Label className="text-xs text-muted-foreground">Max Characters</Label>
-                <Input type="number" value={question.config.maxLength || 500} onChange={(e) => onUpdate({ ...question, config: { ...question.config, maxLength: parseInt(e.target.value) || 500 } })} />
+                <Input type="number" value={question.config.maxLength || 500} onChange={(e) => onUpdate({ ...question, config: { ...question.config, maxLength: parseInt(e.target.value) || 500 } })} aria-label="Maximum characters" />
               </div>
               {/* Text preview */}
               <div className="border border-border rounded-lg px-3 py-2 bg-muted/20 text-sm text-muted-foreground min-h-[60px]">
@@ -259,12 +262,14 @@ const QuestionCard = ({ question, index, onUpdate, onDelete, isActive, onSelect,
                                 const fields = (question.config.fields || []).map((f: any) => f.field === fieldOpt.field ? { ...f, required: v } : f);
                                 onUpdate({ ...question, config: { ...question.config, fields } });
                               }}
+                              aria-label={`${fieldOpt.label} required`}
                             />
                             <span className="text-[11px] text-muted-foreground">Required</span>
                           </div>
                         )}
                         <Switch
                           checked={isEnabled}
+                          aria-label={`Enable ${fieldOpt.label}`}
                           onCheckedChange={(v) => {
                             if (v) {
                               const fields = [...(question.config.fields || []), { field: fieldOpt.field, label: fieldOpt.label, required: fieldOpt.field === "name" }];
@@ -365,7 +370,7 @@ const LivePreview = ({ campaign }: { campaign: Campaign }) => {
                   </div>
                 )}
                 {q.type === "text" && (
-                  <textarea className="w-full h-24 border rounded-lg px-3 py-2 text-sm text-gray-500 resize-none" placeholder={q.config.placeholder || "Type here..."} readOnly />
+                  <textarea className="w-full h-24 border rounded-lg px-3 py-2 text-sm text-gray-500 resize-none" placeholder={q.config.placeholder || "Type here..."} readOnly aria-label="Text answer preview" />
                 )}
                 {q.type === "scale" && (
                   <div className="space-y-2">
@@ -387,7 +392,7 @@ const LivePreview = ({ campaign }: { campaign: Campaign }) => {
                     {(q.config.fields || []).map((f: any, i: number) => (
                       <div key={i} className="space-y-1">
                         <label className="text-xs font-medium text-gray-600">{f.label}{f.required && " *"}</label>
-                        <input className="w-full h-9 border rounded-lg px-3 text-sm text-gray-400" placeholder={f.label} readOnly />
+                        <input className="w-full h-9 border rounded-lg px-3 text-sm text-gray-400" placeholder={f.label} readOnly aria-label={f.label} />
                       </div>
                     ))}
                   </div>
@@ -586,7 +591,7 @@ const CampaignBuilder = ({ campaign, onBack, onSave }: {
         </button>
         <div className="flex-1 min-w-0">
           <input value={draft.name} onChange={(e) => setDraft(prev => ({ ...prev, name: e.target.value }))}
-            className="text-lg font-bold text-foreground bg-transparent border-none outline-none w-full" />
+            className="text-lg font-bold text-foreground bg-transparent border-none outline-none w-full" aria-label="Campaign name" />
           <p className="text-xs text-muted-foreground">
             {draft.type === "video_quiz" ? "Video + Quiz" : "Survey"} · {draft.questions.length} question{draft.questions.length !== 1 ? "s" : ""} · {STATUS_CONFIG[draft.status].label}
           </p>
@@ -682,15 +687,15 @@ const CampaignBuilder = ({ campaign, onBack, onSave }: {
               <Card>
                 <CardHeader><CardTitle className="text-sm font-semibold">General</CardTitle></CardHeader>
                 <CardContent className="space-y-4">
-                  <div className="space-y-1.5"><Label className="text-xs">Campaign Name</Label><Input value={draft.name} onChange={(e) => setDraft(p => ({ ...p, name: e.target.value }))} /></div>
-                  <div className="space-y-1.5"><Label className="text-xs">Description</Label><Textarea value={draft.description} onChange={(e) => setDraft(p => ({ ...p, description: e.target.value }))} rows={2} /></div>
+                  <div className="space-y-1.5"><Label className="text-xs">Campaign Name</Label><Input value={draft.name} onChange={(e) => setDraft(p => ({ ...p, name: e.target.value }))} aria-label="Campaign name" /></div>
+                  <div className="space-y-1.5"><Label className="text-xs">Description</Label><Textarea value={draft.description} onChange={(e) => setDraft(p => ({ ...p, description: e.target.value }))} rows={2} aria-label="Campaign description" /></div>
                   <div className="space-y-1.5"><Label className="text-xs">Type</Label>
-                    <select value={draft.type} onChange={(e) => setDraft(p => ({ ...p, type: e.target.value as CampaignType }))} className="h-10 w-full px-3 rounded-md border border-input bg-background text-sm">
+                    <select value={draft.type} onChange={(e) => setDraft(p => ({ ...p, type: e.target.value as CampaignType }))} className="h-10 w-full px-3 rounded-md border border-input bg-background text-sm" aria-label="Campaign type">
                       <option value="survey">Survey / Quiz</option>
                       <option value="video_quiz">Video + Quiz</option>
                     </select>
                   </div>
-                  <div className="space-y-1.5"><Label className="text-xs">URL Slug</Label><Input value={draft.slug} onChange={(e) => setDraft(p => ({ ...p, slug: e.target.value }))} /></div>
+                  <div className="space-y-1.5"><Label className="text-xs">URL Slug</Label><Input value={draft.slug} onChange={(e) => setDraft(p => ({ ...p, slug: e.target.value }))} aria-label="URL slug" /></div>
                 </CardContent>
               </Card>
 
@@ -741,6 +746,7 @@ const CampaignBuilder = ({ campaign, onBack, onSave }: {
                       type="file"
                       accept="video/mp4,video/webm,video/ogg"
                       className="hidden"
+                      aria-label="Upload video file"
                       onChange={(e) => {
                         const file = e.target.files?.[0];
                         if (file) {
@@ -761,6 +767,7 @@ const CampaignBuilder = ({ campaign, onBack, onSave }: {
                         value={draft.settings.videoUrl?.startsWith("blob:") ? "" : (draft.settings.videoUrl || "")}
                         onChange={(e) => updateSettings({ videoUrl: e.target.value })}
                         placeholder="https://youtube.com/watch?v=... or https://vimeo.com/..."
+                        aria-label="Video URL"
                       />
                       {!draft.settings.videoUrl && (
                         <Button size="sm" variant="outline" onClick={() => document.getElementById("video-upload-input")?.click()}>
@@ -775,8 +782,8 @@ const CampaignBuilder = ({ campaign, onBack, onSave }: {
               <Card>
                 <CardHeader><CardTitle className="text-sm font-semibold">Messages</CardTitle></CardHeader>
                 <CardContent className="space-y-4">
-                  <div className="space-y-1.5"><Label className="text-xs">Welcome Message</Label><Textarea value={draft.settings.welcomeMessage} onChange={(e) => updateSettings({ welcomeMessage: e.target.value })} rows={3} /></div>
-                  <div className="space-y-1.5"><Label className="text-xs">Completion Message</Label><Textarea value={draft.settings.completionMessage} onChange={(e) => updateSettings({ completionMessage: e.target.value })} rows={3} /></div>
+                  <div className="space-y-1.5"><Label className="text-xs">Welcome Message</Label><Textarea value={draft.settings.welcomeMessage} onChange={(e) => updateSettings({ welcomeMessage: e.target.value })} rows={3} aria-label="Welcome message" /></div>
+                  <div className="space-y-1.5"><Label className="text-xs">Completion Message</Label><Textarea value={draft.settings.completionMessage} onChange={(e) => updateSettings({ completionMessage: e.target.value })} rows={3} aria-label="Completion message" /></div>
                 </CardContent>
               </Card>
 
@@ -810,7 +817,7 @@ const CampaignBuilder = ({ campaign, onBack, onSave }: {
                         </Button>
                       </div>
                     </div>
-                    <input id="logo-upload-input" type="file" accept="image/png,image/jpeg,image/svg+xml" className="hidden" onChange={(e) => {
+                    <input id="logo-upload-input" type="file" accept="image/png,image/jpeg,image/svg+xml" className="hidden" aria-label="Upload logo" onChange={(e) => {
                       const file = e.target.files?.[0];
                       if (file) { updateBranding({ logoUrl: URL.createObjectURL(file) }); toast.success("Logo uploaded"); }
                       e.target.value = "";
@@ -843,7 +850,7 @@ const CampaignBuilder = ({ campaign, onBack, onSave }: {
                         <Upload className="w-3 h-3 mr-1" /> Change Image
                       </Button>
                     )}
-                    <input id="header-upload-input" type="file" accept="image/png,image/jpeg" className="hidden" onChange={(e) => {
+                    <input id="header-upload-input" type="file" accept="image/png,image/jpeg" className="hidden" aria-label="Upload header image" onChange={(e) => {
                       const file = e.target.files?.[0];
                       if (file) { updateBranding({ headerImageUrl: URL.createObjectURL(file) }); toast.success("Header image uploaded"); }
                       e.target.value = "";
@@ -856,8 +863,8 @@ const CampaignBuilder = ({ campaign, onBack, onSave }: {
                   <div className="space-y-1.5">
                     <Label className="text-xs font-medium">Primary Color</Label>
                     <div className="flex items-center gap-2">
-                      <input type="color" value={draft.settings.branding.primaryColor} onChange={(e) => updateBranding({ primaryColor: e.target.value, backgroundColor: e.target.value + "1A" })} className="w-10 h-10 rounded-lg border cursor-pointer" />
-                      <Input value={draft.settings.branding.primaryColor} onChange={(e) => updateBranding({ primaryColor: e.target.value, backgroundColor: e.target.value + "1A" })} className="flex-1" />
+                      <input type="color" value={draft.settings.branding.primaryColor} onChange={(e) => updateBranding({ primaryColor: e.target.value, backgroundColor: e.target.value + "1A" })} className="w-10 h-10 rounded-lg border cursor-pointer" aria-label="Brand color picker" />
+                      <Input value={draft.settings.branding.primaryColor} onChange={(e) => updateBranding({ primaryColor: e.target.value, backgroundColor: e.target.value + "1A" })} className="flex-1" aria-label="Brand color hex value" />
                     </div>
                     <p className="text-[11px] text-muted-foreground">Background color is automatically set to 10% of primary</p>
                   </div>
@@ -874,7 +881,7 @@ const CampaignBuilder = ({ campaign, onBack, onSave }: {
                 <CardContent className="space-y-3">
                   <div className="flex items-center justify-between">
                     <div><p className="text-sm font-medium">Collect Contact Info</p><p className="text-xs text-muted-foreground">Add a contact info question to your survey</p></div>
-                    <Switch checked={draft.settings.collectContact} onCheckedChange={(v) => updateSettings({ collectContact: v })} />
+                    <Switch checked={draft.settings.collectContact} onCheckedChange={(v) => updateSettings({ collectContact: v })} aria-label="Collect contact info" />
                   </div>
                 </CardContent>
               </Card>
@@ -963,22 +970,22 @@ const CampaignBuilder = ({ campaign, onBack, onSave }: {
                 <CardContent className="space-y-4">
                   <div className="flex items-center justify-between">
                     <div><p className="text-sm font-medium">Auto-Classify Seeker</p><p className="text-xs text-muted-foreground">AI classifies maturity level from survey answers</p></div>
-                    <Switch checked={draft.outcomeConfig.autoClassify} onCheckedChange={(v) => updateOutcome({ autoClassify: v })} />
+                    <Switch checked={draft.outcomeConfig.autoClassify} onCheckedChange={(v) => updateOutcome({ autoClassify: v })} aria-label="Auto-convert to contact" />
                   </div>
                   <Separator />
                   <div className="flex items-center justify-between">
                     <div><p className="text-sm font-medium">Auto-Match with Mentor</p><p className="text-xs text-muted-foreground">Automatically propose a mentor match based on profile</p></div>
-                    <Switch checked={draft.outcomeConfig.autoMatch} onCheckedChange={(v) => updateOutcome({ autoMatch: v })} />
+                    <Switch checked={draft.outcomeConfig.autoMatch} onCheckedChange={(v) => updateOutcome({ autoMatch: v })} aria-label="Notify team" />
                   </div>
                   <Separator />
                   <div className="flex items-center justify-between">
                     <div><p className="text-sm font-medium">Content Recommendations</p><p className="text-xs text-muted-foreground">Show personalized content on the completion screen</p></div>
-                    <Switch checked={draft.outcomeConfig.contentRecommendationEnabled} onCheckedChange={(v) => updateOutcome({ contentRecommendationEnabled: v })} />
+                    <Switch checked={draft.outcomeConfig.contentRecommendationEnabled} onCheckedChange={(v) => updateOutcome({ contentRecommendationEnabled: v })} aria-label="Add to group" />
                   </div>
                   <Separator />
                   <div className="space-y-1.5">
                     <Label className="text-xs">Enroll in Automation (optional)</Label>
-                    <select value={draft.outcomeConfig.automationId || ""} onChange={(e) => updateOutcome({ automationId: e.target.value || undefined })} className="h-10 w-full px-3 rounded-md border border-input bg-background text-sm">
+                    <select value={draft.outcomeConfig.automationId || ""} onChange={(e) => updateOutcome({ automationId: e.target.value || undefined })} className="h-10 w-full px-3 rounded-md border border-input bg-background text-sm" aria-label="Trigger automation">
                       <option value="">No automation</option>
                       <option value="auto-1">Welcome Message</option>
                       <option value="auto-8">Foundations of Faith Drip</option>
@@ -1090,12 +1097,12 @@ export const CampaignsView = () => {
       <div className="flex items-center gap-3 bg-card border border-border rounded-xl px-4 py-3">
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-          <Input placeholder="Search campaigns..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="pl-9 h-10 text-sm" />
+          <Input placeholder="Search campaigns..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="pl-9 h-10 text-sm" aria-label="Search campaigns" />
         </div>
-        <select value={filterType} onChange={(e) => setFilterType(e.target.value as any)} className="h-10 px-3 pr-8 rounded-lg border border-border bg-background text-sm appearance-none cursor-pointer">
+        <select value={filterType} onChange={(e) => setFilterType(e.target.value as any)} className="h-10 px-3 pr-8 rounded-lg border border-border bg-background text-sm appearance-none cursor-pointer" aria-label="Filter by type">
           <option value="all">All types</option><option value="survey">Survey</option><option value="video_quiz">Video + Quiz</option>
         </select>
-        <select value={filterStatus} onChange={(e) => setFilterStatus(e.target.value as any)} className="h-10 px-3 pr-8 rounded-lg border border-border bg-background text-sm appearance-none cursor-pointer">
+        <select value={filterStatus} onChange={(e) => setFilterStatus(e.target.value as any)} className="h-10 px-3 pr-8 rounded-lg border border-border bg-background text-sm appearance-none cursor-pointer" aria-label="Filter by status">
           <option value="all">All statuses</option><option value="draft">Draft</option><option value="active">Active</option><option value="paused">Paused</option><option value="archived">Archived</option>
         </select>
       </div>

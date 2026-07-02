@@ -186,6 +186,7 @@ function DraggableRuleRow({
             checked={rule.active}
             onCheckedChange={() => onToggle(rule.id)}
             title={rule.active ? "Deactivate rule" : "Activate rule"}
+            aria-label="Toggle rule active"
           />
           <span className={cn(
             "text-xs font-semibold",
@@ -320,11 +321,11 @@ function RuleFormModal({
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <div className="sm:col-span-2 space-y-1.5">
             <Label>Rule Name <span className="text-destructive">*</span></Label>
-            <Input placeholder="VIP Telegram Support" value={form.name} onChange={e => set("name", e.target.value)} />
+            <Input placeholder="VIP Telegram Support" value={form.name} onChange={e => set("name", e.target.value)} aria-label="Rule name" />
           </div>
           <div className="space-y-1.5">
             <Label>Priority</Label>
-            <Input type="number" min={1} value={form.priority} onChange={e => set("priority", Number(e.target.value))} />
+            <Input type="number" min={1} value={form.priority} onChange={e => set("priority", Number(e.target.value))} aria-label="Rule priority" />
             <p className="text-xs text-muted-foreground">Lower = evaluated first</p>
           </div>
         </div>
@@ -351,7 +352,7 @@ function RuleFormModal({
                   <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest px-2 py-1">Channels</p>
                   {CHANNEL_SOURCE_OPTIONS.map(opt => (
                     <label key={opt.id} className="flex items-center gap-2 px-2 py-1.5 hover:bg-muted/40 cursor-pointer text-sm">
-                      <input type="checkbox" checked={form.sources.includes(opt.id)} onChange={() => toggleSource(opt.id)} className="w-3.5 h-3.5 accent-primary" />
+                      <input type="checkbox" checked={form.sources.includes(opt.id)} onChange={() => toggleSource(opt.id)} className="w-3.5 h-3.5 accent-primary" aria-label={`Select ${opt.label}`} />
                       <opt.icon className={cn("w-3.5 h-3.5", opt.color)} />
                       <span>{opt.label}</span>
                     </label>
@@ -361,7 +362,7 @@ function RuleFormModal({
                       <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest px-2 py-1 mt-1 border-t border-border pt-2">Chat Endpoints</p>
                       {chatEndpoints.map(ep => (
                         <label key={ep.id} className="flex items-center gap-2 px-2 py-1.5 hover:bg-muted/40 cursor-pointer text-sm">
-                          <input type="checkbox" checked={form.sources.includes(ep.id)} onChange={() => toggleSource(ep.id)} className="w-3.5 h-3.5 accent-primary" />
+                          <input type="checkbox" checked={form.sources.includes(ep.id)} onChange={() => toggleSource(ep.id)} className="w-3.5 h-3.5 accent-primary" aria-label={`Select ${ep.name}`} />
                           <Bot className="w-3.5 h-3.5 text-primary" />
                           <span>{ep.name}</span>
                         </label>
@@ -395,6 +396,7 @@ function RuleFormModal({
         <div className="space-y-1.5">
           <Label>Audience Mode</Label>
           <select value={form.audienceMode} onChange={e => set("audienceMode", e.target.value as AudienceMode)}
+            aria-label="Audience mode"
             className="w-full h-10 border border-border bg-background px-3 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-ring">
             {AUDIENCE_MODE_OPTIONS.map(o => <option key={o.id} value={o.id}>{o.label} — {o.description}</option>)}
           </select>
@@ -407,7 +409,7 @@ function RuleFormModal({
             <div className="grid grid-cols-2 gap-1">
               {groups.map(g => (
                 <label key={g.id} className="flex items-center gap-2 p-2 hover:bg-white/60 cursor-pointer text-sm">
-                  <input type="checkbox" checked={form.allowedGroups.includes(g.id)} onChange={() => toggleGroup(g.id)} className="w-3.5 h-3.5 accent-primary" />
+                  <input type="checkbox" checked={form.allowedGroups.includes(g.id)} onChange={() => toggleGroup(g.id)} className="w-3.5 h-3.5 accent-primary" aria-label={`Select group ${g.name}`} />
                   <span>{g.name}</span>
                   <span className="text-muted-foreground text-xs">({g.contactCount})</span>
                 </label>
@@ -422,14 +424,14 @@ function RuleFormModal({
             <Label>Allowed Contacts</Label>
             <div className="relative mb-2">
               <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
-              <Input placeholder="Search contacts..." value={contactSearch} onChange={e => setContactSearch(e.target.value)} className="pl-8 text-sm h-9" />
+              <Input placeholder="Search contacts..." value={contactSearch} onChange={e => setContactSearch(e.target.value)} className="pl-8 text-sm h-9" aria-label="Search contacts" />
             </div>
             <div className="max-h-36 overflow-y-auto space-y-0.5">
               {users
                 .filter(u => !contactSearch || u.name.toLowerCase().includes(contactSearch.toLowerCase()) || u.email.toLowerCase().includes(contactSearch.toLowerCase()))
                 .map(u => (
                   <label key={u.id} className="flex items-center gap-2 p-1.5 hover:bg-white/60 cursor-pointer text-sm">
-                    <input type="checkbox" checked={form.allowedContacts.includes(u.id)} onChange={() => toggleContact(u.id)} className="w-3.5 h-3.5 accent-primary" />
+                    <input type="checkbox" checked={form.allowedContacts.includes(u.id)} onChange={() => toggleContact(u.id)} className="w-3.5 h-3.5 accent-primary" aria-label={`Select contact ${u.name}`} />
                     <span>{u.name}</span>
                     <span className="text-muted-foreground text-xs">{u.email}</span>
                   </label>
@@ -445,7 +447,7 @@ function RuleFormModal({
             {(["auto", "manual"] as CreationMode[]).map(mode => (
               <label key={mode} className={cn("flex items-start gap-3 border p-3 cursor-pointer transition-colors",
                 form.creationMode === mode ? "border-primary bg-primary/5" : "border-border hover:bg-muted/30")}>
-                <input type="radio" name="creationMode" value={mode} checked={form.creationMode === mode} onChange={() => set("creationMode", mode)} className="mt-0.5 accent-primary" />
+                <input type="radio" name="creationMode" value={mode} checked={form.creationMode === mode} onChange={() => set("creationMode", mode)} className="mt-0.5 accent-primary" aria-label={`Creation mode: ${mode}`} />
                 <div>
                   <p className="text-sm font-semibold capitalize">{mode}</p>
                   <p className="text-xs text-muted-foreground">
@@ -464,7 +466,7 @@ function RuleFormModal({
             {REOPEN_POLICY_OPTIONS.map(opt => (
               <label key={opt.id} className={cn("flex items-center gap-3 border p-3 cursor-pointer transition-colors",
                 form.reopenPolicy === opt.id ? "border-primary bg-primary/5" : "border-border hover:bg-muted/30")}>
-                <input type="radio" name="reopenPolicy" value={opt.id} checked={form.reopenPolicy === opt.id} onChange={() => set("reopenPolicy", opt.id)} className="accent-primary" />
+                <input type="radio" name="reopenPolicy" value={opt.id} checked={form.reopenPolicy === opt.id} onChange={() => set("reopenPolicy", opt.id)} className="accent-primary" aria-label={`Reopen policy: ${opt.label}`} />
                 <div className="min-w-0">
                   <p className="text-sm font-semibold">{opt.label}</p>
                   <p className="text-xs text-muted-foreground">{opt.description}</p>
@@ -475,7 +477,7 @@ function RuleFormModal({
           {form.reopenPolicy === "threshold" && (
             <div className="space-y-1.5 mt-2">
               <Label>Reopen Window (hours)</Label>
-              <Input type="number" min={1} value={form.reopenWindowHours} onChange={e => set("reopenWindowHours", Number(e.target.value))} className="w-32" />
+              <Input type="number" min={1} value={form.reopenWindowHours} onChange={e => set("reopenWindowHours", Number(e.target.value))} className="w-32" aria-label="Reopen window hours" />
             </div>
           )}
         </div>
@@ -485,6 +487,7 @@ function RuleFormModal({
           <div className="space-y-1.5">
             <Label>Default Team</Label>
             <select value={form.defaultTeam} onChange={e => set("defaultTeam", e.target.value)}
+              aria-label="Default team"
               className="w-full h-10 border border-border bg-background px-3 text-sm focus:outline-none focus:ring-1 focus:ring-ring">
               <option value="">No default team</option>
               {teamGroups.map(tg => <option key={tg.id} value={tg.id}>{tg.name}</option>)}
@@ -493,6 +496,7 @@ function RuleFormModal({
           <div className="space-y-1.5">
             <Label>Default Assignee</Label>
             <select value={form.defaultAssignee} onChange={e => set("defaultAssignee", e.target.value)}
+              aria-label="Default assignee"
               className="w-full h-10 border border-border bg-background px-3 text-sm focus:outline-none focus:ring-1 focus:ring-ring">
               <option value="">No default assignee</option>
               {users.filter(u => u.role !== "viewer").map(u => (
@@ -514,7 +518,7 @@ function RuleFormModal({
             ]).map(opt => (
               <label key={opt.id} className={cn("flex items-start gap-3 border p-3 cursor-pointer transition-colors",
                 form.assignmentMode === opt.id ? "border-primary bg-primary/5" : "border-border hover:bg-muted/30")}>
-                <input type="radio" name="assignmentMode" value={opt.id} checked={form.assignmentMode === opt.id} onChange={() => set("assignmentMode", opt.id)} className="mt-0.5 accent-primary" />
+                <input type="radio" name="assignmentMode" value={opt.id} checked={form.assignmentMode === opt.id} onChange={() => set("assignmentMode", opt.id)} className="mt-0.5 accent-primary" aria-label={`Assignment mode: ${opt.label}`} />
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2">
                     <opt.icon className={cn("w-3.5 h-3.5", opt.color)} />
@@ -536,12 +540,13 @@ function RuleFormModal({
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-1.5">
                   <Label>Grab Window (minutes)</Label>
-                  <Input type="number" min={1} max={1440} value={form.grabWindowMinutes} onChange={e => set("grabWindowMinutes", Number(e.target.value))} className="w-full" />
+                  <Input type="number" min={1} max={1440} value={form.grabWindowMinutes} onChange={e => set("grabWindowMinutes", Number(e.target.value))} className="w-full" aria-label="Grab window minutes" />
                   <p className="text-xs text-muted-foreground">Time mentors have to claim the conversation before fallback triggers.</p>
                 </div>
                 <div className="space-y-1.5">
                   <Label>If Unclaimed (Fallback)</Label>
                   <select value={form.grabFallback} onChange={e => set("grabFallback", e.target.value as GrabFallback)}
+                    aria-label="Unclaimed fallback action"
                     className="w-full h-10 border border-border bg-background px-3 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-ring">
                     <option value="auto_assign_available">Auto-assign to available mentor</option>
                     <option value="escalate_admin">Escalate to admin</option>
@@ -564,7 +569,7 @@ function RuleFormModal({
             ]).map(opt => (
               <label key={opt.id} className={cn("flex items-start gap-3 border p-3 cursor-pointer transition-colors",
                 form.reassignmentMode === opt.id ? "border-primary bg-primary/5" : "border-border hover:bg-muted/30")}>
-                <input type="radio" name="reassignmentMode" value={opt.id} checked={form.reassignmentMode === opt.id} onChange={() => set("reassignmentMode", opt.id)} className="mt-0.5 accent-primary" />
+                <input type="radio" name="reassignmentMode" value={opt.id} checked={form.reassignmentMode === opt.id} onChange={() => set("reassignmentMode", opt.id)} className="mt-0.5 accent-primary" aria-label={`Reassignment mode: ${opt.label}`} />
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2">
                     <opt.icon className={cn("w-3.5 h-3.5", opt.color)} />
@@ -587,7 +592,7 @@ function RuleFormModal({
             <span className={cn("text-xs font-semibold", form.active ? "text-emerald-600" : "text-muted-foreground")}>
               {form.active ? "Active" : "Inactive"}
             </span>
-            <Switch checked={form.active} onCheckedChange={v => set("active", v)} />
+            <Switch checked={form.active} onCheckedChange={v => set("active", v)} aria-label="Rule active" />
           </div>
         </div>
 
@@ -776,6 +781,7 @@ export function RoutingRulesPanel({
                         placeholder="Search conversation rules…"
                         value={searchQuery}
                         onChange={e => setSearchQuery(e.target.value)}
+                        aria-label="Search conversation rules"
                         className="w-full pl-10 pr-8 h-10 bg-background border border-input rounded-sm text-sm focus:outline-none focus:ring-2 focus:ring-ring transition-all"
                       />
                       {searchQuery && (
@@ -864,6 +870,7 @@ export function RoutingRulesPanel({
                     <select
                       value={audienceFilter}
                       onChange={e => setAudienceFilter(e.target.value as AudienceFilter)}
+                      aria-label="Filter by audience"
                       className={cn(
                         "h-7 border px-2 text-xs font-bold bg-background focus:outline-none focus:ring-1 focus:ring-ring transition-colors cursor-pointer",
                         audienceFilter !== "all"
@@ -881,6 +888,7 @@ export function RoutingRulesPanel({
                     <select
                       value={sourceFilter}
                       onChange={e => setSourceFilter(e.target.value)}
+                      aria-label="Filter by source"
                       className={cn(
                         "h-7 border px-2 text-xs font-bold bg-background focus:outline-none focus:ring-1 focus:ring-ring transition-colors cursor-pointer",
                         sourceFilter !== "all"

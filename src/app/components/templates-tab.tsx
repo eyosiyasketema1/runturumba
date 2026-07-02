@@ -158,8 +158,8 @@ export function TemplatesTab({
                         </div>
                       </div>
                       <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <button onClick={() => openEdit(tmpl)} className="p-1.5 text-muted-foreground hover:text-primary transition-colors"><Edit2 className="w-3.5 h-3.5" /></button>
-                        <button onClick={() => onDeleteTemplate(tmpl.id)} className="p-1.5 text-muted-foreground hover:text-destructive transition-colors"><Trash2 className="w-3.5 h-3.5" /></button>
+                        <button onClick={() => openEdit(tmpl)} className="p-1.5 text-muted-foreground hover:text-primary transition-colors" aria-label={`Edit template ${tmpl.name}`}><Edit2 className="w-3.5 h-3.5" /></button>
+                        <button onClick={() => onDeleteTemplate(tmpl.id)} className="p-1.5 text-muted-foreground hover:text-destructive transition-colors" aria-label={`Delete template ${tmpl.name}`}><Trash2 className="w-3.5 h-3.5" /></button>
                       </div>
                     </div>
 
@@ -207,11 +207,11 @@ export function TemplatesTab({
                 <div className="space-y-4">
                   <div className="space-y-2">
                     <label className="text-xs font-bold text-muted-foreground uppercase tracking-widest px-1">Template Title</label>
-                    <input type="text" placeholder="e.g. Welcome Series Step 1" value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} className="w-full px-3 py-2 bg-background border border-input rounded-md text-sm focus:ring-1 focus:ring-ring outline-none" />
+                    <input type="text" placeholder="e.g. Welcome Series Step 1" value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} aria-label="Template title" className="w-full px-3 py-2 bg-background border border-input rounded-md text-sm focus:ring-1 focus:ring-ring outline-none" />
                   </div>
                   <div className="space-y-2">
                     <label className="text-xs font-bold text-muted-foreground uppercase tracking-widest px-1">Category</label>
-                    <select value={form.category} onChange={e => setForm({ ...form, category: e.target.value })} className="w-full px-3 py-2 bg-background border border-input rounded-md text-sm outline-none">
+                    <select value={form.category} onChange={e => setForm({ ...form, category: e.target.value })} aria-label="Template category" className="w-full px-3 py-2 bg-background border border-input rounded-md text-sm outline-none">
                       {TEMPLATE_CATEGORIES.map(cat => <option key={cat} value={cat}>{cat}</option>)}
                     </select>
                   </div>
@@ -220,7 +220,7 @@ export function TemplatesTab({
                       <label className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Drafting Area</label>
                       <span className="text-xs font-bold text-muted-foreground opacity-60 uppercase">{form.content.length} characters</span>
                     </div>
-                    <textarea rows={6} placeholder="Type your message with {PLACEHOLDERS}..." value={form.content} onChange={e => setForm({ ...form, content: e.target.value })} className="w-full p-4 bg-muted/20 border border-input rounded-md text-sm font-mono focus:ring-1 focus:ring-ring outline-none resize-none" />
+                    <textarea rows={6} placeholder="Type your message with {PLACEHOLDERS}..." value={form.content} onChange={e => setForm({ ...form, content: e.target.value })} aria-label="Template message content" className="w-full p-4 bg-muted/20 border border-input rounded-md text-sm font-mono focus:ring-1 focus:ring-ring outline-none resize-none" />
                   </div>
                 </div>
 

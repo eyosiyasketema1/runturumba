@@ -645,6 +645,7 @@ function CreateGroupModal({ isOpen, onClose, onCreateGroup, availableMentors }: 
               placeholder="e.g., Prayer Circle"
               value={name}
               onChange={(e) => setName(e.target.value)}
+              aria-label="Group name"
             />
           </div>
           <div>
@@ -655,6 +656,7 @@ function CreateGroupModal({ isOpen, onClose, onCreateGroup, availableMentors }: 
               placeholder="What is this group for?"
               value={description}
               onChange={(e) => setDescription(e.target.value)}
+              aria-label="Group description"
               className={cn(
                 'w-full rounded-md border border-border bg-background px-3 py-2 text-sm',
                 'placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2'
@@ -738,6 +740,7 @@ function CreateGroupModal({ isOpen, onClose, onCreateGroup, availableMentors }: 
                     onChange={(e) => setMemberSearch(e.target.value)}
                     placeholder="Search mentors by name..."
                     className="pl-8 h-8 text-xs"
+                    aria-label="Search mentors"
                   />
                 </div>
                 {(() => {
@@ -778,6 +781,7 @@ function CreateGroupModal({ isOpen, onClose, onCreateGroup, availableMentors }: 
                         checked={isSelected}
                         onChange={() => handleToggleMentor(mentor.id)}
                         className="w-4 h-4 rounded border-border accent-primary shrink-0"
+                        aria-label={`Select ${mentor.name}`}
                       />
                       <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center shrink-0">
                         <span className="text-xs font-bold text-muted-foreground">
@@ -1041,7 +1045,7 @@ function GroupInfoPanel({
             <div className="space-y-4">
               <div>
                 <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1.5 block">Group Name</label>
-                <Input value={editName} onChange={e => setEditName(e.target.value)} className="rounded-lg" />
+                <Input value={editName} onChange={e => setEditName(e.target.value)} className="rounded-lg" aria-label="Group name" />
               </div>
               <div>
                 <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1.5 block">Description</label>
@@ -1049,6 +1053,7 @@ function GroupInfoPanel({
                   value={editDescription}
                   onChange={e => setEditDescription(e.target.value)}
                   rows={3}
+                  aria-label="Group description"
                   className="w-full rounded-lg border border-input bg-background px-3.5 py-2.5 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
                 />
               </div>
@@ -1122,6 +1127,7 @@ function GroupInfoPanel({
                         placeholder="Search mentors…"
                         value={addMemberSearch}
                         onChange={e => setAddMemberSearch(e.target.value)}
+                        aria-label="Search mentors"
                         className="w-full pl-9 pr-3 py-2 bg-background border border-input text-xs rounded-md focus:ring-1 focus:ring-ring outline-none"
                         autoFocus
                       />
@@ -1477,6 +1483,7 @@ function ForwardModal({
               placeholder="Search groups…"
               value={search}
               onChange={e => setSearch(e.target.value)}
+              aria-label="Search groups"
               className="flex-1 text-sm bg-transparent outline-none"
               autoFocus
             />
@@ -2308,6 +2315,7 @@ export function GroupConversationView() {
                 placeholder="Search groups…"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
+                aria-label="Search groups"
                 className="w-full pl-10 pr-4 py-2.5 bg-background border border-input text-sm focus:ring-1 focus:ring-ring outline-none transition-all"
               />
             </div>
@@ -2466,6 +2474,7 @@ export function GroupConversationView() {
                       placeholder="Search messages…"
                       value={chatSearchQuery}
                       onChange={e => setChatSearchQuery(e.target.value)}
+                      aria-label="Search messages"
                       className="flex-1 text-sm bg-transparent outline-none placeholder:text-muted-foreground"
                       autoFocus
                     />
@@ -2931,6 +2940,7 @@ export function GroupConversationView() {
                       placeholder="Ask a question…"
                       value={pollQuestion}
                       onChange={(e) => setPollQuestion(e.target.value)}
+                      aria-label="Poll question"
                       className="w-full px-3 py-2 text-sm border border-input bg-background outline-none focus:ring-1 focus:ring-ring"
                     />
                     <div className="space-y-2">
@@ -2946,6 +2956,7 @@ export function GroupConversationView() {
                               updated[idx] = e.target.value;
                               setPollOptions(updated);
                             }}
+                            aria-label={`Poll option ${idx + 1}`}
                             className="flex-1 px-3 py-1.5 text-sm border border-input bg-background outline-none focus:ring-1 focus:ring-ring"
                           />
                           {pollOptions.length > 2 && (
@@ -3072,6 +3083,7 @@ export function GroupConversationView() {
                       }
                     }}
                     rows={3}
+                    aria-label="Message text"
                     className="w-full px-4 pt-3 pb-2 text-sm outline-none resize-none bg-transparent text-foreground"
                   />
 

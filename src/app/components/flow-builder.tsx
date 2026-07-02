@@ -719,6 +719,7 @@ function FlowBuilderInner({
                             checked={wh.enabled}
                             onCheckedChange={() => onToggleWebhook?.(wh.id)}
                             className="scale-75"
+                            aria-label={`Toggle ${wh.name} webhook`}
                           />
                           <button onClick={() => onDeleteWebhook?.(wh.id)} className="text-muted-foreground hover:text-destructive transition-colors p-0.5">
                             <Trash2 className="w-3 h-3" />
@@ -883,11 +884,11 @@ function JourneyWebhookModal({ isOpen, onClose, onAdd }: { isOpen: boolean; onCl
       <div className="space-y-5">
         <div className="grid gap-2">
           <Label className="text-xs font-semibold">Webhook Name</Label>
-          <Input placeholder="e.g. CRM Sync" value={whName} onChange={(e) => setWhName(e.target.value)} className="h-9 text-sm" />
+          <Input placeholder="e.g. CRM Sync" value={whName} onChange={(e) => setWhName(e.target.value)} className="h-9 text-sm" aria-label="Webhook name" />
         </div>
         <div className="grid gap-2">
           <Label className="text-xs font-semibold">Endpoint URL</Label>
-          <Input placeholder="https://your-api.com/webhooks" value={url} onChange={(e) => setUrl(e.target.value)} className="h-9 text-sm font-mono" />
+          <Input placeholder="https://your-api.com/webhooks" value={url} onChange={(e) => setUrl(e.target.value)} className="h-9 text-sm font-mono" aria-label="Webhook endpoint URL" />
           <p className="text-xs text-muted-foreground">Turumba will POST JSON payloads to this URL.</p>
         </div>
         <div className="grid gap-2">
@@ -970,6 +971,7 @@ function TemplateGalleryModal({
                 value={search}
                 onChange={e => setSearch(e.target.value)}
                 className="pl-9 h-8 text-xs w-[220px]"
+                aria-label="Search templates"
               />
             </div>
             <button onClick={onClose} className="p-1.5 rounded-md hover:bg-muted text-muted-foreground hover:text-foreground transition-colors">
@@ -1070,6 +1072,7 @@ function SaveTemplateModal({
             onChange={e => setTplName(e.target.value)}
             className="h-9 text-sm"
             autoFocus
+            aria-label="Template name"
           />
           <p className="text-xs text-muted-foreground">This template will be saved and available for future journeys.</p>
         </div>
@@ -1150,7 +1153,7 @@ function NodeInspector({
 
       <div className="space-y-2">
         <label className="text-xs font-semibold text-foreground">Title</label>
-        <Input value={d.title} onChange={(e) => onUpdate({ title: e.target.value })} />
+        <Input value={d.title} onChange={(e) => onUpdate({ title: e.target.value })} aria-label="Node title" />
       </div>
 
       <div className="space-y-2">
@@ -1160,6 +1163,7 @@ function NodeInspector({
           onChange={(e) => onUpdate({ body: e.target.value })}
           className="min-h-[120px] text-sm"
           placeholder="What should this node do or say?"
+          aria-label="Node body"
         />
       </div>
 

@@ -513,7 +513,7 @@ const NodePickerPanel = ({ isOpen, onClose, onSelectNode, title, mode }: {
         <div className="px-5 pb-4">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-            <Input placeholder="Search nodes..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9 h-9 text-sm bg-muted/50 border-border" autoFocus />
+            <Input placeholder="Search nodes..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9 h-9 text-sm bg-muted/50 border-border" autoFocus aria-label="Search nodes" />
           </div>
         </div>
       </div>
@@ -591,16 +591,16 @@ const NodeInspector = ({ node, onUpdate, onClose, onDelete, isJourney, execData,
       <div className="p-5 space-y-5">
         <div className="space-y-1.5">
           <Label className="text-xs font-semibold text-foreground">Node Label</Label>
-          <Input value={node.label} onChange={(e) => onUpdate({ label: e.target.value })} className="h-9 text-sm" />
+          <Input value={node.label} onChange={(e) => onUpdate({ label: e.target.value })} className="h-9 text-sm" aria-label="Node label" />
         </div>
         <div className="space-y-1.5">
           <Label className="text-xs font-semibold text-foreground">Description</Label>
-          <Input value={node.description} onChange={(e) => onUpdate({ description: e.target.value })} className="h-9 text-sm" placeholder="What does this step do?" />
+          <Input value={node.description} onChange={(e) => onUpdate({ description: e.target.value })} className="h-9 text-sm" placeholder="What does this step do?" aria-label="Node description" />
         </div>
         {(node.category === "send_message" || node.category === "ai_respond") && (
           <div className="space-y-1.5">
             <Label className="text-xs font-semibold text-foreground">Message Content</Label>
-            <Textarea value={node.config.message || ""} onChange={(e) => onUpdate({ config: { ...node.config, message: e.target.value } })} className="min-h-[100px] text-sm" placeholder="Type the message content..." />
+            <Textarea value={node.config.message || ""} onChange={(e) => onUpdate({ config: { ...node.config, message: e.target.value } })} className="min-h-[100px] text-sm" placeholder="Type the message content..." aria-label="Message content" />
             {node.category === "ai_respond" && (
               <div className="flex items-center gap-2 pt-1 bg-muted/50 rounded-lg px-3 py-2">
                 <Switch id="ai-personalize" defaultChecked />
@@ -613,8 +613,8 @@ const NodeInspector = ({ node, onUpdate, onClose, onDelete, isJourney, execData,
           <div className="space-y-1.5">
             <Label className="text-xs font-semibold text-foreground">Wait Duration</Label>
             <div className="flex items-center gap-2">
-              <Input type="number" value={node.config.hours || 24} onChange={(e) => onUpdate({ config: { ...node.config, hours: parseInt(e.target.value) || 0 } })} className="h-9 text-sm w-24" min={1} />
-              <select value={node.config.unit || "hours"} onChange={(e) => onUpdate({ config: { ...node.config, unit: e.target.value } })} className="h-9 px-3 rounded-md border border-input bg-background text-sm flex-1">
+              <Input type="number" value={node.config.hours || 24} onChange={(e) => onUpdate({ config: { ...node.config, hours: parseInt(e.target.value) || 0 } })} className="h-9 text-sm w-24" min={1} aria-label="Wait duration" />
+              <select value={node.config.unit || "hours"} onChange={(e) => onUpdate({ config: { ...node.config, unit: e.target.value } })} className="h-9 px-3 rounded-md border border-input bg-background text-sm flex-1" aria-label="Wait unit">
                 <option value="minutes">Minutes</option><option value="hours">Hours</option><option value="days">Days</option>
               </select>
             </div>
@@ -623,13 +623,13 @@ const NodeInspector = ({ node, onUpdate, onClose, onDelete, isJourney, execData,
         {(node.category === "add_tag" || node.category === "remove_tag" || node.category === "tag_added") && (
           <div className="space-y-1.5">
             <Label className="text-xs font-semibold text-foreground">Tag Name</Label>
-            <Input value={node.config.tag || ""} onChange={(e) => onUpdate({ config: { ...node.config, tag: e.target.value } })} className="h-9 text-sm" placeholder="e.g. new-believer, vip" />
+            <Input value={node.config.tag || ""} onChange={(e) => onUpdate({ config: { ...node.config, tag: e.target.value } })} className="h-9 text-sm" placeholder="e.g. new-believer, vip" aria-label="Tag name" />
           </div>
         )}
         {node.category === "if_else" && (
           <div className="space-y-3">
             <Label className="text-xs font-semibold text-foreground">Condition</Label>
-            <select value={node.config.condition || "has_replied"} onChange={(e) => onUpdate({ config: { ...node.config, condition: e.target.value } })} className="h-9 px-3 rounded-md border border-input bg-background text-sm w-full">
+            <select value={node.config.condition || "has_replied"} onChange={(e) => onUpdate({ config: { ...node.config, condition: e.target.value } })} className="h-9 px-3 rounded-md border border-input bg-background text-sm w-full" aria-label="Condition type">
               <option value="has_replied">Contact has replied</option><option value="has_tag">Contact has tag</option>
               <option value="message_contains">Message contains keyword</option><option value="milestone_count">Milestone count is</option>
               <option value="days_since_last">Days since last message</option><option value="in_group">Contact is in group</option>
@@ -651,11 +651,11 @@ const NodeInspector = ({ node, onUpdate, onClose, onDelete, isJourney, execData,
           <div className="space-y-3">
             <div className="space-y-1.5">
               <Label className="text-xs font-semibold text-foreground">URL</Label>
-              <Input value={node.config.url || ""} onChange={(e) => onUpdate({ config: { ...node.config, url: e.target.value } })} className="h-9 text-sm" placeholder="https://api.example.com/webhook" />
+              <Input value={node.config.url || ""} onChange={(e) => onUpdate({ config: { ...node.config, url: e.target.value } })} className="h-9 text-sm" placeholder="https://api.example.com/webhook" aria-label="Webhook URL" />
             </div>
             <div className="space-y-1.5">
               <Label className="text-xs font-semibold text-foreground">Method</Label>
-              <select value={node.config.method || "POST"} onChange={(e) => onUpdate({ config: { ...node.config, method: e.target.value } })} className="h-9 px-3 rounded-md border border-input bg-background text-sm w-full">
+              <select value={node.config.method || "POST"} onChange={(e) => onUpdate({ config: { ...node.config, method: e.target.value } })} className="h-9 px-3 rounded-md border border-input bg-background text-sm w-full" aria-label="HTTP method">
                 <option>POST</option><option>GET</option><option>PUT</option><option>DELETE</option>
               </select>
             </div>
@@ -664,14 +664,14 @@ const NodeInspector = ({ node, onUpdate, onClose, onDelete, isJourney, execData,
         {node.category === "message_received" && (
           <div className="space-y-1.5">
             <Label className="text-xs font-semibold text-foreground">Keyword Filter</Label>
-            <Input value={node.config.keyword || ""} onChange={(e) => onUpdate({ config: { ...node.config, keyword: e.target.value } })} className="h-9 text-sm" placeholder="e.g. help, info, start" />
+            <Input value={node.config.keyword || ""} onChange={(e) => onUpdate({ config: { ...node.config, keyword: e.target.value } })} className="h-9 text-sm" placeholder="e.g. help, info, start" aria-label="Keyword filter" />
             <p className="text-[11px] text-muted-foreground">Leave empty to trigger on any message.</p>
           </div>
         )}
         {node.category === "schedule" && (
           <div className="space-y-1.5">
             <Label className="text-xs font-semibold text-foreground">Frequency</Label>
-            <select value={node.config.interval || "daily"} onChange={(e) => onUpdate({ config: { ...node.config, interval: e.target.value } })} className="h-9 px-3 rounded-md border border-input bg-background text-sm w-full">
+            <select value={node.config.interval || "daily"} onChange={(e) => onUpdate({ config: { ...node.config, interval: e.target.value } })} className="h-9 px-3 rounded-md border border-input bg-background text-sm w-full" aria-label="Schedule frequency">
               <option value="hourly">Every hour</option><option value="daily">Every day</option><option value="weekly">Every week</option><option value="monthly">Every month</option>
             </select>
           </div>
@@ -825,11 +825,11 @@ const NodeConfigModal = ({ node, onSave, onCancel, onDelete, isJourney }: {
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
               <Label className="text-xs font-semibold text-foreground">Label</Label>
-              <Input value={label} onChange={(e) => setLabel(e.target.value)} className="h-9 text-sm" />
+              <Input value={label} onChange={(e) => setLabel(e.target.value)} className="h-9 text-sm" aria-label="Node label" />
             </div>
             <div className="space-y-1.5">
               <Label className="text-xs font-semibold text-foreground">Description</Label>
-              <Input value={description} onChange={(e) => setDescription(e.target.value)} className="h-9 text-sm" placeholder="What does this step do?" />
+              <Input value={description} onChange={(e) => setDescription(e.target.value)} className="h-9 text-sm" placeholder="What does this step do?" aria-label="Node description" />
             </div>
           </div>
 
@@ -843,19 +843,19 @@ const NodeConfigModal = ({ node, onSave, onCancel, onDelete, isJourney }: {
               </Label>
               {field.type === "text" && (
                 <Input value={config[field.key] || ""} onChange={(e) => setConfig(prev => ({ ...prev, [field.key]: e.target.value }))}
-                  className="h-9 text-sm" placeholder={field.placeholder} />
+                  className="h-9 text-sm" placeholder={field.placeholder} aria-label={field.label} />
               )}
               {field.type === "number" && (
                 <Input type="number" value={config[field.key] || ""} onChange={(e) => setConfig(prev => ({ ...prev, [field.key]: parseInt(e.target.value) || 0 }))}
-                  className="h-9 text-sm" placeholder={field.placeholder} min={1} />
+                  className="h-9 text-sm" placeholder={field.placeholder} min={1} aria-label={field.label} />
               )}
               {field.type === "textarea" && (
                 <Textarea value={config[field.key] || ""} onChange={(e) => setConfig(prev => ({ ...prev, [field.key]: e.target.value }))}
-                  className="min-h-[80px] text-sm" placeholder={field.placeholder} />
+                  className="min-h-[80px] text-sm" placeholder={field.placeholder} aria-label={field.label} />
               )}
               {field.type === "select" && field.options && (
                 <select value={config[field.key] || field.options[0]?.value} onChange={(e) => setConfig(prev => ({ ...prev, [field.key]: e.target.value }))}
-                  className="h-9 px-3 rounded-md border border-input bg-background text-sm w-full">
+                  className="h-9 px-3 rounded-md border border-input bg-background text-sm w-full" aria-label={field.label}>
                   {field.options.map(opt => <option key={opt.value} value={opt.value}>{opt.label}</option>)}
                 </select>
               )}
@@ -996,7 +996,7 @@ const LogDrawer = ({ logs, isOpen, onToggle, onClear, onClickLog }: {
             </button>
           ))}
           <div className="w-px h-4 bg-border" />
-          <Input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search logs..." className="h-7 text-xs w-[160px]" />
+          <Input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search logs..." className="h-7 text-xs w-[160px]" aria-label="Search logs" />
           <button onClick={onClear} className="p-1 rounded hover:bg-muted text-muted-foreground hover:text-foreground" title="Clear logs"><Trash2 className="w-3.5 h-3.5" /></button>
           <button onClick={onToggle} className="p-1 rounded hover:bg-muted text-muted-foreground hover:text-foreground"><ChevronDown className="w-3.5 h-3.5" /></button>
         </div>
@@ -1417,7 +1417,7 @@ export const AutomationCanvas = ({ automation, onBack, onSave, onUpdate }: {
             <Input value={autoName} onChange={(e) => setAutoName(e.target.value)}
               onBlur={() => { setIsEditingName(false); onUpdate({ ...automation, name: autoName }); }}
               onKeyDown={(e) => { if (e.key === "Enter") { setIsEditingName(false); onUpdate({ ...automation, name: autoName }); } }}
-              className="h-8 text-sm font-semibold w-[260px]" autoFocus />
+              className="h-8 text-sm font-semibold w-[260px]" autoFocus aria-label="Automation name" />
           ) : (
             <button onClick={() => setIsEditingName(true)} className="flex items-center gap-2 group">
               <h2 className="text-sm font-bold text-foreground group-hover:text-primary transition-colors">{automation.name}</h2>
@@ -1614,12 +1614,13 @@ const NewAutomationModal = ({ isOpen, onClose, onCreate, folders }: {
           <div className="flex items-center gap-3">
             <div className="flex-1 space-y-1.5">
               <Label className="text-xs font-semibold">Automation Name</Label>
-              <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="My automation" className="h-10" autoFocus />
+              <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="My automation" className="h-10" autoFocus aria-label="Automation name" />
             </div>
             <div className="w-[180px] space-y-1.5">
               <Label className="text-xs font-semibold">Folder</Label>
               <select value={folderId || ""} onChange={(e) => setFolderId(e.target.value || null)}
-                className="h-10 w-full px-3 rounded-lg border border-border bg-background text-sm text-foreground">
+                className="h-10 w-full px-3 rounded-lg border border-border bg-background text-sm text-foreground"
+                aria-label="Folder">
                 <option value="">No folder</option>
                 {folders.map(f => <option key={f.id} value={f.id}>{f.name}</option>)}
               </select>
@@ -1895,16 +1896,18 @@ export const AutomationV2View = () => {
           <div className="flex items-center gap-3 bg-card border border-border rounded-xl px-4 py-3 mb-4 sticky top-0 z-10">
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-              <Input placeholder="Search automations..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="pl-9 h-10 text-sm border-border bg-background w-full" />
+              <Input placeholder="Search automations..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="pl-9 h-10 text-sm border-border bg-background w-full" aria-label="Search automations" />
             </div>
             <select value={filterMode} onChange={(e) => setFilterMode(e.target.value as any)}
               className="h-10 px-3 pr-8 rounded-lg border border-border bg-background text-sm text-foreground appearance-none cursor-pointer"
-              style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%239ca3af' stroke-width='2'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E")`, backgroundRepeat: "no-repeat", backgroundPosition: "right 10px center" }}>
+              style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%239ca3af' stroke-width='2'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E")`, backgroundRepeat: "no-repeat", backgroundPosition: "right 10px center" }}
+              aria-label="Filter by type">
               <option value="all">All types</option><option value="basic">Basic</option><option value="sequence">Sequence</option><option value="journey">Journey</option>
             </select>
             <select value={filterStatus} onChange={(e) => setFilterStatus(e.target.value as any)}
               className="h-10 px-3 pr-8 rounded-lg border border-border bg-background text-sm text-foreground appearance-none cursor-pointer"
-              style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%239ca3af' stroke-width='2'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E")`, backgroundRepeat: "no-repeat", backgroundPosition: "right 10px center" }}>
+              style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%239ca3af' stroke-width='2'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E")`, backgroundRepeat: "no-repeat", backgroundPosition: "right 10px center" }}
+              aria-label="Filter by status">
               <option value="all">All statuses</option><option value="active">Active</option><option value="draft">Draft</option>
             </select>
           </div>

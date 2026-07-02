@@ -197,6 +197,7 @@ export const ContactsView = ({
               setPage(1);
             }}
             placeholder="Search Contact by name, phone or email..."
+            aria-label="Search contacts"
             className="w-full h-10 pl-10 pr-3 bg-background border border-input rounded-sm text-sm focus:outline-none focus:ring-2 focus:ring-ring transition-all"
           />
         </div>
@@ -472,6 +473,7 @@ export const ContactsView = ({
                   setPageSize(Number(e.target.value));
                   setPage(1);
                 }}
+                aria-label="Contacts per page"
                 className="h-8 px-2 bg-background border border-input rounded-sm text-sm focus:outline-none focus:ring-2 focus:ring-ring"
               >
                 {[10, 25, 50, 100].map(n => (

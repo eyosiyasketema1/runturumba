@@ -224,6 +224,7 @@ export function AllActivityView({
                     onChange={(e) => setQuery(e.target.value)}
                     placeholder="Search activity..."
                     className="pl-9 h-9 bg-background"
+                    aria-label="Search activity"
                   />
                 </div>
                 <DropdownMenu>

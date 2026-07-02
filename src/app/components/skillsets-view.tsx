@@ -358,6 +358,7 @@ function SkillSetsList({
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="pl-10"
+            aria-label="Search skill sets"
           />
         </div>
         <Tabs value={filter} onValueChange={(v) => setFilter(v as typeof filter)}>
@@ -428,6 +429,7 @@ function SkillSetsList({
                         <Switch
                           checked={skillSet.enabled}
                           onCheckedChange={(checked) => onToggle(skillSet.id, checked)}
+                          aria-label={`Toggle ${skillSet.name}`}
                         />
                         <span className="text-[11px] text-muted-foreground">{skillSet.enabled ? 'Active' : 'Disabled'}</span>
                       </div>
@@ -618,6 +620,7 @@ function SkillSetEditor({
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   className="text-base font-medium"
+                  aria-label="Skill set name"
                 />
               </div>
               <div className="space-y-1.5">
@@ -627,6 +630,7 @@ function SkillSetEditor({
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
                   rows={2}
+                  aria-label="Skill set description"
                 />
               </div>
             </CardContent>
@@ -656,6 +660,7 @@ function SkillSetEditor({
                     value={instructions}
                     onChange={(e) => setInstructions(e.target.value)}
                     className="w-full min-h-[400px] p-4 font-mono text-sm bg-background text-foreground resize-y outline-none placeholder:text-muted-foreground/80"
+                    aria-label="Skill set instructions"
                   />
                 </div>
               ) : (

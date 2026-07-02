@@ -1073,6 +1073,7 @@ function ConversationContextPanel({
                         <select
                           value={selectedNewMentor}
                           onChange={e => setSelectedNewMentor(e.target.value)}
+                          aria-label="Assign to new mentor"
                           className="w-full h-8 px-2 text-xs border border-amber-300 bg-white rounded-sm outline-none focus:ring-1 focus:ring-amber-400"
                         >
                           <option value="">Select a mentor…</option>
@@ -1140,6 +1141,7 @@ function ConversationContextPanel({
                     onChange={e => setReassignReason(e.target.value)}
                     placeholder="e.g. Language barrier, scheduling conflict, seeker requested change..."
                     rows={3}
+                    aria-label="Reassignment reason"
                     className="w-full px-3 py-2 text-xs border border-input bg-background rounded-sm outline-none resize-none focus:ring-1 focus:ring-ring"
                   />
                   <div className="flex items-center justify-end gap-2">
@@ -1366,6 +1368,7 @@ function ConversationContextPanel({
                     type="date"
                     value={filterDate}
                     onChange={(e) => setFilterDate(e.target.value)}
+                    aria-label="Filter notes by date"
                     className="pl-8 pr-2 py-1.5 bg-background border border-input rounded-sm text-xs text-foreground focus:ring-1 focus:ring-ring outline-none cursor-pointer"
                   />
                 </div>
@@ -1381,6 +1384,7 @@ function ConversationContextPanel({
                 onChange={(e) => setNewNote(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && handleAddNote()}
                 placeholder="Add a note..."
+                aria-label="Add a note"
                 className="flex-1 bg-background border border-input rounded-sm px-3 py-2.5 text-sm focus:ring-1 focus:ring-ring outline-none placeholder:text-muted-foreground/80"
               />
               <button onClick={handleAddNote} disabled={!newNote.trim()} className="bg-primary text-primary-foreground p-2.5 rounded-sm hover:bg-primary/90 transition-all shrink-0 disabled:opacity-50">
@@ -2004,6 +2008,7 @@ function ComposeArea({
             onChange={e => setText(e.target.value)}
             placeholder={`Message ${contact.name.split(" ")[0]} via ${CHANNEL_LABEL[port]}…`}
             rows={3}
+            aria-label="Compose message"
             className="w-full px-4 pt-3 pb-2 text-sm outline-none resize-none bg-transparent text-foreground"
             onKeyDown={e => {
               if (e.key === "Enter" && !e.shiftKey) {
@@ -2017,7 +2022,7 @@ function ComposeArea({
           <div className="flex items-center justify-between px-3 pb-2 border-t border-inherit">
             <div className="flex items-center gap-0.5">
               {/* Image / file attachment */}
-              <input ref={fileInputRef} type="file" accept="image/*" multiple className="hidden" onChange={handleImageSelect} />
+              <input ref={fileInputRef} type="file" accept="image/*" multiple className="hidden" onChange={handleImageSelect} aria-label="Attach image" />
               <button type="button" onClick={() => fileInputRef.current?.click()}
                 className="p-1.5 text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
                 title="Attach image"
@@ -2176,6 +2181,7 @@ function NewConversationModal({ isOpen, onClose, contacts, onStart }: {
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
                     <input ref={searchRef} type="text" placeholder="Search contacts by name, phone, or email…" value={search}
                       onChange={e => { setSearch(e.target.value); setShowDropdown(true); }} onFocus={() => setShowDropdown(true)}
+                      aria-label="Search contacts"
                       className="w-full pl-9 pr-4 h-10 border border-input bg-background text-sm focus:ring-1 focus:ring-ring outline-none transition-all"
                     />
                   </div>
@@ -2214,7 +2220,7 @@ function NewConversationModal({ isOpen, onClose, contacts, onStart }: {
               <label className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Message</label>
               <textarea value={message} onChange={e => setMessage(e.target.value)}
                 placeholder={selected ? `Type your first message to ${selected.name.split(" ")[0]}…` : "Type your message…"}
-                rows={4} className="w-full border border-input bg-background px-3 py-2.5 text-sm focus:ring-1 focus:ring-ring outline-none transition-all resize-none"
+                rows={4} aria-label="First message" className="w-full border border-input bg-background px-3 py-2.5 text-sm focus:ring-1 focus:ring-ring outline-none transition-all resize-none"
                 onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleSubmit(e as any); } }}
               />
             </div>
@@ -2512,6 +2518,7 @@ export const ConversationView = ({
               <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
               <input type="text" placeholder="Search conversations…" value={inboxSearch}
                 onChange={e => setInboxSearch(e.target.value)}
+                aria-label="Search conversations"
                 className="w-full pl-10 pr-4 py-2.5 bg-background border border-input text-sm focus:ring-1 focus:ring-ring outline-none transition-all"
               />
             </div>

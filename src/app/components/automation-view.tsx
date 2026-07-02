@@ -653,6 +653,7 @@ export const AutomationView = ({
             value={searchQuery}
             onChange={(e) => { setSearchQuery(e.target.value); setCurrentPage(1); }}
             className="pl-9 h-10 text-sm border-border bg-background w-full"
+            aria-label="Search automations"
           />
         </div>
         <select
@@ -660,6 +661,7 @@ export const AutomationView = ({
           onChange={(e) => { setFilterType(e.target.value as any); setCurrentPage(1); }}
           className="h-10 px-3 pr-8 rounded-lg border border-border bg-background text-sm text-foreground appearance-none cursor-pointer hover:border-muted-foreground transition-colors"
           style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%239ca3af' stroke-width='2'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E")`, backgroundRepeat: "no-repeat", backgroundPosition: "right 10px center" }}
+          aria-label="Filter by type"
         >
           <option value="all">All types</option>
           <option value="basic">Basic</option>
@@ -671,6 +673,7 @@ export const AutomationView = ({
           onChange={(e) => { setFilterStatus(e.target.value as any); setCurrentPage(1); }}
           className="h-10 px-3 pr-8 rounded-lg border border-border bg-background text-sm text-foreground appearance-none cursor-pointer hover:border-muted-foreground transition-colors"
           style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%239ca3af' stroke-width='2'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E")`, backgroundRepeat: "no-repeat", backgroundPosition: "right 10px center" }}
+          aria-label="Filter by status"
         >
           <option value="all">All statuses</option>
           <option value="active">Active</option>
@@ -961,6 +964,7 @@ export const AutomationView = ({
                           onChange={(e) => { setPageSize(Number(e.target.value)); setCurrentPage(1); }}
                           className="h-8 px-2 pr-7 rounded-md border border-border bg-background text-sm text-foreground appearance-none cursor-pointer"
                           style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 24 24' fill='none' stroke='%239ca3af' stroke-width='2'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E")`, backgroundRepeat: "no-repeat", backgroundPosition: "right 6px center" }}
+                          aria-label="Results per page"
                         >
                           <option value={10}>10 / page</option>
                           <option value={25}>25 / page</option>
@@ -1076,6 +1080,7 @@ export const AutomationView = ({
               onKeyDown={(e) => e.key === "Enter" && handleCreateFolder()}
               className="h-9 text-sm"
               autoFocus
+              aria-label="Folder name"
             />
           </div>
           <div className="flex items-center justify-end gap-2">
@@ -1141,6 +1146,7 @@ const AutomationTemplatesTab = ({ onUseTemplate }: { onUseTemplate: (tpl: Automa
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="pl-9 h-10 text-sm"
+            aria-label="Search templates"
           />
         </div>
         <select
@@ -1148,6 +1154,7 @@ const AutomationTemplatesTab = ({ onUseTemplate }: { onUseTemplate: (tpl: Automa
           onChange={(e) => setTypeFilter(e.target.value as any)}
           className="h-10 px-3 pr-8 rounded-lg border border-border bg-background text-sm text-foreground appearance-none cursor-pointer hover:border-muted-foreground transition-colors"
           style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%239ca3af' stroke-width='2'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E")`, backgroundRepeat: "no-repeat", backgroundPosition: "right 10px center" }}
+          aria-label="Filter by template type"
         >
           <option value="all">All Types</option>
           <option value="basic">Auto-Reply</option>
@@ -1404,6 +1411,7 @@ const MoveToFolderModal = ({
               onKeyDown={(e) => e.key === "Enter" && handleCreateAndMove()}
               className="h-9 text-sm flex-1"
               autoFocus
+              aria-label="New folder name"
             />
             <Button size="sm" disabled={!newName.trim()} onClick={handleCreateAndMove}>
               Create & Move
@@ -1461,11 +1469,11 @@ const EditRuleModal = ({
       <div className="space-y-5">
         <div className="grid gap-2">
           <Label className="text-xs font-semibold">Name</Label>
-          <Input value={name} onChange={(e) => setName(e.target.value)} className="h-9 text-sm" />
+          <Input value={name} onChange={(e) => setName(e.target.value)} className="h-9 text-sm" aria-label="Automation name" />
         </div>
         <div className="grid gap-2">
           <Label className="text-xs font-semibold">Description</Label>
-          <Textarea value={description} onChange={(e) => setDescription(e.target.value)} className="text-sm min-h-[60px]" />
+          <Textarea value={description} onChange={(e) => setDescription(e.target.value)} className="text-sm min-h-[60px]" aria-label="Automation description" />
         </div>
 
         <div className="grid gap-2">
@@ -1551,11 +1559,11 @@ const AddRuleModal = ({ isOpen, onClose, onAdd }: { isOpen: boolean; onClose: ()
       <div className="space-y-5">
         <div className="grid gap-2">
           <Label className="text-xs font-semibold">Rule Name</Label>
-          <Input placeholder="e.g. Welcome Message" value={name} onChange={(e) => setName(e.target.value)} className="h-9 text-sm" />
+          <Input placeholder="e.g. Welcome Message" value={name} onChange={(e) => setName(e.target.value)} className="h-9 text-sm" aria-label="Rule name" />
         </div>
         <div className="grid gap-2">
           <Label className="text-xs font-semibold">Description</Label>
-          <Textarea placeholder="What does this rule do?" value={description} onChange={(e) => setDescription(e.target.value)} className="text-sm min-h-[60px]" />
+          <Textarea placeholder="What does this rule do?" value={description} onChange={(e) => setDescription(e.target.value)} className="text-sm min-h-[60px]" aria-label="Rule description" />
         </div>
 
         <div className="grid gap-2">

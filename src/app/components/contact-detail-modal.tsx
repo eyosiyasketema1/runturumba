@@ -134,7 +134,7 @@ export const ContactDetailModal = ({
               </h3>
             </div>
             <div className="flex gap-2">
-              <input value={newNote} onChange={(e) => setNewNote(e.target.value)} placeholder="Type a note..." onKeyDown={(e) => e.key === "Enter" && handleAddNote()} className="flex-1 bg-background border border-input rounded-md px-3 py-2 text-sm focus:ring-1 focus:ring-ring outline-none" />
+              <input value={newNote} onChange={(e) => setNewNote(e.target.value)} placeholder="Type a note..." aria-label="Add a note about this contact" onKeyDown={(e) => e.key === "Enter" && handleAddNote()} className="flex-1 bg-background border border-input rounded-md px-3 py-2 text-sm focus:ring-1 focus:ring-ring outline-none" />
               <button onClick={handleAddNote} disabled={!newNote.trim()} className="bg-primary text-primary-foreground p-2 rounded-md hover:bg-primary/90 transition-all disabled:opacity-50"><Plus className="w-5 h-5" /></button>
             </div>
             <div className="space-y-2">
