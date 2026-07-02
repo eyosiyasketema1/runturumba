@@ -153,7 +153,7 @@ export function ScheduledTab({
                               </div>
                             </td>
                             <td className="px-6 py-4 text-right">
-                              <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                              <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 focus-within:opacity-100 transition-opacity">
                                 <button
                                   onClick={() => onEditMessage(msg.id, msg.content)}
                                   className="p-2 text-muted-foreground hover:text-primary hover:bg-muted rounded-md transition-all"
@@ -232,7 +232,7 @@ export function ScheduledTab({
                             )}
                           </td>
                           <td className="px-6 py-4 text-right">
-                            <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 focus-within:opacity-100 transition-opacity">
                               <button
                                 onClick={() => onEditBroadcast(bc as any)}
                                 className="p-2 text-muted-foreground hover:text-primary hover:bg-muted rounded-md transition-all"

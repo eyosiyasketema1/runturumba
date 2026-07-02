@@ -45,7 +45,7 @@ export const ContactDetailModal = ({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={onClose} className="absolute inset-0 bg-black/60 backdrop-blur-[2px]" />
+      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={onClose} aria-hidden="true" className="absolute inset-0 bg-black/60 backdrop-blur-[2px]" />
       <motion.div
         initial={{ opacity: 0, scale: 0.98, y: 10 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
@@ -135,7 +135,7 @@ export const ContactDetailModal = ({
             </div>
             <div className="flex gap-2">
               <input value={newNote} onChange={(e) => setNewNote(e.target.value)} placeholder="Type a note..." aria-label="Add a note about this contact" onKeyDown={(e) => e.key === "Enter" && handleAddNote()} className="flex-1 bg-background border border-input rounded-md px-3 py-2 text-sm focus:ring-1 focus:ring-ring outline-none" />
-              <button onClick={handleAddNote} disabled={!newNote.trim()} className="bg-primary text-primary-foreground p-2 rounded-md hover:bg-primary/90 transition-all disabled:opacity-50"><Plus className="w-5 h-5" /></button>
+              <button onClick={handleAddNote} disabled={!newNote.trim()} className="bg-primary text-primary-foreground min-w-[44px] min-h-[44px] flex items-center justify-center rounded-md hover:bg-primary/90 transition-all disabled:opacity-50"><Plus className="w-5 h-5" /></button>
             </div>
             <div className="space-y-2">
               {contactNotes.map(note => (
@@ -143,7 +143,7 @@ export const ContactDetailModal = ({
                   <p className="text-sm text-foreground leading-relaxed pr-8">{note.content}</p>
                   <div className="mt-3 flex items-center justify-between">
                     <span className="text-xs font-bold text-muted-foreground uppercase opacity-60">{new Date(note.createdAt).toLocaleDateString()}</span>
-                    <button onClick={() => onDeleteNote(note.id)} className="p-1 text-muted-foreground hover:text-destructive opacity-0 group-hover:opacity-100 transition-all"><Trash2 className="w-3.5 h-3.5" /></button>
+                    <button onClick={() => onDeleteNote(note.id)} className="relative p-1 text-muted-foreground hover:text-destructive opacity-0 group-hover:opacity-100 focus-visible:opacity-100 transition-all after:absolute after:content-[''] after:-inset-2"><Trash2 className="w-3.5 h-3.5" /></button>
                   </div>
                 </div>
               ))}

@@ -645,7 +645,7 @@ const ChannelRow = ({ channel, onToggle, onDetail, onEdit, onDelete, onDuplicate
               <Switch checked={channel.enabled} onCheckedChange={onToggle} aria-label="Enable channel" />
               {/* Context menu */}
               <div className="relative" ref={menuRef}>
-                <Button variant="ghost" size="sm" className="h-8 w-8 p-0" onClick={() => setMenuOpen(!menuOpen)}>
+                <Button variant="ghost" size="sm" className="h-11 w-11 p-0" onClick={() => setMenuOpen(!menuOpen)}>
                   <Ellipsis className="w-4 h-4 text-muted-foreground" />
                 </Button>
                 <AnimatePresence>

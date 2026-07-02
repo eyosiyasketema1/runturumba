@@ -197,7 +197,7 @@ function DraggableRuleRow({
         </div>
 
         {/* Actions — w-16 */}
-        <div className="w-16 shrink-0 flex items-center justify-end gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+        <div className="w-16 shrink-0 flex items-center justify-end gap-0.5 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 focus-within:opacity-100 transition-opacity">
           <button
             onClick={() => onEdit(rule)}
             className="p-1.5 text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"

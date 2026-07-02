@@ -157,9 +157,9 @@ export function TemplatesTab({
                           </span>
                         </div>
                       </div>
-                      <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <button onClick={() => openEdit(tmpl)} className="p-1.5 text-muted-foreground hover:text-primary transition-colors" aria-label={`Edit template ${tmpl.name}`}><Edit2 className="w-3.5 h-3.5" /></button>
-                        <button onClick={() => onDeleteTemplate(tmpl.id)} className="p-1.5 text-muted-foreground hover:text-destructive transition-colors" aria-label={`Delete template ${tmpl.name}`}><Trash2 className="w-3.5 h-3.5" /></button>
+                      <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 focus-within:opacity-100 transition-opacity">
+                        <button onClick={() => openEdit(tmpl)} className="min-w-[44px] min-h-[44px] flex items-center justify-center text-muted-foreground hover:text-primary transition-colors rounded-md" aria-label={`Edit template ${tmpl.name}`}><Edit2 className="w-3.5 h-3.5" /></button>
+                        <button onClick={() => onDeleteTemplate(tmpl.id)} className="min-w-[44px] min-h-[44px] flex items-center justify-center text-muted-foreground hover:text-destructive transition-colors rounded-md" aria-label={`Delete template ${tmpl.name}`}><Trash2 className="w-3.5 h-3.5" /></button>
                       </div>
                     </div>
 
@@ -197,11 +197,11 @@ export function TemplatesTab({
       <AnimatePresence>
         {isModalOpen && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setIsModalOpen(false)} className="absolute inset-0 bg-black/60 backdrop-blur-[2px]" />
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setIsModalOpen(false)} aria-hidden="true" className="absolute inset-0 bg-black/60 backdrop-blur-[2px]" />
             <motion.div initial={{ opacity: 0, scale: 0.98, y: 10 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.98, y: 10 }} className="relative bg-background rounded-lg shadow-xl border border-border w-full max-w-xl overflow-hidden flex flex-col max-h-[90vh]">
               <div className="px-6 py-4 border-b border-border flex items-center justify-between">
                 <h2 className="text-lg font-bold tracking-tight text-foreground">{editingTmpl ? "Edit Template" : "New Template"}</h2>
-                <button onClick={() => setIsModalOpen(false)} className="p-2 text-muted-foreground hover:text-foreground rounded-md transition-colors"><X className="w-4 h-4" /></button>
+                <button onClick={() => setIsModalOpen(false)} className="min-w-[44px] min-h-[44px] flex items-center justify-center text-muted-foreground hover:text-foreground rounded-md transition-colors"><X className="w-4 h-4" /></button>
               </div>
               <div className="p-6 space-y-6 overflow-y-auto custom-scrollbar">
                 <div className="space-y-4">

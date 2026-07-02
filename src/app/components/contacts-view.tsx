@@ -413,7 +413,7 @@ export const ContactsView = ({
                           <AnimatePresence>
                             {openMenuId === contact.id && (
                               <>
-                                <div className="fixed inset-0 z-40" onClick={() => setOpenMenuId(null)} />
+                                <div className="fixed inset-0 z-40" onClick={() => setOpenMenuId(null)} aria-hidden="true" />
                                 <motion.div
                                   initial={{ opacity: 0, scale: 0.95, y: -4 }}
                                   animate={{ opacity: 1, scale: 1, y: 0 }}

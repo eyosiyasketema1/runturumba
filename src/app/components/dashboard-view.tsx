@@ -175,7 +175,14 @@ export const DashboardView = ({
                     <span className="text-xs font-semibold text-muted-foreground">Contacts</span>
                     <span className="text-xs font-bold text-foreground">{usage}/{limit}</span>
                   </div>
-                  <div className="h-1.5 w-full bg-muted rounded-full overflow-hidden">
+                  <div
+                    className="h-1.5 w-full bg-muted rounded-full overflow-hidden"
+                    role="progressbar"
+                    aria-valuenow={usage}
+                    aria-valuemin={0}
+                    aria-valuemax={limit === Infinity ? undefined : limit}
+                    aria-label={`Contact usage: ${usage} of ${limit === Infinity ? "unlimited" : limit} contacts used`}
+                  >
                     <motion.div
                       initial={{ width: 0 }}
                       animate={{ width: `${Math.min(100, percentage)}%` }}
@@ -274,30 +281,32 @@ export const DashboardView = ({
                 </div>
               </div>
             </div>
-            <ResponsiveContainer width="100%" height={260}>
-              <AreaChart data={messageVolumeData}>
-                <defs key="defs">
-                  <linearGradient key="grad-sent" id="dashSent" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%"  stopColor="#2563eb" stopOpacity={0.15} />
-                    <stop offset="95%" stopColor="#2563eb" stopOpacity={0}    />
-                  </linearGradient>
-                  <linearGradient key="grad-recv" id="dashRecv" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%"  stopColor="#10b981" stopOpacity={0.15} />
-                    <stop offset="95%" stopColor="#10b981" stopOpacity={0}    />
-                  </linearGradient>
-                </defs>
-                <CartesianGrid key="grid" strokeDasharray="3 3" vertical={false} stroke="#e4e4e7" />
-                <XAxis key="xaxis" dataKey="name" tick={{ fontSize: 10, fill: "#71717a", fontWeight: 600 }} axisLine={false} tickLine={false} dy={8} />
-                <YAxis key="yaxis" tick={{ fontSize: 10, fill: "#71717a", fontWeight: 600 }} axisLine={false} tickLine={false} dx={-8} />
-                <Tooltip
-                  key="tooltip"
-                  contentStyle={{ backgroundColor: "#fff", borderRadius: "6px", border: "1px solid #e4e4e7", boxShadow: "0 4px 12px rgba(0,0,0,0.05)", fontSize: "11px" }}
-                  itemStyle={{ fontWeight: 600 }}
-                />
-                <Area key="area-sent"     type="monotone" dataKey="sent"     stroke="#2563eb" strokeWidth={2} fill="url(#dashSent)" />
-                <Area key="area-received" type="monotone" dataKey="received" stroke="#10b981" strokeWidth={2} fill="url(#dashRecv)" />
-              </AreaChart>
-            </ResponsiveContainer>
+            <div role="img" aria-label={`Area chart showing sent versus received message volume over the last 7 days. Sent ranges from ${Math.min(...messageVolumeData.map(d => d.sent))} to ${Math.max(...messageVolumeData.map(d => d.sent))}. Received ranges from ${Math.min(...messageVolumeData.map(d => d.received))} to ${Math.max(...messageVolumeData.map(d => d.received))}.`}>
+              <ResponsiveContainer width="100%" height={260}>
+                <AreaChart data={messageVolumeData}>
+                  <defs key="defs">
+                    <linearGradient key="grad-sent" id="dashSent" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%"  stopColor="#2563eb" stopOpacity={0.15} />
+                      <stop offset="95%" stopColor="#2563eb" stopOpacity={0}    />
+                    </linearGradient>
+                    <linearGradient key="grad-recv" id="dashRecv" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%"  stopColor="#10b981" stopOpacity={0.15} />
+                      <stop offset="95%" stopColor="#10b981" stopOpacity={0}    />
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid key="grid" strokeDasharray="3 3" vertical={false} stroke="#e4e4e7" />
+                  <XAxis key="xaxis" dataKey="name" tick={{ fontSize: 10, fill: "#71717a", fontWeight: 600 }} axisLine={false} tickLine={false} dy={8} />
+                  <YAxis key="yaxis" tick={{ fontSize: 10, fill: "#71717a", fontWeight: 600 }} axisLine={false} tickLine={false} dx={-8} />
+                  <Tooltip
+                    key="tooltip"
+                    contentStyle={{ backgroundColor: "#fff", borderRadius: "6px", border: "1px solid #e4e4e7", boxShadow: "0 4px 12px rgba(0,0,0,0.05)", fontSize: "11px" }}
+                    itemStyle={{ fontWeight: 600 }}
+                  />
+                  <Area key="area-sent"     type="monotone" dataKey="sent"     stroke="#2563eb" strokeWidth={2} fill="url(#dashSent)" />
+                  <Area key="area-received" type="monotone" dataKey="received" stroke="#10b981" strokeWidth={2} fill="url(#dashRecv)" />
+                </AreaChart>
+              </ResponsiveContainer>
+            </div>
           </div>
 
           {/* Pie Chart */}
@@ -307,16 +316,18 @@ export const DashboardView = ({
               <p className="text-xs text-muted-foreground">By message status</p>
             </div>
             <div className="flex-1 flex flex-col justify-center">
-              <ResponsiveContainer width="100%" height={170}>
-                <RechartsPie>
-                  <Pie key="pie-chart" data={deliveryData} cx="50%" cy="50%" innerRadius={50} outerRadius={72} paddingAngle={4} dataKey="value">
-                    {deliveryData.map((entry, idx) => (
-                      <Cell key={`cell-${entry.name}`} fill={entry.color} />
-                    ))}
-                  </Pie>
-                  <Tooltip key="tooltip" />
-                </RechartsPie>
-              </ResponsiveContainer>
+              <div role="img" aria-label={`Donut chart showing message delivery breakdown: ${deliveryData.map(d => `${d.name} ${d.value}`).join(", ")}.`}>
+                <ResponsiveContainer width="100%" height={170}>
+                  <RechartsPie>
+                    <Pie key="pie-chart" data={deliveryData} cx="50%" cy="50%" innerRadius={50} outerRadius={72} paddingAngle={4} dataKey="value">
+                      {deliveryData.map((entry, idx) => (
+                        <Cell key={`cell-${entry.name}`} fill={entry.color} />
+                      ))}
+                    </Pie>
+                    <Tooltip key="tooltip" />
+                  </RechartsPie>
+                </ResponsiveContainer>
+              </div>
               <div className="space-y-1.5 mt-4">
                 {deliveryData.map((entry) => (
                   <div key={entry.name} className="flex items-center justify-between px-1 py-1 hover:bg-muted/50 rounded transition-colors">
@@ -460,7 +471,14 @@ export const DashboardView = ({
                       </div>
                       <span className="text-xs font-bold text-foreground">{contact.messages}</span>
                     </div>
-                    <div className="h-1 w-full bg-muted rounded-full overflow-hidden">
+                    <div
+                      className="h-1 w-full bg-muted rounded-full overflow-hidden"
+                      role="progressbar"
+                      aria-valuenow={Math.round(pct)}
+                      aria-valuemin={0}
+                      aria-valuemax={100}
+                      aria-label={`${contact.name} engagement: ${contact.messages} messages, ${Math.round(pct)}% of top contact`}
+                    >
                       <div className="h-full bg-primary rounded-full transition-all duration-1000 ease-out" style={{ width: `${pct}%` }} />
                     </div>
                   </div>

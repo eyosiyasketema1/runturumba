@@ -466,7 +466,7 @@ const AutomationNodeComponent = ({ data, selected }: NodeProps) => {
       {/* Delete button */}
       {!isExecMode && (
         <button onClick={(e) => { e.stopPropagation(); onDelete(); }}
-          className="absolute -top-2 -right-2 w-5 h-5 rounded-full bg-destructive text-destructive-foreground flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity text-xs hover:scale-110 z-10">
+          className="absolute -top-2 -right-2 w-5 h-5 rounded-full bg-destructive text-destructive-foreground flex items-center justify-center opacity-0 group-hover:opacity-100 focus-visible:opacity-100 transition-opacity text-xs hover:scale-110 z-10">
           <X className="w-3 h-3" />
         </button>
       )}
@@ -474,7 +474,7 @@ const AutomationNodeComponent = ({ data, selected }: NodeProps) => {
       {/* Add after button */}
       {onAddAfter && !isExecMode && (
         <button onClick={(e) => { e.stopPropagation(); onAddAfter(); }}
-          className="absolute -right-5 top-1/2 -translate-y-1/2 translate-x-full w-7 h-7 rounded-full border-2 border-dashed border-border bg-background flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all hover:border-primary hover:bg-primary/5 z-10">
+          className="absolute -right-5 top-1/2 -translate-y-1/2 translate-x-full w-7 h-7 rounded-full border-2 border-dashed border-border bg-background flex items-center justify-center opacity-0 group-hover:opacity-100 focus-visible:opacity-100 transition-all hover:border-primary hover:bg-primary/5 z-10">
           <Plus className="w-3.5 h-3.5 text-muted-foreground group-hover:text-primary" />
         </button>
       )}
@@ -508,7 +508,7 @@ const NodePickerPanel = ({ isOpen, onClose, onSelectNode, title, mode }: {
       <div className="sticky top-0 bg-card z-10 border-b border-border">
         <div className="flex items-center justify-between px-5 py-4">
           <h3 className="text-base font-bold text-foreground">{title}</h3>
-          <button onClick={onClose} className="p-1.5 rounded-md hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"><X className="w-4 h-4" /></button>
+          <button onClick={onClose} className="min-w-[44px] min-h-[44px] flex items-center justify-center rounded-md hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"><X className="w-4 h-4" /></button>
         </div>
         <div className="px-5 pb-4">
           <div className="relative">
@@ -550,7 +550,7 @@ const NodePickerPanel = ({ isOpen, onClose, onSelectNode, title, mode }: {
                           <p className="text-sm font-medium text-foreground group-hover:text-primary transition-colors">{item.label}</p>
                           <p className="text-xs text-muted-foreground">{item.description}</p>
                         </div>
-                        <Plus className="w-4 h-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
+                        <Plus className="w-4 h-4 text-muted-foreground opacity-0 group-hover:opacity-100 group-focus-visible:opacity-100 transition-opacity" />
                       </button>
                     );
                   })}
@@ -585,7 +585,7 @@ const NodeInspector = ({ node, onUpdate, onClose, onDelete, isJourney, execData,
               <Badge variant="outline" className={cn("text-xs mt-0.5", colors.badge)}>{node.type}</Badge>
             </div>
           </div>
-          <button onClick={onClose} className="p-1.5 rounded-md hover:bg-muted text-muted-foreground hover:text-foreground"><X className="w-4 h-4" /></button>
+          <button onClick={onClose} className="min-w-[44px] min-h-[44px] flex items-center justify-center rounded-md hover:bg-muted text-muted-foreground hover:text-foreground"><X className="w-4 h-4" /></button>
         </div>
       </div>
       <div className="p-5 space-y-5">
@@ -817,7 +817,7 @@ const NodeConfigModal = ({ node, onSave, onCancel, onDelete, isJourney }: {
                 <span className="text-xs text-muted-foreground">{node.description}</span>
               </div>
             </div>
-            <button onClick={onCancel} className="p-1.5 rounded-md hover:bg-muted text-muted-foreground hover:text-foreground"><X className="w-4 h-4" /></button>
+            <button onClick={onCancel} className="min-w-[44px] min-h-[44px] flex items-center justify-center rounded-md hover:bg-muted text-muted-foreground hover:text-foreground"><X className="w-4 h-4" /></button>
           </div>
         </div>
 
@@ -997,8 +997,8 @@ const LogDrawer = ({ logs, isOpen, onToggle, onClear, onClickLog }: {
           ))}
           <div className="w-px h-4 bg-border" />
           <Input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search logs..." className="h-7 text-xs w-[160px]" aria-label="Search logs" />
-          <button onClick={onClear} className="p-1 rounded hover:bg-muted text-muted-foreground hover:text-foreground" title="Clear logs"><Trash2 className="w-3.5 h-3.5" /></button>
-          <button onClick={onToggle} className="p-1 rounded hover:bg-muted text-muted-foreground hover:text-foreground"><ChevronDown className="w-3.5 h-3.5" /></button>
+          <button onClick={onClear} className="relative p-1 rounded hover:bg-muted text-muted-foreground hover:text-foreground after:absolute after:content-[''] after:-inset-2" title="Clear logs"><Trash2 className="w-3.5 h-3.5" /></button>
+          <button onClick={onToggle} className="relative p-1 rounded hover:bg-muted text-muted-foreground hover:text-foreground after:absolute after:content-[''] after:-inset-2"><ChevronDown className="w-3.5 h-3.5" /></button>
         </div>
       </div>
       {/* Log entries */}
@@ -1411,7 +1411,7 @@ export const AutomationCanvas = ({ automation, onBack, onSave, onUpdate }: {
       {/* Toolbar */}
       <div className="flex items-center justify-between px-4 py-2.5 border-b border-border bg-card shrink-0">
         <div className="flex items-center gap-3">
-          <button onClick={onBack} className="p-2 rounded-lg hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"><ArrowLeft className="w-4 h-4" /></button>
+          <button onClick={onBack} className="min-w-[44px] min-h-[44px] flex items-center justify-center rounded-lg hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"><ArrowLeft className="w-4 h-4" /></button>
           <div className="w-px h-6 bg-border" />
           {isEditingName ? (
             <Input value={autoName} onChange={(e) => setAutoName(e.target.value)}
@@ -1421,7 +1421,7 @@ export const AutomationCanvas = ({ automation, onBack, onSave, onUpdate }: {
           ) : (
             <button onClick={() => setIsEditingName(true)} className="flex items-center gap-2 group">
               <h2 className="text-sm font-bold text-foreground group-hover:text-primary transition-colors">{automation.name}</h2>
-              <Edit2 className="w-3 h-3 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
+              <Edit2 className="w-3 h-3 text-muted-foreground opacity-0 group-hover:opacity-100 group-focus-visible:opacity-100 transition-opacity" />
             </button>
           )}
           <Badge variant="outline" className={cn("text-xs", modeInfo.bg, modeInfo.color, modeInfo.border)}>
@@ -1742,8 +1742,8 @@ const FolderSidebar = ({ folders, selectedFolderId, automations, onSelectFolder,
                 {isSelected ? <FolderOpen className="w-4 h-4 shrink-0" /> : <Folder className="w-4 h-4 shrink-0 text-muted-foreground" />}
                 <span className="text-sm flex-1 truncate">{folder.name}</span>
                 {/* Count hides on hover, edit/delete show instead */}
-                <span className={cn("text-xs tabular-nums group-hover:hidden", isSelected ? "text-primary" : "text-muted-foreground")}>{count}</span>
-                <span className="hidden group-hover:flex items-center gap-0.5">
+                <span className={cn("text-xs tabular-nums group-hover:hidden group-focus-within:hidden", isSelected ? "text-primary" : "text-muted-foreground")}>{count}</span>
+                <span className="hidden group-hover:flex group-focus-within:flex focus-within:flex items-center gap-0.5">
                   <span role="button" onClick={(e) => { e.stopPropagation(); setEditingId(folder.id); setEditName(folder.name); }}
                     className="p-1 rounded hover:bg-muted text-muted-foreground hover:text-foreground"><Pencil className="w-3 h-3" /></span>
                   <span role="button" onClick={(e) => { e.stopPropagation(); onDeleteFolder(folder.id); }}

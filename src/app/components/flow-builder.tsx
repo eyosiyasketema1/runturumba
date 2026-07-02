@@ -677,7 +677,7 @@ function FlowBuilderInner({
                     <Icon className="w-3.5 h-3.5" />
                   </span>
                   <span className="flex-1">{n.label}</span>
-                  <Plus className="w-3.5 h-3.5 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
+                  <Plus className="w-3.5 h-3.5 text-muted-foreground opacity-0 group-hover:opacity-100 group-focus-visible:opacity-100 transition-opacity" />
                 </button>
               );
             })}

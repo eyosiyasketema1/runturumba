@@ -171,30 +171,32 @@ export const AnalyticsView = ({
               <div className="flex items-center gap-1.5"><div className="w-2 h-2 bg-blue-500 rounded-full" /><span className="text-xs font-bold text-muted-foreground uppercase">Received</span></div>
             </div>
           </div>
-          <ResponsiveContainer width="100%" height={300}>
-            <AreaChart data={messageVolumeData}>
-              <defs key="defs">
-                <linearGradient key="grad-sent" id="colorSent" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#7c3aed" stopOpacity={0.1} />
-                  <stop offset="95%" stopColor="#7c3aed" stopOpacity={0} />
-                </linearGradient>
-                <linearGradient key="grad-recv" id="colorReceived" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.1} />
-                  <stop offset="95%" stopColor="#3b82f6" stopOpacity={0} />
-                </linearGradient>
-              </defs>
-              <CartesianGrid key="grid" strokeDasharray="3 3" vertical={false} stroke="#e4e4e7" />
-              <XAxis key="xaxis" dataKey="name" tick={{ fontSize: 11, fill: "#71717a", fontWeight: 600 }} axisLine={false} tickLine={false} dy={10} />
-              <YAxis key="yaxis" tick={{ fontSize: 11, fill: "#71717a", fontWeight: 600 }} axisLine={false} tickLine={false} dx={-10} />
-              <Tooltip
-                key="tooltip"
-                contentStyle={{ backgroundColor: "#ffffff", borderRadius: "8px", border: "1px solid #e4e4e7", boxShadow: "0 4px 12px rgba(0,0,0,0.05)", fontSize: "12px" }}
-                itemStyle={{ fontWeight: "600" }}
-              />
-              <Area key="area-sent" type="monotone" dataKey="sent" stroke="#7c3aed" strokeWidth={2} fill="url(#colorSent)" />
-              <Area key="area-received" type="monotone" dataKey="received" stroke="#3b82f6" strokeWidth={2} fill="url(#colorReceived)" />
-            </AreaChart>
-          </ResponsiveContainer>
+          <div role="img" aria-label={`Area chart showing sent versus received message volume over the last 7 days. Sent ranges from ${Math.min(...messageVolumeData.map(d => d.sent))} to ${Math.max(...messageVolumeData.map(d => d.sent))}. Received ranges from ${Math.min(...messageVolumeData.map(d => d.received))} to ${Math.max(...messageVolumeData.map(d => d.received))}.`}>
+            <ResponsiveContainer width="100%" height={300}>
+              <AreaChart data={messageVolumeData}>
+                <defs key="defs">
+                  <linearGradient key="grad-sent" id="colorSent" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#7c3aed" stopOpacity={0.1} />
+                    <stop offset="95%" stopColor="#7c3aed" stopOpacity={0} />
+                  </linearGradient>
+                  <linearGradient key="grad-recv" id="colorReceived" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.1} />
+                    <stop offset="95%" stopColor="#3b82f6" stopOpacity={0} />
+                  </linearGradient>
+                </defs>
+                <CartesianGrid key="grid" strokeDasharray="3 3" vertical={false} stroke="#e4e4e7" />
+                <XAxis key="xaxis" dataKey="name" tick={{ fontSize: 11, fill: "#71717a", fontWeight: 600 }} axisLine={false} tickLine={false} dy={10} />
+                <YAxis key="yaxis" tick={{ fontSize: 11, fill: "#71717a", fontWeight: 600 }} axisLine={false} tickLine={false} dx={-10} />
+                <Tooltip
+                  key="tooltip"
+                  contentStyle={{ backgroundColor: "#ffffff", borderRadius: "8px", border: "1px solid #e4e4e7", boxShadow: "0 4px 12px rgba(0,0,0,0.05)", fontSize: "12px" }}
+                  itemStyle={{ fontWeight: "600" }}
+                />
+                <Area key="area-sent" type="monotone" dataKey="sent" stroke="#7c3aed" strokeWidth={2} fill="url(#colorSent)" />
+                <Area key="area-received" type="monotone" dataKey="received" stroke="#3b82f6" strokeWidth={2} fill="url(#colorReceived)" />
+              </AreaChart>
+            </ResponsiveContainer>
+          </div>
         </div>
 
         <div className="bg-card p-6 rounded-lg border border-border shadow-sm flex flex-col">
@@ -203,16 +205,18 @@ export const AnalyticsView = ({
             <p className="text-xs text-muted-foreground">Distribution by message status</p>
           </div>
           <div className="flex-1 flex flex-col justify-center">
-            <ResponsiveContainer width="100%" height={200}>
-              <RechartsPie>
-                <Pie key="pie-chart" data={deliveryData} cx="50%" cy="50%" innerRadius={60} outerRadius={85} paddingAngle={4} dataKey="value">
-                  {deliveryData.map((entry, index) => (
-                    <Cell key={`cell-${entry.name}`} fill={entry.color} />
-                  ))}
-                </Pie>
-                <Tooltip key="tooltip" />
-              </RechartsPie>
-            </ResponsiveContainer>
+            <div role="img" aria-label={`Donut chart showing message delivery breakdown: ${deliveryData.map(d => `${d.name} ${d.value}`).join(", ")}.`}>
+              <ResponsiveContainer width="100%" height={200}>
+                <RechartsPie>
+                  <Pie key="pie-chart" data={deliveryData} cx="50%" cy="50%" innerRadius={60} outerRadius={85} paddingAngle={4} dataKey="value">
+                    {deliveryData.map((entry, index) => (
+                      <Cell key={`cell-${entry.name}`} fill={entry.color} />
+                    ))}
+                  </Pie>
+                  <Tooltip key="tooltip" />
+                </RechartsPie>
+              </ResponsiveContainer>
+            </div>
             <div className="space-y-2 mt-6">
               {deliveryData.map((entry) => (
                 <div key={entry.name} className="flex items-center justify-between p-2 rounded-md hover:bg-muted/50 transition-colors">
@@ -253,7 +257,14 @@ export const AnalyticsView = ({
                       <p className="text-xs font-bold text-muted-foreground uppercase opacity-60">msgs</p>
                     </div>
                   </div>
-                  <div className="h-1.5 w-full bg-muted rounded-full overflow-hidden border border-border/20">
+                  <div
+                    className="h-1.5 w-full bg-muted rounded-full overflow-hidden border border-border/20"
+                    role="progressbar"
+                    aria-valuenow={Math.round(percentage)}
+                    aria-valuemin={0}
+                    aria-valuemax={100}
+                    aria-label={`${contact.name} engagement: ${contact.messages} messages, ${Math.round(percentage)}% of top contact`}
+                  >
                     <div
                       className="h-full bg-primary rounded-full transition-all duration-1000 ease-out"
                       style={{ width: `${percentage}%` }}

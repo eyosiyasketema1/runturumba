@@ -728,7 +728,7 @@ export function SequenceBuilder({
                         {/* Delete button — top right */}
                         <button
                           onClick={(e) => { e.stopPropagation(); removeStep(step.id); toast.success("Step removed"); }}
-                          className="absolute top-3 right-3 w-7 h-7 rounded-md flex items-center justify-center text-muted-foreground hover:text-destructive hover:bg-destructive/10 opacity-0 group-hover:opacity-100 transition-all z-10"
+                          className="absolute top-3 right-3 w-7 h-7 rounded-md flex items-center justify-center text-muted-foreground hover:text-destructive hover:bg-destructive/10 opacity-0 group-hover:opacity-100 focus-visible:opacity-100 transition-all z-10"
                           aria-label="Delete step"
                         >
                           <Trash2 className="w-3.5 h-3.5" />

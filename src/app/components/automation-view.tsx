@@ -974,14 +974,14 @@ export const AutomationView = ({
                           <button
                             onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
                             disabled={safePage <= 1}
-                            className="h-8 w-8 rounded-md border border-border flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted disabled:opacity-30 disabled:pointer-events-none transition-colors"
+                            className="h-11 w-11 rounded-md border border-border flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted disabled:opacity-30 disabled:pointer-events-none transition-colors"
                           >
                             <ChevronLeft className="w-4 h-4" />
                           </button>
                           <button
                             onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
                             disabled={safePage >= totalPages}
-                            className="h-8 w-8 rounded-md border border-border flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted disabled:opacity-30 disabled:pointer-events-none transition-colors"
+                            className="h-11 w-11 rounded-md border border-border flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted disabled:opacity-30 disabled:pointer-events-none transition-colors"
                           >
                             <ChevronRight className="w-4 h-4" />
                           </button>
@@ -1326,7 +1326,7 @@ const TemplateCard = ({ template, onUse, onPreview }: {
         )}
         <div className="flex-1" />
         {/* Hover-only actions */}
-        <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+        <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 focus-within:opacity-100 transition-opacity">
           <button
             onClick={() => onPreview(template)}
             className="text-xs text-muted-foreground hover:text-foreground font-medium transition-colors"

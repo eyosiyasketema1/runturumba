@@ -290,7 +290,7 @@ function DraggableRuleRow({
         </div>
 
         {/* Actions */}
-        <div className="flex items-center gap-1 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
+        <div className="flex items-center gap-1 shrink-0 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 focus-within:opacity-100 transition-opacity">
           <button
             onClick={() => onEdit(rule)}
             className="p-1.5 text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
@@ -480,7 +480,7 @@ function EndpointFormModal({
                   <span className="text-xs text-muted-foreground group-hover:text-primary transition-colors font-bold">DEFAULT</span>
                 </div>
               )}
-              <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+              <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 focus-visible:opacity-100 transition-opacity flex items-center justify-center">
                 <span className="text-xs text-white font-bold">UPLOAD</span>
               </div>
             </button>
@@ -1767,7 +1767,7 @@ function WidgetPreviewOverlay({
   return (
     <div className="fixed inset-0 z-[200]">
       {/* Backdrop */}
-      <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={onClose} />
+      <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={onClose} aria-hidden="true" />
 
       {/* Top label bar */}
       <div className="absolute top-0 inset-x-0 flex items-center justify-between px-5 py-2.5 bg-black/80 text-white z-10 pointer-events-none">
@@ -1965,7 +1965,7 @@ function WidgetPreviewOverlay({
                       >
                         {/* Attachment */}
                         <label
-                          className="p-1 text-muted-foreground hover:text-foreground transition-colors cursor-pointer shrink-0"
+                          className="min-w-[44px] min-h-[44px] flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors cursor-pointer shrink-0 rounded-md"
                           title="Attach file"
                         >
                           <Paperclip className="w-4 h-4" />

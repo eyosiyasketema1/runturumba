@@ -353,7 +353,7 @@ export const NewMessageFlow: React.FC<NewMessageFlowProps> = ({
                           <div key={gid} className="flex items-center gap-1.5 px-2.5 py-1.5 bg-primary text-primary-foreground rounded-md text-xs font-bold shadow-sm">
                             <Layers className="w-3.5 h-3.5 opacity-80" />
                             {g?.name}
-                            <button onClick={() => toggleGroup(gid)} className="hover:text-primary-foreground/70 ml-1"><X className="w-3.5 h-3.5" /></button>
+                            <button onClick={() => toggleGroup(gid)} className="relative hover:text-primary-foreground/70 ml-1 after:absolute after:content-[''] after:-inset-2"><X className="w-3.5 h-3.5" /></button>
                           </div>
                         );
                       })}
@@ -363,7 +363,7 @@ export const NewMessageFlow: React.FC<NewMessageFlowProps> = ({
                           <div key={cid} className="flex items-center gap-1.5 px-2.5 py-1.5 bg-muted text-foreground border border-border rounded-md text-xs font-bold shadow-sm">
                             <User className="w-3.5 h-3.5 text-muted-foreground" />
                             {c?.name}
-                            <button onClick={() => toggleContact(cid)} className="hover:text-destructive ml-1"><X className="w-3.5 h-3.5" /></button>
+                            <button onClick={() => toggleContact(cid)} className="relative hover:text-destructive ml-1 after:absolute after:content-[''] after:-inset-2"><X className="w-3.5 h-3.5" /></button>
                           </div>
                         );
                       })}

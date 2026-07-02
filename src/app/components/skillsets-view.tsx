@@ -704,7 +704,7 @@ function SkillSetEditor({
                           <p className="text-xs text-muted-foreground">{file.size}</p>
                         </div>
                       </div>
-                      <Button variant="ghost" size="sm" className="h-6 w-6 p-0 text-muted-foreground hover:text-red-500 shrink-0" onClick={() => handleRemoveAttachment(file.id)}>
+                      <Button variant="ghost" size="sm" className="h-6 w-6 p-0 relative after:absolute after:content-[''] after:-inset-2 text-muted-foreground hover:text-red-500 shrink-0" onClick={() => handleRemoveAttachment(file.id)}>
                         <X className="h-3 w-3" />
                       </Button>
                     </div>
