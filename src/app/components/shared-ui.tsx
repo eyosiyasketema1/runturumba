@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import {
   X, Check, AlertTriangle, Info, Radio, Repeat, Bell,
   MessageSquare, Zap, Clock, AlertCircle, Building2, Plus,
@@ -20,6 +20,46 @@ export { cn };
 // --- Modal ---
 
 export const Modal = ({ isOpen, onClose, title, children, size = "md" }: { isOpen: boolean; onClose: () => void; title: string; children: React.ReactNode; size?: "sm" | "md" | "lg" | "xl" | "2xl" | "3xl" | "4xl" | "5xl" }) => {
+  const modalRef = useRef<HTMLDivElement>(null);
+  const previousFocusRef = useRef<HTMLElement | null>(null);
+
+  // Focus trap + Escape handler
+  useEffect(() => {
+    if (!isOpen) return;
+    // Save the element that had focus before modal opened
+    previousFocusRef.current = document.activeElement as HTMLElement;
+
+    // Focus the modal container
+    const timer = setTimeout(() => modalRef.current?.focus(), 50);
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") { e.stopPropagation(); onClose(); return; }
+
+      // Focus trap: Tab / Shift+Tab cycle within modal
+      if (e.key === "Tab" && modalRef.current) {
+        const focusable = modalRef.current.querySelectorAll<HTMLElement>(
+          'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+        );
+        if (focusable.length === 0) return;
+        const first = focusable[0];
+        const last = focusable[focusable.length - 1];
+        if (e.shiftKey) {
+          if (document.activeElement === first) { e.preventDefault(); last.focus(); }
+        } else {
+          if (document.activeElement === last) { e.preventDefault(); first.focus(); }
+        }
+      }
+    };
+
+    document.addEventListener("keydown", handleKeyDown, true);
+    return () => {
+      document.removeEventListener("keydown", handleKeyDown, true);
+      clearTimeout(timer);
+      // Restore focus on close
+      previousFocusRef.current?.focus();
+    };
+  }, [isOpen, onClose]);
+
   if (!isOpen) return null;
 
   const sizeClasses = {
@@ -33,32 +73,42 @@ export const Modal = ({ isOpen, onClose, title, children, size = "md" }: { isOpe
     "5xl": "max-w-5xl",
   };
 
+  const titleId = `modal-title-${title.replace(/\s+/g, "-").toLowerCase()}`;
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+      {/* Backdrop — keyboard users dismiss via Escape, not clicking */}
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
         onClick={onClose}
+        aria-hidden="true"
         className="absolute inset-0 bg-black/60 backdrop-blur-[2px]"
       />
       <motion.div
+        ref={modalRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby={titleId}
+        tabIndex={-1}
         initial={{ opacity: 0, scale: 0.98, y: 10 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
         exit={{ opacity: 0, scale: 0.98, y: 10 }}
         transition={{ duration: 0.2, ease: "easeOut" }}
         className={cn(
-          "relative bg-background w-full rounded-lg shadow-xl border border-border overflow-hidden flex flex-col max-h-[90vh]",
+          "relative bg-background w-full rounded-lg shadow-xl border border-border overflow-hidden flex flex-col max-h-[90vh] outline-none",
           sizeClasses[size] || sizeClasses.md
         )}
       >
         <div className="flex items-center justify-between px-6 py-4 border-b border-border">
-          <h2 className="text-lg font-semibold tracking-tight text-foreground">{title}</h2>
-          <button 
-            onClick={onClose} 
-            className="p-2 text-muted-foreground hover:text-foreground hover:bg-muted rounded-md transition-colors"
+          <h2 id={titleId} className="text-lg font-semibold tracking-tight text-foreground">{title}</h2>
+          <button
+            onClick={onClose}
+            aria-label="Close dialog"
+            className="p-3 min-w-[44px] min-h-[44px] flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted rounded-md transition-colors focus-visible:ring-2 focus-visible:ring-ring"
           >
-            <X className="w-4 h-4" />
+            <X className="w-4 h-4" aria-hidden="true" />
           </button>
         </div>
         <div className="p-6 overflow-y-auto custom-scrollbar">
