@@ -3,7 +3,7 @@ import {
   Users, MessageSquare, AlertTriangle, Clock, TrendingUp,
   CheckCircle2, Plus, X, Shield,
   UserPlus, Globe, ArrowRightLeft, Bell, Trophy,
-  ChevronLeft, ChevronRight, Search,
+  ChevronLeft, ChevronRight, Search, Settings, Timer, Hash, Volume2, RotateCcw,
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { toast } from "sonner";
@@ -14,6 +14,8 @@ import {
 import { Button } from "./ui/button";
 import { Badge } from "./ui/badge";
 import { Input } from "./ui/input";
+import { Switch } from "./ui/switch";
+import { Label } from "./ui/label";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -129,8 +131,24 @@ export const CoordinatorDashboard = ({
   const [escSearch, setEscSearch] = useState("");
   const ESC_PAGE_SIZE = 8;
   // Reassign popover state
-  const [reassignOpen, setReassignOpen] = useState<string | null>(null); // contactId or null
+  const [reassignOpen, setReassignOpen] = useState<string | null>(null);
   const reassignRef = useRef<HTMLDivElement>(null);
+  // Team Settings panel state
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [settings, setSettings] = useState({
+    teamName: "Amharic Team",
+    language: "Amharic",
+    assignmentMode: "round_robin" as "round_robin" | "least_busy" | "manual",
+    maxConcurrentChats: 5,
+    escalationTimeout: 15, // minutes
+    autoEscalateOnTrigger: true,
+    notifyOnNewConversation: true,
+    notifyOnEscalation: true,
+    notifyOnIdleVolunteer: false,
+    workingHoursStart: "08:00",
+    workingHoursEnd: "22:00",
+    autoReturnAfterHours: true,
+  });
 
   // Filter contacts for the Amharic team
   const teamContacts = useMemo(
@@ -435,9 +453,9 @@ export const CoordinatorDashboard = ({
               variant="outline"
               size="sm"
               className="border-white/20 bg-white/10 text-white hover:bg-white/20 hover:text-white backdrop-blur-sm"
-              onClick={() => toast.info("Opening team settings...")}
+              onClick={() => setIsSettingsOpen(true)}
             >
-              <Shield className="w-3.5 h-3.5 mr-1.5" />
+              <Settings className="w-3.5 h-3.5 mr-1.5" />
               Team Settings
             </Button>
           </div>
@@ -722,88 +740,84 @@ export const CoordinatorDashboard = ({
                       return (
                         <div
                           key={esc.contactId + "-esc"}
-                          className="px-5 py-4 hover:bg-muted/30 transition-colors border-b border-border last:border-0"
+                          className="px-5 py-3.5 hover:bg-muted/30 transition-colors border-b border-border last:border-0"
                         >
-                          <div className="flex items-start justify-between gap-3">
-                            <div className="flex items-start gap-3 min-w-0 flex-1">
-                              <div
-                                className={cn(
-                                  "w-9 h-9 rounded-full flex items-center justify-center text-white text-xs font-bold shrink-0 mt-0.5",
-                                  avatarColor(esc.contactId)
-                                )}
-                              >
-                                {getInitial(esc.contactName)}
-                              </div>
-                              <div className="min-w-0 flex-1">
-                                <div className="flex items-center gap-2 flex-wrap">
-                                  <span className="text-sm font-semibold text-foreground truncate">
-                                    {esc.contactName}
-                                  </span>
-                                  {channelInfo.logoUrl ? (
-                                    <img
-                                      src={channelInfo.logoUrl}
-                                      alt={channelInfo.label}
-                                      className="w-3.5 h-3.5 shrink-0"
-                                    />
-                                  ) : (
-                                    <channelInfo.icon
-                                      className={cn("w-3.5 h-3.5 shrink-0", channelInfo.color)}
-                                    />
-                                  )}
-                                </div>
-                                <p className="text-xs text-muted-foreground mt-0.5">
-                                  Flagged by {esc.volunteerName}
-                                </p>
-                                <div className="flex items-center gap-2 mt-1.5 flex-wrap">
-                                  <Badge
-                                    variant="outline"
-                                    className={cn("text-[10px] px-1.5 py-0", reasonStyles[esc.reason])}
-                                  >
-                                    {esc.reason}
-                                  </Badge>
-                                  <span className="text-[11px] text-muted-foreground flex items-center gap-1">
-                                    <Clock className="w-3 h-3" />
-                                    {formatTimeAgo(esc.flaggedAt)}
-                                  </span>
-                                </div>
-                              </div>
-                            </div>
-                          </div>
-
-                          {/* Actions */}
-                          <div className="flex items-center gap-2 mt-3 ml-12 relative">
-                            <Button
-                              size="sm"
-                              className="text-xs h-7 px-3"
-                              onClick={() => onOpenConversation(esc.contactId)}
+                          <div className="flex items-center gap-3">
+                            {/* Avatar */}
+                            <div
+                              className={cn(
+                                "w-9 h-9 rounded-full flex items-center justify-center text-white text-xs font-bold shrink-0",
+                                avatarColor(esc.contactId)
+                              )}
                             >
-                              Review
-                            </Button>
-                            <div className="relative" ref={reassignOpen === esc.contactId ? reassignRef : undefined}>
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                className={cn(
-                                  "text-xs h-7 px-3 gap-1",
-                                  reassignOpen === esc.contactId && "bg-muted border-primary/40"
-                                )}
-                                onClick={() => setReassignOpen(
-                                  reassignOpen === esc.contactId ? null : esc.contactId
-                                )}
-                              >
-                                <ArrowRightLeft className="w-3 h-3" />
-                                Reassign
-                              </Button>
+                              {getInitial(esc.contactName)}
+                            </div>
 
-                              {/* Reassign popover — team member picker */}
-                              <AnimatePresence>
-                                {reassignOpen === esc.contactId && (
-                                  <motion.div
-                                    initial={{ opacity: 0, y: -4, scale: 0.95 }}
-                                    animate={{ opacity: 1, y: 0, scale: 1 }}
-                                    exit={{ opacity: 0, y: -4, scale: 0.95 }}
-                                    transition={{ duration: 0.12 }}
-                                    className="absolute left-0 bottom-full mb-2 w-64 bg-popover border border-border rounded-lg shadow-xl z-50 overflow-hidden"
+                            {/* Contact info */}
+                            <div className="min-w-0 flex-1">
+                              <div className="flex items-center gap-2 flex-wrap">
+                                <span className="text-sm font-semibold text-foreground truncate">
+                                  {esc.contactName}
+                                </span>
+                                {channelInfo.logoUrl ? (
+                                  <img
+                                    src={channelInfo.logoUrl}
+                                    alt={channelInfo.label}
+                                    className="w-3.5 h-3.5 shrink-0"
+                                  />
+                                ) : (
+                                  <channelInfo.icon
+                                    className={cn("w-3.5 h-3.5 shrink-0", channelInfo.color)}
+                                  />
+                                )}
+                                <Badge
+                                  variant="outline"
+                                  className={cn("text-[10px] px-1.5 py-0", reasonStyles[esc.reason])}
+                                >
+                                  {esc.reason}
+                                </Badge>
+                              </div>
+                              <p className="text-xs text-muted-foreground mt-0.5">
+                                Flagged by {esc.volunteerName}
+                                <span className="mx-1.5 text-border">&middot;</span>
+                                {formatTimeAgo(esc.flaggedAt)}
+                              </p>
+                            </div>
+
+                            {/* Actions — far right */}
+                            <div className="flex items-center gap-1.5 shrink-0 relative">
+                              <Button
+                                size="sm"
+                                className="text-xs h-7 px-2.5"
+                                onClick={() => onOpenConversation(esc.contactId)}
+                              >
+                                Review
+                              </Button>
+                              <div className="relative" ref={reassignOpen === esc.contactId ? reassignRef : undefined}>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  className={cn(
+                                    "text-xs h-7 px-2.5 gap-1",
+                                    reassignOpen === esc.contactId && "bg-muted border-primary/40"
+                                  )}
+                                  onClick={() => setReassignOpen(
+                                    reassignOpen === esc.contactId ? null : esc.contactId
+                                  )}
+                                >
+                                  <ArrowRightLeft className="w-3 h-3" />
+                                  Reassign
+                                </Button>
+
+                                {/* Reassign popover — team member picker */}
+                                <AnimatePresence>
+                                  {reassignOpen === esc.contactId && (
+                                    <motion.div
+                                      initial={{ opacity: 0, y: -4, scale: 0.95 }}
+                                      animate={{ opacity: 1, y: 0, scale: 1 }}
+                                      exit={{ opacity: 0, y: -4, scale: 0.95 }}
+                                      transition={{ duration: 0.12 }}
+                                      className="absolute right-0 top-full mt-2 w-64 bg-popover border border-border rounded-lg shadow-xl z-50 overflow-hidden"
                                   >
                                     <div className="px-3 py-2 border-b border-border bg-muted/30">
                                       <p className="text-xs font-bold text-foreground">Reassign to</p>
@@ -854,7 +868,8 @@ export const CoordinatorDashboard = ({
                                     </div>
                                   </motion.div>
                                 )}
-                              </AnimatePresence>
+                                </AnimatePresence>
+                              </div>
                             </div>
                           </div>
                         </div>
@@ -1142,6 +1157,254 @@ export const CoordinatorDashboard = ({
           </table>
         </div>
       </div>
+
+      {/* ─── Team Settings Slide-Over Panel ─── */}
+      <AnimatePresence>
+        {isSettingsOpen && (
+          <>
+            {/* Backdrop */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 bg-black/40 z-40"
+              onClick={() => setIsSettingsOpen(false)}
+            />
+            {/* Panel */}
+            <motion.div
+              initial={{ x: "100%" }}
+              animate={{ x: 0 }}
+              exit={{ x: "100%" }}
+              transition={{ type: "spring", damping: 28, stiffness: 300 }}
+              className="fixed top-0 right-0 h-full w-full max-w-md bg-background border-l border-border shadow-2xl z-50 flex flex-col"
+            >
+              {/* Header */}
+              <div className="flex items-center justify-between px-6 py-5 border-b border-border bg-card">
+                <div>
+                  <h2 className="text-lg font-bold text-foreground">Team Settings</h2>
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    Configure your {settings.language} team
+                  </p>
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="h-8 w-8 p-0"
+                  onClick={() => setIsSettingsOpen(false)}
+                >
+                  <X className="w-4 h-4" />
+                </Button>
+              </div>
+
+              {/* Scrollable content */}
+              <div className="flex-1 overflow-y-auto">
+                {/* General */}
+                <div className="px-6 py-5 border-b border-border">
+                  <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-widest mb-4 flex items-center gap-2">
+                    <Shield className="w-3.5 h-3.5" />
+                    General
+                  </h3>
+                  <div className="space-y-4">
+                    <div>
+                      <Label className="text-xs font-semibold text-foreground">Team Name</Label>
+                      <Input
+                        value={settings.teamName}
+                        onChange={e => setSettings(s => ({ ...s, teamName: e.target.value }))}
+                        className="mt-1.5 text-sm h-9"
+                      />
+                    </div>
+                    <div>
+                      <Label className="text-xs font-semibold text-foreground">Language</Label>
+                      <Input
+                        value={settings.language}
+                        onChange={e => setSettings(s => ({ ...s, language: e.target.value }))}
+                        className="mt-1.5 text-sm h-9"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Assignment Rules */}
+                <div className="px-6 py-5 border-b border-border">
+                  <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-widest mb-4 flex items-center gap-2">
+                    <ArrowRightLeft className="w-3.5 h-3.5" />
+                    Assignment Rules
+                  </h3>
+                  <div className="space-y-4">
+                    <div>
+                      <Label className="text-xs font-semibold text-foreground">Auto-Assignment Mode</Label>
+                      <div className="grid grid-cols-3 gap-2 mt-2">
+                        {([
+                          { id: "round_robin", label: "Round Robin", desc: "Even distribution" },
+                          { id: "least_busy", label: "Least Busy", desc: "Fewest active chats" },
+                          { id: "manual", label: "Manual", desc: "Coordinator assigns" },
+                        ] as const).map(mode => (
+                          <button
+                            key={mode.id}
+                            onClick={() => setSettings(s => ({ ...s, assignmentMode: mode.id }))}
+                            className={cn(
+                              "p-3 rounded-lg border text-left transition-all",
+                              settings.assignmentMode === mode.id
+                                ? "border-primary bg-primary/5 shadow-sm"
+                                : "border-border hover:border-primary/30"
+                            )}
+                          >
+                            <p className="text-xs font-semibold text-foreground">{mode.label}</p>
+                            <p className="text-[11px] text-muted-foreground mt-0.5">{mode.desc}</p>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                    <div>
+                      <Label className="text-xs font-semibold text-foreground flex items-center gap-2">
+                        <Hash className="w-3 h-3 text-muted-foreground" />
+                        Max Concurrent Chats per Volunteer
+                      </Label>
+                      <div className="flex items-center gap-3 mt-2">
+                        <Input
+                          type="number"
+                          min={1}
+                          max={20}
+                          value={settings.maxConcurrentChats}
+                          onChange={e => setSettings(s => ({ ...s, maxConcurrentChats: Number(e.target.value) }))}
+                          className="w-20 text-sm h-9 text-center"
+                        />
+                        <span className="text-xs text-muted-foreground">conversations at a time</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Escalation */}
+                <div className="px-6 py-5 border-b border-border">
+                  <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-widest mb-4 flex items-center gap-2">
+                    <AlertTriangle className="w-3.5 h-3.5" />
+                    Escalation
+                  </h3>
+                  <div className="space-y-4">
+                    <div>
+                      <Label className="text-xs font-semibold text-foreground flex items-center gap-2">
+                        <Timer className="w-3 h-3 text-muted-foreground" />
+                        Escalation Timeout
+                      </Label>
+                      <div className="flex items-center gap-3 mt-2">
+                        <Input
+                          type="number"
+                          min={1}
+                          max={120}
+                          value={settings.escalationTimeout}
+                          onChange={e => setSettings(s => ({ ...s, escalationTimeout: Number(e.target.value) }))}
+                          className="w-20 text-sm h-9 text-center"
+                        />
+                        <span className="text-xs text-muted-foreground">minutes of no response before auto-escalation</span>
+                      </div>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <Label className="text-xs font-semibold text-foreground">Auto-Escalate on Trigger Word</Label>
+                        <p className="text-[11px] text-muted-foreground mt-0.5">Immediately flag when a trigger word is detected</p>
+                      </div>
+                      <Switch
+                        checked={settings.autoEscalateOnTrigger}
+                        onCheckedChange={v => setSettings(s => ({ ...s, autoEscalateOnTrigger: v }))}
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Working Hours */}
+                <div className="px-6 py-5 border-b border-border">
+                  <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-widest mb-4 flex items-center gap-2">
+                    <Clock className="w-3.5 h-3.5" />
+                    Working Hours
+                  </h3>
+                  <div className="space-y-4">
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <Label className="text-xs font-semibold text-foreground">Start Time</Label>
+                        <Input
+                          type="time"
+                          value={settings.workingHoursStart}
+                          onChange={e => setSettings(s => ({ ...s, workingHoursStart: e.target.value }))}
+                          className="mt-1.5 text-sm h-9"
+                        />
+                      </div>
+                      <div>
+                        <Label className="text-xs font-semibold text-foreground">End Time</Label>
+                        <Input
+                          type="time"
+                          value={settings.workingHoursEnd}
+                          onChange={e => setSettings(s => ({ ...s, workingHoursEnd: e.target.value }))}
+                          className="mt-1.5 text-sm h-9"
+                        />
+                      </div>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <Label className="text-xs font-semibold text-foreground flex items-center gap-2">
+                          <RotateCcw className="w-3 h-3 text-muted-foreground" />
+                          Return to Queue After Hours
+                        </Label>
+                        <p className="text-[11px] text-muted-foreground mt-0.5">Unclaimed chats return to queue outside working hours</p>
+                      </div>
+                      <Switch
+                        checked={settings.autoReturnAfterHours}
+                        onCheckedChange={v => setSettings(s => ({ ...s, autoReturnAfterHours: v }))}
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Notifications */}
+                <div className="px-6 py-5">
+                  <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-widest mb-4 flex items-center gap-2">
+                    <Volume2 className="w-3.5 h-3.5" />
+                    Notifications
+                  </h3>
+                  <div className="space-y-4">
+                    {([
+                      { key: "notifyOnNewConversation", label: "New Conversation", desc: "When a new seeker starts a chat in your language" },
+                      { key: "notifyOnEscalation", label: "Escalation Alert", desc: "When a volunteer escalates or a trigger word fires" },
+                      { key: "notifyOnIdleVolunteer", label: "Idle Volunteer", desc: "When a volunteer hasn't responded in 10+ minutes" },
+                    ] as const).map(n => (
+                      <div key={n.key} className="flex items-center justify-between">
+                        <div>
+                          <Label className="text-xs font-semibold text-foreground">{n.label}</Label>
+                          <p className="text-[11px] text-muted-foreground mt-0.5">{n.desc}</p>
+                        </div>
+                        <Switch
+                          checked={settings[n.key]}
+                          onCheckedChange={v => setSettings(s => ({ ...s, [n.key]: v }))}
+                        />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              {/* Footer */}
+              <div className="px-6 py-4 border-t border-border bg-card flex items-center justify-between">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setIsSettingsOpen(false)}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  size="sm"
+                  onClick={() => {
+                    setIsSettingsOpen(false);
+                    toast.success("Team settings saved!");
+                  }}
+                >
+                  Save Changes
+                </Button>
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
     </div>
   );
 };
