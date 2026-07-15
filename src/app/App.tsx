@@ -98,6 +98,8 @@ import { VolunteerDashboard } from "./components/volunteer-dashboard";
 import { CoordinatorDashboard } from "./components/coordinator-dashboard";
 import { ReviewerDashboard } from "./components/reviewer-dashboard";
 import { TrainerDashboard } from "./components/trainer-dashboard";
+import { ExecutiveDashboard } from "./components/executive-dashboard";
+import { GlobalOpsDashboard } from "./components/globalops-dashboard";
 
 // --- Role System ---
 // Ministry Team Hierarchy (per language team):
@@ -1181,7 +1183,29 @@ export default function App() {
                 />
               </motion.div>
             )}
-            {currentView === "dashboard" && viewMode !== "volunteer" && viewMode !== "coordinator" && viewMode !== "reviewer" && viewMode !== "trainer" && (
+            {currentView === "dashboard" && viewMode === "executive" && (
+              <motion.div key="executive-dashboard" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.2 }}>
+                <ExecutiveDashboard
+                  contacts={contacts}
+                  messages={messages}
+                  users={users}
+                  currentUser={currentUser}
+                  onNavigate={handleNavigate}
+                />
+              </motion.div>
+            )}
+            {currentView === "dashboard" && viewMode === "global_ops" && (
+              <motion.div key="globalops-dashboard" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.2 }}>
+                <GlobalOpsDashboard
+                  contacts={contacts}
+                  messages={messages}
+                  users={users}
+                  currentUser={currentUser}
+                  onNavigate={handleNavigate}
+                />
+              </motion.div>
+            )}
+            {currentView === "dashboard" && viewMode !== "volunteer" && viewMode !== "coordinator" && viewMode !== "reviewer" && viewMode !== "trainer" && viewMode !== "executive" && viewMode !== "global_ops" && (
               <motion.div key="dashboard" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.2 }}>
                 {/* Dashboard tab switcher — each tab is a separate dashboard view */}
                 <div className="px-6 pt-6 flex items-center gap-3">
