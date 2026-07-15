@@ -985,7 +985,7 @@ const RulesPoliciesTab = () => {
   });
   const [userRules, setUserRules] = useState({
     maxUsersPerOrg: 25, requireAdmin: true, requireApprovalForInvites: false,
-    allowedRoles: ["admin", "agent", "viewer"] as string[],
+    allowedRoles: ["executive", "global_ops", "coordinator", "reviewer", "trainer", "volunteer"] as string[],
   });
   const [dataRules, setDataRules] = useState({
     retentionDays: 365, allowExport: true, allowBulkDelete: false,

@@ -36,7 +36,7 @@ interface DashboardViewProps {
 export const DashboardView = ({
   tenant, role, channels, auditLog, messages, broadcasts, contacts, groups, onNavigate
 }: DashboardViewProps) => {
-  const isAdmin = role === "admin";
+  const isAdmin = role === "executive" || role === "global_ops" || role === "coordinator";
   const planInfo = PLAN_LIMITS[tenant.plan];
   const limit = planInfo.maxContacts;
   const usage = tenant.stats.contacts;

@@ -1676,7 +1676,7 @@ function RuleFormModal({
               aria-label="Default assignee"
             >
               <option value="">No default assignee</option>
-              {users.filter(u => u.role !== "viewer").map(u => (
+              {users.filter(u => u.role !== "reviewer").map(u => (
                 <option key={u.id} value={u.id}>{u.name} ({u.role})</option>
               ))}
             </select>

@@ -70,7 +70,7 @@ export const TeamManagement = ({
   const [roleFilter, setRoleFilter] = useState<Role | "all">("all");
   const [statusFilter, setStatusFilter] = useState<Status | "all">("all");
 
-  const isAdmin = currentUserRole === "admin";
+  const isAdmin = currentUserRole === "executive" || currentUserRole === "global_ops" || currentUserRole === "coordinator";
 
   const filteredUsers = useMemo(() => {
     return users.filter(user => {
@@ -82,8 +82,8 @@ export const TeamManagement = ({
     });
   }, [users, searchQuery, roleFilter, statusFilter]);
 
-  const adminCount = users.filter(u => u.role === "admin").length;
-  const agentCount = users.filter(u => u.role === "agent").length;
+  const executiveCount = users.filter(u => u.role === "executive" || u.role === "global_ops").length;
+  const volunteerCount = users.filter(u => u.role === "volunteer").length;
   const activeCount = users.filter(u => u.status === "active").length;
 
   if (isManagingGroups) {
@@ -124,8 +124,8 @@ export const TeamManagement = ({
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         {[
           { label: "Total Members", value: users.length, sub: `${activeCount} active` },
-          { label: "Admins", value: adminCount, sub: "Full access" },
-          { label: "Agents", value: agentCount, sub: "Messaging access" },
+          { label: "Executives", value: executiveCount, sub: "Full access" },
+          { label: "Volunteers", value: volunteerCount, sub: "Messaging access" },
           { label: "Audit Events", value: auditLog.length, sub: "Tracked actions" },
         ].map(stat => (
           <Card key={stat.label}>
@@ -189,9 +189,11 @@ export const TeamManagement = ({
             <div className="flex gap-3 mb-4 flex-wrap">
               <div className="flex gap-1 p-1 bg-muted border border-border">
                 <FilterBtn active={roleFilter === "all"} onClick={() => setRoleFilter("all")}>All Roles</FilterBtn>
-                <FilterBtn active={roleFilter === "admin"} onClick={() => setRoleFilter("admin")}>Admin</FilterBtn>
-                <FilterBtn active={roleFilter === "agent"} onClick={() => setRoleFilter("agent")}>Agent</FilterBtn>
-                <FilterBtn active={roleFilter === "viewer"} onClick={() => setRoleFilter("viewer")}>Viewer</FilterBtn>
+                <FilterBtn active={roleFilter === "executive"} onClick={() => setRoleFilter("executive")}>Executive</FilterBtn>
+                <FilterBtn active={roleFilter === "coordinator"} onClick={() => setRoleFilter("coordinator")}>Coordinator</FilterBtn>
+                <FilterBtn active={roleFilter === "volunteer"} onClick={() => setRoleFilter("volunteer")}>Volunteer</FilterBtn>
+                <FilterBtn active={roleFilter === "reviewer"} onClick={() => setRoleFilter("reviewer")}>Reviewer</FilterBtn>
+                <FilterBtn active={roleFilter === "trainer"} onClick={() => setRoleFilter("trainer")}>Trainer</FilterBtn>
               </div>
               <div className="flex gap-1 p-1 bg-muted border border-border">
                 <FilterBtn active={statusFilter === "all"} onClick={() => setStatusFilter("all")}>All Status</FilterBtn>
@@ -676,7 +678,7 @@ const DeleteMemberConfirm = ({ isOpen, userName, onClose, onConfirm }: {
 // ============================================================
 
 const AddUserForm = ({ onAdd, onCancel }: { onAdd: (data: Partial<UserType>) => void; onCancel: () => void }) => {
-  const [formData, setFormData] = useState({ name: "", email: "", role: "agent" as Role });
+  const [formData, setFormData] = useState({ name: "", email: "", role: "volunteer" as Role });
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -701,7 +703,7 @@ const AddUserForm = ({ onAdd, onCancel }: { onAdd: (data: Partial<UserType>) => 
       <div className="grid gap-2">
         <Label className="text-xs font-semibold">Organization Role</Label>
         <div className="grid grid-cols-3 gap-2 p-1 bg-muted border border-border">
-          {(["admin", "agent", "viewer"] as Role[]).map(role => (
+          {(["executive", "global_ops", "coordinator", "reviewer", "trainer", "volunteer"] as Role[]).map(role => (
             <button
               key={role}
               type="button"
@@ -713,14 +715,17 @@ const AddUserForm = ({ onAdd, onCancel }: { onAdd: (data: Partial<UserType>) => 
                   : "text-muted-foreground hover:text-foreground"
               )}
             >
-              {role}
+              {role.replace("_", " ")}
             </button>
           ))}
         </div>
         <p className="text-xs text-muted-foreground">
-          {formData.role === "admin" && "Full access to all settings, billing, and data."}
-          {formData.role === "agent" && "Can manage contacts, messages, and broadcasts."}
-          {formData.role === "viewer" && "Read-only access to analytics and logs."}
+          {formData.role === "executive" && "Full access to all settings, billing, and data."}
+          {formData.role === "global_ops" && "Global operations management across all teams."}
+          {formData.role === "coordinator" && "Manages teams, content, and assignments."}
+          {formData.role === "reviewer" && "Reviews dialogues, coaches mentors. Read access to analytics and logs."}
+          {formData.role === "trainer" && "Trains and onboards new volunteers."}
+          {formData.role === "volunteer" && "Frontline chat responder. Can manage contacts, messages, and broadcasts."}
         </p>
       </div>
       <div className="flex justify-end gap-2 pt-2">
@@ -770,7 +775,7 @@ const EditUserForm = ({ user, onUpdate, onCancel }: {
       <div className="grid gap-2">
         <Label className="text-xs font-semibold">Organization Role</Label>
         <div className="grid grid-cols-3 gap-2 p-1 bg-muted border border-border">
-          {(["admin", "agent", "viewer"] as Role[]).map(role => (
+          {(["executive", "global_ops", "coordinator", "reviewer", "trainer", "volunteer"] as Role[]).map(role => (
             <button
               key={role}
               type="button"
@@ -782,7 +787,7 @@ const EditUserForm = ({ user, onUpdate, onCancel }: {
                   : "text-muted-foreground hover:text-foreground"
               )}
             >
-              {role}
+              {role.replace("_", " ")}
             </button>
           ))}
         </div>

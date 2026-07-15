@@ -96,26 +96,102 @@ import { AllActivityView } from "./components/all-activity-view";
 import { GamificationAdminView } from "./components/gamification-admin-view";
 
 // --- Role System ---
-// Super Admin is a dev/testing god-mode. The four product roles map to the
-// Turumba Roles & Permissions spec. "Mentor" replaces the legacy "agent".
-type ViewRole = "super_admin" | "admin" | "mentor_coach" | "content_creator" | "mentor";
+// Ministry Team Hierarchy (per language team):
+//   Executive > Global Ops > Coordinator > Reviewer / Trainer > Volunteer
+// Each role maps to the IE Chat Aggregator PRD personas + Ministry Team Hierarchy diagram.
+type ViewRole = "executive" | "global_ops" | "coordinator" | "reviewer" | "trainer" | "volunteer";
 
-const ROLE_OPTIONS: { id: ViewRole; label: string; description: string; icon: any }[] = [
-  { id: "super_admin",     label: "Super Admin",     description: "Full developer view — all features",    icon: ShieldCheck },
-  { id: "admin",           label: "Admin",           description: "Account administrator — full CRUD",    icon: Crown },
-  { id: "mentor_coach",    label: "Mentor Coach",    description: "Oversees mentors and matches",         icon: UserCheck },
-  { id: "content_creator", label: "Content Creator", description: "Creates devotionals and studies",      icon: PenTool },
-  { id: "mentor",          label: "Mentor",          description: "Mentors assigned seekers (was Agent)", icon: Users },
+const ROLE_OPTIONS: { id: ViewRole; label: string; description: string; icon: any; tier: number }[] = [
+  { id: "executive",   label: "IE Executive",       description: "Cross-language dashboards, policy, full chat history",         icon: Crown,       tier: 1 },
+  { id: "global_ops",  label: "Global Ops Manager", description: "Governance, region assignment, audit, compliance",            icon: ShieldCheck, tier: 2 },
+  { id: "coordinator", label: "Coordinator",        description: "Leads one language team, sets permissions, reviews by keyword", icon: Shield,      tier: 3 },
+  { id: "reviewer",    label: "Reviewer",           description: "Reviews dialogues, coaches volunteers, escalation queue",     icon: UserCheck,   tier: 4 },
+  { id: "trainer",     label: "Trainer",            description: "Trains new volunteers, manages onboarding & practice chats",  icon: PenTool,     tier: 4 },
+  { id: "volunteer",   label: "Volunteer",          description: "Frontline — claims & responds to seeker conversations",       icon: Users,       tier: 5 },
 ];
+
+// Granular permission flags per role
+type Permission =
+  | "view_all_languages" | "view_own_language"
+  | "manage_roles" | "manage_permissions" | "manage_channels" | "manage_automations"
+  | "view_conversations" | "claim_conversations" | "respond_conversations" | "transfer_conversations" | "merge_conversations"
+  | "escalate_conversations" | "block_seekers" | "mark_spam" | "return_to_queue"
+  | "review_chats" | "coach_volunteers" | "flag_for_review"
+  | "create_kb_articles" | "manage_templates" | "manage_quick_replies"
+  | "view_reports" | "export_reports" | "view_executive_dashboard"
+  | "manage_team" | "manage_settings" | "view_audit_log"
+  | "send_alerts" | "manage_trigger_words"
+  | "train_volunteers" | "designate_practice_chats"
+  | "audio_messaging" | "video_messaging"
+  | "church_connections" | "bug_reports";
+
+const ROLE_PERMISSIONS: Record<ViewRole, Permission[]> = {
+  executive: [
+    "view_all_languages", "manage_roles", "manage_permissions", "manage_channels", "manage_automations",
+    "view_conversations", "review_chats", "flag_for_review",
+    "create_kb_articles", "manage_templates", "manage_quick_replies",
+    "view_reports", "export_reports", "view_executive_dashboard",
+    "manage_team", "manage_settings", "view_audit_log",
+    "send_alerts", "manage_trigger_words",
+    "audio_messaging", "video_messaging", "church_connections", "bug_reports",
+  ],
+  global_ops: [
+    "view_all_languages", "manage_roles", "manage_permissions", "manage_channels",
+    "view_conversations", "review_chats", "flag_for_review", "block_seekers",
+    "manage_templates", "manage_quick_replies",
+    "view_reports", "export_reports", "view_executive_dashboard",
+    "manage_team", "manage_settings", "view_audit_log",
+    "send_alerts", "manage_trigger_words",
+    "audio_messaging", "video_messaging", "church_connections", "bug_reports",
+  ],
+  coordinator: [
+    "view_own_language", "manage_permissions", "manage_channels", "manage_automations",
+    "view_conversations", "review_chats", "flag_for_review", "block_seekers", "mark_spam",
+    "transfer_conversations", "return_to_queue",
+    "create_kb_articles", "manage_templates", "manage_quick_replies",
+    "view_reports", "export_reports",
+    "manage_team", "manage_settings", "view_audit_log",
+    "send_alerts", "manage_trigger_words",
+    "audio_messaging", "video_messaging", "church_connections", "bug_reports",
+  ],
+  reviewer: [
+    "view_own_language",
+    "view_conversations", "claim_conversations", "respond_conversations", "transfer_conversations",
+    "review_chats", "coach_volunteers", "flag_for_review", "escalate_conversations",
+    "return_to_queue", "mark_spam",
+    "view_reports",
+    "send_alerts", "audio_messaging", "church_connections", "bug_reports",
+  ],
+  trainer: [
+    "view_own_language",
+    "view_conversations", "claim_conversations", "respond_conversations",
+    "train_volunteers", "designate_practice_chats", "coach_volunteers",
+    "manage_quick_replies",
+    "send_alerts", "audio_messaging", "church_connections", "bug_reports",
+  ],
+  volunteer: [
+    "view_own_language",
+    "view_conversations", "claim_conversations", "respond_conversations",
+    "transfer_conversations", "escalate_conversations", "return_to_queue",
+    "flag_for_review", "mark_spam",
+    "send_alerts", "audio_messaging", "church_connections", "bug_reports",
+  ],
+};
+
+// Helper: check if a role has a specific permission
+function hasPermission(role: ViewRole, perm: Permission): boolean {
+  return ROLE_PERMISSIONS[role].includes(perm);
+}
 
 // Which views each role can access. Views omitted from a role's list are
 // hidden from the sidebar and blocked from being navigated to.
 const ROLE_VIEW_ACCESS: Record<ViewRole, string[]> = {
-  super_admin:     ["dashboard", "contacts", "messages", "conversations", "seekers", "mentors", "matches", "faith_journeys", "milestones", "channels", "automations", "campaigns", "skill_sets", "content_library", "gamification", "growth_metrics", "vital_analytics", "reporting", "validations", "team", "settings"],
-  admin:           ["dashboard", "contacts", "messages", "conversations", "seekers", "mentors", "matches", "faith_journeys", "milestones", "channels", "automations", "campaigns", "skill_sets", "content_library", "gamification", "growth_metrics", "vital_analytics", "reporting", "validations", "team", "settings"],
-  mentor_coach:    ["dashboard", "messages", "conversations", "seekers", "mentors", "matches", "faith_journeys", "milestones", "skill_sets", "content_library", "growth_metrics", "vital_analytics", "reporting", "validations"],
-  content_creator: ["dashboard", "content_library"],
-  mentor:          ["dashboard", "contacts", "messages", "conversations", "seekers", "matches", "faith_journeys", "milestones", "content_library"],
+  executive:   ["dashboard", "contacts", "messages", "conversations", "seekers", "mentors", "matches", "faith_journeys", "milestones", "channels", "automations", "campaigns", "skill_sets", "content_library", "gamification", "growth_metrics", "vital_analytics", "reporting", "validations", "team", "settings"],
+  global_ops:  ["dashboard", "contacts", "messages", "conversations", "seekers", "mentors", "matches", "faith_journeys", "milestones", "channels", "automations", "campaigns", "skill_sets", "content_library", "gamification", "growth_metrics", "vital_analytics", "reporting", "validations", "team", "settings"],
+  coordinator: ["dashboard", "contacts", "messages", "conversations", "seekers", "mentors", "matches", "faith_journeys", "milestones", "channels", "automations", "campaigns", "skill_sets", "content_library", "growth_metrics", "vital_analytics", "reporting", "validations", "team", "settings"],
+  reviewer:    ["dashboard", "contacts", "messages", "conversations", "seekers", "mentors", "matches", "faith_journeys", "milestones", "content_library", "growth_metrics", "vital_analytics", "reporting", "validations"],
+  trainer:     ["dashboard", "contacts", "messages", "conversations", "seekers", "content_library", "skill_sets"],
+  volunteer:   ["dashboard", "contacts", "messages", "conversations", "seekers", "matches", "faith_journeys", "milestones", "content_library"],
 };
 
 // --- App Component ---
@@ -130,7 +206,7 @@ export default function App() {
   const [conversationTab, setConversationTab] = useState<"direct" | "groups">("direct");
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
   const [isNewMessageFlowOpen, setIsNewMessageFlowOpen] = useState(false);
-  const [viewMode, setViewMode] = useState<ViewRole>("super_admin");
+  const [viewMode, setViewMode] = useState<ViewRole>("executive");
   const [isRoleMenuOpen, setIsRoleMenuOpen] = useState(false);
   const [isOrgSwitcherOpen, setIsOrgSwitcherOpen] = useState(false);
   const [isCreateOrgOpen, setIsCreateOrgOpen] = useState(false);
@@ -1476,12 +1552,12 @@ export default function App() {
             )}
             {currentView === "seekers" && (
               <motion.div key="seekers" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.2 }}>
-                <SeekersView canCreate={viewMode === "super_admin" || viewMode === "admin"} contacts={contacts} matches={matches} faithJourneys={faithJourneys} users={users} onNavigate={handleNavigate} onUpdateContact={handleUpdateContact} />
+                <SeekersView canCreate={viewMode === "executive" || viewMode === "global_ops" || viewMode === "coordinator"} contacts={contacts} matches={matches} faithJourneys={faithJourneys} users={users} onNavigate={handleNavigate} onUpdateContact={handleUpdateContact} />
               </motion.div>
             )}
             {currentView === "mentors" && (
               <motion.div key="mentors" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.2 }}>
-                <MentorsView canCreate={viewMode === "super_admin" || viewMode === "admin"} users={users} contacts={contacts} matches={matches} />
+                <MentorsView canCreate={viewMode === "executive" || viewMode === "global_ops" || viewMode === "coordinator"} users={users} contacts={contacts} matches={matches} />
               </motion.div>
             )}
             {currentView === "matches" && (
@@ -1501,7 +1577,7 @@ export default function App() {
             )}
             {currentView === "content_library" && (
               <motion.div key="content_library" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.2 }}>
-                <ContentLibraryView canEdit={viewMode === "super_admin" || viewMode === "admin" || viewMode === "content_creator"} contentLibrary={contentLibrary} onUpdateContent={(id: string, data: Partial<ContentRow>) => setContentLibrary(prev => prev.map(c => c.id === id ? { ...c, ...data } : c))} />
+                <ContentLibraryView canEdit={viewMode === "executive" || viewMode === "global_ops" || viewMode === "coordinator"} contentLibrary={contentLibrary} onUpdateContent={(id: string, data: Partial<ContentRow>) => setContentLibrary(prev => prev.map(c => c.id === id ? { ...c, ...data } : c))} />
               </motion.div>
             )}
             {currentView === "growth_metrics" && (

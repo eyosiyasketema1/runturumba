@@ -1070,7 +1070,7 @@ function ConversationContextPanel({
                     </div>
 
                     {/* Mentor Coach controls — only visible to mentor_coach / admin / super_admin */}
-                    {(viewMode === "mentor_coach" || viewMode === "admin" || viewMode === "super_admin") && (
+                    {(viewMode === "reviewer" || viewMode === "coordinator" || viewMode === "executive" || viewMode === "global_ops") && (
                       <div className="pt-2 border-t border-amber-200 space-y-2">
                         <label className="text-xs font-semibold text-amber-800 block">Assign to new mentor</label>
                         <select
@@ -2258,7 +2258,7 @@ interface ConversationViewProps {
   onUpdateRule:      (id: string, data: Partial<ConversationRule>) => void;
   onDeleteRule:      (id: string) => void;
   onReorderRules:    (rules: ConversationRule[]) => void;
-  viewMode?:         "super_admin" | "agent";
+  viewMode?:         "executive" | "volunteer";
   // --- discipleship data ---
   faithJourneys?:      FaithJourney[];
   contactMilestones?:  ContactMilestones[];
@@ -2280,13 +2280,13 @@ export const ConversationView = ({
   contacts, messages, notes, users, currentUser, onSendMessage,
   preSelectedContactId, conversationRules, chatEndpoints, groups,
   teamGroups, onAddRule, onUpdateRule, onDeleteRule, onReorderRules,
-  viewMode = "super_admin",
+  viewMode = "executive",
   faithJourneys = [], contactMilestones = [], matches = [], contentLibrary = [],
   onUpdateContact, onUpdateJourney, onLogMilestone, onUpdateMatch,
   onAddNote, onDeleteNote,
   reassignRequests = [], onRequestReassign, onApproveReassign, onRejectReassign,
 }: ConversationViewProps) => {
-  const isAgent = viewMode === "agent";
+  const isAgent = viewMode === "volunteer";
 
   // ── State ────────────────────────────────────────────────────────────────
   const contactsWithMsg = useMemo(() => {

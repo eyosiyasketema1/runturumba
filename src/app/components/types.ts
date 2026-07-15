@@ -14,7 +14,7 @@ export function cn(...inputs: ClassValue[]) {
 
 // --- Types ---
 
-export type Role = "admin" | "agent" | "viewer";
+export type Role = "executive" | "global_ops" | "coordinator" | "reviewer" | "trainer" | "volunteer";
 export type Plan = "free" | "pro" | "enterprise";
 export type Status = "active" | "pending";
 export type MessageStatus = "sent" | "delivered" | "read" | "failed" | "scheduled" | "received";
@@ -570,7 +570,7 @@ export const INITIAL_USERS: User[] = [
     id: "user-1",
     name: "Alex Rivera",
     email: "alex@acme.com",
-    role: "admin",
+    role: "executive",
     status: "active",
     tenantId: "tenant-1",
     avatar: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&h=100&fit=crop",
@@ -580,7 +580,7 @@ export const INITIAL_USERS: User[] = [
     id: "user-2",
     name: "Sarah Chen",
     email: "sarah@acme.com",
-    role: "agent",
+    role: "coordinator",
     status: "active",
     tenantId: "tenant-1",
     avatar: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=100&h=100&fit=crop",
@@ -590,7 +590,7 @@ export const INITIAL_USERS: User[] = [
     id: "user-3",
     name: "Mike Ross",
     email: "mike@acme.com",
-    role: "viewer",
+    role: "reviewer",
     status: "active",
     tenantId: "tenant-1",
     avatar: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=100&h=100&fit=crop"
@@ -599,7 +599,7 @@ export const INITIAL_USERS: User[] = [
     id: "user-4",
     name: "Jessica Pearson",
     email: "jessica@global.com",
-    role: "admin",
+    role: "global_ops",
     status: "active",
     tenantId: "tenant-2",
     avatar: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&h=100&fit=crop"
@@ -608,7 +608,7 @@ export const INITIAL_USERS: User[] = [
     id: "user-5",
     name: "Daniel Ortiz",
     email: "daniel@acme.com",
-    role: "agent",
+    role: "volunteer",
     status: "pending",
     tenantId: "tenant-1",
     avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop"
@@ -617,7 +617,7 @@ export const INITIAL_USERS: User[] = [
     id: "user-6",
     name: "Priya Sharma",
     email: "priya@acme.com",
-    role: "agent",
+    role: "trainer",
     status: "active",
     tenantId: "tenant-1",
     avatar: "https://images.unsplash.com/photo-1573497019940-1c28c88b4f3e?w=100&h=100&fit=crop",
