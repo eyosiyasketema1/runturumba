@@ -4,7 +4,7 @@ import {
   CheckCircle2, XCircle, ChevronLeft, ChevronRight,
   Activity, Zap, FileText, UserPlus, Settings,
   ArrowUpRight, ArrowDownRight, CircleDot, Search,
-  ClipboardCheck, Eye, BarChart3,
+  ClipboardCheck, Eye, BarChart3, MessageSquare,
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { toast } from "sonner";
