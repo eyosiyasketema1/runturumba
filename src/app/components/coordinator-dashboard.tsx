@@ -1,8 +1,9 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useRef, useEffect } from "react";
 import {
   Users, MessageSquare, AlertTriangle, Clock, TrendingUp,
   CheckCircle2, Plus, X, Shield,
   UserPlus, Globe, ArrowRightLeft, Bell, Trophy,
+  ChevronLeft, ChevronRight, Search,
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { toast } from "sonner";
@@ -122,6 +123,14 @@ export const CoordinatorDashboard = ({
 }: CoordinatorDashboardProps) => {
   const [triggerWords, setTriggerWords] = useState<string[]>(DEFAULT_TRIGGER_WORDS);
   const [newTriggerWord, setNewTriggerWord] = useState("");
+  // Escalation queue UX state
+  const [escPage, setEscPage] = useState(1);
+  const [escFilter, setEscFilter] = useState<"all" | EscalationItem["reason"]>("all");
+  const [escSearch, setEscSearch] = useState("");
+  const ESC_PAGE_SIZE = 8;
+  // Reassign popover state
+  const [reassignOpen, setReassignOpen] = useState<string | null>(null); // contactId or null
+  const reassignRef = useRef<HTMLDivElement>(null);
 
   // Filter contacts for the Amharic team
   const teamContacts = useMemo(
@@ -129,32 +138,42 @@ export const CoordinatorDashboard = ({
     [contacts]
   );
 
-  // Build team members from users whose mentorProfile.languages includes "AM"
+  // Build team members: real users + synthetic volunteers for a realistic roster
   const teamMembers = useMemo<TeamMember[]>(() => {
+    // Start with real users whose mentorProfile.languages includes "AM"
     const amharicUsers = users.filter(u => {
-      if (u.id === currentUser.id) return false; // exclude coordinator themselves
+      if (u.id === currentUser.id) return false;
       const langs = u.mentorProfile?.languages || "";
       return langs.toUpperCase().includes("AM");
     });
 
-    // Also include volunteers/reviewers/trainers without mentor profiles
-    // who are assigned to Amharic contacts
+    // Also include users assigned to Amharic contacts
     const amharicMentorIds = new Set(teamContacts.map(c => c.assignedMentorId).filter(Boolean));
     const additionalUsers = users.filter(u => {
       if (u.id === currentUser.id) return false;
       if (amharicUsers.find(au => au.id === u.id)) return false;
-      return amharicMentorIds.has(u.id) && ["volunteer", "reviewer", "trainer"].includes(u.role);
+      return amharicMentorIds.has(u.id);
     });
 
-    const allTeamUsers = [...amharicUsers, ...additionalUsers];
+    const realUsers = [...amharicUsers, ...additionalUsers];
 
-    return allTeamUsers.map(u => {
+    // Generate synthetic team members so the roster is realistic (6-8 members)
+    const SYNTHETIC_MEMBERS: { id: string; name: string; email: string; role: TeamMember["role"] }[] = [
+      { id: "syn-vol-1", name: "Kidus Alemayehu", email: "kidus@team.org",   role: "Volunteer" },
+      { id: "syn-vol-2", name: "Tigist Worku",    email: "tigist@team.org",  role: "Volunteer" },
+      { id: "syn-vol-3", name: "Dawit Mengistu",  email: "dawit@team.org",   role: "Volunteer" },
+      { id: "syn-rev-1", name: "Rahel Tadesse",   email: "rahel@team.org",   role: "Reviewer" },
+      { id: "syn-trn-1", name: "Yonas Gebre",     email: "yonas@team.org",   role: "Trainer" },
+      { id: "syn-vol-4", name: "Hiwot Bekele",    email: "hiwot@team.org",   role: "Volunteer" },
+    ];
+
+    const roleMap: Record<string, TeamMember["role"]> = {
+      volunteer: "Volunteer", reviewer: "Reviewer", trainer: "Trainer",
+      executive: "Volunteer", global_ops: "Volunteer", coordinator: "Volunteer",
+    };
+
+    const fromReal: TeamMember[] = realUsers.map(u => {
       const rand = seededRandom(u.id + "-status");
-      const roleMap: Record<string, TeamMember["role"]> = {
-        volunteer: "Volunteer",
-        reviewer: "Reviewer",
-        trainer: "Trainer",
-      };
       return {
         user: u,
         role: roleMap[u.role] || "Volunteer",
@@ -163,6 +182,25 @@ export const CoordinatorDashboard = ({
         lastActive: new Date(Date.now() - Math.floor(rand() * 7200000)).toISOString(),
       };
     });
+
+    // Add enough synthetic members so total is at least 7
+    const needed = Math.max(0, 7 - fromReal.length);
+    const fromSynthetic: TeamMember[] = SYNTHETIC_MEMBERS.slice(0, needed).map(s => {
+      const rand = seededRandom(s.id + "-status");
+      return {
+        user: {
+          id: s.id, name: s.name, email: s.email,
+          role: s.role.toLowerCase() as any,
+          status: "active" as const, tenantId: "tenant-1",
+        },
+        role: s.role,
+        online: rand() > 0.35,
+        activeChatCount: Math.floor(rand() * 6),
+        lastActive: new Date(Date.now() - Math.floor(rand() * 7200000)).toISOString(),
+      };
+    });
+
+    return [...fromReal, ...fromSynthetic];
   }, [users, currentUser.id, teamContacts]);
 
   // Sort team members: online first, then alphabetical
@@ -304,9 +342,45 @@ export const CoordinatorDashboard = ({
     toast.success(`Trigger word "${word}" removed.`);
   };
 
-  const handleReassign = (contactId: string, volunteerName: string) => {
-    toast.success(`Conversation reassigned to ${volunteerName}.`);
+  const handleReassign = (contactId: string, member: TeamMember) => {
+    setReassignOpen(null);
+    toast.success(
+      `Reassigned to ${member.user.name} (${member.role})`,
+      { description: `${member.online ? "Online" : "Offline"} · ${member.activeChatCount} active chats` }
+    );
   };
+
+  // Close reassign popover on outside click
+  useEffect(() => {
+    if (!reassignOpen) return;
+    const onClick = (e: MouseEvent) => {
+      if (reassignRef.current && !reassignRef.current.contains(e.target as Node)) {
+        setReassignOpen(null);
+      }
+    };
+    document.addEventListener("mousedown", onClick);
+    return () => document.removeEventListener("mousedown", onClick);
+  }, [reassignOpen]);
+
+  // Filtered + paginated escalations
+  const filteredEscalations = useMemo(() => {
+    let list = escalations;
+    if (escFilter !== "all") list = list.filter(e => e.reason === escFilter);
+    if (escSearch.trim()) {
+      const q = escSearch.toLowerCase();
+      list = list.filter(e =>
+        e.contactName.toLowerCase().includes(q) ||
+        e.volunteerName.toLowerCase().includes(q)
+      );
+    }
+    return list;
+  }, [escalations, escFilter, escSearch]);
+
+  const escTotalPages = Math.max(1, Math.ceil(filteredEscalations.length / ESC_PAGE_SIZE));
+  const escPageItems = filteredEscalations.slice((escPage - 1) * ESC_PAGE_SIZE, escPage * ESC_PAGE_SIZE);
+
+  // Reset to page 1 when filter/search changes
+  useEffect(() => { setEscPage(1); }, [escFilter, escSearch]);
 
   // Greeting
   const hour = new Date().getHours();
@@ -552,6 +626,7 @@ export const CoordinatorDashboard = ({
         {/* Center Panel (~33%) — Escalation Queue */}
         <div className="lg:col-span-4">
           <div className="bg-card rounded-lg border border-border shadow-sm overflow-hidden">
+            {/* Header */}
             <div className="px-6 pt-5 pb-4 border-b border-border">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
@@ -566,113 +641,261 @@ export const CoordinatorDashboard = ({
               <p className="text-xs text-muted-foreground mt-1">
                 Flagged conversations needing review
               </p>
+
+              {/* Search bar */}
+              {escalations.length > 3 && (
+                <div className="relative mt-3">
+                  <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
+                  <Input
+                    type="text"
+                    placeholder="Search by contact or volunteer..."
+                    value={escSearch}
+                    onChange={e => setEscSearch(e.target.value)}
+                    className="text-xs h-8 pl-8"
+                  />
+                </div>
+              )}
+
+              {/* Filter tabs */}
+              {escalations.length > 3 && (
+                <div className="flex gap-1 mt-3 p-1 bg-muted rounded-md border border-border">
+                  {(["all", ...ESCALATION_REASONS] as const).map(f => {
+                    const count = f === "all"
+                      ? escalations.length
+                      : escalations.filter(e => e.reason === f).length;
+                    return (
+                      <button
+                        key={f}
+                        onClick={() => setEscFilter(f)}
+                        className={cn(
+                          "flex items-center gap-1 px-2.5 py-1 rounded-sm text-xs font-semibold transition-all",
+                          escFilter === f
+                            ? "bg-background text-foreground shadow-sm border border-border"
+                            : "text-muted-foreground hover:text-foreground"
+                        )}
+                      >
+                        {f === "all" ? "All" : f}
+                        <span className={cn(
+                          "text-[10px] font-bold px-1 py-0 rounded-full min-w-[16px] text-center",
+                          escFilter === f ? "bg-primary/10 text-primary" : "bg-muted-foreground/10 text-muted-foreground"
+                        )}>
+                          {count}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
             </div>
 
-            <div className="divide-y divide-border max-h-[520px] overflow-y-auto">
-              {escalations.length === 0 ? (
+            {/* Escalation list */}
+            <div className="divide-y divide-border">
+              {filteredEscalations.length === 0 ? (
                 <div className="py-16 text-center">
                   <CheckCircle2 className="w-10 h-10 text-emerald-500/40 mx-auto mb-3" />
                   <p className="text-sm font-medium text-muted-foreground">
-                    No escalations
+                    {escalations.length === 0 ? "No escalations" : "No matching results"}
                   </p>
                   <p className="text-xs text-muted-foreground mt-1">
-                    Your team is on top of things!
+                    {escalations.length === 0
+                      ? "Your team is on top of things!"
+                      : "Try adjusting your search or filter."}
                   </p>
                 </div>
               ) : (
-                escalations.map((esc, i) => {
-                  const channelInfo = getChannelInfo(esc.channel);
-                  const reasonStyles: Record<string, string> = {
-                    "Trigger word": "bg-rose-500/10 text-rose-600 border-rose-500/20",
-                    "Manual flag": "bg-amber-500/10 text-amber-600 border-amber-500/20",
-                    "Timeout": "bg-violet-500/10 text-violet-600 border-violet-500/20",
-                  };
+                <AnimatePresence mode="wait">
+                  <motion.div
+                    key={`${escFilter}-${escSearch}-${escPage}`}
+                    initial={{ opacity: 0, y: 4 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -4 }}
+                    transition={{ duration: 0.15 }}
+                  >
+                    {escPageItems.map((esc, i) => {
+                      const channelInfo = getChannelInfo(esc.channel);
+                      const reasonStyles: Record<string, string> = {
+                        "Trigger word": "bg-rose-500/10 text-rose-600 border-rose-500/20",
+                        "Manual flag": "bg-amber-500/10 text-amber-600 border-amber-500/20",
+                        "Timeout": "bg-violet-500/10 text-violet-600 border-violet-500/20",
+                      };
 
-                  return (
-                    <motion.div
-                      key={esc.contactId + "-esc"}
-                      initial={{ opacity: 0, x: 8 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ duration: 0.2, delay: i * 0.04, ease: "easeOut" }}
-                      className="px-5 py-4 hover:bg-muted/30 transition-colors"
-                    >
-                      <div className="flex items-start justify-between gap-3">
-                        <div className="flex items-start gap-3 min-w-0 flex-1">
-                          <div
-                            className={cn(
-                              "w-9 h-9 rounded-full flex items-center justify-center text-white text-xs font-bold shrink-0 mt-0.5",
-                              avatarColor(esc.contactId)
-                            )}
-                          >
-                            {getInitial(esc.contactName)}
-                          </div>
-                          <div className="min-w-0 flex-1">
-                            <div className="flex items-center gap-2 flex-wrap">
-                              <span className="text-sm font-semibold text-foreground truncate">
-                                {esc.contactName}
-                              </span>
-                              {channelInfo.logoUrl ? (
-                                <img
-                                  src={channelInfo.logoUrl}
-                                  alt={channelInfo.label}
-                                  className="w-3.5 h-3.5 shrink-0"
-                                />
-                              ) : (
-                                <channelInfo.icon
-                                  className={cn("w-3.5 h-3.5 shrink-0", channelInfo.color)}
-                                />
-                              )}
-                            </div>
-                            <p className="text-xs text-muted-foreground mt-0.5">
-                              Flagged by {esc.volunteerName}
-                            </p>
-                            <div className="flex items-center gap-2 mt-1.5 flex-wrap">
-                              <Badge
-                                variant="outline"
-                                className={cn("text-[10px] px-1.5 py-0", reasonStyles[esc.reason])}
+                      return (
+                        <div
+                          key={esc.contactId + "-esc"}
+                          className="px-5 py-4 hover:bg-muted/30 transition-colors border-b border-border last:border-0"
+                        >
+                          <div className="flex items-start justify-between gap-3">
+                            <div className="flex items-start gap-3 min-w-0 flex-1">
+                              <div
+                                className={cn(
+                                  "w-9 h-9 rounded-full flex items-center justify-center text-white text-xs font-bold shrink-0 mt-0.5",
+                                  avatarColor(esc.contactId)
+                                )}
                               >
-                                {esc.reason}
-                              </Badge>
-                              <span className="text-[11px] text-muted-foreground flex items-center gap-1">
-                                <Clock className="w-3 h-3" />
-                                {formatTimeAgo(esc.flaggedAt)}
-                              </span>
+                                {getInitial(esc.contactName)}
+                              </div>
+                              <div className="min-w-0 flex-1">
+                                <div className="flex items-center gap-2 flex-wrap">
+                                  <span className="text-sm font-semibold text-foreground truncate">
+                                    {esc.contactName}
+                                  </span>
+                                  {channelInfo.logoUrl ? (
+                                    <img
+                                      src={channelInfo.logoUrl}
+                                      alt={channelInfo.label}
+                                      className="w-3.5 h-3.5 shrink-0"
+                                    />
+                                  ) : (
+                                    <channelInfo.icon
+                                      className={cn("w-3.5 h-3.5 shrink-0", channelInfo.color)}
+                                    />
+                                  )}
+                                </div>
+                                <p className="text-xs text-muted-foreground mt-0.5">
+                                  Flagged by {esc.volunteerName}
+                                </p>
+                                <div className="flex items-center gap-2 mt-1.5 flex-wrap">
+                                  <Badge
+                                    variant="outline"
+                                    className={cn("text-[10px] px-1.5 py-0", reasonStyles[esc.reason])}
+                                  >
+                                    {esc.reason}
+                                  </Badge>
+                                  <span className="text-[11px] text-muted-foreground flex items-center gap-1">
+                                    <Clock className="w-3 h-3" />
+                                    {formatTimeAgo(esc.flaggedAt)}
+                                  </span>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Actions */}
+                          <div className="flex items-center gap-2 mt-3 ml-12 relative">
+                            <Button
+                              size="sm"
+                              className="text-xs h-7 px-3"
+                              onClick={() => onOpenConversation(esc.contactId)}
+                            >
+                              Review
+                            </Button>
+                            <div className="relative" ref={reassignOpen === esc.contactId ? reassignRef : undefined}>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className={cn(
+                                  "text-xs h-7 px-3 gap-1",
+                                  reassignOpen === esc.contactId && "bg-muted border-primary/40"
+                                )}
+                                onClick={() => setReassignOpen(
+                                  reassignOpen === esc.contactId ? null : esc.contactId
+                                )}
+                              >
+                                <ArrowRightLeft className="w-3 h-3" />
+                                Reassign
+                              </Button>
+
+                              {/* Reassign popover — team member picker */}
+                              <AnimatePresence>
+                                {reassignOpen === esc.contactId && (
+                                  <motion.div
+                                    initial={{ opacity: 0, y: -4, scale: 0.95 }}
+                                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                                    exit={{ opacity: 0, y: -4, scale: 0.95 }}
+                                    transition={{ duration: 0.12 }}
+                                    className="absolute left-0 bottom-full mb-2 w-64 bg-popover border border-border rounded-lg shadow-xl z-50 overflow-hidden"
+                                  >
+                                    <div className="px-3 py-2 border-b border-border bg-muted/30">
+                                      <p className="text-xs font-bold text-foreground">Reassign to</p>
+                                      <p className="text-[11px] text-muted-foreground">Select a team member</p>
+                                    </div>
+                                    <div className="max-h-[240px] overflow-y-auto py-1">
+                                      {sortedTeamMembers.map(member => (
+                                        <button
+                                          key={member.user.id}
+                                          onClick={() => handleReassign(esc.contactId, member)}
+                                          className="w-full flex items-center gap-2.5 px-3 py-2 text-left hover:bg-muted/50 transition-colors"
+                                        >
+                                          <div className="relative shrink-0">
+                                            {member.user.avatar ? (
+                                              <img
+                                                src={member.user.avatar}
+                                                alt={member.user.name}
+                                                className="w-7 h-7 rounded-full object-cover"
+                                              />
+                                            ) : (
+                                              <div
+                                                className={cn(
+                                                  "w-7 h-7 rounded-full flex items-center justify-center text-white text-[10px] font-bold",
+                                                  avatarColor(member.user.id)
+                                                )}
+                                              >
+                                                {getInitial(member.user.name)}
+                                              </div>
+                                            )}
+                                            <span
+                                              className={cn(
+                                                "absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full border-2 border-popover",
+                                                member.online ? "bg-emerald-500" : "bg-gray-400"
+                                              )}
+                                            />
+                                          </div>
+                                          <div className="flex-1 min-w-0">
+                                            <p className="text-xs font-semibold text-foreground truncate">
+                                              {member.user.name}
+                                            </p>
+                                            <p className="text-[11px] text-muted-foreground">
+                                              {member.role} &middot; {member.activeChatCount} chats
+                                              {!member.online && " · Offline"}
+                                            </p>
+                                          </div>
+                                        </button>
+                                      ))}
+                                    </div>
+                                  </motion.div>
+                                )}
+                              </AnimatePresence>
                             </div>
                           </div>
                         </div>
-                      </div>
-
-                      {/* Actions */}
-                      <div className="flex items-center gap-2 mt-3 ml-12">
-                        <Button
-                          size="sm"
-                          className="text-xs h-7 px-3"
-                          onClick={() => onOpenConversation(esc.contactId)}
-                        >
-                          Review
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="text-xs h-7 px-3 gap-1"
-                          onClick={() => {
-                            const randomMember = sortedTeamMembers[
-                              Math.floor(Math.random() * sortedTeamMembers.length)
-                            ];
-                            if (randomMember) {
-                              handleReassign(esc.contactId, randomMember.user.name);
-                            }
-                          }}
-                        >
-                          <ArrowRightLeft className="w-3 h-3" />
-                          Reassign
-                        </Button>
-                      </div>
-                    </motion.div>
-                  );
-                })
+                      );
+                    })}
+                  </motion.div>
+                </AnimatePresence>
               )}
             </div>
+
+            {/* Pagination footer */}
+            {filteredEscalations.length > ESC_PAGE_SIZE && (
+              <div className="px-5 py-3 border-t border-border flex items-center justify-between">
+                <p className="text-xs text-muted-foreground">
+                  {(escPage - 1) * ESC_PAGE_SIZE + 1}–{Math.min(escPage * ESC_PAGE_SIZE, filteredEscalations.length)} of {filteredEscalations.length}
+                </p>
+                <div className="flex items-center gap-1">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="h-7 w-7 p-0"
+                    disabled={escPage <= 1}
+                    onClick={() => setEscPage(p => p - 1)}
+                  >
+                    <ChevronLeft className="w-3.5 h-3.5" />
+                  </Button>
+                  <span className="text-xs font-semibold text-foreground px-2">
+                    {escPage} / {escTotalPages}
+                  </span>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="h-7 w-7 p-0"
+                    disabled={escPage >= escTotalPages}
+                    onClick={() => setEscPage(p => p + 1)}
+                  >
+                    <ChevronRight className="w-3.5 h-3.5" />
+                  </Button>
+                </div>
+              </div>
+            )}
           </div>
         </div>
 
