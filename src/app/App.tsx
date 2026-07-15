@@ -1131,82 +1131,73 @@ export default function App() {
 
         <div className="flex-1 overflow-y-auto custom-scrollbar">
           <AnimatePresence mode="wait">
-            {currentView === "dashboard" && viewMode === "volunteer" && (
-              <motion.div key="volunteer-dashboard" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.2 }}>
-                <VolunteerDashboard
-                  contacts={contacts}
-                  messages={messages}
-                  users={users}
-                  currentUser={currentUser}
-                  onOpenConversation={(contactId) => {
-                    setCurrentView("conversations");
-                  }}
-                  onClaimConversation={(contactId) => {
-                    toast.success(`Conversation claimed!`);
-                  }}
-                />
-              </motion.div>
-            )}
-            {currentView === "dashboard" && viewMode === "coordinator" && (
-              <motion.div key="coordinator-dashboard" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.2 }}>
-                <CoordinatorDashboard
-                  contacts={contacts}
-                  messages={messages}
-                  users={users}
-                  currentUser={currentUser}
-                  onOpenConversation={(contactId) => {
-                    setCurrentView("conversations");
-                  }}
-                />
-              </motion.div>
-            )}
-            {currentView === "dashboard" && viewMode === "reviewer" && (
-              <motion.div key="reviewer-dashboard" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.2 }}>
-                <ReviewerDashboard
-                  contacts={contacts}
-                  messages={messages}
-                  users={users}
-                  currentUser={currentUser}
-                  onOpenConversation={(contactId) => {
-                    setCurrentView("conversations");
-                  }}
-                />
-              </motion.div>
-            )}
-            {currentView === "dashboard" && viewMode === "trainer" && (
-              <motion.div key="trainer-dashboard" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.2 }}>
-                <TrainerDashboard
-                  contacts={contacts}
-                  messages={messages}
-                  users={users}
-                  currentUser={currentUser}
-                />
-              </motion.div>
-            )}
-            {currentView === "dashboard" && viewMode === "executive" && (
-              <motion.div key="executive-dashboard" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.2 }}>
-                <ExecutiveDashboard
-                  contacts={contacts}
-                  messages={messages}
-                  users={users}
-                  currentUser={currentUser}
-                  onNavigate={handleNavigate}
-                />
-              </motion.div>
-            )}
-            {currentView === "dashboard" && viewMode === "global_ops" && (
-              <motion.div key="globalops-dashboard" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.2 }}>
-                <GlobalOpsDashboard
-                  contacts={contacts}
-                  messages={messages}
-                  users={users}
-                  currentUser={currentUser}
-                  onNavigate={handleNavigate}
-                />
-              </motion.div>
-            )}
             {currentView === "dashboard" && (
-              <motion.div key="dashboard" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.2 }}>
+              <motion.div key={`dashboard-${viewMode}`} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.2 }}>
+                {/* ── Role-specific dashboards ── */}
+                {viewMode === "volunteer" && (
+                  <VolunteerDashboard
+                    contacts={contacts}
+                    messages={messages}
+                    users={users}
+                    currentUser={currentUser}
+                    onOpenConversation={(contactId) => {
+                      setCurrentView("conversations");
+                    }}
+                    onClaimConversation={(contactId) => {
+                      toast.success(`Conversation claimed!`);
+                    }}
+                  />
+                )}
+                {viewMode === "coordinator" && (
+                  <CoordinatorDashboard
+                    contacts={contacts}
+                    messages={messages}
+                    users={users}
+                    currentUser={currentUser}
+                    onOpenConversation={(contactId) => {
+                      setCurrentView("conversations");
+                    }}
+                  />
+                )}
+                {viewMode === "reviewer" && (
+                  <ReviewerDashboard
+                    contacts={contacts}
+                    messages={messages}
+                    users={users}
+                    currentUser={currentUser}
+                    onOpenConversation={(contactId) => {
+                      setCurrentView("conversations");
+                    }}
+                  />
+                )}
+                {viewMode === "trainer" && (
+                  <TrainerDashboard
+                    contacts={contacts}
+                    messages={messages}
+                    users={users}
+                    currentUser={currentUser}
+                  />
+                )}
+                {viewMode === "executive" && (
+                  <ExecutiveDashboard
+                    contacts={contacts}
+                    messages={messages}
+                    users={users}
+                    currentUser={currentUser}
+                    onNavigate={handleNavigate}
+                  />
+                )}
+                {viewMode === "global_ops" && (
+                  <GlobalOpsDashboard
+                    contacts={contacts}
+                    messages={messages}
+                    users={users}
+                    currentUser={currentUser}
+                    onNavigate={handleNavigate}
+                  />
+                )}
+
+                {/* ── Original dashboard tab switcher (always visible below role dashboard) ── */}
                 {/* Dashboard tab switcher — each tab is a separate dashboard view */}
                 <div className="px-6 pt-6 flex items-center gap-3">
                   <div
