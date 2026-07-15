@@ -97,6 +97,7 @@ import { GamificationAdminView } from "./components/gamification-admin-view";
 import { VolunteerDashboard } from "./components/volunteer-dashboard";
 import { CoordinatorDashboard } from "./components/coordinator-dashboard";
 import { ReviewerDashboard } from "./components/reviewer-dashboard";
+import { TrainerDashboard } from "./components/trainer-dashboard";
 
 // --- Role System ---
 // Ministry Team Hierarchy (per language team):
@@ -1170,7 +1171,17 @@ export default function App() {
                 />
               </motion.div>
             )}
-            {currentView === "dashboard" && viewMode !== "volunteer" && viewMode !== "coordinator" && viewMode !== "reviewer" && (
+            {currentView === "dashboard" && viewMode === "trainer" && (
+              <motion.div key="trainer-dashboard" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.2 }}>
+                <TrainerDashboard
+                  contacts={contacts}
+                  messages={messages}
+                  users={users}
+                  currentUser={currentUser}
+                />
+              </motion.div>
+            )}
+            {currentView === "dashboard" && viewMode !== "volunteer" && viewMode !== "coordinator" && viewMode !== "reviewer" && viewMode !== "trainer" && (
               <motion.div key="dashboard" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.2 }}>
                 {/* Dashboard tab switcher — each tab is a separate dashboard view */}
                 <div className="px-6 pt-6 flex items-center gap-3">
