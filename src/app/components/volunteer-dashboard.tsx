@@ -96,6 +96,9 @@ export const VolunteerDashboard = ({
 }: VolunteerDashboardProps) => {
   const [activeTab, setActiveTab] = useState<TabOption>("Active");
   const [readConversations, setReadConversations] = useState<Set<string>>(new Set());
+  const [selectedConvoId, setSelectedConvoId] = useState<string | null>(null);
+  const [showTransferModal, setShowTransferModal] = useState(false);
+  const [showQuickReplies, setShowQuickReplies] = useState(false);
 
   // ── US32: Practice Chat Mode ──────────────────────────────────────────────
   const [testChats, setTestChats] = useState<Set<string>>(new Set());
@@ -118,6 +121,8 @@ export const VolunteerDashboard = ({
   };
 
   // Build initial conversation metadata from messages (seed data)
+  // Uses a round-robin pattern to guarantee a realistic distribution:
+  //   ~35% active (mine), ~15% pending_response (mine), ~15% resolved (mine), ~35% unclaimed
   const buildInitialConversations = (): ConversationMeta[] => {
     const byContact: Record<string, Message[]> = {};
     messages.forEach(m => {
@@ -125,7 +130,24 @@ export const VolunteerDashboard = ({
       byContact[m.contactId].push(m);
     });
 
-    return Object.entries(byContact).map(([contactId, msgs]) => {
+    const entries = Object.entries(byContact);
+    // Cycle pattern ensures good distribution regardless of contact count
+    const CYCLE: Array<{ assignee: "me" | null; status: ConversationMeta["status"] }> = [
+      { assignee: "me",  status: "active" },
+      { assignee: "me",  status: "active" },
+      { assignee: null,  status: "active" },
+      { assignee: "me",  status: "pending_response" },
+      { assignee: "me",  status: "active" },
+      { assignee: null,  status: "active" },
+      { assignee: "me",  status: "resolved" },
+      { assignee: null,  status: "active" },
+      { assignee: "me",  status: "pending_response" },
+      { assignee: null,  status: "active" },
+      { assignee: "me",  status: "resolved" },
+      { assignee: null,  status: "active" },
+    ];
+
+    return entries.map(([contactId, msgs], idx) => {
       const sorted = [...msgs].sort(
         (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
       );
@@ -133,25 +155,9 @@ export const VolunteerDashboard = ({
       const oldest = sorted[sorted.length - 1];
       const contact = contacts.find(c => c.id === contactId);
 
-      // Deterministic assignment: use seeded random based on contactId
-      const rand = seededRandom(contactId);
-      const r = rand();
-      let assigneeId: string | null = null;
-      let status: ConversationMeta["status"] = "active";
-
-      if (r < 0.35) {
-        // Claimed by current user
-        assigneeId = currentUser.id;
-        status = rand() < 0.5 ? "active" : "pending_response";
-      } else if (r < 0.55) {
-        // Resolved today by current user
-        assigneeId = currentUser.id;
-        status = "resolved";
-      } else {
-        // Unclaimed
-        assigneeId = null;
-        status = "active";
-      }
+      const slot = CYCLE[idx % CYCLE.length];
+      const assigneeId = slot.assignee === "me" ? currentUser.id : null;
+      const status = slot.status;
 
       const unreadFromContact = sorted.filter(
         m => m.senderType === "contact" && (m.status === "delivered" || m.status === "received")
@@ -168,7 +174,7 @@ export const VolunteerDashboard = ({
           : latest.content,
         channel: latest.port,
         unreadCount: assigneeId === currentUser.id && status !== "resolved"
-          ? Math.min(unreadFromContact, 5)
+          ? Math.min(Math.max(unreadFromContact, 1), 5)
           : 0,
         language: contact?.preferredLanguage || "English",
       };
@@ -209,7 +215,58 @@ export const VolunteerDashboard = ({
   // Handlers
   const handleOpenConversation = (contactId: string) => {
     setReadConversations(prev => new Set(prev).add(contactId));
+    setSelectedConvoId(contactId);
     onOpenConversation(contactId);
+  };
+
+  // Quick action: Return conversation to unclaimed queue
+  const handleReturnToQueue = () => {
+    if (!selectedConvoId) { toast.error("Select a conversation first."); return; }
+    const convo = conversations.find(c => c.contactId === selectedConvoId);
+    if (!convo || convo.assigneeId !== currentUser.id) { toast.error("You can only return your own conversations."); return; }
+    setConversations(prev =>
+      prev.map(c => c.contactId === selectedConvoId
+        ? { ...c, assigneeId: null, status: "active" as const, unreadCount: 0 }
+        : c
+      )
+    );
+    setSelectedConvoId(null);
+    toast.success(`Conversation returned to the queue.`);
+  };
+
+  // Quick action: Mark conversation as spam (removes it from your list)
+  const handleMarkSpam = () => {
+    if (!selectedConvoId) { toast.error("Select a conversation first."); return; }
+    setConversations(prev => prev.filter(c => c.contactId !== selectedConvoId));
+    setSelectedConvoId(null);
+    toast.success("Conversation marked as spam and removed.");
+  };
+
+  // Quick action: Alert admins
+  const handleAlertAdmins = () => {
+    if (!selectedConvoId) { toast.error("Select a conversation first."); return; }
+    const name = getContactName(selectedConvoId);
+    toast.success(`Admin alert sent for ${name}'s conversation. Admins have been notified.`);
+  };
+
+  // Quick action: Transfer
+  const handleTransfer = () => {
+    if (!selectedConvoId) { toast.error("Select a conversation first."); return; }
+    setShowTransferModal(true);
+  };
+
+  // Quick action: Execute transfer to another volunteer
+  const handleDoTransfer = (targetUserId: string) => {
+    setConversations(prev =>
+      prev.map(c => c.contactId === selectedConvoId
+        ? { ...c, assigneeId: targetUserId }
+        : c
+      )
+    );
+    const targetUser = users.find(u => u.id === targetUserId);
+    toast.success(`Conversation transferred to ${targetUser?.name ?? "another volunteer"}.`);
+    setShowTransferModal(false);
+    setSelectedConvoId(null);
   };
 
   const handleClaim = (contactId: string) => {
@@ -468,18 +525,23 @@ export const VolunteerDashboard = ({
                       const isRead = readConversations.has(convo.contactId);
                       const showUnread = convo.unreadCount > 0 && !isRead;
                       const isTest = testChats.has(convo.contactId);
+                      const isSelected = selectedConvoId === convo.contactId;
 
                       return (
                         <div
                           key={convo.contactId}
                           className={cn(
                             "w-full text-left px-6 py-4 hover:bg-muted/50 transition-colors group flex items-center gap-4",
-                            isTest && "bg-yellow-50/50 border-l-2 border-l-yellow-400"
+                            isTest && "bg-yellow-50/50 border-l-2 border-l-yellow-400",
+                            isSelected && !isTest && "bg-primary/5 border-l-2 border-l-primary"
                           )}
                         >
                           {/* Avatar */}
                           <button
-                            onClick={() => handleOpenConversation(convo.contactId)}
+                            onClick={() => {
+                              setSelectedConvoId(convo.contactId);
+                              handleOpenConversation(convo.contactId);
+                            }}
                             className="flex items-center gap-4 flex-1 min-w-0 text-left"
                           >
                             <div className="relative shrink-0">
@@ -582,60 +644,130 @@ export const VolunteerDashboard = ({
 
           {/* Quick Actions Bar */}
           <div className="bg-card rounded-lg border border-border shadow-sm p-5">
-            <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-widest mb-4">
-              Quick Actions
-            </h3>
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-widest">
+                Quick Actions
+              </h3>
+              {selectedConvoId && (
+                <div className="flex items-center gap-2">
+                  <span className="text-xs text-muted-foreground">Acting on:</span>
+                  <Badge variant="outline" className="text-xs font-semibold">
+                    {getContactName(selectedConvoId)}
+                  </Badge>
+                  <button
+                    onClick={() => setSelectedConvoId(null)}
+                    className="p-0.5 text-muted-foreground hover:text-foreground"
+                  >
+                    <X className="w-3 h-3" />
+                  </button>
+                </div>
+              )}
+            </div>
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2">
               {[
                 {
                   label: "Transfer",
                   icon: ArrowRightLeft,
-                  action: () => toast.info("Transfer: Select a conversation first."),
+                  action: handleTransfer,
                   variant: "outline" as const,
+                  disabled: !selectedConvoId,
                 },
                 {
                   label: "Alert Admins",
                   icon: ShieldAlert,
-                  action: () => toast.info("Admin alert sent."),
+                  action: handleAlertAdmins,
                   variant: "outline" as const,
+                  disabled: !selectedConvoId,
                 },
                 {
                   label: "Mark Spam",
                   icon: Ban,
-                  action: () => toast.info("Marked as spam."),
+                  action: handleMarkSpam,
                   variant: "outline" as const,
+                  disabled: !selectedConvoId,
                 },
                 {
                   label: "Return to Queue",
                   icon: Undo2,
-                  action: () => toast.info("Returned to queue."),
+                  action: handleReturnToQueue,
                   variant: "outline" as const,
+                  disabled: !selectedConvoId,
                 },
                 {
                   label: "Church Connect",
                   icon: Church,
-                  action: () => toast.info("Opening church connections..."),
+                  action: () => {
+                    if (!selectedConvoId) { toast.error("Select a conversation first."); return; }
+                    toast.success(`Church connections opened for ${getContactName(selectedConvoId)}. Matching local churches...`);
+                  },
                   variant: "outline" as const,
+                  disabled: !selectedConvoId,
                 },
                 {
                   label: "Quick Replies",
                   icon: Zap,
-                  action: () => toast.info("Opening quick replies library..."),
+                  action: () => setShowQuickReplies(prev => !prev),
                   variant: "outline" as const,
+                  disabled: false,
                 },
               ].map(act => (
                 <Button
                   key={act.label}
                   variant={act.variant}
                   size="sm"
-                  className="text-xs justify-start gap-2 h-9"
+                  className={cn("text-xs justify-start gap-2 h-9", act.disabled && "opacity-50")}
                   onClick={act.action}
+                  disabled={act.disabled}
                 >
                   <act.icon className="w-3.5 h-3.5" />
                   {act.label}
                 </Button>
               ))}
             </div>
+
+            {/* Quick Replies Panel */}
+            <AnimatePresence>
+              {showQuickReplies && (
+                <motion.div
+                  initial={{ height: 0, opacity: 0 }}
+                  animate={{ height: "auto", opacity: 1 }}
+                  exit={{ height: 0, opacity: 0 }}
+                  className="overflow-hidden"
+                >
+                  <div className="mt-3 pt-3 border-t border-border">
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Quick Reply Templates</span>
+                      <button onClick={() => setShowQuickReplies(false)} className="p-0.5 text-muted-foreground hover:text-foreground">
+                        <X className="w-3 h-3" />
+                      </button>
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
+                      {[
+                        "Hi! Thank you for reaching out. How can I help you today?",
+                        "I'd love to share some resources about that topic. Give me a moment.",
+                        "That's a great question! Let me connect you with someone who can help.",
+                        "I'm praying for you. Would you like to share more about your situation?",
+                        "Here's a scripture that might encourage you: ",
+                        "Thank you for sharing. Would you like to join one of our small groups?",
+                      ].map((reply, i) => (
+                        <button
+                          key={i}
+                          onClick={() => {
+                            navigator.clipboard?.writeText(reply);
+                            toast.success("Copied to clipboard!");
+                            setShowQuickReplies(false);
+                          }}
+                          className="text-left text-xs px-3 py-2 bg-muted/50 border border-border rounded-md hover:bg-muted transition-colors text-foreground leading-relaxed"
+                        >
+                          {reply}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+
             <div className="flex items-center gap-2 mt-3 pt-3 border-t border-border">
               <Button
                 variant="outline"
@@ -650,7 +782,7 @@ export const VolunteerDashboard = ({
                 variant="outline"
                 size="sm"
                 className="text-xs gap-2"
-                onClick={() => toast.info("Bug report submitted.")}
+                onClick={() => toast.success("Bug report submitted. Thank you for the feedback!")}
               >
                 <Bug className="w-3.5 h-3.5" />
                 Report Bug
@@ -659,7 +791,7 @@ export const VolunteerDashboard = ({
                 variant="destructive"
                 size="sm"
                 className="text-xs gap-2 ml-auto"
-                onClick={() => toast.error("Emergency alert sent to all admins!")}
+                onClick={() => toast.error("Emergency alert sent to all admins and coordinators!")}
               >
                 <AlertTriangle className="w-3.5 h-3.5" />
                 Emergency Alert
@@ -843,6 +975,75 @@ export const VolunteerDashboard = ({
                 >
                   <FlaskConical className="w-3.5 h-3.5 mr-1.5" />
                   Mark as Practice
+                </Button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Transfer Conversation Modal */}
+      <AnimatePresence>
+        {showTransferModal && selectedConvoId && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm"
+            onClick={() => setShowTransferModal(false)}
+          >
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              transition={{ type: "spring", duration: 0.3, bounce: 0.1 }}
+              onClick={e => e.stopPropagation()}
+              className="bg-background border border-border rounded-lg shadow-xl max-w-sm w-full mx-4 overflow-hidden"
+            >
+              <div className="px-6 pt-6 pb-4">
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="w-10 h-10 rounded-full bg-blue-500/10 flex items-center justify-center">
+                    <ArrowRightLeft className="w-5 h-5 text-blue-600" />
+                  </div>
+                  <div>
+                    <h3 className="text-base font-bold text-foreground">Transfer Conversation</h3>
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      {getContactName(selectedConvoId)}'s chat
+                    </p>
+                  </div>
+                </div>
+                <p className="text-xs text-muted-foreground mb-3">Select a team member to transfer this conversation to:</p>
+                <div className="space-y-1.5 max-h-56 overflow-y-auto">
+                  {users
+                    .filter(u => u.id !== currentUser.id && u.status === "active")
+                    .map(u => (
+                      <button
+                        key={u.id}
+                        onClick={() => handleDoTransfer(u.id)}
+                        className="w-full flex items-center gap-3 px-3 py-2.5 rounded-md hover:bg-muted/50 transition-colors text-left"
+                      >
+                        <div className={cn(
+                          "w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold",
+                          avatarColor(u.id)
+                        )}>
+                          {u.name.charAt(0)}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <span className="text-sm font-semibold text-foreground block truncate">{u.name}</span>
+                          <span className="text-xs text-muted-foreground">{u.role}</span>
+                        </div>
+                      </button>
+                    ))}
+                </div>
+              </div>
+              <div className="px-6 py-3 bg-muted/30 border-t border-border">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="w-full"
+                  onClick={() => setShowTransferModal(false)}
+                >
+                  Cancel
                 </Button>
               </div>
             </motion.div>
