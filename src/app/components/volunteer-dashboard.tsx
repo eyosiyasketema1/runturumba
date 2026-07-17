@@ -1,8 +1,7 @@
 import React, { useState } from "react";
 import {
   MessageSquare, Clock, CheckCircle2, Timer, ChevronRight,
-  BookOpen, Zap, Bug, AlertTriangle, Hand, Globe,
-  ArrowRightLeft, ShieldAlert, Ban, Undo2, Church,
+  BookOpen, Hand, Globe,
   FlaskConical, Eye, EyeOff, X, AlertCircle
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
@@ -97,8 +96,6 @@ export const VolunteerDashboard = ({
   const [activeTab, setActiveTab] = useState<TabOption>("Active");
   const [readConversations, setReadConversations] = useState<Set<string>>(new Set());
   const [selectedConvoId, setSelectedConvoId] = useState<string | null>(null);
-  const [showTransferModal, setShowTransferModal] = useState(false);
-  const [showQuickReplies, setShowQuickReplies] = useState(false);
 
   // ── US32: Practice Chat Mode ──────────────────────────────────────────────
   const [testChats, setTestChats] = useState<Set<string>>(new Set());
@@ -217,56 +214,6 @@ export const VolunteerDashboard = ({
     setReadConversations(prev => new Set(prev).add(contactId));
     setSelectedConvoId(contactId);
     onOpenConversation(contactId);
-  };
-
-  // Quick action: Return conversation to unclaimed queue
-  const handleReturnToQueue = () => {
-    if (!selectedConvoId) { toast.error("Select a conversation first."); return; }
-    const convo = conversations.find(c => c.contactId === selectedConvoId);
-    if (!convo || convo.assigneeId !== currentUser.id) { toast.error("You can only return your own conversations."); return; }
-    setConversations(prev =>
-      prev.map(c => c.contactId === selectedConvoId
-        ? { ...c, assigneeId: null, status: "active" as const, unreadCount: 0 }
-        : c
-      )
-    );
-    setSelectedConvoId(null);
-    toast.success(`Conversation returned to the queue.`);
-  };
-
-  // Quick action: Mark conversation as spam (removes it from your list)
-  const handleMarkSpam = () => {
-    if (!selectedConvoId) { toast.error("Select a conversation first."); return; }
-    setConversations(prev => prev.filter(c => c.contactId !== selectedConvoId));
-    setSelectedConvoId(null);
-    toast.success("Conversation marked as spam and removed.");
-  };
-
-  // Quick action: Alert admins
-  const handleAlertAdmins = () => {
-    if (!selectedConvoId) { toast.error("Select a conversation first."); return; }
-    const name = getContactName(selectedConvoId);
-    toast.success(`Admin alert sent for ${name}'s conversation. Admins have been notified.`);
-  };
-
-  // Quick action: Transfer
-  const handleTransfer = () => {
-    if (!selectedConvoId) { toast.error("Select a conversation first."); return; }
-    setShowTransferModal(true);
-  };
-
-  // Quick action: Execute transfer to another volunteer
-  const handleDoTransfer = (targetUserId: string) => {
-    setConversations(prev =>
-      prev.map(c => c.contactId === selectedConvoId
-        ? { ...c, assigneeId: targetUserId }
-        : c
-      )
-    );
-    const targetUser = users.find(u => u.id === targetUserId);
-    toast.success(`Conversation transferred to ${targetUser?.name ?? "another volunteer"}.`);
-    setShowTransferModal(false);
-    setSelectedConvoId(null);
   };
 
   const handleClaim = (contactId: string) => {
@@ -642,162 +589,7 @@ export const VolunteerDashboard = ({
             </div>
           </div>
 
-          {/* Quick Actions Bar */}
-          <div className="bg-card rounded-lg border border-border shadow-sm p-5">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-widest">
-                Quick Actions
-              </h3>
-              {selectedConvoId && (
-                <div className="flex items-center gap-2">
-                  <span className="text-xs text-muted-foreground">Acting on:</span>
-                  <Badge variant="outline" className="text-xs font-semibold">
-                    {getContactName(selectedConvoId)}
-                  </Badge>
-                  <button
-                    onClick={() => setSelectedConvoId(null)}
-                    className="p-0.5 text-muted-foreground hover:text-foreground"
-                  >
-                    <X className="w-3 h-3" />
-                  </button>
-                </div>
-              )}
-            </div>
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2">
-              {[
-                {
-                  label: "Transfer",
-                  icon: ArrowRightLeft,
-                  action: handleTransfer,
-                  variant: "outline" as const,
-                  disabled: !selectedConvoId,
-                },
-                {
-                  label: "Alert Admins",
-                  icon: ShieldAlert,
-                  action: handleAlertAdmins,
-                  variant: "outline" as const,
-                  disabled: !selectedConvoId,
-                },
-                {
-                  label: "Mark Spam",
-                  icon: Ban,
-                  action: handleMarkSpam,
-                  variant: "outline" as const,
-                  disabled: !selectedConvoId,
-                },
-                {
-                  label: "Return to Queue",
-                  icon: Undo2,
-                  action: handleReturnToQueue,
-                  variant: "outline" as const,
-                  disabled: !selectedConvoId,
-                },
-                {
-                  label: "Church Connect",
-                  icon: Church,
-                  action: () => {
-                    if (!selectedConvoId) { toast.error("Select a conversation first."); return; }
-                    toast.success(`Church connections opened for ${getContactName(selectedConvoId)}. Matching local churches...`);
-                  },
-                  variant: "outline" as const,
-                  disabled: !selectedConvoId,
-                },
-                {
-                  label: "Quick Replies",
-                  icon: Zap,
-                  action: () => setShowQuickReplies(prev => !prev),
-                  variant: "outline" as const,
-                  disabled: false,
-                },
-              ].map(act => (
-                <Button
-                  key={act.label}
-                  variant={act.variant}
-                  size="sm"
-                  className={cn("text-xs justify-start gap-2 h-9", act.disabled && "opacity-50")}
-                  onClick={act.action}
-                  disabled={act.disabled}
-                >
-                  <act.icon className="w-3.5 h-3.5" />
-                  {act.label}
-                </Button>
-              ))}
-            </div>
-
-            {/* Quick Replies Panel */}
-            <AnimatePresence>
-              {showQuickReplies && (
-                <motion.div
-                  initial={{ height: 0, opacity: 0 }}
-                  animate={{ height: "auto", opacity: 1 }}
-                  exit={{ height: 0, opacity: 0 }}
-                  className="overflow-hidden"
-                >
-                  <div className="mt-3 pt-3 border-t border-border">
-                    <div className="flex items-center justify-between mb-2">
-                      <span className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Quick Reply Templates</span>
-                      <button onClick={() => setShowQuickReplies(false)} className="p-0.5 text-muted-foreground hover:text-foreground">
-                        <X className="w-3 h-3" />
-                      </button>
-                    </div>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
-                      {[
-                        "Hi! Thank you for reaching out. How can I help you today?",
-                        "I'd love to share some resources about that topic. Give me a moment.",
-                        "That's a great question! Let me connect you with someone who can help.",
-                        "I'm praying for you. Would you like to share more about your situation?",
-                        "Here's a scripture that might encourage you: ",
-                        "Thank you for sharing. Would you like to join one of our small groups?",
-                      ].map((reply, i) => (
-                        <button
-                          key={i}
-                          onClick={() => {
-                            navigator.clipboard?.writeText(reply);
-                            toast.success("Copied to clipboard!");
-                            setShowQuickReplies(false);
-                          }}
-                          className="text-left text-xs px-3 py-2 bg-muted/50 border border-border rounded-md hover:bg-muted transition-colors text-foreground leading-relaxed"
-                        >
-                          {reply}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                </motion.div>
-              )}
-            </AnimatePresence>
-
-            <div className="flex items-center gap-2 mt-3 pt-3 border-t border-border">
-              <Button
-                variant="outline"
-                size="sm"
-                className="text-xs gap-2"
-                onClick={() => toast.info("Opening scripture library...")}
-              >
-                <BookOpen className="w-3.5 h-3.5" />
-                Scripture Library
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                className="text-xs gap-2"
-                onClick={() => toast.success("Bug report submitted. Thank you for the feedback!")}
-              >
-                <Bug className="w-3.5 h-3.5" />
-                Report Bug
-              </Button>
-              <Button
-                variant="destructive"
-                size="sm"
-                className="text-xs gap-2 ml-auto"
-                onClick={() => toast.error("Emergency alert sent to all admins and coordinators!")}
-              >
-                <AlertTriangle className="w-3.5 h-3.5" />
-                Emergency Alert
-              </Button>
-            </div>
-          </div>
+          {/* Quick actions have been moved to the Conversation View */}
         </div>
 
         {/* Right Column — Unclaimed Queue (40%) */}
@@ -982,74 +774,7 @@ export const VolunteerDashboard = ({
         )}
       </AnimatePresence>
 
-      {/* Transfer Conversation Modal */}
-      <AnimatePresence>
-        {showTransferModal && selectedConvoId && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm"
-            onClick={() => setShowTransferModal(false)}
-          >
-            <motion.div
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.95 }}
-              transition={{ type: "spring", duration: 0.3, bounce: 0.1 }}
-              onClick={e => e.stopPropagation()}
-              className="bg-background border border-border rounded-lg shadow-xl max-w-sm w-full mx-4 overflow-hidden"
-            >
-              <div className="px-6 pt-6 pb-4">
-                <div className="flex items-center gap-3 mb-4">
-                  <div className="w-10 h-10 rounded-full bg-blue-500/10 flex items-center justify-center">
-                    <ArrowRightLeft className="w-5 h-5 text-blue-600" />
-                  </div>
-                  <div>
-                    <h3 className="text-base font-bold text-foreground">Transfer Conversation</h3>
-                    <p className="text-xs text-muted-foreground mt-0.5">
-                      {getContactName(selectedConvoId)}'s chat
-                    </p>
-                  </div>
-                </div>
-                <p className="text-xs text-muted-foreground mb-3">Select a team member to transfer this conversation to:</p>
-                <div className="space-y-1.5 max-h-56 overflow-y-auto">
-                  {users
-                    .filter(u => u.id !== currentUser.id && u.status === "active")
-                    .map(u => (
-                      <button
-                        key={u.id}
-                        onClick={() => handleDoTransfer(u.id)}
-                        className="w-full flex items-center gap-3 px-3 py-2.5 rounded-md hover:bg-muted/50 transition-colors text-left"
-                      >
-                        <div className={cn(
-                          "w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold",
-                          avatarColor(u.id)
-                        )}>
-                          {u.name.charAt(0)}
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <span className="text-sm font-semibold text-foreground block truncate">{u.name}</span>
-                          <span className="text-xs text-muted-foreground">{u.role}</span>
-                        </div>
-                      </button>
-                    ))}
-                </div>
-              </div>
-              <div className="px-6 py-3 bg-muted/30 border-t border-border">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="w-full"
-                  onClick={() => setShowTransferModal(false)}
-                >
-                  Cancel
-                </Button>
-              </div>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+      {/* Transfer modal moved to conversation view */}
     </div>
   );
 };

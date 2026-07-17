@@ -9,6 +9,7 @@ import {
   Zap, ListOrdered, Library, Hand, Timer,
   Image, Mic, Square, Trash2,
   Pencil, History, Merge, ChevronUp,
+  ArrowRightLeft, ShieldAlert, Ban, Undo2, Church, AlertTriangle,
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { toast } from "sonner";
@@ -1960,6 +1961,219 @@ function AISuggestionPills({
   );
 }
 
+// ─── Volunteer Quick Actions (replaces AI Suggestions in volunteer mode) ──────
+
+function VolunteerQuickActions({
+  contact, users, currentUser, onInsertText,
+}: {
+  contact: Contact;
+  users: User[];
+  currentUser: User;
+  onInsertText: (text: string) => void;
+}) {
+  const [showQuickReplies, setShowQuickReplies] = useState(false);
+  const [showTransferModal, setShowTransferModal] = useState(false);
+
+  const QUICK_REPLY_TEMPLATES = [
+    "Hi! Thank you for reaching out. How can I help you today?",
+    "I'd love to share some resources about that topic. Give me a moment.",
+    "That's a great question! Let me connect you with someone who can help.",
+    "I'm praying for you. Would you like to share more about your situation?",
+    "Here's a scripture that might encourage you: ",
+    "Thank you for sharing. Would you like to join one of our small groups?",
+  ];
+
+  const actions = [
+    {
+      label: "Transfer",
+      icon: ArrowRightLeft,
+      onClick: () => setShowTransferModal(true),
+      color: "text-blue-600",
+      bg: "hover:bg-blue-50",
+    },
+    {
+      label: "Return to Queue",
+      icon: Undo2,
+      onClick: () => toast.success(`${contact.name}'s conversation returned to the queue.`),
+      color: "text-amber-600",
+      bg: "hover:bg-amber-50",
+    },
+    {
+      label: "Mark Spam",
+      icon: Ban,
+      onClick: () => toast.success(`${contact.name}'s conversation marked as spam.`),
+      color: "text-red-600",
+      bg: "hover:bg-red-50",
+    },
+    {
+      label: "Church Connect",
+      icon: Church,
+      onClick: () => toast.success(`Church connections opened for ${contact.name}. Matching local churches...`),
+      color: "text-emerald-600",
+      bg: "hover:bg-emerald-50",
+    },
+    {
+      label: "Alert Admins",
+      icon: ShieldAlert,
+      onClick: () => toast.success(`Admin alert sent for ${contact.name}'s conversation.`),
+      color: "text-orange-600",
+      bg: "hover:bg-orange-50",
+    },
+    {
+      label: "Quick Replies",
+      icon: Zap,
+      onClick: () => setShowQuickReplies(prev => !prev),
+      color: "text-violet-600",
+      bg: "hover:bg-violet-50",
+      active: showQuickReplies,
+    },
+  ];
+
+  return (
+    <>
+      <div className="shrink-0 px-3 py-2 border-t border-border bg-background/80 backdrop-blur-sm">
+        <div className="flex items-center gap-1.5 mb-1.5">
+          <Zap className="w-3 h-3 text-primary" />
+          <span className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Quick Actions</span>
+          <span className="ml-auto text-[10px] text-muted-foreground">{contact.name}</span>
+        </div>
+        <div className="flex flex-wrap gap-1">
+          {actions.map(act => (
+            <button
+              key={act.label}
+              onClick={act.onClick}
+              className={cn(
+                "inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium rounded-md border border-border bg-background transition-all",
+                act.bg,
+                act.color,
+                (act as any).active && "ring-1 ring-primary/30 bg-primary/5"
+              )}
+            >
+              <act.icon className="w-3 h-3" />
+              {act.label}
+            </button>
+          ))}
+          <button
+            onClick={() => toast.info("Opening scripture library...")}
+            className="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium rounded-md border border-border bg-background hover:bg-indigo-50 text-indigo-600 transition-all"
+          >
+            <BookOpen className="w-3 h-3" />
+            Scripture
+          </button>
+          <button
+            onClick={() => toast.error("Emergency alert sent to all admins and coordinators!")}
+            className="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium rounded-md border border-red-200 bg-red-50 hover:bg-red-100 text-red-700 transition-all ml-auto"
+          >
+            <AlertTriangle className="w-3 h-3" />
+            Emergency
+          </button>
+        </div>
+
+        {/* Quick Replies Expansion */}
+        <AnimatePresence>
+          {showQuickReplies && (
+            <motion.div
+              initial={{ height: 0, opacity: 0 }}
+              animate={{ height: "auto", opacity: 1 }}
+              exit={{ height: 0, opacity: 0 }}
+              className="overflow-hidden"
+            >
+              <div className="mt-2 pt-2 border-t border-border">
+                <div className="flex items-center justify-between mb-1.5">
+                  <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Reply Templates</span>
+                  <button onClick={() => setShowQuickReplies(false)} className="p-0.5 text-muted-foreground hover:text-foreground">
+                    <X className="w-3 h-3" />
+                  </button>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-1">
+                  {QUICK_REPLY_TEMPLATES.map((reply, i) => (
+                    <button
+                      key={i}
+                      onClick={() => {
+                        onInsertText(reply);
+                        setShowQuickReplies(false);
+                      }}
+                      className="text-left text-xs px-2.5 py-1.5 bg-muted/50 border border-border rounded-md hover:bg-muted transition-colors text-foreground leading-relaxed truncate"
+                      title={reply}
+                    >
+                      {reply}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
+
+      {/* Transfer Modal */}
+      <AnimatePresence>
+        {showTransferModal && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm"
+            onClick={() => setShowTransferModal(false)}
+          >
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              transition={{ type: "spring", duration: 0.3, bounce: 0.1 }}
+              onClick={e => e.stopPropagation()}
+              className="bg-background border border-border rounded-lg shadow-xl max-w-sm w-full mx-4 overflow-hidden"
+            >
+              <div className="px-6 pt-6 pb-4">
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="w-10 h-10 rounded-full bg-blue-500/10 flex items-center justify-center">
+                    <ArrowRightLeft className="w-5 h-5 text-blue-600" />
+                  </div>
+                  <div>
+                    <h3 className="text-base font-bold text-foreground">Transfer Conversation</h3>
+                    <p className="text-xs text-muted-foreground mt-0.5">{contact.name}'s chat</p>
+                  </div>
+                </div>
+                <p className="text-xs text-muted-foreground mb-3">Select a team member to transfer this conversation to:</p>
+                <div className="space-y-1.5 max-h-56 overflow-y-auto">
+                  {users
+                    .filter(u => u.id !== currentUser.id && u.status === "active")
+                    .map(u => (
+                      <button
+                        key={u.id}
+                        onClick={() => {
+                          toast.success(`Conversation transferred to ${u.name}.`);
+                          setShowTransferModal(false);
+                        }}
+                        className="w-full flex items-center gap-3 px-3 py-2.5 rounded-md hover:bg-muted/50 transition-colors text-left"
+                      >
+                        <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-primary text-xs font-bold">
+                          {u.name.charAt(0)}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <span className="text-sm font-semibold text-foreground block truncate">{u.name}</span>
+                          <span className="text-xs text-muted-foreground">{u.role}</span>
+                        </div>
+                      </button>
+                    ))}
+                </div>
+              </div>
+              <div className="px-6 py-3 bg-muted/30 border-t border-border">
+                <button
+                  onClick={() => setShowTransferModal(false)}
+                  className="w-full px-4 py-2 text-sm font-semibold border border-border text-muted-foreground hover:text-foreground hover:bg-muted/40 transition-colors rounded-md"
+                >
+                  Cancel
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </>
+  );
+}
+
 // ─── ComposeArea ──────────────────────────────────────────────────────────────
 
 function ComposeArea({
@@ -3056,12 +3270,21 @@ export const ConversationView = ({
                   onUpdateContact={onUpdateContact}
                 />
 
-                {/* AI Reply Suggestions */}
-                <AISuggestionPills
-                  contact={selectedContact}
-                  messages={selectedMessages}
-                  onSelect={(text) => setAiSuggestedText(text)}
-                />
+                {/* AI Suggestions or Volunteer Quick Actions */}
+                {isAgent ? (
+                  <VolunteerQuickActions
+                    contact={selectedContact}
+                    users={users}
+                    currentUser={currentUser}
+                    onInsertText={(text) => setAiSuggestedText(text)}
+                  />
+                ) : (
+                  <AISuggestionPills
+                    contact={selectedContact}
+                    messages={selectedMessages}
+                    onSelect={(text) => setAiSuggestedText(text)}
+                  />
+                )}
 
                 {/* Compose */}
                 <div data-dropdown-host>
