@@ -1961,36 +1961,24 @@ function AISuggestionPills({
   );
 }
 
-// ─── ComposeArea ──────────────────────────────────────────────────────────────
+// ─── VolunteerQuickActions (unified bar above compose for volunteer mode) ─────
 
-function ComposeArea({
-  contact, port, setPort, onSend, openDropdown, setOpenDropdown, suggestedText, onSuggestedTextConsumed,
-  isAgent, users, currentUser, contentLibrary, onSendMessage, onRequestReassign, onInsertText,
+function VolunteerQuickActions({
+  contact, port, users, currentUser, contentLibrary,
+  onSendMessage, onRequestReassign, onInsertText,
 }: {
-  contact:         Contact;
-  port:            MessagePort;
-  setPort:         (p: MessagePort) => void;
-  onSend:          (content: string) => void;
-  openDropdown:    string | null;
-  setOpenDropdown: (v: string | null) => void;
-  suggestedText?:  string;
-  onSuggestedTextConsumed?: () => void;
-  // Volunteer quick actions props
-  isAgent?:        boolean;
-  users?:          User[];
-  currentUser?:    User;
-  contentLibrary?: ContentRow[];
-  onSendMessage?:  (contactId: string, content: string, scheduledAt?: string, port?: MessagePort) => void;
+  contact:          Contact;
+  port:             MessagePort;
+  users:            User[];
+  currentUser:      User;
+  contentLibrary:   ContentRow[];
+  onSendMessage:    (contactId: string, content: string, scheduledAt?: string, port?: MessagePort) => void;
   onRequestReassign?: (contactId: string, reason: string) => void;
-  onInsertText?:   (text: string) => void;
+  onInsertText?:    (text: string) => void;
 }) {
-  const [text, setText] = useState("");
-  const textareaRef = useRef<HTMLTextAreaElement>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
-
-  // ── Quick Actions (volunteer mode) ──
-  const [qaPanel, setQaPanel] = useState<string | null>(null);
+  const [activePanel, setActivePanel] = useState<string | null>(null);
   const [reassignReason, setReassignReason] = useState("");
+  const [collapsed, setCollapsed] = useState(false);
 
   const QUICK_REPLY_TEMPLATES = [
     "Hi! Thank you for reaching out. How can I help you today?",
@@ -2002,7 +1990,7 @@ function ComposeArea({
   ];
 
   const qaSuggestions = useMemo(() => {
-    const published = (contentLibrary || []).filter(c => c.status === "Published");
+    const published = contentLibrary.filter(c => c.status === "Published");
     const maturity = contact.maturity;
     const diffMap: Record<string, string> = { "Pre-Seeker": "Beginner", "Seeker": "Beginner", "New Believer": "Beginner", "Growing": "Intermediate", "Mature": "Advanced", "Leader": "Advanced" };
     const targetDiff = diffMap[maturity || "Seeker"] || "Beginner";
@@ -2010,31 +1998,7 @@ function ComposeArea({
     return matched.length > 0 ? matched.slice(0, 4) : published.slice(0, 4);
   }, [contentLibrary, contact.maturity]);
 
-  const qaHandleSendForm = (formId: string) => {
-    const form = FORM_TEMPLATES.find(f => f.id === formId);
-    if (!form || !onSendMessage) return;
-    onSendMessage(contact.id, `📋 *${form.label}*\n\n${form.desc}\n\n👉 Please fill out this form: [Open Form]`, undefined, port);
-    toast.success(`${form.label} sent to ${contact.name.split(" ")[0]}`);
-    setQaPanel(null);
-  };
-
-  const qaHandleStartSeries = (seriesId: string) => {
-    const series = CONTENT_SERIES.find(s => s.id === seriesId);
-    if (!series || !onSendMessage) return;
-    onSendMessage(contact.id, `📚 *${series.label}* — ${series.lessons}-part series\n\n${series.desc}\n\nLesson 1 is on its way!`, undefined, port);
-    toast.success(`Started "${series.label}" series for ${contact.name.split(" ")[0]}`);
-    setQaPanel(null);
-  };
-
-  const qaHandleSendContent = (item: ContentRow) => {
-    if (!onSendMessage) return;
-    const variant = item.variants?.[port] || item.variants?.web || item.body;
-    onSendMessage(contact.id, `📖 *${item.title}*\n\n${variant}`, undefined, port);
-    toast.success(`Sent "${item.title}"`);
-    setQaPanel(null);
-  };
-
-  const QA_ACTIONS: { id: string; label: string; icon: React.ComponentType<{ className?: string }>; panel?: boolean; emergency?: boolean }[] = [
+  const ACTIONS: { id: string; label: string; icon: React.ComponentType<{ className?: string }>; panel?: boolean; emergency?: boolean }[] = [
     { id: "reassign",  label: "Request Reassign", icon: RefreshCw, panel: true },
     { id: "replies",   label: "Quick Replies",     icon: Zap, panel: true },
     { id: "form",      label: "Send Form",         icon: FileText, panel: true },
@@ -2048,9 +2012,9 @@ function ComposeArea({
     { id: "emergency", label: "Emergency",         icon: AlertTriangle, emergency: true },
   ];
 
-  const handleQaClick = (id: string) => {
-    const action = QA_ACTIONS.find(a => a.id === id);
-    if (action?.panel) { setQaPanel(prev => prev === id ? null : id); return; }
+  const handleClick = (id: string) => {
+    const action = ACTIONS.find(a => a.id === id);
+    if (action?.panel) { setActivePanel(prev => prev === id ? null : id); return; }
     switch (id) {
       case "queue": toast.success(`${contact.name}'s conversation returned to the queue.`); break;
       case "spam": toast.success(`${contact.name}'s conversation marked as spam.`); break;
@@ -2059,8 +2023,225 @@ function ComposeArea({
       case "scripture": toast.info("Opening scripture library..."); break;
       case "emergency": toast.error("Emergency alert sent to all admins and coordinators!"); break;
     }
-    setOpenDropdown(null);
   };
+
+  const handleSendForm = (formId: string) => {
+    const form = FORM_TEMPLATES.find(f => f.id === formId);
+    if (!form) return;
+    onSendMessage(contact.id, `📋 *${form.label}*\n\n${form.desc}\n\n👉 Please fill out this form: [Open Form]`, undefined, port);
+    toast.success(`${form.label} sent to ${contact.name.split(" ")[0]}`);
+    setActivePanel(null);
+  };
+
+  const handleStartSeries = (seriesId: string) => {
+    const series = CONTENT_SERIES.find(s => s.id === seriesId);
+    if (!series) return;
+    onSendMessage(contact.id, `📚 *${series.label}* — ${series.lessons}-part series\n\n${series.desc}\n\nLesson 1 is on its way!`, undefined, port);
+    toast.success(`Started "${series.label}" series for ${contact.name.split(" ")[0]}`);
+    setActivePanel(null);
+  };
+
+  const handleSendContent = (item: ContentRow) => {
+    const variant = item.variants?.[port] || item.variants?.web || item.body;
+    onSendMessage(contact.id, `📖 *${item.title}*\n\n${variant}`, undefined, port);
+    toast.success(`Sent "${item.title}"`);
+    setActivePanel(null);
+  };
+
+  return (
+    <div className="shrink-0 border-t border-border bg-muted/20">
+      {/* Toggle header */}
+      <button
+        onClick={() => { setCollapsed(c => !c); if (!collapsed) setActivePanel(null); }}
+        className="w-full flex items-center justify-between px-4 py-1.5 text-xs font-bold text-muted-foreground uppercase tracking-widest hover:bg-muted/30 transition-colors"
+      >
+        Quick Actions
+        {collapsed ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
+      </button>
+
+      {!collapsed && (
+        <>
+          {/* Action buttons row */}
+          <div className="flex flex-wrap gap-1 px-3 pb-2">
+            {ACTIONS.map(act => (
+              <button
+                key={act.id}
+                onClick={() => handleClick(act.id)}
+                className={cn(
+                  "flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium rounded-sm transition-colors",
+                  activePanel === act.id
+                    ? "bg-primary/10 text-primary"
+                    : act.emergency
+                    ? "text-red-600 hover:bg-red-50 border border-red-200"
+                    : "text-foreground hover:bg-muted border border-transparent"
+                )}
+              >
+                <act.icon className="w-3.5 h-3.5" />
+                {act.label}
+              </button>
+            ))}
+          </div>
+
+          {/* Expandable panels */}
+          <AnimatePresence mode="wait">
+            {activePanel && (
+              <motion.div
+                key={activePanel}
+                initial={{ height: 0, opacity: 0 }}
+                animate={{ height: "auto", opacity: 1 }}
+                exit={{ height: 0, opacity: 0 }}
+                transition={{ duration: 0.15 }}
+                className="overflow-hidden border-t border-border"
+              >
+                <div className="p-3 max-h-52 overflow-y-auto">
+                  {/* REQUEST REASSIGN */}
+                  {activePanel === "reassign" && (
+                    <div className="space-y-2.5">
+                      <p className="text-xs font-bold text-foreground">Request Reassignment</p>
+                      <p className="text-xs text-muted-foreground leading-snug">
+                        Submit a reason and the mentor coach will review and assign a new volunteer.
+                      </p>
+                      <textarea
+                        value={reassignReason}
+                        onChange={e => setReassignReason(e.target.value)}
+                        placeholder="e.g. Language barrier, scheduling conflict..."
+                        rows={3}
+                        aria-label="Reassignment reason"
+                        className="w-full px-3 py-2 text-xs border border-input bg-background rounded-sm outline-none resize-none focus:ring-1 focus:ring-ring"
+                      />
+                      <div className="flex items-center justify-end gap-2">
+                        <button onClick={() => { setActivePanel(null); setReassignReason(""); }}
+                          className="px-3 py-1.5 text-xs font-semibold text-muted-foreground hover:text-foreground transition-colors"
+                        >Cancel</button>
+                        <button
+                          onClick={() => {
+                            if (!reassignReason.trim()) { toast.error("Please provide a reason"); return; }
+                            if (onRequestReassign) onRequestReassign(contact.id, reassignReason.trim());
+                            else toast.success(`Reassignment request submitted for ${contact.name}.`);
+                            setReassignReason("");
+                            setActivePanel(null);
+                          }}
+                          disabled={!reassignReason.trim()}
+                          className={cn(
+                            "flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-sm transition-all",
+                            reassignReason.trim()
+                              ? "bg-primary text-primary-foreground hover:bg-primary/90"
+                              : "bg-muted text-muted-foreground cursor-not-allowed"
+                          )}
+                        >
+                          <Send className="w-3 h-3" />
+                          Submit
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* QUICK REPLIES */}
+                  {activePanel === "replies" && (
+                    <div className="space-y-1">
+                      {QUICK_REPLY_TEMPLATES.map((reply, i) => (
+                        <button
+                          key={i}
+                          onClick={() => {
+                            onInsertText?.(reply);
+                            setActivePanel(null);
+                          }}
+                          className="w-full text-left text-xs px-2.5 py-2 bg-muted/30 border border-border rounded-sm hover:bg-muted transition-colors text-foreground leading-relaxed"
+                          title={reply}
+                        >
+                          {reply}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* SEND FORM */}
+                  {activePanel === "form" && (
+                    <div className="space-y-1.5">
+                      {FORM_TEMPLATES.map(form => (
+                        <button key={form.id} onClick={() => handleSendForm(form.id)}
+                          className="w-full flex items-start gap-3 p-2 text-left bg-muted/20 hover:bg-muted/50 transition-colors rounded-sm group"
+                        >
+                          <form.icon className="w-4 h-4 mt-0.5 shrink-0 text-muted-foreground" />
+                          <div className="min-w-0 flex-1">
+                            <p className="text-xs font-bold text-foreground">{form.label}</p>
+                            <p className="text-xs text-muted-foreground leading-snug">{form.desc}</p>
+                          </div>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* CONTENT SERIES */}
+                  {activePanel === "series" && (
+                    <div className="space-y-1.5">
+                      {CONTENT_SERIES.map(series => (
+                        <button key={series.id} onClick={() => handleStartSeries(series.id)}
+                          className="w-full flex items-start gap-3 p-2 text-left bg-muted/20 hover:bg-muted/50 transition-colors rounded-sm group"
+                        >
+                          <Library className="w-4 h-4 mt-0.5 shrink-0 text-muted-foreground" />
+                          <div className="min-w-0 flex-1">
+                            <p className="text-xs font-bold text-foreground">{series.label} <span className="font-normal text-muted-foreground">· {series.lessons} lessons</span></p>
+                            <p className="text-xs text-muted-foreground leading-snug">{series.desc}</p>
+                          </div>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* AI SUGGEST */}
+                  {activePanel === "suggest" && (
+                    <div className="space-y-1.5">
+                      <div className="flex items-center gap-2 mb-1">
+                        <p className="text-xs font-bold text-foreground">AI picks for {contact.name.split(" ")[0]}</p>
+                        {contact.maturity && (
+                          <span className="text-xs font-semibold px-1.5 py-0.5 rounded-sm bg-muted text-muted-foreground">{contact.maturity}</span>
+                        )}
+                      </div>
+                      {qaSuggestions.length === 0 ? (
+                        <p className="text-xs text-muted-foreground py-4 text-center">No published content found.</p>
+                      ) : (
+                        qaSuggestions.map(item => (
+                          <button key={item.id} onClick={() => handleSendContent(item)}
+                            className="w-full flex items-start gap-3 p-2 text-left bg-muted/20 hover:bg-muted/50 transition-colors rounded-sm group"
+                          >
+                            <BookOpen className="w-4 h-4 mt-0.5 shrink-0 text-muted-foreground" />
+                            <div className="min-w-0 flex-1">
+                              <p className="text-xs font-bold text-foreground">{item.title}</p>
+                              <p className="text-xs text-muted-foreground leading-snug line-clamp-2">{item.summary}</p>
+                            </div>
+                          </button>
+                        ))
+                      )}
+                    </div>
+                  )}
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </>
+      )}
+    </div>
+  );
+}
+
+// ─── ComposeArea ──────────────────────────────────────────────────────────────
+
+function ComposeArea({
+  contact, port, setPort, onSend, openDropdown, setOpenDropdown, suggestedText, onSuggestedTextConsumed,
+}: {
+  contact:         Contact;
+  port:            MessagePort;
+  setPort:         (p: MessagePort) => void;
+  onSend:          (content: string) => void;
+  openDropdown:    string | null;
+  setOpenDropdown: (v: string | null) => void;
+  suggestedText?:  string;
+  onSuggestedTextConsumed?: () => void;
+}) {
+  const [text, setText] = useState("");
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // ── Image attachments ──
   type ImageAttachment = { id: string; file: File; preview: string };
@@ -2173,40 +2354,6 @@ function ComposeArea({
 
   return (
     <div className="shrink-0 border-t border-border bg-background">
-      {/* Channel indicator */}
-      <div className="flex items-center justify-end px-4 pt-3 pb-2">
-        <div className="flex items-center gap-2">
-          <span className="text-xs text-muted-foreground font-medium">Replying via</span>
-          <div className="relative">
-            <button onClick={() => setOpenDropdown(openDropdown === "compose-port" ? null : "compose-port")}
-              className={cn("flex items-center gap-1.5 text-xs font-bold px-2.5 py-1 border transition-colors hover:opacity-80", PORT_COLORS[port] ?? "bg-muted text-muted-foreground border-border")}
-            >
-              {channelIcon(port, "w-3 h-3")}
-              {CHANNEL_LABEL[port] ?? port}
-              <ChevronDown className="w-3 h-3 opacity-60" />
-            </button>
-            {openDropdown === "compose-port" && (
-              <div className="absolute bottom-full right-0 mb-1 z-50 w-44 bg-background border border-border shadow-xl py-1">
-                <div className="px-3 py-1.5 border-b border-border">
-                  <span className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Send via</span>
-                </div>
-                {Object.entries(CHANNEL_LABEL).filter(([k]) => k !== "smpp").map(([k, label]) => (
-                  <button key={k} onClick={() => { setPort(k as MessagePort); setOpenDropdown(null); }}
-                    className={cn("w-full flex items-center gap-2.5 px-3 py-2.5 text-xs font-semibold hover:bg-muted/50 transition-colors", port === k && "bg-muted/30")}
-                  >
-                    <span className={cn("inline-flex items-center justify-center w-6 h-6 border shrink-0", PORT_COLORS[k] ?? "bg-muted text-muted-foreground border-border")}>
-                      {channelIcon(k, "w-3 h-3")}
-                    </span>
-                    <span className={port === k ? "text-primary font-bold" : "text-foreground"}>{label}</span>
-                    {port === k && <Check className="w-3 h-3 text-primary ml-auto" />}
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
-        </div>
-      </div>
-
       {/* Image preview strip */}
       {images.length > 0 && (
         <div className="px-4 pb-2 flex flex-wrap gap-2">
@@ -2341,197 +2488,35 @@ function ComposeArea({
                 )}
               </div>
 
-              {/* Quick Actions button (volunteer mode) */}
-              {isAgent && (
-                <div className="relative">
-                  <button
-                    type="button"
-                    onClick={() => setOpenDropdown(openDropdown === "compose-qa" ? null : "compose-qa")}
-                    className={cn(
-                      "p-1.5 transition-colors",
-                      openDropdown === "compose-qa"
-                        ? "text-primary bg-primary/10"
-                        : "text-muted-foreground hover:text-foreground hover:bg-muted"
-                    )}
-                    title="Quick Actions"
-                  >
-                    <Plus className="w-4 h-4" />
-                  </button>
-                  {openDropdown === "compose-qa" && (
-                    <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 z-50 bg-background border border-border shadow-xl w-72 max-h-[420px] overflow-hidden flex flex-col">
-                      {/* Header */}
-                      <div className="flex items-center justify-between px-3 py-2 border-b border-border shrink-0">
-                        <span className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Quick Actions</span>
-                        <button type="button" onClick={() => { setOpenDropdown(null); setQaPanel(null); }} className="p-0.5 text-muted-foreground hover:text-foreground">
-                          <X className="w-3 h-3" />
-                        </button>
-                      </div>
-
-                      {/* Action list or active panel */}
-                      {!qaPanel ? (
-                        <div className="py-1 overflow-y-auto">
-                          {QA_ACTIONS.map(act => (
-                            <button
-                              key={act.id}
-                              type="button"
-                              onClick={() => handleQaClick(act.id)}
-                              className={cn(
-                                "w-full flex items-center gap-2.5 px-3 py-2 text-xs font-medium hover:bg-muted/50 transition-colors text-left",
-                                act.emergency ? "text-red-600 hover:bg-red-50" : "text-foreground"
-                              )}
-                            >
-                              <act.icon className="w-3.5 h-3.5 shrink-0" />
-                              {act.label}
-                              {act.panel && <ChevronRight className="w-3 h-3 ml-auto text-muted-foreground" />}
-                            </button>
-                          ))}
-                        </div>
-                      ) : (
-                        <div className="flex flex-col overflow-hidden">
-                          {/* Back button */}
-                          <button
-                            type="button"
-                            onClick={() => setQaPanel(null)}
-                            className="flex items-center gap-1.5 px-3 py-2 text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-muted/50 border-b border-border transition-colors shrink-0"
-                          >
-                            <ChevronDown className="w-3 h-3 rotate-90" />
-                            Back
-                          </button>
-
-                          <div className="p-3 overflow-y-auto max-h-72">
-                            {/* REQUEST REASSIGN */}
-                            {qaPanel === "reassign" && (
-                              <div className="space-y-2.5">
-                                <p className="text-xs font-bold text-foreground">Request Reassignment</p>
-                                <p className="text-xs text-muted-foreground leading-snug">
-                                  Submit a reason and the mentor coach will review and assign a new volunteer.
-                                </p>
-                                <textarea
-                                  value={reassignReason}
-                                  onChange={e => setReassignReason(e.target.value)}
-                                  placeholder="e.g. Language barrier, scheduling conflict..."
-                                  rows={3}
-                                  aria-label="Reassignment reason"
-                                  className="w-full px-3 py-2 text-xs border border-input bg-background rounded-sm outline-none resize-none focus:ring-1 focus:ring-ring"
-                                />
-                                <div className="flex items-center justify-end gap-2">
-                                  <button type="button" onClick={() => { setQaPanel(null); setReassignReason(""); }}
-                                    className="px-3 py-1.5 text-xs font-semibold text-muted-foreground hover:text-foreground transition-colors"
-                                  >Cancel</button>
-                                  <button
-                                    type="button"
-                                    onClick={() => {
-                                      if (!reassignReason.trim()) { toast.error("Please provide a reason"); return; }
-                                      if (onRequestReassign) onRequestReassign(contact.id, reassignReason.trim());
-                                      else toast.success(`Reassignment request submitted for ${contact.name}.`);
-                                      setReassignReason("");
-                                      setQaPanel(null);
-                                      setOpenDropdown(null);
-                                    }}
-                                    disabled={!reassignReason.trim()}
-                                    className={cn(
-                                      "flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-sm transition-all",
-                                      reassignReason.trim()
-                                        ? "bg-primary text-primary-foreground hover:bg-primary/90"
-                                        : "bg-muted text-muted-foreground cursor-not-allowed"
-                                    )}
-                                  >
-                                    <Send className="w-3 h-3" />
-                                    Submit
-                                  </button>
-                                </div>
-                              </div>
-                            )}
-
-                            {/* QUICK REPLIES */}
-                            {qaPanel === "replies" && (
-                              <div className="space-y-1">
-                                {QUICK_REPLY_TEMPLATES.map((reply, i) => (
-                                  <button
-                                    key={i}
-                                    type="button"
-                                    onClick={() => {
-                                      setText(reply);
-                                      textareaRef.current?.focus();
-                                      setQaPanel(null);
-                                      setOpenDropdown(null);
-                                    }}
-                                    className="w-full text-left text-xs px-2.5 py-2 bg-muted/30 border border-border rounded-sm hover:bg-muted transition-colors text-foreground leading-relaxed"
-                                    title={reply}
-                                  >
-                                    {reply}
-                                  </button>
-                                ))}
-                              </div>
-                            )}
-
-                            {/* SEND FORM */}
-                            {qaPanel === "form" && (
-                              <div className="space-y-1.5">
-                                {FORM_TEMPLATES.map(form => (
-                                  <button key={form.id} type="button" onClick={() => qaHandleSendForm(form.id)}
-                                    className="w-full flex items-start gap-3 p-2 text-left bg-muted/20 hover:bg-muted/50 transition-colors rounded-sm group"
-                                  >
-                                    <form.icon className="w-4 h-4 mt-0.5 shrink-0 text-muted-foreground" />
-                                    <div className="min-w-0 flex-1">
-                                      <p className="text-xs font-bold text-foreground">{form.label}</p>
-                                      <p className="text-xs text-muted-foreground leading-snug">{form.desc}</p>
-                                    </div>
-                                  </button>
-                                ))}
-                              </div>
-                            )}
-
-                            {/* CONTENT SERIES */}
-                            {qaPanel === "series" && (
-                              <div className="space-y-1.5">
-                                {CONTENT_SERIES.map(series => (
-                                  <button key={series.id} type="button" onClick={() => qaHandleStartSeries(series.id)}
-                                    className="w-full flex items-start gap-3 p-2 text-left bg-muted/20 hover:bg-muted/50 transition-colors rounded-sm group"
-                                  >
-                                    <Library className="w-4 h-4 mt-0.5 shrink-0 text-muted-foreground" />
-                                    <div className="min-w-0 flex-1">
-                                      <p className="text-xs font-bold text-foreground">{series.label} <span className="font-normal text-muted-foreground">· {series.lessons} lessons</span></p>
-                                      <p className="text-xs text-muted-foreground leading-snug">{series.desc}</p>
-                                    </div>
-                                  </button>
-                                ))}
-                              </div>
-                            )}
-
-                            {/* AI SUGGEST */}
-                            {qaPanel === "suggest" && (
-                              <div className="space-y-1.5">
-                                <div className="flex items-center gap-2 mb-1">
-                                  <p className="text-xs font-bold text-foreground">AI picks for {contact.name.split(" ")[0]}</p>
-                                  {contact.maturity && (
-                                    <span className="text-xs font-semibold px-1.5 py-0.5 rounded-sm bg-muted text-muted-foreground">{contact.maturity}</span>
-                                  )}
-                                </div>
-                                {qaSuggestions.length === 0 ? (
-                                  <p className="text-xs text-muted-foreground py-4 text-center">No published content found.</p>
-                                ) : (
-                                  qaSuggestions.map(item => (
-                                    <button key={item.id} type="button" onClick={() => qaHandleSendContent(item)}
-                                      className="w-full flex items-start gap-3 p-2 text-left bg-muted/20 hover:bg-muted/50 transition-colors rounded-sm group"
-                                    >
-                                      <BookOpen className="w-4 h-4 mt-0.5 shrink-0 text-muted-foreground" />
-                                      <div className="min-w-0 flex-1">
-                                        <p className="text-xs font-bold text-foreground">{item.title}</p>
-                                        <p className="text-xs text-muted-foreground leading-snug line-clamp-2">{item.summary}</p>
-                                      </div>
-                                    </button>
-                                  ))
-                                )}
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                      )}
+              {/* Channel selector — beside emoji */}
+              <div className="relative ml-1">
+                <button type="button" onClick={() => setOpenDropdown(openDropdown === "compose-port" ? null : "compose-port")}
+                  className={cn("flex items-center gap-1 text-xs font-bold px-2 py-1 border transition-colors hover:opacity-80 rounded-sm", PORT_COLORS[port] ?? "bg-muted text-muted-foreground border-border")}
+                  title={`Replying via ${CHANNEL_LABEL[port] ?? port}`}
+                >
+                  {channelIcon(port, "w-3 h-3")}
+                  {CHANNEL_LABEL[port] ?? port}
+                  <ChevronDown className="w-2.5 h-2.5 opacity-60" />
+                </button>
+                {openDropdown === "compose-port" && (
+                  <div className="absolute bottom-full right-0 mb-1 z-50 w-44 bg-background border border-border shadow-xl py-1">
+                    <div className="px-3 py-1.5 border-b border-border">
+                      <span className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Send via</span>
                     </div>
-                  )}
-                </div>
-              )}
+                    {Object.entries(CHANNEL_LABEL).filter(([k]) => k !== "smpp").map(([k, label]) => (
+                      <button key={k} type="button" onClick={() => { setPort(k as MessagePort); setOpenDropdown(null); }}
+                        className={cn("w-full flex items-center gap-2.5 px-3 py-2.5 text-xs font-semibold hover:bg-muted/50 transition-colors", port === k && "bg-muted/30")}
+                      >
+                        <span className={cn("inline-flex items-center justify-center w-6 h-6 border shrink-0", PORT_COLORS[k] ?? "bg-muted text-muted-foreground border-border")}>
+                          {channelIcon(k, "w-3 h-3")}
+                        </span>
+                        <span className={port === k ? "text-primary font-bold" : "text-foreground"}>{label}</span>
+                        {port === k && <Check className="w-3 h-3 text-primary ml-auto" />}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
 
             {/* Send */}
@@ -2543,11 +2528,8 @@ function ComposeArea({
             </button>
           </div>
         </div>
-        <div className="flex items-center justify-between mt-1.5">
+        <div className="mt-1.5 px-1">
           <p className="text-xs text-muted-foreground">Enter to send · Shift+Enter for new line</p>
-          <p className="text-xs font-medium text-muted-foreground/70">
-            Replying via <span className="font-bold capitalize">{CHANNEL_LABEL[port] || port}</span>
-          </p>
         </div>
       </form>
     </div>
@@ -3341,7 +3323,21 @@ export const ConversationView = ({
                   </>
                 )}
 
-                {/* Compose — volunteer mode gets quick actions "+" button inside */}
+                {/* Volunteer: unified quick actions bar above compose */}
+                {isAgent && (
+                  <VolunteerQuickActions
+                    contact={selectedContact}
+                    port={convPort}
+                    users={users}
+                    currentUser={currentUser}
+                    contentLibrary={contentLibrary}
+                    onSendMessage={onSendMessage}
+                    onRequestReassign={onRequestReassign}
+                    onInsertText={(text) => setAiSuggestedText(text)}
+                  />
+                )}
+
+                {/* Compose */}
                 <div data-dropdown-host>
                   <ComposeArea
                     contact={selectedContact}
@@ -3352,12 +3348,6 @@ export const ConversationView = ({
                     setOpenDropdown={setOpenDropdown}
                     suggestedText={aiSuggestedText}
                     onSuggestedTextConsumed={() => setAiSuggestedText("")}
-                    isAgent={isAgent}
-                    users={users}
-                    currentUser={currentUser}
-                    contentLibrary={contentLibrary}
-                    onSendMessage={onSendMessage}
-                    onRequestReassign={onRequestReassign}
                   />
                 </div>
               </div>
