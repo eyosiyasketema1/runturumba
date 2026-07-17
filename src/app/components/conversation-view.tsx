@@ -2388,7 +2388,7 @@ function ComposeArea({
   };
 
   return (
-    <div className="shrink-0 border-t border-border bg-background">
+    <div className="shrink-0 bg-background">
       {/* Image preview strip */}
       {images.length > 0 && (
         <div className="px-4 pb-2 flex flex-wrap gap-2">
@@ -2454,8 +2454,8 @@ function ComposeArea({
       )}
 
       {/* Textarea */}
-      <form onSubmit={handleSend} className="px-4 pb-3">
-        <div className="border border-input bg-background transition-colors">
+      <form onSubmit={handleSend} className="mx-2 mb-2">
+        <div className="border border-input bg-background rounded-md transition-colors">
           <textarea
             ref={textareaRef}
             value={text}
@@ -2463,7 +2463,7 @@ function ComposeArea({
             placeholder={`Message ${contact.name.split(" ")[0]} via ${CHANNEL_LABEL[port]}…`}
             rows={3}
             aria-label="Compose message"
-            className="w-full px-4 pt-3 pb-2 text-sm outline-none resize-none bg-transparent text-foreground"
+            className="w-full px-3 pt-3 pb-2 text-sm outline-none resize-none bg-transparent text-foreground rounded-t-md"
             onKeyDown={e => {
               if (e.key === "Enter" && !e.shiftKey) {
                 e.preventDefault();
@@ -2473,7 +2473,7 @@ function ComposeArea({
           />
 
           {/* Toolbar */}
-          <div className="flex items-center justify-between px-3 pb-2 border-t border-inherit">
+          <div className="flex items-center justify-between px-3 py-2 border-t border-inherit">
             <div className="flex items-center gap-0.5">
               {/* Image / file attachment */}
               <input ref={fileInputRef} type="file" accept="image/*" multiple className="hidden" onChange={handleImageSelect} aria-label="Attach image" />
@@ -2557,14 +2557,14 @@ function ComposeArea({
 
             {/* Send */}
             <button type="submit" disabled={!canSend}
-              className="flex items-center gap-1.5 px-4 py-1.5 text-xs font-bold transition-all disabled:opacity-40 disabled:cursor-not-allowed bg-primary text-primary-foreground hover:bg-primary/90"
+              className="flex items-center gap-1.5 px-4 py-1.5 text-xs font-bold rounded-sm transition-all disabled:opacity-40 disabled:cursor-not-allowed bg-primary text-primary-foreground hover:bg-primary/90"
             >
               <Send className="w-3 h-3" />
               Send
             </button>
           </div>
         </div>
-        <div className="mt-1.5 px-1">
+        <div className="mt-1 px-1">
           <p className="text-xs text-muted-foreground">Enter to send · Shift+Enter for new line</p>
         </div>
       </form>
