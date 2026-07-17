@@ -9,7 +9,7 @@ import {
   Zap, ListOrdered, Library, Hand, Timer,
   Image, Mic, Square, Trash2,
   Pencil, History, Merge, ChevronUp,
-  ArrowRightLeft, ShieldAlert, Ban, Undo2, Church, AlertTriangle,
+  ShieldAlert, Ban, Undo2, Church, AlertTriangle,
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { toast } from "sonner";
@@ -1961,18 +1961,24 @@ function AISuggestionPills({
   );
 }
 
-// ─── Volunteer Quick Actions (replaces AI Suggestions in volunteer mode) ──────
+// ─── Volunteer Quick Actions (unified bar — replaces both ConversationToolbar + AISuggestionPills in volunteer mode) ──
 
 function VolunteerQuickActions({
   contact, users, currentUser, onInsertText,
+  contentLibrary, onSendMessage, port, onRequestReassign,
 }: {
   contact: Contact;
   users: User[];
   currentUser: User;
   onInsertText: (text: string) => void;
+  contentLibrary?: ContentRow[];
+  onSendMessage: (contactId: string, content: string, scheduledAt?: string, port?: MessagePort) => void;
+  port: MessagePort;
+  onRequestReassign?: (contactId: string, reason: string) => void;
 }) {
-  const [showQuickReplies, setShowQuickReplies] = useState(false);
-  const [showTransferModal, setShowTransferModal] = useState(false);
+  const [isCollapsed, setIsCollapsed] = useState(false);
+  const [activePanel, setActivePanel] = useState<string | null>(null);
+  const [reassignReason, setReassignReason] = useState("");
 
   const QUICK_REPLY_TEMPLATES = [
     "Hi! Thank you for reaching out. How can I help you today?",
@@ -1983,194 +1989,297 @@ function VolunteerQuickActions({
     "Thank you for sharing. Would you like to join one of our small groups?",
   ];
 
-  const actions = [
-    {
-      label: "Transfer",
-      icon: ArrowRightLeft,
-      onClick: () => setShowTransferModal(true),
-      color: "text-blue-600",
-      bg: "hover:bg-blue-50",
-    },
-    {
-      label: "Return to Queue",
-      icon: Undo2,
-      onClick: () => toast.success(`${contact.name}'s conversation returned to the queue.`),
-      color: "text-amber-600",
-      bg: "hover:bg-amber-50",
-    },
-    {
-      label: "Mark Spam",
-      icon: Ban,
-      onClick: () => toast.success(`${contact.name}'s conversation marked as spam.`),
-      color: "text-red-600",
-      bg: "hover:bg-red-50",
-    },
-    {
-      label: "Church Connect",
-      icon: Church,
-      onClick: () => toast.success(`Church connections opened for ${contact.name}. Matching local churches...`),
-      color: "text-emerald-600",
-      bg: "hover:bg-emerald-50",
-    },
-    {
-      label: "Alert Admins",
-      icon: ShieldAlert,
-      onClick: () => toast.success(`Admin alert sent for ${contact.name}'s conversation.`),
-      color: "text-orange-600",
-      bg: "hover:bg-orange-50",
-    },
-    {
-      label: "Quick Replies",
-      icon: Zap,
-      onClick: () => setShowQuickReplies(prev => !prev),
-      color: "text-violet-600",
-      bg: "hover:bg-violet-50",
-      active: showQuickReplies,
-    },
+  // AI content suggestion — picks from library based on seeker's maturity
+  const suggestions = useMemo(() => {
+    const published = (contentLibrary || []).filter(c => c.status === "Published");
+    const maturity = contact.maturity;
+    const diffMap: Record<string, string> = { "Pre-Seeker": "Beginner", "Seeker": "Beginner", "New Believer": "Beginner", "Growing": "Intermediate", "Mature": "Advanced", "Leader": "Advanced" };
+    const targetDiff = diffMap[maturity || "Seeker"] || "Beginner";
+    const matched = published.filter(c => c.difficulty === targetDiff);
+    return matched.length > 0 ? matched.slice(0, 4) : published.slice(0, 4);
+  }, [contentLibrary, contact.maturity]);
+
+  const handleSendForm = (formId: string) => {
+    const form = FORM_TEMPLATES.find(f => f.id === formId);
+    if (!form) return;
+    const msg = `📋 *${form.label}*\n\n${form.desc}\n\n👉 Please fill out this form: [Open Form]`;
+    onSendMessage(contact.id, msg, undefined, port);
+    toast.success(`${form.label} sent to ${contact.name.split(" ")[0]}`);
+    setActivePanel(null);
+  };
+
+  const handleStartSeries = (seriesId: string) => {
+    const series = CONTENT_SERIES.find(s => s.id === seriesId);
+    if (!series) return;
+    const msg = `📚 *${series.label}* — ${series.lessons}-part series\n\n${series.desc}\n\nLesson 1 is on its way!`;
+    onSendMessage(contact.id, msg, undefined, port);
+    toast.success(`Started "${series.label}" series for ${contact.name.split(" ")[0]}`);
+    setActivePanel(null);
+  };
+
+  const handleSendContent = (item: ContentRow) => {
+    const variant = item.variants?.[port] || item.variants?.web || item.body;
+    const msg = `📖 *${item.title}*\n\n${variant}`;
+    onSendMessage(contact.id, msg, undefined, port);
+    toast.success(`Sent "${item.title}"`);
+    setActivePanel(null);
+  };
+
+  const togglePanel = (panel: string) => {
+    setActivePanel(prev => prev === panel ? null : panel);
+  };
+
+  const actions: { id: string; label: string; icon: React.ComponentType<{ className?: string }> }[] = [
+    { id: "reassign",  label: "Request Reassign", icon: RefreshCw },
+    { id: "replies",   label: "Quick Replies",     icon: Zap },
+    { id: "form",      label: "Send Form",         icon: FileText },
+    { id: "series",    label: "Content Series",    icon: ListOrdered },
+    { id: "suggest",   label: "AI Suggest",        icon: Sparkles },
+    { id: "queue",     label: "Return to Queue",   icon: Undo2 },
+    { id: "spam",      label: "Mark Spam",         icon: Ban },
+    { id: "church",    label: "Church Connect",    icon: Church },
+    { id: "admins",    label: "Alert Admins",      icon: ShieldAlert },
+    { id: "scripture", label: "Scripture",          icon: BookOpen },
   ];
 
+  const handleActionClick = (id: string) => {
+    // Actions with panels
+    if (["reassign", "replies", "form", "series", "suggest"].includes(id)) {
+      togglePanel(id);
+      return;
+    }
+    // Instant actions
+    switch (id) {
+      case "queue":
+        toast.success(`${contact.name}'s conversation returned to the queue.`);
+        break;
+      case "spam":
+        toast.success(`${contact.name}'s conversation marked as spam.`);
+        break;
+      case "church":
+        toast.success(`Church connections opened for ${contact.name}. Matching local churches...`);
+        break;
+      case "admins":
+        toast.success(`Admin alert sent for ${contact.name}'s conversation.`);
+        break;
+      case "scripture":
+        toast.info("Opening scripture library...");
+        break;
+    }
+  };
+
   return (
-    <>
-      <div className="shrink-0 px-3 py-2 border-t border-border bg-background/80 backdrop-blur-sm">
-        <div className="flex items-center gap-1.5 mb-1.5">
-          <Zap className="w-3 h-3 text-primary" />
-          <span className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Quick Actions</span>
-          <span className="ml-auto text-[10px] text-muted-foreground">{contact.name}</span>
-        </div>
-        <div className="flex flex-wrap gap-1">
-          {actions.map(act => (
-            <button
-              key={act.label}
-              onClick={act.onClick}
-              className={cn(
-                "inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium rounded-md border border-border bg-background transition-all",
-                act.bg,
-                act.color,
-                (act as any).active && "ring-1 ring-primary/30 bg-primary/5"
-              )}
-            >
-              <act.icon className="w-3 h-3" />
-              {act.label}
-            </button>
-          ))}
-          <button
-            onClick={() => toast.info("Opening scripture library...")}
-            className="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium rounded-md border border-border bg-background hover:bg-indigo-50 text-indigo-600 transition-all"
-          >
-            <BookOpen className="w-3 h-3" />
-            Scripture
-          </button>
-          <button
-            onClick={() => toast.error("Emergency alert sent to all admins and coordinators!")}
-            className="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium rounded-md border border-red-200 bg-red-50 hover:bg-red-100 text-red-700 transition-all ml-auto"
-          >
-            <AlertTriangle className="w-3 h-3" />
-            Emergency
-          </button>
-        </div>
+    <div className="shrink-0 border-t border-border bg-background">
+      {/* Toggle bar */}
+      <button
+        onClick={() => { setIsCollapsed(!isCollapsed); if (!isCollapsed) setActivePanel(null); }}
+        className="w-full flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-muted-foreground hover:text-foreground transition-colors"
+      >
+        <Zap className="w-3.5 h-3.5" />
+        <span>Quick Actions</span>
+        <ChevronDown className={cn("w-3 h-3 transition-transform", !isCollapsed && "rotate-180")} />
+        <span className="ml-auto text-[10px] font-normal">{contact.name}</span>
+      </button>
 
-        {/* Quick Replies Expansion */}
-        <AnimatePresence>
-          {showQuickReplies && (
-            <motion.div
-              initial={{ height: 0, opacity: 0 }}
-              animate={{ height: "auto", opacity: 1 }}
-              exit={{ height: 0, opacity: 0 }}
-              className="overflow-hidden"
-            >
-              <div className="mt-2 pt-2 border-t border-border">
-                <div className="flex items-center justify-between mb-1.5">
-                  <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Reply Templates</span>
-                  <button onClick={() => setShowQuickReplies(false)} className="p-0.5 text-muted-foreground hover:text-foreground">
-                    <X className="w-3 h-3" />
-                  </button>
-                </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-1">
-                  {QUICK_REPLY_TEMPLATES.map((reply, i) => (
-                    <button
-                      key={i}
-                      onClick={() => {
-                        onInsertText(reply);
-                        setShowQuickReplies(false);
-                      }}
-                      className="text-left text-xs px-2.5 py-1.5 bg-muted/50 border border-border rounded-md hover:bg-muted transition-colors text-foreground leading-relaxed truncate"
-                      title={reply}
-                    >
-                      {reply}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </div>
-
-      {/* Transfer Modal */}
+      {/* Collapsible body */}
       <AnimatePresence>
-        {showTransferModal && (
+        {!isCollapsed && (
           <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm"
-            onClick={() => setShowTransferModal(false)}
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: "auto", opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.15 }}
+            className="overflow-hidden"
           >
-            <motion.div
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.95 }}
-              transition={{ type: "spring", duration: 0.3, bounce: 0.1 }}
-              onClick={e => e.stopPropagation()}
-              className="bg-background border border-border rounded-lg shadow-xl max-w-sm w-full mx-4 overflow-hidden"
-            >
-              <div className="px-6 pt-6 pb-4">
-                <div className="flex items-center gap-3 mb-4">
-                  <div className="w-10 h-10 rounded-full bg-blue-500/10 flex items-center justify-center">
-                    <ArrowRightLeft className="w-5 h-5 text-blue-600" />
-                  </div>
-                  <div>
-                    <h3 className="text-base font-bold text-foreground">Transfer Conversation</h3>
-                    <p className="text-xs text-muted-foreground mt-0.5">{contact.name}'s chat</p>
-                  </div>
-                </div>
-                <p className="text-xs text-muted-foreground mb-3">Select a team member to transfer this conversation to:</p>
-                <div className="space-y-1.5 max-h-56 overflow-y-auto">
-                  {users
-                    .filter(u => u.id !== currentUser.id && u.status === "active")
-                    .map(u => (
-                      <button
-                        key={u.id}
-                        onClick={() => {
-                          toast.success(`Conversation transferred to ${u.name}.`);
-                          setShowTransferModal(false);
-                        }}
-                        className="w-full flex items-center gap-3 px-3 py-2.5 rounded-md hover:bg-muted/50 transition-colors text-left"
-                      >
-                        <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-primary text-xs font-bold">
-                          {u.name.charAt(0)}
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <span className="text-sm font-semibold text-foreground block truncate">{u.name}</span>
-                          <span className="text-xs text-muted-foreground">{u.role}</span>
-                        </div>
-                      </button>
-                    ))}
-                </div>
-              </div>
-              <div className="px-6 py-3 bg-muted/30 border-t border-border">
+            <div className="flex flex-wrap gap-1 px-3 pb-2">
+              {actions.map(act => (
                 <button
-                  onClick={() => setShowTransferModal(false)}
-                  className="w-full px-4 py-2 text-sm font-semibold border border-border text-muted-foreground hover:text-foreground hover:bg-muted/40 transition-colors rounded-md"
+                  key={act.id}
+                  onClick={() => handleActionClick(act.id)}
+                  className={cn(
+                    "inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium rounded-md border transition-all",
+                    activePanel === act.id
+                      ? "border-primary/30 bg-primary/5 text-foreground"
+                      : "border-border bg-background text-muted-foreground hover:bg-muted/50 hover:text-foreground"
+                  )}
                 >
-                  Cancel
+                  <act.icon className="w-3 h-3" />
+                  {act.label}
                 </button>
-              </div>
-            </motion.div>
+              ))}
+              {/* Emergency — only colored action */}
+              <button
+                onClick={() => toast.error("Emergency alert sent to all admins and coordinators!")}
+                className="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium rounded-md border border-red-200 bg-red-50 hover:bg-red-100 text-red-700 transition-all ml-auto"
+              >
+                <AlertTriangle className="w-3 h-3" />
+                Emergency
+              </button>
+            </div>
+
+            {/* Expandable panel content */}
+            <AnimatePresence mode="wait">
+              {activePanel && (
+                <motion.div
+                  key={activePanel}
+                  initial={{ height: 0, opacity: 0 }}
+                  animate={{ height: "auto", opacity: 1 }}
+                  exit={{ height: 0, opacity: 0 }}
+                  transition={{ duration: 0.12 }}
+                  className="overflow-hidden border-t border-border"
+                >
+                  <div className="px-3 py-3 max-h-52 overflow-y-auto custom-scrollbar">
+
+                    {/* REQUEST REASSIGN */}
+                    {activePanel === "reassign" && (
+                      <div className="space-y-2.5">
+                        <p className="text-xs font-bold text-foreground">Request Reassignment</p>
+                        <p className="text-xs text-muted-foreground leading-snug">
+                          Submit a reason and the mentor coach will review and assign a new volunteer.
+                        </p>
+                        <textarea
+                          value={reassignReason}
+                          onChange={e => setReassignReason(e.target.value)}
+                          placeholder="e.g. Language barrier, scheduling conflict, seeker requested change..."
+                          rows={3}
+                          aria-label="Reassignment reason"
+                          className="w-full px-3 py-2 text-xs border border-input bg-background rounded-sm outline-none resize-none focus:ring-1 focus:ring-ring"
+                        />
+                        <div className="flex items-center justify-end gap-2">
+                          <button
+                            onClick={() => { setActivePanel(null); setReassignReason(""); }}
+                            className="px-3 py-1.5 text-xs font-semibold text-muted-foreground hover:text-foreground transition-colors"
+                          >Cancel</button>
+                          <button
+                            onClick={() => {
+                              if (!reassignReason.trim()) { toast.error("Please provide a reason"); return; }
+                              if (onRequestReassign) onRequestReassign(contact.id, reassignReason.trim());
+                              else toast.success(`Reassignment request submitted for ${contact.name}.`);
+                              setReassignReason("");
+                              setActivePanel(null);
+                            }}
+                            disabled={!reassignReason.trim()}
+                            className={cn(
+                              "flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-sm transition-all",
+                              reassignReason.trim()
+                                ? "bg-primary text-primary-foreground hover:bg-primary/90"
+                                : "bg-muted text-muted-foreground cursor-not-allowed"
+                            )}
+                          >
+                            <Send className="w-3 h-3" />
+                            Submit Request
+                          </button>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* QUICK REPLIES */}
+                    {activePanel === "replies" && (
+                      <div className="space-y-1.5">
+                        <p className="text-xs font-bold text-foreground mb-2">Insert a reply template</p>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-1">
+                          {QUICK_REPLY_TEMPLATES.map((reply, i) => (
+                            <button
+                              key={i}
+                              onClick={() => {
+                                onInsertText(reply);
+                                setActivePanel(null);
+                              }}
+                              className="text-left text-xs px-2.5 py-1.5 bg-muted/50 border border-border rounded-md hover:bg-muted transition-colors text-foreground leading-relaxed truncate"
+                              title={reply}
+                            >
+                              {reply}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* SEND FORM */}
+                    {activePanel === "form" && (
+                      <div className="space-y-1.5">
+                        <p className="text-xs font-bold text-foreground mb-2">Send a form to {contact.name.split(" ")[0]}</p>
+                        {FORM_TEMPLATES.map(form => (
+                          <button key={form.id} onClick={() => handleSendForm(form.id)}
+                            className="w-full flex items-start gap-3 p-2.5 text-left bg-muted/20 hover:bg-muted/50 transition-colors rounded-sm group"
+                          >
+                            <div className="w-8 h-8 bg-muted/50 text-foreground rounded-sm flex items-center justify-center shrink-0">
+                              <form.icon className="w-4 h-4" />
+                            </div>
+                            <div className="min-w-0 flex-1">
+                              <p className="text-xs font-bold text-foreground">{form.label}</p>
+                              <p className="text-xs text-muted-foreground leading-snug">{form.desc}</p>
+                            </div>
+                            <Send className="w-3.5 h-3.5 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity mt-1 shrink-0" />
+                          </button>
+                        ))}
+                      </div>
+                    )}
+
+                    {/* CONTENT SERIES */}
+                    {activePanel === "series" && (
+                      <div className="space-y-1.5">
+                        <p className="text-xs font-bold text-foreground mb-2">Start a content series</p>
+                        {CONTENT_SERIES.map(series => (
+                          <button key={series.id} onClick={() => handleStartSeries(series.id)}
+                            className="w-full flex items-start gap-3 p-2.5 text-left bg-muted/20 hover:bg-muted/50 transition-colors rounded-sm group"
+                          >
+                            <div className="w-8 h-8 bg-muted/50 text-foreground rounded-sm flex items-center justify-center shrink-0">
+                              <Library className="w-4 h-4" />
+                            </div>
+                            <div className="min-w-0 flex-1">
+                              <p className="text-xs font-bold text-foreground">{series.label} <span className="font-normal text-muted-foreground">· {series.lessons} lessons</span></p>
+                              <p className="text-xs text-muted-foreground leading-snug">{series.desc}</p>
+                            </div>
+                            <ChevronRight className="w-3.5 h-3.5 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity mt-1 shrink-0" />
+                          </button>
+                        ))}
+                      </div>
+                    )}
+
+                    {/* AI CONTENT SUGGESTION */}
+                    {activePanel === "suggest" && (
+                      <div className="space-y-1.5">
+                        <div className="flex items-center gap-2 mb-2">
+                          <Sparkles className="w-3.5 h-3.5 text-amber-500" />
+                          <p className="text-xs font-bold text-foreground">AI picks for {contact.name.split(" ")[0]}</p>
+                          {contact.maturity && (
+                            <span className="text-xs font-semibold px-1.5 py-0.5 rounded-sm bg-muted text-muted-foreground">{contact.maturity}</span>
+                          )}
+                        </div>
+                        {suggestions.length === 0 ? (
+                          <p className="text-xs text-muted-foreground py-4 text-center">No published content found.</p>
+                        ) : (
+                          suggestions.map(item => (
+                            <button key={item.id} onClick={() => handleSendContent(item)}
+                              className="w-full flex items-start gap-3 p-2.5 text-left bg-muted/20 hover:bg-muted/50 transition-colors rounded-sm group"
+                            >
+                              <div className="w-8 h-8 bg-muted/50 text-foreground rounded-sm flex items-center justify-center shrink-0">
+                                <BookOpen className="w-4 h-4" />
+                              </div>
+                              <div className="min-w-0 flex-1">
+                                <p className="text-xs font-bold text-foreground">{item.title}</p>
+                                <p className="text-xs text-muted-foreground leading-snug line-clamp-2">{item.summary}</p>
+                                <div className="flex items-center gap-2 mt-1">
+                                  <span className="text-xs font-semibold px-1.5 py-0.5 rounded-sm bg-muted text-muted-foreground">{item.type}</span>
+                                  <span className="text-xs text-muted-foreground">{item.readTimeMin} min read</span>
+                                </div>
+                              </div>
+                              <Send className="w-3.5 h-3.5 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity mt-1 shrink-0" />
+                            </button>
+                          ))
+                        )}
+                      </div>
+                    )}
+
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
           </motion.div>
         )}
       </AnimatePresence>
-    </>
+    </div>
   );
 }
 
@@ -3259,31 +3368,35 @@ export const ConversationView = ({
                   )}
                 </div>
 
-                {/* Quick Actions Toolbar */}
-                <ConversationToolbar
-                  contact={selectedContact}
-                  contentLibrary={contentLibrary}
-                  users={users}
-                  currentUser={currentUser}
-                  onSendMessage={onSendMessage}
-                  port={convPort}
-                  onUpdateContact={onUpdateContact}
-                />
-
-                {/* AI Suggestions or Volunteer Quick Actions */}
+                {/* Quick Actions — unified bar in volunteer mode, split toolbar + AI pills otherwise */}
                 {isAgent ? (
                   <VolunteerQuickActions
                     contact={selectedContact}
                     users={users}
                     currentUser={currentUser}
                     onInsertText={(text) => setAiSuggestedText(text)}
+                    contentLibrary={contentLibrary}
+                    onSendMessage={onSendMessage}
+                    port={convPort}
+                    onRequestReassign={onRequestReassign}
                   />
                 ) : (
-                  <AISuggestionPills
-                    contact={selectedContact}
-                    messages={selectedMessages}
-                    onSelect={(text) => setAiSuggestedText(text)}
-                  />
+                  <>
+                    <ConversationToolbar
+                      contact={selectedContact}
+                      contentLibrary={contentLibrary}
+                      users={users}
+                      currentUser={currentUser}
+                      onSendMessage={onSendMessage}
+                      port={convPort}
+                      onUpdateContact={onUpdateContact}
+                    />
+                    <AISuggestionPills
+                      contact={selectedContact}
+                      messages={selectedMessages}
+                      onSelect={(text) => setAiSuggestedText(text)}
+                    />
+                  </>
                 )}
 
                 {/* Compose */}

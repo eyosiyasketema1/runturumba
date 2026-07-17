@@ -217,7 +217,8 @@ export const VolunteerDashboard = ({
   };
 
   const handleClaim = (contactId: string) => {
-    // Mutate conversation state: assign to current user
+    const name = contacts.find(c => c.id === contactId)?.name || "Contact";
+    // Mutate conversation state: assign to current user — KPI counts update instantly
     setConversations(prev =>
       prev.map(c =>
         c.contactId === contactId
@@ -225,9 +226,7 @@ export const VolunteerDashboard = ({
           : c
       )
     );
-    toast.success("Conversation claimed. Opening chat...");
-    // Navigate to conversation view with this contact selected
-    onClaimConversation(contactId);
+    toast.success(`${name}'s conversation claimed! It's now in your Active tab.`);
   };
 
   const getContactName = (contactId: string) =>
