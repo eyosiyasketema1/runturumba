@@ -1979,6 +1979,7 @@ function VolunteerQuickActions({
   const [activePanel, setActivePanel] = useState<string | null>(null);
   const [reassignReason, setReassignReason] = useState("");
   const [collapsed, setCollapsed] = useState(false);
+  const [moreOpen, setMoreOpen] = useState(false);
 
   const QUICK_REPLY_TEMPLATES = [
     "Hi! Thank you for reaching out. How can I help you today?",
@@ -1998,23 +1999,28 @@ function VolunteerQuickActions({
     return matched.length > 0 ? matched.slice(0, 4) : published.slice(0, 4);
   }, [contentLibrary, contact.maturity]);
 
-  const ACTIONS: { id: string; label: string; icon: React.ComponentType<{ className?: string }>; panel?: boolean; emergency?: boolean }[] = [
+  // Primary actions shown as named buttons
+  const PRIMARY_ACTIONS: { id: string; label: string; icon: React.ComponentType<{ className?: string }>; panel?: boolean; emergency?: boolean }[] = [
     { id: "reassign",  label: "Request Reassign", icon: RefreshCw, panel: true },
     { id: "replies",   label: "Quick Replies",     icon: Zap, panel: true },
     { id: "form",      label: "Send Form",         icon: FileText, panel: true },
     { id: "series",    label: "Content Series",    icon: ListOrdered, panel: true },
     { id: "suggest",   label: "AI Suggest",        icon: Sparkles, panel: true },
+    { id: "emergency", label: "Emergency",         icon: AlertTriangle, emergency: true },
+  ];
+
+  // Secondary actions inside the "+" popover
+  const MORE_ACTIONS: { id: string; label: string; icon: React.ComponentType<{ className?: string }> }[] = [
     { id: "queue",     label: "Return to Queue",   icon: Undo2 },
     { id: "spam",      label: "Mark Spam",         icon: Ban },
     { id: "church",    label: "Church Connect",    icon: Church },
     { id: "admins",    label: "Alert Admins",      icon: ShieldAlert },
     { id: "scripture", label: "Scripture",          icon: BookOpen },
-    { id: "emergency", label: "Emergency",         icon: AlertTriangle, emergency: true },
   ];
 
   const handleClick = (id: string) => {
-    const action = ACTIONS.find(a => a.id === id);
-    if (action?.panel) { setActivePanel(prev => prev === id ? null : id); return; }
+    const primary = PRIMARY_ACTIONS.find(a => a.id === id);
+    if (primary?.panel) { setActivePanel(prev => prev === id ? null : id); setMoreOpen(false); return; }
     switch (id) {
       case "queue": toast.success(`${contact.name}'s conversation returned to the queue.`); break;
       case "spam": toast.success(`${contact.name}'s conversation marked as spam.`); break;
@@ -2023,6 +2029,7 @@ function VolunteerQuickActions({
       case "scripture": toast.info("Opening scripture library..."); break;
       case "emergency": toast.error("Emergency alert sent to all admins and coordinators!"); break;
     }
+    setMoreOpen(false);
   };
 
   const handleSendForm = (formId: string) => {
@@ -2062,13 +2069,13 @@ function VolunteerQuickActions({
       {!collapsed && (
         <>
           {/* Action buttons row */}
-          <div className="flex flex-wrap gap-1 px-3 pb-2">
-            {ACTIONS.map(act => (
+          <div className="flex items-center gap-1 px-3 pb-2">
+            {PRIMARY_ACTIONS.map(act => (
               <button
                 key={act.id}
                 onClick={() => handleClick(act.id)}
                 className={cn(
-                  "flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium rounded-sm transition-colors",
+                  "flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium rounded-sm transition-colors whitespace-nowrap",
                   activePanel === act.id
                     ? "bg-primary/10 text-primary"
                     : act.emergency
@@ -2076,10 +2083,38 @@ function VolunteerQuickActions({
                     : "text-foreground hover:bg-muted border border-transparent"
                 )}
               >
-                <act.icon className="w-3.5 h-3.5" />
+                <act.icon className="w-3.5 h-3.5 shrink-0" />
                 {act.label}
               </button>
             ))}
+
+            {/* "+" more actions popover */}
+            <div className="relative">
+              <button
+                onClick={() => setMoreOpen(o => !o)}
+                className={cn(
+                  "flex items-center justify-center w-7 h-7 rounded-sm transition-colors",
+                  moreOpen ? "bg-primary/10 text-primary" : "text-muted-foreground hover:text-foreground hover:bg-muted"
+                )}
+                title="More actions"
+              >
+                <Plus className="w-4 h-4" />
+              </button>
+              {moreOpen && (
+                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 z-50 w-48 bg-background border border-border shadow-xl py-1">
+                  {MORE_ACTIONS.map(act => (
+                    <button
+                      key={act.id}
+                      onClick={() => handleClick(act.id)}
+                      className="w-full flex items-center gap-2.5 px-3 py-2 text-xs font-medium text-foreground hover:bg-muted/50 transition-colors text-left"
+                    >
+                      <act.icon className="w-3.5 h-3.5 shrink-0" />
+                      {act.label}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
 
           {/* Expandable panels */}
@@ -2489,7 +2524,8 @@ function ComposeArea({
               </div>
 
               {/* Channel selector — beside emoji */}
-              <div className="relative ml-1">
+              <div className="relative ml-1 flex items-center gap-1.5">
+                <span className="text-xs text-muted-foreground font-medium">Replying via</span>
                 <button type="button" onClick={() => setOpenDropdown(openDropdown === "compose-port" ? null : "compose-port")}
                   className={cn("flex items-center gap-1 text-xs font-bold px-2 py-1 border transition-colors hover:opacity-80 rounded-sm", PORT_COLORS[port] ?? "bg-muted text-muted-foreground border-border")}
                   title={`Replying via ${CHANNEL_LABEL[port] ?? port}`}
