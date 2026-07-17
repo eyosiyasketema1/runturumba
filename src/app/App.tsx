@@ -206,6 +206,7 @@ export default function App() {
   const [activeTenant, setActiveTenant] = useState<Tenant>(INITIAL_TENANTS[0]);
   const [currentUser, setCurrentUser] = useState<User>(INITIAL_USERS[0]);
   const [currentView, setCurrentView] = useState("dashboard");
+  const [preSelectedContactId, setPreSelectedContactId] = useState<string | null>(null);
   const [dashboardTab, setDashboardTab] = useState<"main" | "discipleship" | "collective">("main");
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
@@ -1141,10 +1142,12 @@ export default function App() {
                     users={users}
                     currentUser={currentUser}
                     onOpenConversation={(contactId) => {
+                      setPreSelectedContactId(contactId);
                       setCurrentView("conversations");
                     }}
                     onClaimConversation={(contactId) => {
-                      toast.success(`Conversation claimed!`);
+                      setPreSelectedContactId(contactId);
+                      setCurrentView("conversations");
                     }}
                   />
                 )}
@@ -1155,6 +1158,7 @@ export default function App() {
                     users={users}
                     currentUser={currentUser}
                     onOpenConversation={(contactId) => {
+                      setPreSelectedContactId(contactId);
                       setCurrentView("conversations");
                     }}
                   />
@@ -1166,6 +1170,7 @@ export default function App() {
                     users={users}
                     currentUser={currentUser}
                     onOpenConversation={(contactId) => {
+                      setPreSelectedContactId(contactId);
                       setCurrentView("conversations");
                     }}
                   />
@@ -1416,6 +1421,7 @@ export default function App() {
                       users={users}
                       currentUser={currentUser}
                       onSendMessage={handleSendMessage}
+                      preSelectedContactId={preSelectedContactId}
                       conversationRules={conversationRules}
                       chatEndpoints={chatEndpoints}
                       groups={groups}

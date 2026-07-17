@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import React, { useState } from "react";
 import {
   MessageSquare, Clock, CheckCircle2, Timer, ChevronRight,
   BookOpen, Zap, Bug, AlertTriangle, Hand, Globe,
@@ -117,8 +117,8 @@ export const VolunteerDashboard = ({
     setPracticeConfirmId(null);
   };
 
-  // Build conversation metadata from messages
-  const conversations = useMemo<ConversationMeta[]>(() => {
+  // Build initial conversation metadata from messages (seed data)
+  const buildInitialConversations = (): ConversationMeta[] => {
     const byContact: Record<string, Message[]> = {};
     messages.forEach(m => {
       if (!byContact[m.contactId]) byContact[m.contactId] = [];
@@ -173,20 +173,16 @@ export const VolunteerDashboard = ({
         language: contact?.preferredLanguage || "English",
       };
     });
-  }, [messages, contacts, currentUser.id]);
+  };
+
+  // Mutable conversation state — so claiming actually updates the list
+  const [conversations, setConversations] = useState<ConversationMeta[]>(() => buildInitialConversations());
 
   // Partition conversations
-  const myConversations = useMemo(
-    () => conversations.filter(c => c.assigneeId === currentUser.id),
-    [conversations, currentUser.id]
-  );
+  const myConversations = conversations.filter(c => c.assigneeId === currentUser.id);
 
-  const unclaimed = useMemo(
-    () =>
-      [...conversations.filter(c => c.assigneeId === null)].sort(
-        (a, b) => new Date(a.firstMessageAt).getTime() - new Date(b.firstMessageAt).getTime()
-      ),
-    [conversations]
+  const unclaimed = [...conversations.filter(c => c.assigneeId === null)].sort(
+    (a, b) => new Date(a.firstMessageAt).getTime() - new Date(b.firstMessageAt).getTime()
   );
 
   const activeConvos = myConversations.filter(c => c.status === "active");
@@ -217,8 +213,17 @@ export const VolunteerDashboard = ({
   };
 
   const handleClaim = (contactId: string) => {
-    onClaimConversation(contactId);
+    // Mutate conversation state: assign to current user
+    setConversations(prev =>
+      prev.map(c =>
+        c.contactId === contactId
+          ? { ...c, assigneeId: currentUser.id, status: "active" as const, unreadCount: c.unreadCount || 1 }
+          : c
+      )
+    );
     toast.success("Conversation claimed. Opening chat...");
+    // Navigate to conversation view with this contact selected
+    onClaimConversation(contactId);
   };
 
   const getContactName = (contactId: string) =>
