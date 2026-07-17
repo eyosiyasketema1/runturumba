@@ -2056,11 +2056,11 @@ function VolunteerQuickActions({
   };
 
   return (
-    <div className="shrink-0 border-t border-border bg-muted/20">
+    <div className="shrink-0 mx-2 mb-2 border border-border rounded-md bg-muted/20">
       {/* Toggle header */}
       <button
         onClick={() => { setCollapsed(c => !c); if (!collapsed) setActivePanel(null); }}
-        className="w-full flex items-center justify-between px-4 py-1.5 text-xs font-bold text-muted-foreground uppercase tracking-widest hover:bg-muted/30 transition-colors"
+        className="w-full flex items-center justify-between px-3 py-1.5 text-xs font-bold text-muted-foreground uppercase tracking-widest hover:bg-muted/30 transition-colors rounded-t-md"
       >
         Quick Actions
         {collapsed ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
@@ -2101,7 +2101,7 @@ function VolunteerQuickActions({
                 <Plus className="w-4 h-4" />
               </button>
               {moreOpen && (
-                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 z-50 w-48 bg-background border border-border shadow-xl py-1">
+                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 z-50 w-48 bg-background border border-border shadow-xl rounded-md py-1">
                   {MORE_ACTIONS.map(act => (
                     <button
                       key={act.id}
@@ -2126,7 +2126,7 @@ function VolunteerQuickActions({
                 animate={{ height: "auto", opacity: 1 }}
                 exit={{ height: 0, opacity: 0 }}
                 transition={{ duration: 0.15 }}
-                className="overflow-hidden border-t border-border"
+                className="overflow-hidden border-t border-border rounded-b-md"
               >
                 <div className="p-3 max-h-52 overflow-y-auto">
                   {/* REQUEST REASSIGN */}

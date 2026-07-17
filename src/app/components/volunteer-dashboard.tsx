@@ -226,7 +226,9 @@ export const VolunteerDashboard = ({
           : c
       )
     );
-    toast.success(`${name}'s conversation claimed! It's now in your Active tab.`);
+    toast.success(`${name}'s conversation claimed!`);
+    // Navigate to the conversation
+    onClaimConversation(contactId);
   };
 
   const getContactName = (contactId: string) =>
