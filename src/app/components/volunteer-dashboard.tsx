@@ -2,7 +2,8 @@ import React, { useState, useMemo } from "react";
 import {
   MessageSquare, Clock, CheckCircle2, Timer, ChevronRight,
   BookOpen, Zap, Bug, AlertTriangle, Hand, Globe,
-  ArrowRightLeft, ShieldAlert, Ban, Undo2, Church
+  ArrowRightLeft, ShieldAlert, Ban, Undo2, Church,
+  FlaskConical, Eye, EyeOff, X, AlertCircle
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { toast } from "sonner";
@@ -96,6 +97,26 @@ export const VolunteerDashboard = ({
   const [activeTab, setActiveTab] = useState<TabOption>("Active");
   const [readConversations, setReadConversations] = useState<Set<string>>(new Set());
 
+  // ── US32: Practice Chat Mode ──────────────────────────────────────────────
+  const [testChats, setTestChats] = useState<Set<string>>(new Set());
+  const [showTestChats, setShowTestChats] = useState(true);
+  const [practiceConfirmId, setPracticeConfirmId] = useState<string | null>(null);
+
+  const toggleTestChat = (contactId: string) => {
+    setTestChats(prev => {
+      const next = new Set(prev);
+      if (next.has(contactId)) {
+        next.delete(contactId);
+        toast.success("Chat restored to live mode — activity will count in reports.");
+      } else {
+        next.add(contactId);
+        toast.info("Chat marked as practice — excluded from all reporting.");
+      }
+      return next;
+    });
+    setPracticeConfirmId(null);
+  };
+
   // Build conversation metadata from messages
   const conversations = useMemo<ConversationMeta[]>(() => {
     const byContact: Record<string, Message[]> = {};
@@ -178,7 +199,14 @@ export const VolunteerDashboard = ({
       ? pendingConvos
       : resolvedConvos;
 
-  // Stats
+  // US32: Filter test chats from KPI counts
+  const liveActiveConvos = activeConvos.filter(c => !testChats.has(c.contactId));
+  const livePendingConvos = pendingConvos.filter(c => !testChats.has(c.contactId));
+  const liveResolvedConvos = resolvedConvos.filter(c => !testChats.has(c.contactId));
+  const liveUnclaimed = unclaimed.filter(c => !testChats.has(c.contactId));
+  const testChatCount = testChats.size;
+
+  // Stats (exclude test chats)
   const avgResponseSeconds = 135; // 2m 15s mock
   const avgResponseFormatted = `${Math.floor(avgResponseSeconds / 60)}m ${avgResponseSeconds % 60}s`;
 
@@ -231,19 +259,44 @@ export const VolunteerDashboard = ({
             </h1>
             <p className="text-base text-slate-300 mt-3 max-w-2xl leading-relaxed">
               <span className="font-semibold text-white">
-                {activeConvos.length + pendingConvos.length} active chats
+                {liveActiveConvos.length + livePendingConvos.length} active chats
               </span>
               <span className="mx-2 text-slate-500">&middot;</span>
               <span className="font-semibold text-emerald-300">
-                {unclaimed.length} waiting in queue
+                {liveUnclaimed.length} waiting in queue
               </span>
               <span className="mx-2 text-slate-500">&middot;</span>
               <span className="font-semibold text-pink-300">
-                {resolvedConvos.length} resolved today
+                {liveResolvedConvos.length} resolved today
               </span>
+              {testChatCount > 0 && (
+                <>
+                  <span className="mx-2 text-slate-500">&middot;</span>
+                  <span className="font-semibold text-yellow-300">
+                    <FlaskConical className="w-3.5 h-3.5 inline mr-1" />
+                    {testChatCount} practice
+                  </span>
+                </>
+              )}
             </p>
           </div>
           <div className="flex items-center gap-3">
+            {testChatCount > 0 && (
+              <Button
+                variant="outline"
+                size="sm"
+                className={cn(
+                  "border-white/20 backdrop-blur-sm",
+                  showTestChats
+                    ? "bg-yellow-500/20 text-yellow-300 hover:bg-yellow-500/30 hover:text-yellow-200"
+                    : "bg-white/10 text-white hover:bg-white/20 hover:text-white"
+                )}
+                onClick={() => setShowTestChats(prev => !prev)}
+              >
+                {showTestChats ? <Eye className="w-3.5 h-3.5 mr-1.5" /> : <EyeOff className="w-3.5 h-3.5 mr-1.5" />}
+                {showTestChats ? "Practice Visible" : "Practice Hidden"}
+              </Button>
+            )}
             <Button
               variant="outline"
               size="sm"
@@ -262,21 +315,21 @@ export const VolunteerDashboard = ({
         {[
           {
             label: "My Active Chats",
-            value: activeConvos.length + pendingConvos.length,
+            value: liveActiveConvos.length + livePendingConvos.length,
             icon: MessageSquare,
             color: "text-blue-600",
             bg: "bg-blue-500/10",
           },
           {
             label: "Unclaimed Queue",
-            value: unclaimed.length,
+            value: liveUnclaimed.length,
             icon: Clock,
             color: "text-amber-600",
             bg: "bg-amber-500/10",
           },
           {
             label: "Resolved Today",
-            value: resolvedConvos.length,
+            value: liveResolvedConvos.length,
             icon: CheckCircle2,
             color: "text-emerald-600",
             bg: "bg-emerald-500/10",
@@ -402,74 +455,118 @@ export const VolunteerDashboard = ({
                     exit={{ opacity: 0, y: -4 }}
                     transition={{ duration: 0.15 }}
                   >
-                    {filteredConvos.map(convo => {
+                    {filteredConvos
+                      .filter(convo => showTestChats || !testChats.has(convo.contactId))
+                      .map(convo => {
                       const name = getContactName(convo.contactId);
                       const channelInfo = getChannelInfo(convo.channel);
                       const isRead = readConversations.has(convo.contactId);
                       const showUnread = convo.unreadCount > 0 && !isRead;
+                      const isTest = testChats.has(convo.contactId);
 
                       return (
-                        <button
+                        <div
                           key={convo.contactId}
-                          onClick={() => handleOpenConversation(convo.contactId)}
-                          className="w-full text-left px-6 py-4 hover:bg-muted/50 transition-colors group flex items-center gap-4"
+                          className={cn(
+                            "w-full text-left px-6 py-4 hover:bg-muted/50 transition-colors group flex items-center gap-4",
+                            isTest && "bg-yellow-50/50 border-l-2 border-l-yellow-400"
+                          )}
                         >
                           {/* Avatar */}
-                          <div
-                            className={cn(
-                              "w-10 h-10 rounded-full flex items-center justify-center text-white text-sm font-bold shrink-0",
-                              avatarColor(convo.contactId)
-                            )}
+                          <button
+                            onClick={() => handleOpenConversation(convo.contactId)}
+                            className="flex items-center gap-4 flex-1 min-w-0 text-left"
                           >
-                            {getInitial(name)}
-                          </div>
+                            <div className="relative shrink-0">
+                              <div
+                                className={cn(
+                                  "w-10 h-10 rounded-full flex items-center justify-center text-white text-sm font-bold",
+                                  isTest ? "bg-yellow-500" : avatarColor(convo.contactId)
+                                )}
+                              >
+                                {isTest ? <FlaskConical className="w-5 h-5" /> : getInitial(name)}
+                              </div>
+                            </div>
 
-                          {/* Content */}
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-2">
-                              <span className="text-sm font-semibold text-foreground truncate">
-                                {name}
+                            {/* Content */}
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-2">
+                                <span className="text-sm font-semibold text-foreground truncate">
+                                  {name}
+                                </span>
+                                {/* Channel icon */}
+                                {channelInfo.logoUrl ? (
+                                  <img
+                                    src={channelInfo.logoUrl}
+                                    alt={channelInfo.label}
+                                    className="w-3.5 h-3.5 shrink-0"
+                                  />
+                                ) : (
+                                  <channelInfo.icon
+                                    className={cn("w-3.5 h-3.5 shrink-0", channelInfo.color)}
+                                  />
+                                )}
+                                {isTest && (
+                                  <Badge
+                                    variant="outline"
+                                    className="text-[10px] px-1.5 py-0 bg-yellow-500/10 text-yellow-700 border-yellow-500/30"
+                                  >
+                                    <FlaskConical className="w-2.5 h-2.5 mr-0.5" />
+                                    Practice
+                                  </Badge>
+                                )}
+                                {convo.status === "pending_response" && (
+                                  <Badge
+                                    variant="outline"
+                                    className="text-[10px] px-1.5 py-0 bg-amber-500/10 text-amber-600 border-amber-500/20"
+                                  >
+                                    Awaiting
+                                  </Badge>
+                                )}
+                              </div>
+                              <p className="text-xs text-muted-foreground truncate mt-0.5">
+                                {convo.lastMessagePreview}
+                              </p>
+                            </div>
+                          </button>
+
+                          {/* Right Side: time + unread + practice toggle */}
+                          <div className="flex items-center gap-2 shrink-0">
+                            <div className="flex flex-col items-end gap-1">
+                              <span className="text-[11px] text-muted-foreground">
+                                {formatTimeAgo(convo.lastMessageAt)}
                               </span>
-                              {/* Channel icon */}
-                              {channelInfo.logoUrl ? (
-                                <img
-                                  src={channelInfo.logoUrl}
-                                  alt={channelInfo.label}
-                                  className="w-3.5 h-3.5 shrink-0"
-                                />
-                              ) : (
-                                <channelInfo.icon
-                                  className={cn("w-3.5 h-3.5 shrink-0", channelInfo.color)}
-                                />
-                              )}
-                              {convo.status === "pending_response" && (
-                                <Badge
-                                  variant="outline"
-                                  className="text-[10px] px-1.5 py-0 bg-amber-500/10 text-amber-600 border-amber-500/20"
-                                >
-                                  Awaiting
-                                </Badge>
+                              {showUnread && (
+                                <span className="w-5 h-5 rounded-full bg-destructive text-destructive-foreground text-[10px] font-bold flex items-center justify-center">
+                                  {convo.unreadCount}
+                                </span>
                               )}
                             </div>
-                            <p className="text-xs text-muted-foreground truncate mt-0.5">
-                              {convo.lastMessagePreview}
-                            </p>
-                          </div>
 
-                          {/* Right Side: time + unread */}
-                          <div className="flex flex-col items-end gap-1 shrink-0">
-                            <span className="text-[11px] text-muted-foreground">
-                              {formatTimeAgo(convo.lastMessageAt)}
-                            </span>
-                            {showUnread && (
-                              <span className="w-5 h-5 rounded-full bg-destructive text-destructive-foreground text-[10px] font-bold flex items-center justify-center">
-                                {convo.unreadCount}
-                              </span>
-                            )}
-                          </div>
+                            {/* Practice toggle */}
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                if (isTest) {
+                                  toggleTestChat(convo.contactId);
+                                } else {
+                                  setPracticeConfirmId(convo.contactId);
+                                }
+                              }}
+                              title={isTest ? "Remove practice mode" : "Mark as practice chat"}
+                              className={cn(
+                                "p-1.5 rounded-md transition-colors opacity-0 group-hover:opacity-100",
+                                isTest
+                                  ? "bg-yellow-100 text-yellow-700 hover:bg-yellow-200"
+                                  : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                              )}
+                            >
+                              <FlaskConical className="w-3.5 h-3.5" />
+                            </button>
 
-                          <ChevronRight className="w-4 h-4 text-muted-foreground/40 group-hover:text-muted-foreground transition-colors shrink-0" />
-                        </button>
+                            <ChevronRight className="w-4 h-4 text-muted-foreground/40 group-hover:text-muted-foreground transition-colors shrink-0" />
+                          </div>
+                        </div>
                       );
                     })}
                   </motion.div>
@@ -679,6 +776,74 @@ export const VolunteerDashboard = ({
           </div>
         </div>
       </div>
+
+      {/* US32: Practice Chat Confirmation Modal */}
+      <AnimatePresence>
+        {practiceConfirmId && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm"
+            onClick={() => setPracticeConfirmId(null)}
+          >
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              transition={{ type: "spring", duration: 0.3, bounce: 0.1 }}
+              onClick={e => e.stopPropagation()}
+              className="bg-background border border-border rounded-lg shadow-xl max-w-md w-full mx-4 overflow-hidden"
+            >
+              <div className="px-6 pt-6 pb-4">
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="w-10 h-10 rounded-full bg-yellow-500/10 flex items-center justify-center">
+                    <FlaskConical className="w-5 h-5 text-yellow-600" />
+                  </div>
+                  <div>
+                    <h3 className="text-base font-bold text-foreground">Mark as Practice Chat?</h3>
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      Chat with {getContactName(practiceConfirmId)}
+                    </p>
+                  </div>
+                </div>
+                <div className="bg-yellow-50 border border-yellow-200/60 rounded-md p-3 mb-4">
+                  <div className="flex items-start gap-2">
+                    <AlertCircle className="w-4 h-4 text-yellow-600 mt-0.5 shrink-0" />
+                    <div className="text-xs text-yellow-800 leading-relaxed">
+                      <p className="font-semibold mb-1">This conversation will be treated as a test:</p>
+                      <ul className="space-y-0.5 ml-3 list-disc">
+                        <li>Excluded from all KPI reports and analytics</li>
+                        <li>Excluded from response time calculations</li>
+                        <li>Marked with a visible practice badge</li>
+                        <li>Can be reverted back to live at any time</li>
+                      </ul>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div className="flex items-center gap-3 px-6 py-4 bg-muted/30 border-t border-border">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="flex-1"
+                  onClick={() => setPracticeConfirmId(null)}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  size="sm"
+                  className="flex-1 bg-yellow-500 hover:bg-yellow-600 text-white"
+                  onClick={() => toggleTestChat(practiceConfirmId)}
+                >
+                  <FlaskConical className="w-3.5 h-3.5 mr-1.5" />
+                  Mark as Practice
+                </Button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };

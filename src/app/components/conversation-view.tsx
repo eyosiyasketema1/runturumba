@@ -8,6 +8,7 @@ import {
   FileText, BookOpen, Sparkles, RefreshCw, ChevronRight, AlertCircle,
   Zap, ListOrdered, Library, Hand, Timer,
   Image, Mic, Square, Trash2,
+  Pencil, History, Merge, ChevronUp,
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { toast } from "sonner";
@@ -54,6 +55,28 @@ interface ThreadEntry {
   createdAt:   string;
   status?:     string;
   port?:       MessagePort;
+}
+
+// ── US33: Message Editing Types ────────────────────────────────────────────
+interface MessageEditRecord {
+  originalContent: string;
+  editedAt: string;
+}
+
+interface MessageEditState {
+  editedContent: Record<string, string>;     // msgId -> current edited content
+  editHistory: Record<string, MessageEditRecord[]>; // msgId -> array of previous versions
+}
+
+const EDIT_WINDOW_MINUTES = 15; // Configurable edit time window
+const MESSAGE_EDIT_WINDOW_MS = EDIT_WINDOW_MINUTES * 60 * 1000;
+
+// ── US26: Chat Merging Types ───────────────────────────────────────────────
+interface MergedConversation {
+  primaryContactId: string;
+  mergedContactIds: string[];
+  mergedAt: string;
+  channels: MessagePort[];
 }
 
 // ─── Reassignment & Forms Types ──────────────────────────────────────────────
@@ -353,7 +376,35 @@ function VoiceMessagePlayer({ duration, isAgent }: { duration: string; isAgent: 
 
 // ─── ThreadMessage ────────────────────────────────────────────────────────────
 
-function ThreadMessage({ entry }: { entry: ThreadEntry }) {
+function ThreadMessage({ entry, isEdited, editHistory, onEdit, onDelete, canEdit, canDelete }: {
+  entry: ThreadEntry;
+  isEdited?: boolean;
+  editHistory?: MessageEditRecord[];
+  onEdit?: (id: string, newContent: string) => void;
+  onDelete?: (id: string) => void;
+  canEdit?: boolean;
+  canDelete?: boolean;
+}) {
+  const [isEditing, setIsEditing] = useState(false);
+  const [editText, setEditText] = useState(entry.content);
+  const [showHistory, setShowHistory] = useState(false);
+  const editRef = useRef<HTMLTextAreaElement>(null);
+
+  useEffect(() => {
+    if (isEditing && editRef.current) {
+      editRef.current.focus();
+      editRef.current.setSelectionRange(editRef.current.value.length, editRef.current.value.length);
+    }
+  }, [isEditing]);
+
+  const handleSaveEdit = () => {
+    const trimmed = editText.trim();
+    if (trimmed && trimmed !== entry.content && onEdit) {
+      onEdit(entry.id, trimmed);
+    }
+    setIsEditing(false);
+  };
+
   if (entry.type === "system") {
     return (
       <div className="flex items-center gap-3 py-2.5 px-5">
@@ -384,45 +435,114 @@ function ThreadMessage({ entry }: { entry: ThreadEntry }) {
   const isAgent = entry.senderType === "user";
   return (
     <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
-      className={cn("flex w-full px-5 py-0.5", isAgent ? "justify-end" : "justify-start")}
+      className={cn("flex w-full px-5 py-0.5 group/msg", isAgent ? "justify-end" : "justify-start")}
     >
       <div className={cn("max-w-[68%] flex flex-col", isAgent ? "items-end" : "items-start")}>
-        <div className={cn(
-          "px-4 py-2.5 text-sm shadow-sm border",
-          isAgent
-            ? "bg-primary text-primary-foreground border-primary rounded-2xl rounded-tr-none"
-            : "bg-card text-foreground border-border rounded-2xl rounded-tl-none"
-        )}>
-          {/* Render image placeholders */}
-          {entry.content.includes("📷 [Image:") && (
-            <div className="flex flex-wrap gap-2 mb-2">
-              {entry.content.match(/📷 \[Image: ([^\]]+)\]/g)?.map((match, i) => {
-                const name = match.replace("📷 [Image: ", "").replace("]", "");
-                return (
-                  <div key={i} className={cn("w-40 h-28 rounded-md flex flex-col items-center justify-center gap-1", isAgent ? "bg-primary-foreground/10" : "bg-muted")}>
-                    <Image className={cn("w-6 h-6", isAgent ? "text-primary-foreground/60" : "text-muted-foreground")} />
-                    <span className={cn("text-xs px-1 truncate max-w-full", isAgent ? "text-primary-foreground/70" : "text-muted-foreground")}>{name}</span>
-                  </div>
-                );
-              })}
+        {/* Edit / Delete action buttons (visible on hover for agent messages) */}
+        {isAgent && (canEdit || canDelete) && !isEditing && (
+          <div className="flex items-center gap-0.5 mb-1 opacity-0 group-hover/msg:opacity-100 transition-opacity">
+            {canEdit && (
+              <button
+                onClick={() => { setEditText(entry.content); setIsEditing(true); }}
+                className="p-1 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+                title="Edit message"
+              >
+                <Pencil className="w-3 h-3" />
+              </button>
+            )}
+            {canDelete && (
+              <button
+                onClick={() => onDelete?.(entry.id)}
+                className="p-1 rounded-md text-muted-foreground hover:text-red-500 hover:bg-red-50 transition-colors"
+                title="Delete message"
+              >
+                <Trash2 className="w-3 h-3" />
+              </button>
+            )}
+          </div>
+        )}
+
+        {isEditing ? (
+          /* Inline edit UI */
+          <div className="w-full min-w-[280px]">
+            <div className="bg-primary/5 border border-primary/30 rounded-lg p-3">
+              <div className="flex items-center gap-1.5 mb-2">
+                <Pencil className="w-3 h-3 text-primary" />
+                <span className="text-xs font-bold text-primary">Editing message</span>
+              </div>
+              <textarea
+                ref={editRef}
+                value={editText}
+                onChange={e => setEditText(e.target.value)}
+                rows={3}
+                className="w-full px-3 py-2 text-sm border border-input bg-background rounded-md outline-none resize-none focus:ring-1 focus:ring-primary"
+                onKeyDown={e => {
+                  if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleSaveEdit(); }
+                  if (e.key === "Escape") setIsEditing(false);
+                }}
+              />
+              <div className="flex items-center justify-between mt-2">
+                <span className="text-xs text-muted-foreground">
+                  Esc to cancel, Enter to save
+                </span>
+                <div className="flex gap-1.5">
+                  <button
+                    onClick={() => setIsEditing(false)}
+                    className="px-2.5 py-1 text-xs font-medium text-muted-foreground hover:text-foreground bg-muted hover:bg-muted/80 rounded-md transition-colors"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={handleSaveEdit}
+                    disabled={!editText.trim() || editText.trim() === entry.content}
+                    className="px-2.5 py-1 text-xs font-medium text-primary-foreground bg-primary hover:bg-primary/90 rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    Save
+                  </button>
+                </div>
+              </div>
             </div>
-          )}
-          {/* Render voice message */}
-          {entry.content.includes("🎤 Voice message") && (
-            <VoiceMessagePlayer
-              duration={entry.content.match(/🎤 Voice message \(([^)]+)\)/)?.[1] || "0:05"}
-              isAgent={isAgent}
-            />
-          )}
-          {/* Render text (excluding image/voice placeholders) */}
-          {(() => {
-            const cleaned = entry.content
-              .replace(/📷 \[Image: [^\]]+\]\n*/g, "")
-              .replace(/🎤 Voice message \([^)]+\)\n*/g, "")
-              .trim();
-            return cleaned ? <p className="whitespace-pre-wrap leading-relaxed">{cleaned}</p> : null;
-          })()}
-        </div>
+          </div>
+        ) : (
+          /* Normal message bubble */
+          <div className={cn(
+            "px-4 py-2.5 text-sm shadow-sm border",
+            isAgent
+              ? "bg-primary text-primary-foreground border-primary rounded-2xl rounded-tr-none"
+              : "bg-card text-foreground border-border rounded-2xl rounded-tl-none"
+          )}>
+            {/* Render image placeholders */}
+            {entry.content.includes("📷 [Image:") && (
+              <div className="flex flex-wrap gap-2 mb-2">
+                {entry.content.match(/📷 \[Image: ([^\]]+)\]/g)?.map((match, i) => {
+                  const name = match.replace("📷 [Image: ", "").replace("]", "");
+                  return (
+                    <div key={i} className={cn("w-40 h-28 rounded-md flex flex-col items-center justify-center gap-1", isAgent ? "bg-primary-foreground/10" : "bg-muted")}>
+                      <Image className={cn("w-6 h-6", isAgent ? "text-primary-foreground/60" : "text-muted-foreground")} />
+                      <span className={cn("text-xs px-1 truncate max-w-full", isAgent ? "text-primary-foreground/70" : "text-muted-foreground")}>{name}</span>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+            {/* Render voice message */}
+            {entry.content.includes("🎤 Voice message") && (
+              <VoiceMessagePlayer
+                duration={entry.content.match(/🎤 Voice message \(([^)]+)\)/)?.[1] || "0:05"}
+                isAgent={isAgent}
+              />
+            )}
+            {/* Render text (excluding image/voice placeholders) */}
+            {(() => {
+              const cleaned = entry.content
+                .replace(/📷 \[Image: [^\]]+\]\n*/g, "")
+                .replace(/🎤 Voice message \([^)]+\)\n*/g, "")
+                .trim();
+              return cleaned ? <p className="whitespace-pre-wrap leading-relaxed">{cleaned}</p> : null;
+            })()}
+          </div>
+        )}
+
         <div className={cn("flex items-center gap-1.5 mt-1 px-1", isAgent ? "justify-end" : "justify-start")}>
           {entry.port && !isAgent && (
             <ChannelBadge port={entry.port} size="sm" />
@@ -430,6 +550,71 @@ function ThreadMessage({ entry }: { entry: ThreadEntry }) {
           <span className="text-xs font-bold text-muted-foreground uppercase tracking-wider opacity-60">
             {new Date(entry.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
           </span>
+
+          {/* US33: Edited badge with history */}
+          {isEdited && !isEditing && (
+            <div className="relative">
+              <button
+                onClick={() => setShowHistory(prev => !prev)}
+                className={cn(
+                  "flex items-center gap-0.5 text-xs font-medium px-1.5 py-0.5 rounded-sm transition-colors",
+                  isAgent
+                    ? "text-primary-foreground/60 hover:text-primary-foreground/80"
+                    : "text-muted-foreground hover:text-foreground"
+                )}
+                title="View edit history"
+              >
+                <Pencil className="w-2.5 h-2.5" />
+                edited
+              </button>
+
+              {/* Edit history popover */}
+              <AnimatePresence>
+                {showHistory && editHistory && editHistory.length > 0 && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 4, scale: 0.95 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: 4, scale: 0.95 }}
+                    className={cn(
+                      "absolute z-50 w-72 bg-background border border-border rounded-lg shadow-xl p-3",
+                      isAgent ? "right-0 bottom-full mb-1" : "left-0 bottom-full mb-1"
+                    )}
+                  >
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="flex items-center gap-1.5">
+                        <History className="w-3.5 h-3.5 text-muted-foreground" />
+                        <span className="text-xs font-bold text-foreground">Edit History</span>
+                      </div>
+                      <button
+                        onClick={() => setShowHistory(false)}
+                        className="p-0.5 text-muted-foreground hover:text-foreground"
+                      >
+                        <X className="w-3 h-3" />
+                      </button>
+                    </div>
+                    <div className="space-y-2 max-h-48 overflow-y-auto">
+                      {editHistory.map((record, idx) => (
+                        <div key={idx} className="bg-muted/50 rounded-md p-2 border border-border/50">
+                          <p className="text-xs text-muted-foreground whitespace-pre-wrap leading-relaxed line-through decoration-red-400/50">
+                            {record.originalContent.length > 120
+                              ? record.originalContent.slice(0, 117) + "..."
+                              : record.originalContent}
+                          </p>
+                          <span className="text-xs text-muted-foreground/60 mt-1 block">
+                            {new Date(record.editedAt).toLocaleString([], {
+                              month: "short", day: "numeric",
+                              hour: "2-digit", minute: "2-digit"
+                            })}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+          )}
+
           {isAgent && (
             <span className="opacity-50">
               {entry.status === "delivered" || entry.status === "read"
@@ -2315,6 +2500,45 @@ export const ConversationView = ({
   // ── Grab Conversation state (declared here, logic wired after helpers) ──
   const [grabDeadlines, setGrabDeadlines] = useState<Record<string, number>>({});
 
+  // ── US33: Message Edit State ───────────────────────────────────────────
+  const [msgEdits, setMsgEdits] = useState<MessageEditState>({ editedContent: {}, editHistory: {} });
+  const [deletedMsgs, setDeletedMsgs] = useState<Set<string>>(new Set());
+
+  const handleEditMessage = useCallback((msgId: string, newContent: string) => {
+    setMsgEdits(prev => {
+      // Find the current content (either already-edited or original from messages)
+      const currentContent = prev.editedContent[msgId]
+        ?? messages.find(m => m.id === msgId)?.content ?? "";
+
+      const history = prev.editHistory[msgId] ?? [];
+      return {
+        editedContent: { ...prev.editedContent, [msgId]: newContent },
+        editHistory: {
+          ...prev.editHistory,
+          [msgId]: [...history, { originalContent: currentContent, editedAt: new Date().toISOString() }],
+        },
+      };
+    });
+    toast.success("Message updated. Original preserved in edit history.");
+  }, [messages]);
+
+  const handleDeleteMessage = useCallback((msgId: string) => {
+    setDeletedMsgs(prev => new Set(prev).add(msgId));
+    toast.success("Message deleted.");
+  }, []);
+
+  const canEditMessage = useCallback((msg: { createdAt: string; senderType?: string }) => {
+    if (msg.senderType !== "user") return false;
+    const elapsed = Date.now() - new Date(msg.createdAt).getTime();
+    return elapsed < MESSAGE_EDIT_WINDOW_MS;
+  }, []);
+
+  // ── US26: Chat Merge State ─────────────────────────────────────────────
+  const [mergedConversations, setMergedConversations] = useState<MergedConversation[]>([]);
+  const [mergeMode, setMergeMode] = useState(false);
+  const [mergeSelection, setMergeSelection] = useState<Set<string>>(new Set());
+  const [showMergeConfirm, setShowMergeConfirm] = useState(false);
+
   // ── Helpers ────────────────────────────────────────────────────────────
   const getMeta = useCallback((id: string): ConvMeta => convMeta[id] ?? DEFAULT_META, [convMeta]);
 
@@ -2412,11 +2636,22 @@ export const ConversationView = ({
       senderType: m.senderType, senderId: m.senderId,
       createdAt: m.createdAt, status: m.status, port: m.port,
     }));
+    // US26: Include messages from merged conversations
+    const mergeRecord = mergedConversations.find(mc => mc.primaryContactId === selectedId);
+    const mergedMsgEntries: ThreadEntry[] = mergeRecord
+      ? messages
+          .filter(m => mergeRecord.mergedContactIds.includes(m.contactId))
+          .map(m => ({
+            id: m.id, type: "message" as const, content: m.content,
+            senderType: m.senderType, senderId: m.senderId,
+            createdAt: m.createdAt, status: m.status, port: m.port,
+          }))
+      : [];
     const localEntries: ThreadEntry[] = localItems
       .filter(i => i.contactId === selectedId)
       .map(i => ({ id: i.id, type: i.type, content: i.content, senderId: i.senderId, createdAt: i.createdAt }));
-    return [...msgEntries, ...localEntries].sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
-  }, [selectedMessages, localItems, selectedId]);
+    return [...msgEntries, ...mergedMsgEntries, ...localEntries].sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+  }, [selectedMessages, localItems, selectedId, mergedConversations, messages]);
 
   // ── Filtered + sorted inbox ────────────────────────────────────────────
   const filteredContacts = useMemo(() => {
@@ -2483,6 +2718,16 @@ export const ConversationView = ({
           <p className="text-sm text-muted-foreground">{contactsWithMsg.length} active thread{contactsWithMsg.length !== 1 ? "s" : ""}</p>
         </div>
         <div className="flex items-center gap-2">
+          {/* US26: Merge button */}
+          {isAgent && selectedId && !mergeMode && (
+            <button
+              onClick={() => { setMergeMode(true); setMergeSelection(new Set()); }}
+              className="flex items-center gap-2 px-4 py-1.5 bg-background border border-border text-sm font-semibold text-foreground hover:bg-muted/40 transition-colors"
+            >
+              <Merge className="w-4 h-4" />
+              Merge Chats
+            </button>
+          )}
           {!isAgent && (
             <button onClick={() => setIsRoutingOpen(true)}
               className="flex items-center gap-2 px-4 py-1.5 bg-background border border-border text-sm font-semibold text-foreground hover:bg-muted/40 transition-colors"
@@ -2615,13 +2860,46 @@ export const ConversationView = ({
             ) : (
               filteredContacts.map(c => {
                 const lastMsg = messages.filter(m => m.contactId === c.id).sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())[0];
+                const isMergeCandidate = mergeMode && c.id !== selectedId;
+                const isMergeSelected = mergeSelection.has(c.id);
                 return (
-                  <InboxListItem key={c.id} contact={c} lastMsg={lastMsg} meta={getMeta(c.id)}
-                    isActive={selectedId === c.id} users={users}
-                    grabDeadline={grabDeadlines[c.id] ?? null}
-                    onGrab={grabConversation}
-                    onClick={() => { setSelectedId(c.id); }}
-                  />
+                  <div key={c.id} className="relative">
+                    <InboxListItem contact={c} lastMsg={lastMsg} meta={getMeta(c.id)}
+                      isActive={selectedId === c.id} users={users}
+                      grabDeadline={grabDeadlines[c.id] ?? null}
+                      onGrab={grabConversation}
+                      onClick={() => {
+                        if (mergeMode && c.id !== selectedId) {
+                          setMergeSelection(prev => {
+                            const next = new Set(prev);
+                            if (next.has(c.id)) next.delete(c.id);
+                            else next.add(c.id);
+                            return next;
+                          });
+                        } else {
+                          setSelectedId(c.id);
+                        }
+                      }}
+                    />
+                    {/* US26: Merge selection overlay */}
+                    {isMergeCandidate && (
+                      <div
+                        className={cn(
+                          "absolute inset-0 flex items-center justify-end pr-4 pointer-events-none transition-colors",
+                          isMergeSelected ? "bg-indigo-500/10" : "bg-transparent"
+                        )}
+                      >
+                        <div className={cn(
+                          "w-5 h-5 rounded-sm border-2 flex items-center justify-center transition-all",
+                          isMergeSelected
+                            ? "bg-indigo-600 border-indigo-600"
+                            : "bg-background border-border"
+                        )}>
+                          {isMergeSelected && <Check className="w-3 h-3 text-white" />}
+                        </div>
+                      </div>
+                    )}
+                  </div>
                 );
               })
             )}
@@ -2676,6 +2954,59 @@ export const ConversationView = ({
                   </div>
                 )}
 
+                {/* US26: Merged conversation indicator */}
+                {selectedId && mergedConversations.find(mc => mc.primaryContactId === selectedId) && (
+                  <div className="shrink-0 bg-violet-50 border-b border-violet-200 px-5 py-2.5 flex items-center gap-3 animate-in slide-in-from-top-2 duration-300">
+                    <Merge className="w-4 h-4 text-violet-600 shrink-0" />
+                    <div className="flex-1 min-w-0">
+                      <span className="text-xs font-bold text-violet-800">Merged conversation</span>
+                      <span className="text-xs text-violet-600 ml-2">
+                        Includes messages from {mergedConversations.find(mc => mc.primaryContactId === selectedId)!.mergedContactIds.length} other contact{mergedConversations.find(mc => mc.primaryContactId === selectedId)!.mergedContactIds.length > 1 ? "s" : ""} across {mergedConversations.find(mc => mc.primaryContactId === selectedId)!.channels.map(ch => CHANNEL_LABEL[ch] ?? ch).join(", ")}
+                      </span>
+                    </div>
+                  </div>
+                )}
+
+                {/* US26: Merge mode selection banner */}
+                {mergeMode && selectedId && (
+                  <div className="shrink-0 bg-indigo-50 border-b border-indigo-200 px-5 py-3 animate-in slide-in-from-top-2 duration-300">
+                    <div className="flex items-center justify-between gap-3">
+                      <div className="flex items-center gap-3 min-w-0">
+                        <div className="w-8 h-8 rounded-sm bg-indigo-500 flex items-center justify-center shrink-0 shadow-sm">
+                          <Merge className="w-4 h-4 text-white" />
+                        </div>
+                        <div className="min-w-0">
+                          <p className="text-sm font-bold text-indigo-900">Merge Mode</p>
+                          <p className="text-xs text-indigo-700/80">
+                            Select conversations from the inbox to merge into this thread ({mergeSelection.size} selected)
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2 shrink-0">
+                        <button
+                          onClick={() => { setMergeMode(false); setMergeSelection(new Set()); }}
+                          className="px-3 py-1.5 text-xs font-medium text-indigo-700 border border-indigo-300 hover:bg-indigo-100 transition-colors rounded-sm"
+                        >
+                          Cancel
+                        </button>
+                        <button
+                          onClick={() => setShowMergeConfirm(true)}
+                          disabled={mergeSelection.size === 0}
+                          className="inline-flex items-center gap-1.5 px-4 py-1.5 bg-indigo-600 text-white text-xs font-bold hover:bg-indigo-700 transition-colors rounded-sm shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          <Merge className="w-3 h-3" />
+                          Merge {mergeSelection.size > 0 ? `(${mergeSelection.size})` : ""}
+                        </button>
+                      </div>
+                    </div>
+                    {/* Compatible channels note */}
+                    <div className="mt-2 flex items-center gap-1.5 text-xs text-indigo-600">
+                      <AlertCircle className="w-3 h-3" />
+                      Compatible channels: conversations from any channel can be merged into a unified thread
+                    </div>
+                  </div>
+                )}
+
                 {/* Thread */}
                 <div className="flex-1 overflow-y-auto py-4 space-y-1 custom-scrollbar bg-muted/5">
                   {threadEntries.length === 0 ? (
@@ -2685,7 +3016,26 @@ export const ConversationView = ({
                     </div>
                   ) : (
                     <>
-                      {threadEntries.map(entry => <ThreadMessage key={entry.id} entry={entry} />)}
+                      {threadEntries
+                        .filter(entry => !deletedMsgs.has(entry.id))
+                        .map(entry => {
+                          // Apply edited content if available
+                          const displayEntry = msgEdits.editedContent[entry.id]
+                            ? { ...entry, content: msgEdits.editedContent[entry.id] }
+                            : entry;
+                          return (
+                            <ThreadMessage
+                              key={entry.id}
+                              entry={displayEntry}
+                              isEdited={!!msgEdits.editHistory[entry.id]?.length}
+                              editHistory={msgEdits.editHistory[entry.id]}
+                              onEdit={handleEditMessage}
+                              onDelete={handleDeleteMessage}
+                              canEdit={canEditMessage(entry)}
+                              canDelete={isAgent}
+                            />
+                          );
+                        })}
                       {/* Typing indicator */}
                       {typingSet.has(selectedId!) && (
                         <div className="px-5"><TypingIndicator /></div>
@@ -2788,6 +3138,133 @@ export const ConversationView = ({
         contacts={contacts}
         onStart={(contactId, message, port) => { onSendMessage(contactId, message, undefined, port); setSelectedId(contactId); }}
       />
+
+      {/* US26: Merge Confirmation Modal */}
+      <AnimatePresence>
+        {showMergeConfirm && selectedId && mergeSelection.size > 0 && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm"
+            onClick={() => setShowMergeConfirm(false)}
+          >
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              transition={{ type: "spring", duration: 0.3, bounce: 0.1 }}
+              onClick={e => e.stopPropagation()}
+              className="bg-background border border-border rounded-lg shadow-xl max-w-lg w-full mx-4 overflow-hidden"
+            >
+              <div className="px-6 pt-6 pb-4">
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="w-10 h-10 rounded-full bg-indigo-500/10 flex items-center justify-center">
+                    <Merge className="w-5 h-5 text-indigo-600" />
+                  </div>
+                  <div>
+                    <h3 className="text-base font-bold text-foreground">Merge Conversations?</h3>
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      Merge {mergeSelection.size} conversation{mergeSelection.size > 1 ? "s" : ""} into {contacts.find(c => c.id === selectedId)?.name}'s thread
+                    </p>
+                  </div>
+                </div>
+
+                {/* Selected conversations to merge */}
+                <div className="bg-muted/30 border border-border rounded-md p-3 mb-4 max-h-40 overflow-y-auto">
+                  <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest mb-2">
+                    Conversations to merge
+                  </p>
+                  <div className="space-y-2">
+                    {Array.from(mergeSelection).map(cid => {
+                      const contact = contacts.find(c => c.id === cid);
+                      const lastMsg = messages.filter(m => m.contactId === cid).sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())[0];
+                      return (
+                        <div key={cid} className="flex items-center gap-2">
+                          <div className="w-6 h-6 rounded-full bg-indigo-500/10 flex items-center justify-center text-xs font-bold text-indigo-600">
+                            {contact?.name?.charAt(0) ?? "?"}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <span className="text-xs font-semibold text-foreground">{contact?.name ?? "Unknown"}</span>
+                            {lastMsg?.port && (
+                              <span className="ml-1.5"><ChannelBadge port={lastMsg.port} size="sm" /></span>
+                            )}
+                          </div>
+                          <button
+                            onClick={() => setMergeSelection(prev => { const n = new Set(prev); n.delete(cid); return n; })}
+                            className="p-0.5 text-muted-foreground hover:text-red-500"
+                          >
+                            <X className="w-3 h-3" />
+                          </button>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                <div className="bg-amber-50 border border-amber-200/60 rounded-md p-3">
+                  <div className="flex items-start gap-2">
+                    <AlertCircle className="w-4 h-4 text-amber-600 mt-0.5 shrink-0" />
+                    <div className="text-xs text-amber-800 leading-relaxed">
+                      <p className="font-semibold mb-1">This action will:</p>
+                      <ul className="space-y-0.5 ml-3 list-disc">
+                        <li>Combine all messages into a single unified thread</li>
+                        <li>Preserve channel information on each message</li>
+                        <li>Mark the merged conversations as linked</li>
+                      </ul>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div className="flex items-center gap-3 px-6 py-4 bg-muted/30 border-t border-border">
+                <button
+                  onClick={() => setShowMergeConfirm(false)}
+                  className="flex-1 px-4 py-2 text-sm font-semibold border border-border text-muted-foreground hover:text-foreground hover:bg-muted/40 rounded-md transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={() => {
+                    // Collect all unique channels from selected conversations
+                    const mergedChannels = new Set<MessagePort>();
+                    mergeSelection.forEach(cid => {
+                      messages
+                        .filter(m => m.contactId === cid)
+                        .forEach(m => mergedChannels.add(m.port));
+                    });
+
+                    setMergedConversations(prev => [
+                      ...prev,
+                      {
+                        primaryContactId: selectedId!,
+                        mergedContactIds: Array.from(mergeSelection),
+                        mergedAt: new Date().toISOString(),
+                        channels: Array.from(mergedChannels),
+                      },
+                    ]);
+
+                    // Add system message
+                    addLocalItem({
+                      contactId: selectedId!,
+                      type: "system",
+                      content: `${mergeSelection.size} conversation${mergeSelection.size > 1 ? "s" : ""} merged into this thread`,
+                    });
+
+                    toast.success(`${mergeSelection.size} conversation${mergeSelection.size > 1 ? "s" : ""} merged successfully!`);
+                    setShowMergeConfirm(false);
+                    setMergeMode(false);
+                    setMergeSelection(new Set());
+                  }}
+                  className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-2 text-sm font-semibold bg-indigo-600 text-white hover:bg-indigo-700 rounded-md transition-colors"
+                >
+                  <Merge className="w-4 h-4" />
+                  Confirm Merge
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };
