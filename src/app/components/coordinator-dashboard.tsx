@@ -355,6 +355,8 @@ export const CoordinatorDashboard = ({
 
   // -- Settings panel --
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  type SettingsTab = "general" | "assignment" | "escalation" | "hours" | "notifications" | "keywords" | "permissions" | "platforms";
+  const [settingsTab, setSettingsTab] = useState<SettingsTab>("general");
   const [settings, setSettings] = useState({
     teamName: "Amharic Team",
     language: "Amharic",
@@ -1639,7 +1641,7 @@ export const CoordinatorDashboard = ({
               animate={{ x: 0 }}
               exit={{ x: "100%" }}
               transition={{ type: "spring", damping: 28, stiffness: 300 }}
-              className="fixed top-0 right-0 h-full w-full max-w-2xl bg-background border-l border-border shadow-2xl z-50 flex flex-col"
+              className="fixed top-0 right-0 h-full w-full max-w-4xl bg-background border-l border-border shadow-2xl z-50 flex flex-col"
             >
               {/* Header */}
               <div className="flex items-center justify-between px-6 py-5 border-b border-border bg-card">
@@ -1652,444 +1654,472 @@ export const CoordinatorDashboard = ({
                 </Button>
               </div>
 
-              {/* Scrollable content */}
-              <div className="flex-1 overflow-y-auto">
-                {/* General */}
-                <div className="px-6 py-5 border-b border-border">
-                  <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-widest mb-4 flex items-center gap-2">
-                    <Shield className="w-3.5 h-3.5" />
-                    General
-                  </h3>
-                  <div className="space-y-4">
-                    <div>
-                      <Label className="text-xs font-semibold text-foreground">Team Name</Label>
-                      <Input
-                        value={settings.teamName}
-                        onChange={e => setSettings(s => ({ ...s, teamName: e.target.value }))}
-                        className="mt-1.5 text-sm h-9"
-                      />
-                    </div>
-                    <div>
-                      <Label className="text-xs font-semibold text-foreground">Language</Label>
-                      <Input
-                        value={settings.language}
-                        onChange={e => setSettings(s => ({ ...s, language: e.target.value }))}
-                        className="mt-1.5 text-sm h-9"
-                      />
-                    </div>
-                  </div>
+              {/* Tabbed layout: sidebar nav + content */}
+              <div className="flex-1 flex min-h-0">
+                {/* Sidebar tabs */}
+                <div className="w-48 shrink-0 border-r border-border bg-muted/30 py-2 overflow-y-auto">
+                  {([
+                    { id: "general" as SettingsTab, label: "General", icon: Shield },
+                    { id: "assignment" as SettingsTab, label: "Assignment Rules", icon: ArrowRightLeft },
+                    { id: "escalation" as SettingsTab, label: "Escalation", icon: AlertTriangle },
+                    { id: "hours" as SettingsTab, label: "Working Hours", icon: Clock },
+                    { id: "notifications" as SettingsTab, label: "Notifications", icon: Volume2 },
+                    { id: "keywords" as SettingsTab, label: "Keywords", icon: Hash },
+                    { id: "permissions" as SettingsTab, label: "Permissions", icon: Shield },
+                    { id: "platforms" as SettingsTab, label: "Platforms", icon: Globe },
+                  ]).map(tab => (
+                    <button
+                      key={tab.id}
+                      onClick={() => setSettingsTab(tab.id)}
+                      className={cn(
+                        "w-full flex items-center gap-2.5 px-4 py-2.5 text-left text-xs font-medium transition-colors",
+                        settingsTab === tab.id
+                          ? "bg-background text-foreground border-r-2 border-primary shadow-sm"
+                          : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
+                      )}
+                    >
+                      <tab.icon className="w-3.5 h-3.5 shrink-0" />
+                      {tab.label}
+                    </button>
+                  ))}
                 </div>
 
-                {/* Assignment Rules */}
-                <div className="px-6 py-5 border-b border-border">
-                  <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-widest mb-4 flex items-center gap-2">
-                    <ArrowRightLeft className="w-3.5 h-3.5" />
-                    Assignment Rules
-                  </h3>
-                  <div className="space-y-4">
-                    <div>
-                      <Label className="text-xs font-semibold text-foreground">Auto-Assignment Mode</Label>
-                      <div className="grid grid-cols-3 gap-2 mt-2">
+                {/* Tab content */}
+                <div className="flex-1 overflow-y-auto">
+                  {/* General */}
+                  {settingsTab === "general" && (
+                    <div className="px-6 py-5">
+                      <h3 className="text-sm font-bold text-foreground mb-1">General</h3>
+                      <p className="text-xs text-muted-foreground mb-5">Basic team configuration</p>
+                      <div className="space-y-4">
+                        <div>
+                          <Label className="text-xs font-semibold text-foreground">Team Name</Label>
+                          <Input
+                            value={settings.teamName}
+                            onChange={e => setSettings(s => ({ ...s, teamName: e.target.value }))}
+                            className="mt-1.5 text-sm h-9"
+                          />
+                        </div>
+                        <div>
+                          <Label className="text-xs font-semibold text-foreground">Language</Label>
+                          <Input
+                            value={settings.language}
+                            onChange={e => setSettings(s => ({ ...s, language: e.target.value }))}
+                            className="mt-1.5 text-sm h-9"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Assignment Rules */}
+                  {settingsTab === "assignment" && (
+                    <div className="px-6 py-5">
+                      <h3 className="text-sm font-bold text-foreground mb-1">Assignment Rules</h3>
+                      <p className="text-xs text-muted-foreground mb-5">How conversations are distributed to volunteers</p>
+                      <div className="space-y-4">
+                        <div>
+                          <Label className="text-xs font-semibold text-foreground">Auto-Assignment Mode</Label>
+                          <div className="grid grid-cols-3 gap-2 mt-2">
+                            {([
+                              { id: "round_robin", label: "Round Robin", desc: "Even distribution" },
+                              { id: "least_busy", label: "Least Busy", desc: "Fewest active chats" },
+                              { id: "manual", label: "Manual", desc: "Coordinator assigns" },
+                            ] as const).map(mode => (
+                              <button
+                                key={mode.id}
+                                onClick={() => setSettings(s => ({ ...s, assignmentMode: mode.id }))}
+                                className={cn(
+                                  "p-3 rounded-lg border text-left transition-all",
+                                  settings.assignmentMode === mode.id
+                                    ? "border-primary bg-primary/5 shadow-sm"
+                                    : "border-border hover:border-primary/30"
+                                )}
+                              >
+                                <p className="text-xs font-semibold text-foreground">{mode.label}</p>
+                                <p className="text-[11px] text-muted-foreground mt-0.5">{mode.desc}</p>
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                        <div>
+                          <Label className="text-xs font-semibold text-foreground flex items-center gap-2">
+                            <Hash className="w-3 h-3 text-muted-foreground" />
+                            Max Concurrent Chats per Volunteer
+                          </Label>
+                          <div className="flex items-center gap-3 mt-2">
+                            <Input
+                              type="number"
+                              min={1}
+                              max={20}
+                              value={settings.maxConcurrentChats}
+                              onChange={e => setSettings(s => ({ ...s, maxConcurrentChats: Number(e.target.value) }))}
+                              className="w-20 text-sm h-9 text-center"
+                            />
+                            <span className="text-xs text-muted-foreground">conversations at a time</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Escalation */}
+                  {settingsTab === "escalation" && (
+                    <div className="px-6 py-5">
+                      <h3 className="text-sm font-bold text-foreground mb-1">Escalation</h3>
+                      <p className="text-xs text-muted-foreground mb-5">Timeout and auto-escalation behavior</p>
+                      <div className="space-y-4">
+                        <div>
+                          <Label className="text-xs font-semibold text-foreground flex items-center gap-2">
+                            <Timer className="w-3 h-3 text-muted-foreground" />
+                            Escalation Timeout
+                          </Label>
+                          <div className="flex items-center gap-3 mt-2">
+                            <Input
+                              type="number"
+                              min={1}
+                              max={120}
+                              value={settings.escalationTimeout}
+                              onChange={e => setSettings(s => ({ ...s, escalationTimeout: Number(e.target.value) }))}
+                              className="w-20 text-sm h-9 text-center"
+                            />
+                            <span className="text-xs text-muted-foreground">minutes of no response before auto-escalation</span>
+                          </div>
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <Label className="text-xs font-semibold text-foreground">Auto-Escalate on Trigger Word</Label>
+                            <p className="text-[11px] text-muted-foreground mt-0.5">Immediately flag when a trigger word is detected</p>
+                          </div>
+                          <Switch
+                            checked={settings.autoEscalateOnTrigger}
+                            onCheckedChange={v => setSettings(s => ({ ...s, autoEscalateOnTrigger: v }))}
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Working Hours */}
+                  {settingsTab === "hours" && (
+                    <div className="px-6 py-5">
+                      <h3 className="text-sm font-bold text-foreground mb-1">Working Hours</h3>
+                      <p className="text-xs text-muted-foreground mb-5">Team availability schedule</p>
+                      <div className="space-y-4">
+                        <div className="grid grid-cols-2 gap-4">
+                          <div>
+                            <Label className="text-xs font-semibold text-foreground">Start Time</Label>
+                            <Input
+                              type="time"
+                              value={settings.workingHoursStart}
+                              onChange={e => setSettings(s => ({ ...s, workingHoursStart: e.target.value }))}
+                              className="mt-1.5 text-sm h-9"
+                            />
+                          </div>
+                          <div>
+                            <Label className="text-xs font-semibold text-foreground">End Time</Label>
+                            <Input
+                              type="time"
+                              value={settings.workingHoursEnd}
+                              onChange={e => setSettings(s => ({ ...s, workingHoursEnd: e.target.value }))}
+                              className="mt-1.5 text-sm h-9"
+                            />
+                          </div>
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <Label className="text-xs font-semibold text-foreground flex items-center gap-2">
+                              <RotateCcw className="w-3 h-3 text-muted-foreground" />
+                              Return to Queue After Hours
+                            </Label>
+                            <p className="text-[11px] text-muted-foreground mt-0.5">Unclaimed chats return to queue outside working hours</p>
+                          </div>
+                          <Switch
+                            checked={settings.autoReturnAfterHours}
+                            onCheckedChange={v => setSettings(s => ({ ...s, autoReturnAfterHours: v }))}
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Notifications */}
+                  {settingsTab === "notifications" && (
+                    <div className="px-6 py-5">
+                      <h3 className="text-sm font-bold text-foreground mb-1">Notifications</h3>
+                      <p className="text-xs text-muted-foreground mb-5">Alert preferences for your team</p>
+                      <div className="space-y-4">
                         {([
-                          { id: "round_robin", label: "Round Robin", desc: "Even distribution" },
-                          { id: "least_busy", label: "Least Busy", desc: "Fewest active chats" },
-                          { id: "manual", label: "Manual", desc: "Coordinator assigns" },
-                        ] as const).map(mode => (
-                          <button
-                            key={mode.id}
-                            onClick={() => setSettings(s => ({ ...s, assignmentMode: mode.id }))}
-                            className={cn(
-                              "p-3 rounded-lg border text-left transition-all",
-                              settings.assignmentMode === mode.id
-                                ? "border-primary bg-primary/5 shadow-sm"
-                                : "border-border hover:border-primary/30"
-                            )}
-                          >
-                            <p className="text-xs font-semibold text-foreground">{mode.label}</p>
-                            <p className="text-[11px] text-muted-foreground mt-0.5">{mode.desc}</p>
-                          </button>
+                          { key: "notifyOnNewConversation", label: "New Conversation", desc: "When a new seeker starts a chat in your language" },
+                          { key: "notifyOnEscalation", label: "Escalation Alert", desc: "When a volunteer escalates or a trigger word fires" },
+                          { key: "notifyOnIdleVolunteer", label: "Idle Volunteer", desc: "When a volunteer hasn't responded in 10+ minutes" },
+                        ] as const).map(n => (
+                          <div key={n.key} className="flex items-center justify-between">
+                            <div>
+                              <Label className="text-xs font-semibold text-foreground">{n.label}</Label>
+                              <p className="text-[11px] text-muted-foreground mt-0.5">{n.desc}</p>
+                            </div>
+                            <Switch
+                              checked={settings[n.key]}
+                              onCheckedChange={v => setSettings(s => ({ ...s, [n.key]: v }))}
+                            />
+                          </div>
                         ))}
                       </div>
                     </div>
-                    <div>
-                      <Label className="text-xs font-semibold text-foreground flex items-center gap-2">
-                        <Hash className="w-3 h-3 text-muted-foreground" />
-                        Max Concurrent Chats per Volunteer
-                      </Label>
-                      <div className="flex items-center gap-3 mt-2">
+                  )}
+
+                  {/* Keywords & Trigger Words */}
+                  {settingsTab === "keywords" && (
+                    <div className="px-6 py-5">
+                      <h3 className="text-sm font-bold text-foreground mb-1">Keywords &amp; Trigger Words</h3>
+                      <p className="text-xs text-muted-foreground mb-5">
+                        {triggerWords.length} active keywords that trigger escalation alerts
+                      </p>
+
+                      {/* Trigger word chips */}
+                      <div className="flex flex-wrap gap-2 mb-3">
+                        {triggerWords.map(word => (
+                          <span
+                            key={word}
+                            className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-rose-500/10 text-rose-600 border border-rose-500/20"
+                          >
+                            {word}
+                            <button
+                              onClick={() => handleRemoveTriggerWord(word)}
+                              className="ml-0.5 p-0.5 rounded-full hover:bg-rose-500/20 transition-colors"
+                              aria-label={`Remove trigger word ${word}`}
+                            >
+                              <X className="w-3 h-3" />
+                            </button>
+                          </span>
+                        ))}
+                      </div>
+
+                      {/* Add trigger word */}
+                      <div className="flex items-center gap-2 mb-4">
                         <Input
-                          type="number"
-                          min={1}
-                          max={20}
-                          value={settings.maxConcurrentChats}
-                          onChange={e => setSettings(s => ({ ...s, maxConcurrentChats: Number(e.target.value) }))}
-                          className="w-20 text-sm h-9 text-center"
+                          type="text"
+                          placeholder="Add keyword..."
+                          value={newTriggerWord}
+                          onChange={e => setNewTriggerWord(e.target.value)}
+                          onKeyDown={e => { if (e.key === "Enter") handleAddTriggerWord(); }}
+                          className="text-xs h-8"
                         />
-                        <span className="text-xs text-muted-foreground">conversations at a time</span>
+                        <Button size="sm" className="h-8 px-3 shrink-0" onClick={handleAddTriggerWord}>
+                          <Plus className="w-3.5 h-3.5" />
+                        </Button>
                       </div>
-                    </div>
-                  </div>
-                </div>
 
-                {/* Escalation */}
-                <div className="px-6 py-5 border-b border-border">
-                  <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-widest mb-4 flex items-center gap-2">
-                    <AlertTriangle className="w-3.5 h-3.5" />
-                    Escalation
-                  </h3>
-                  <div className="space-y-4">
-                    <div>
-                      <Label className="text-xs font-semibold text-foreground flex items-center gap-2">
-                        <Timer className="w-3 h-3 text-muted-foreground" />
-                        Escalation Timeout
-                      </Label>
-                      <div className="flex items-center gap-3 mt-2">
-                        <Input
-                          type="number"
-                          min={1}
-                          max={120}
-                          value={settings.escalationTimeout}
-                          onChange={e => setSettings(s => ({ ...s, escalationTimeout: Number(e.target.value) }))}
-                          className="w-20 text-sm h-9 text-center"
-                        />
-                        <span className="text-xs text-muted-foreground">minutes of no response before auto-escalation</span>
-                      </div>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <Label className="text-xs font-semibold text-foreground">Auto-Escalate on Trigger Word</Label>
-                        <p className="text-[11px] text-muted-foreground mt-0.5">Immediately flag when a trigger word is detected</p>
-                      </div>
-                      <Switch
-                        checked={settings.autoEscalateOnTrigger}
-                        onCheckedChange={v => setSettings(s => ({ ...s, autoEscalateOnTrigger: v }))}
-                      />
-                    </div>
-                  </div>
-                </div>
-
-                {/* Keywords & Trigger Words (NEW) */}
-                <div className="px-6 py-5 border-b border-border">
-                  <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-widest mb-4 flex items-center gap-2">
-                    <Hash className="w-3.5 h-3.5" />
-                    Keywords &amp; Trigger Words
-                  </h3>
-                  <p className="text-[11px] text-muted-foreground mb-3">
-                    {triggerWords.length} active keywords that trigger escalation alerts
-                  </p>
-
-                  {/* Trigger word chips */}
-                  <div className="flex flex-wrap gap-2 mb-3">
-                    {triggerWords.map(word => (
-                      <span
-                        key={word}
-                        className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-rose-500/10 text-rose-600 border border-rose-500/20"
-                      >
-                        {word}
-                        <button
-                          onClick={() => handleRemoveTriggerWord(word)}
-                          className="ml-0.5 p-0.5 rounded-full hover:bg-rose-500/20 transition-colors"
-                          aria-label={`Remove trigger word ${word}`}
-                        >
-                          <X className="w-3 h-3" />
-                        </button>
-                      </span>
-                    ))}
-                  </div>
-
-                  {/* Add trigger word */}
-                  <div className="flex items-center gap-2 mb-4">
-                    <Input
-                      type="text"
-                      placeholder="Add keyword..."
-                      value={newTriggerWord}
-                      onChange={e => setNewTriggerWord(e.target.value)}
-                      onKeyDown={e => { if (e.key === "Enter") handleAddTriggerWord(); }}
-                      className="text-xs h-8"
-                    />
-                    <Button size="sm" className="h-8 px-3 shrink-0" onClick={handleAddTriggerWord}>
-                      <Plus className="w-3.5 h-3.5" />
-                    </Button>
-                  </div>
-
-                  {/* LLM Suggestions */}
-                  <div className="space-y-3">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="w-full text-xs gap-2 justify-center"
-                      onClick={() => setShowLlmSuggestions(!showLlmSuggestions)}
-                    >
-                      <Sparkles className="w-3.5 h-3.5" />
-                      {showLlmSuggestions ? "Hide LLM Suggestions" : "LLM Suggestions"}
-                    </Button>
-
-                    <AnimatePresence>
-                      {showLlmSuggestions && (
-                        <motion.div
-                          initial={{ opacity: 0, height: 0 }}
-                          animate={{ opacity: 1, height: "auto" }}
-                          exit={{ opacity: 0, height: 0 }}
-                          className="overflow-hidden"
-                        >
-                          <div className="p-3 bg-violet-500/5 border border-violet-500/20 rounded-lg space-y-2">
-                            <p className="text-[11px] font-semibold text-violet-600 flex items-center gap-1">
-                              <Sparkles className="w-3 h-3" />
-                              Suggested keywords based on crisis detection patterns
-                            </p>
-                            {LLM_SUGGESTED_WORDS.map(word => {
-                              const alreadyAdded = triggerWords.includes(word);
-                              return (
-                                <div key={word} className="flex items-center justify-between">
-                                  <span className={cn("text-xs font-medium", alreadyAdded ? "text-muted-foreground line-through" : "text-foreground")}>
-                                    {word}
-                                  </span>
-                                  <Button
-                                    variant="outline"
-                                    size="sm"
-                                    className="h-6 px-2 text-[10px]"
-                                    disabled={alreadyAdded}
-                                    onClick={() => {
-                                      if (!alreadyAdded) {
-                                        setTriggerWords(prev => [...prev, word]);
-                                        toast.success(`Trigger word "${word}" added.`);
-                                      }
-                                    }}
-                                  >
-                                    {alreadyAdded ? "Added" : "Add"}
-                                  </Button>
-                                </div>
-                              );
-                            })}
-                          </div>
-                        </motion.div>
-                      )}
-                    </AnimatePresence>
-
-                    {/* Bulk Import */}
-                    <div>
-                      <Label className="text-xs font-semibold text-foreground flex items-center gap-2 mb-1.5">
-                        <Upload className="w-3 h-3 text-muted-foreground" />
-                        Bulk Import
-                      </Label>
-                      <Textarea
-                        placeholder="Paste comma-separated words (e.g. danger, help, scared, alone)"
-                        value={bulkImportText}
-                        onChange={e => setBulkImportText(e.target.value)}
-                        className="text-xs min-h-[60px]"
-                      />
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="mt-2 w-full text-xs gap-2 justify-center"
-                        onClick={handleBulkImport}
-                        disabled={!bulkImportText.trim()}
-                      >
-                        <Upload className="w-3.5 h-3.5" />
-                        Import Keywords
-                      </Button>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Volunteer Permissions (NEW - US29) */}
-                <div className="px-6 py-5 border-b border-border">
-                  <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-widest mb-4 flex items-center gap-2">
-                    <Shield className="w-3.5 h-3.5" />
-                    Volunteer Permissions
-                  </h3>
-                  <p className="text-[11px] text-muted-foreground mb-3">
-                    Configure feature access for each team member
-                  </p>
-
-                  <div className="border border-border rounded-lg overflow-hidden">
-                    {/* Table header */}
-                    <div className="grid grid-cols-[1fr_auto_auto_auto_auto] gap-0 px-3 py-2 bg-muted/50 border-b border-border">
-                      <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Name</span>
-                      <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest w-14 text-center">Block</span>
-                      <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest w-14 text-center">Transfer</span>
-                      <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest w-14 text-center">Audio</span>
-                      <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest w-14 text-center">Video</span>
-                    </div>
-
-                    {/* Table rows */}
-                    <div className="divide-y divide-border max-h-[300px] overflow-y-auto">
-                      {sortedTeamMembers.filter(m => m.role === "Volunteer").map(member => {
-                        const perms = getVolunteerPerm(member.user.id);
-                        return (
-                          <div key={member.user.id} className="grid grid-cols-[1fr_auto_auto_auto_auto] gap-0 px-3 py-2 items-center hover:bg-muted/20 transition-colors">
-                            <div className="flex items-center gap-2 min-w-0">
-                              <div className={cn("w-6 h-6 rounded-full flex items-center justify-center text-white text-[9px] font-bold shrink-0", avatarColor(member.user.id))}>
-                                {getInitial(member.user.name)}
-                              </div>
-                              <span className="text-xs font-medium text-foreground truncate">{member.user.name}</span>
-                            </div>
-                            <div className="w-14 flex justify-center">
-                              <Switch
-                                checked={perms.blockSeekers}
-                                onCheckedChange={() => toggleVolunteerPerm(member.user.id, "blockSeekers")}
-                              />
-                            </div>
-                            <div className="w-14 flex justify-center">
-                              <Switch
-                                checked={perms.transferConversations}
-                                onCheckedChange={() => toggleVolunteerPerm(member.user.id, "transferConversations")}
-                              />
-                            </div>
-                            <div className="w-14 flex justify-center">
-                              <Switch
-                                checked={perms.audioMessages}
-                                onCheckedChange={() => toggleVolunteerPerm(member.user.id, "audioMessages")}
-                              />
-                            </div>
-                            <div className="w-14 flex justify-center">
-                              <Switch
-                                checked={perms.videoCalls}
-                                onCheckedChange={() => toggleVolunteerPerm(member.user.id, "videoCalls")}
-                              />
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-                </div>
-
-                {/* Connected Platforms (NEW - US21) */}
-                <div className="px-6 py-5 border-b border-border">
-                  <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-widest mb-4 flex items-center gap-2">
-                    <Globe className="w-3.5 h-3.5" />
-                    Connected Platforms
-                  </h3>
-                  <p className="text-[11px] text-muted-foreground mb-3">
-                    Manage chat platform integrations
-                  </p>
-                  <div className="space-y-2">
-                    {connectedPlatforms.map(platform => (
-                      <div
-                        key={platform.id}
-                        className="flex items-center justify-between p-3 rounded-lg border border-border hover:bg-muted/20 transition-colors"
-                      >
-                        <div className="flex items-center gap-3">
-                          <div className={cn(
-                            "w-8 h-8 rounded-lg flex items-center justify-center text-xs font-bold",
-                            platform.connected
-                              ? "bg-emerald-500/10 text-emerald-600 border border-emerald-500/20"
-                              : "bg-gray-500/10 text-gray-500 border border-gray-500/20"
-                          )}>
-                            <Globe className="w-4 h-4" />
-                          </div>
-                          <div>
-                            <p className="text-xs font-semibold text-foreground">{platform.name}</p>
-                            <div className="flex items-center gap-1 mt-0.5">
-                              <span className={cn(
-                                "w-1.5 h-1.5 rounded-full",
-                                platform.connected ? "bg-emerald-500" : "bg-gray-400"
-                              )} />
-                              <span className={cn(
-                                "text-[10px] font-medium",
-                                platform.connected ? "text-emerald-600" : "text-muted-foreground"
-                              )}>
-                                {platform.connected ? "Connected" : "Not connected"}
-                              </span>
-                            </div>
-                          </div>
-                        </div>
+                      {/* LLM Suggestions */}
+                      <div className="space-y-3">
                         <Button
                           variant="outline"
                           size="sm"
-                          className={cn(
-                            "h-7 px-3 text-xs gap-1",
-                            platform.connected
-                              ? "text-rose-600 hover:text-rose-700 hover:bg-rose-50"
-                              : "text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50"
-                          )}
-                          onClick={() => handleConnectPlatform(platform.id, platform.name)}
+                          className="w-full text-xs gap-2 justify-center"
+                          onClick={() => setShowLlmSuggestions(!showLlmSuggestions)}
                         >
-                          {platform.connected ? (
-                            <>
-                              <X className="w-3 h-3" />
-                              Disconnect
-                            </>
-                          ) : (
-                            <>
-                              <ExternalLink className="w-3 h-3" />
-                              Connect
-                            </>
-                          )}
+                          <Sparkles className="w-3.5 h-3.5" />
+                          {showLlmSuggestions ? "Hide LLM Suggestions" : "LLM Suggestions"}
                         </Button>
-                      </div>
-                    ))}
-                  </div>
-                </div>
 
-                {/* Working Hours */}
-                <div className="px-6 py-5 border-b border-border">
-                  <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-widest mb-4 flex items-center gap-2">
-                    <Clock className="w-3.5 h-3.5" />
-                    Working Hours
-                  </h3>
-                  <div className="space-y-4">
-                    <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <Label className="text-xs font-semibold text-foreground">Start Time</Label>
-                        <Input
-                          type="time"
-                          value={settings.workingHoursStart}
-                          onChange={e => setSettings(s => ({ ...s, workingHoursStart: e.target.value }))}
-                          className="mt-1.5 text-sm h-9"
-                        />
-                      </div>
-                      <div>
-                        <Label className="text-xs font-semibold text-foreground">End Time</Label>
-                        <Input
-                          type="time"
-                          value={settings.workingHoursEnd}
-                          onChange={e => setSettings(s => ({ ...s, workingHoursEnd: e.target.value }))}
-                          className="mt-1.5 text-sm h-9"
-                        />
-                      </div>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <Label className="text-xs font-semibold text-foreground flex items-center gap-2">
-                          <RotateCcw className="w-3 h-3 text-muted-foreground" />
-                          Return to Queue After Hours
-                        </Label>
-                        <p className="text-[11px] text-muted-foreground mt-0.5">Unclaimed chats return to queue outside working hours</p>
-                      </div>
-                      <Switch
-                        checked={settings.autoReturnAfterHours}
-                        onCheckedChange={v => setSettings(s => ({ ...s, autoReturnAfterHours: v }))}
-                      />
-                    </div>
-                  </div>
-                </div>
+                        <AnimatePresence>
+                          {showLlmSuggestions && (
+                            <motion.div
+                              initial={{ opacity: 0, height: 0 }}
+                              animate={{ opacity: 1, height: "auto" }}
+                              exit={{ opacity: 0, height: 0 }}
+                              className="overflow-hidden"
+                            >
+                              <div className="p-3 bg-violet-500/5 border border-violet-500/20 rounded-lg space-y-2">
+                                <p className="text-[11px] font-semibold text-violet-600 flex items-center gap-1">
+                                  <Sparkles className="w-3 h-3" />
+                                  Suggested keywords based on crisis detection patterns
+                                </p>
+                                {LLM_SUGGESTED_WORDS.map(word => {
+                                  const alreadyAdded = triggerWords.includes(word);
+                                  return (
+                                    <div key={word} className="flex items-center justify-between">
+                                      <span className={cn("text-xs font-medium", alreadyAdded ? "text-muted-foreground line-through" : "text-foreground")}>
+                                        {word}
+                                      </span>
+                                      <Button
+                                        variant="outline"
+                                        size="sm"
+                                        className="h-6 px-2 text-[10px]"
+                                        disabled={alreadyAdded}
+                                        onClick={() => {
+                                          if (!alreadyAdded) {
+                                            setTriggerWords(prev => [...prev, word]);
+                                            toast.success(`Trigger word "${word}" added.`);
+                                          }
+                                        }}
+                                      >
+                                        {alreadyAdded ? "Added" : "Add"}
+                                      </Button>
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                            </motion.div>
+                          )}
+                        </AnimatePresence>
 
-                {/* Notifications */}
-                <div className="px-6 py-5">
-                  <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-widest mb-4 flex items-center gap-2">
-                    <Volume2 className="w-3.5 h-3.5" />
-                    Notifications
-                  </h3>
-                  <div className="space-y-4">
-                    {([
-                      { key: "notifyOnNewConversation", label: "New Conversation", desc: "When a new seeker starts a chat in your language" },
-                      { key: "notifyOnEscalation", label: "Escalation Alert", desc: "When a volunteer escalates or a trigger word fires" },
-                      { key: "notifyOnIdleVolunteer", label: "Idle Volunteer", desc: "When a volunteer hasn't responded in 10+ minutes" },
-                    ] as const).map(n => (
-                      <div key={n.key} className="flex items-center justify-between">
+                        {/* Bulk Import */}
                         <div>
-                          <Label className="text-xs font-semibold text-foreground">{n.label}</Label>
-                          <p className="text-[11px] text-muted-foreground mt-0.5">{n.desc}</p>
+                          <Label className="text-xs font-semibold text-foreground flex items-center gap-2 mb-1.5">
+                            <Upload className="w-3 h-3 text-muted-foreground" />
+                            Bulk Import
+                          </Label>
+                          <Textarea
+                            placeholder="Paste comma-separated words (e.g. danger, help, scared, alone)"
+                            value={bulkImportText}
+                            onChange={e => setBulkImportText(e.target.value)}
+                            className="text-xs min-h-[60px]"
+                          />
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="mt-2 w-full text-xs gap-2 justify-center"
+                            onClick={handleBulkImport}
+                            disabled={!bulkImportText.trim()}
+                          >
+                            <Upload className="w-3.5 h-3.5" />
+                            Import Keywords
+                          </Button>
                         </div>
-                        <Switch
-                          checked={settings[n.key]}
-                          onCheckedChange={v => setSettings(s => ({ ...s, [n.key]: v }))}
-                        />
                       </div>
-                    ))}
-                  </div>
+                    </div>
+                  )}
+
+                  {/* Volunteer Permissions */}
+                  {settingsTab === "permissions" && (
+                    <div className="px-6 py-5">
+                      <h3 className="text-sm font-bold text-foreground mb-1">Volunteer Permissions</h3>
+                      <p className="text-xs text-muted-foreground mb-5">
+                        Configure feature access for each team member
+                      </p>
+
+                      <div className="border border-border rounded-lg overflow-hidden">
+                        {/* Table header */}
+                        <div className="grid grid-cols-[1fr_auto_auto_auto_auto] gap-0 px-3 py-2 bg-muted/50 border-b border-border">
+                          <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Name</span>
+                          <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest w-14 text-center">Block</span>
+                          <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest w-14 text-center">Transfer</span>
+                          <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest w-14 text-center">Audio</span>
+                          <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest w-14 text-center">Video</span>
+                        </div>
+
+                        {/* Table rows */}
+                        <div className="divide-y divide-border max-h-[400px] overflow-y-auto">
+                          {sortedTeamMembers.filter(m => m.role === "Volunteer").map(member => {
+                            const perms = getVolunteerPerm(member.user.id);
+                            return (
+                              <div key={member.user.id} className="grid grid-cols-[1fr_auto_auto_auto_auto] gap-0 px-3 py-2 items-center hover:bg-muted/20 transition-colors">
+                                <div className="flex items-center gap-2 min-w-0">
+                                  <div className={cn("w-6 h-6 rounded-full flex items-center justify-center text-white text-[9px] font-bold shrink-0", avatarColor(member.user.id))}>
+                                    {getInitial(member.user.name)}
+                                  </div>
+                                  <span className="text-xs font-medium text-foreground truncate">{member.user.name}</span>
+                                </div>
+                                <div className="w-14 flex justify-center">
+                                  <Switch
+                                    checked={perms.blockSeekers}
+                                    onCheckedChange={() => toggleVolunteerPerm(member.user.id, "blockSeekers")}
+                                  />
+                                </div>
+                                <div className="w-14 flex justify-center">
+                                  <Switch
+                                    checked={perms.transferConversations}
+                                    onCheckedChange={() => toggleVolunteerPerm(member.user.id, "transferConversations")}
+                                  />
+                                </div>
+                                <div className="w-14 flex justify-center">
+                                  <Switch
+                                    checked={perms.audioMessages}
+                                    onCheckedChange={() => toggleVolunteerPerm(member.user.id, "audioMessages")}
+                                  />
+                                </div>
+                                <div className="w-14 flex justify-center">
+                                  <Switch
+                                    checked={perms.videoCalls}
+                                    onCheckedChange={() => toggleVolunteerPerm(member.user.id, "videoCalls")}
+                                  />
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Connected Platforms */}
+                  {settingsTab === "platforms" && (
+                    <div className="px-6 py-5">
+                      <h3 className="text-sm font-bold text-foreground mb-1">Connected Platforms</h3>
+                      <p className="text-xs text-muted-foreground mb-5">
+                        Manage chat platform integrations
+                      </p>
+                      <div className="space-y-2">
+                        {connectedPlatforms.map(platform => (
+                          <div
+                            key={platform.id}
+                            className="flex items-center justify-between p-3 rounded-lg border border-border hover:bg-muted/20 transition-colors"
+                          >
+                            <div className="flex items-center gap-3">
+                              <div className={cn(
+                                "w-8 h-8 rounded-lg flex items-center justify-center text-xs font-bold",
+                                platform.connected
+                                  ? "bg-emerald-500/10 text-emerald-600 border border-emerald-500/20"
+                                  : "bg-gray-500/10 text-gray-500 border border-gray-500/20"
+                              )}>
+                                <Globe className="w-4 h-4" />
+                              </div>
+                              <div>
+                                <p className="text-xs font-semibold text-foreground">{platform.name}</p>
+                                <div className="flex items-center gap-1 mt-0.5">
+                                  <span className={cn(
+                                    "w-1.5 h-1.5 rounded-full",
+                                    platform.connected ? "bg-emerald-500" : "bg-gray-400"
+                                  )} />
+                                  <span className={cn(
+                                    "text-[10px] font-medium",
+                                    platform.connected ? "text-emerald-600" : "text-muted-foreground"
+                                  )}>
+                                    {platform.connected ? "Connected" : "Not connected"}
+                                  </span>
+                                </div>
+                              </div>
+                            </div>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className={cn(
+                                "h-7 px-3 text-xs gap-1",
+                                platform.connected
+                                  ? "text-rose-600 hover:text-rose-700 hover:bg-rose-50"
+                                  : "text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50"
+                              )}
+                              onClick={() => handleConnectPlatform(platform.id, platform.name)}
+                            >
+                              {platform.connected ? (
+                                <>
+                                  <X className="w-3 h-3" />
+                                  Disconnect
+                                </>
+                              ) : (
+                                <>
+                                  <ExternalLink className="w-3 h-3" />
+                                  Connect
+                                </>
+                              )}
+                            </Button>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
 
