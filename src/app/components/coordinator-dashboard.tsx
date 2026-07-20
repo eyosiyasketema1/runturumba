@@ -2003,12 +2003,12 @@ export const CoordinatorDashboard = ({
 
                       <div className="border border-border rounded-lg overflow-hidden">
                         {/* Table header */}
-                        <div className="grid grid-cols-[1fr_auto_auto_auto_auto] gap-0 px-3 py-2 bg-muted/50 border-b border-border">
+                        <div className="grid grid-cols-[1fr_72px_72px_72px_72px] gap-3 px-4 py-2.5 bg-muted/50 border-b border-border">
                           <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Name</span>
-                          <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest w-14 text-center">Block</span>
-                          <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest w-14 text-center">Transfer</span>
-                          <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest w-14 text-center">Audio</span>
-                          <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest w-14 text-center">Video</span>
+                          <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest text-center">Block</span>
+                          <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest text-center">Transfer</span>
+                          <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest text-center">Audio</span>
+                          <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest text-center">Video</span>
                         </div>
 
                         {/* Table rows */}
@@ -2016,32 +2016,32 @@ export const CoordinatorDashboard = ({
                           {sortedTeamMembers.filter(m => m.role === "Volunteer").map(member => {
                             const perms = getVolunteerPerm(member.user.id);
                             return (
-                              <div key={member.user.id} className="grid grid-cols-[1fr_auto_auto_auto_auto] gap-0 px-3 py-2 items-center hover:bg-muted/20 transition-colors">
+                              <div key={member.user.id} className="grid grid-cols-[1fr_72px_72px_72px_72px] gap-3 px-4 py-2.5 items-center hover:bg-muted/20 transition-colors">
                                 <div className="flex items-center gap-2 min-w-0">
                                   <div className={cn("w-6 h-6 rounded-full flex items-center justify-center text-white text-[9px] font-bold shrink-0", avatarColor(member.user.id))}>
                                     {getInitial(member.user.name)}
                                   </div>
                                   <span className="text-xs font-medium text-foreground truncate">{member.user.name}</span>
                                 </div>
-                                <div className="w-14 flex justify-center">
+                                <div className="flex justify-center">
                                   <Switch
                                     checked={perms.blockSeekers}
                                     onCheckedChange={() => toggleVolunteerPerm(member.user.id, "blockSeekers")}
                                   />
                                 </div>
-                                <div className="w-14 flex justify-center">
+                                <div className="flex justify-center">
                                   <Switch
                                     checked={perms.transferConversations}
                                     onCheckedChange={() => toggleVolunteerPerm(member.user.id, "transferConversations")}
                                   />
                                 </div>
-                                <div className="w-14 flex justify-center">
+                                <div className="flex justify-center">
                                   <Switch
                                     checked={perms.audioMessages}
                                     onCheckedChange={() => toggleVolunteerPerm(member.user.id, "audioMessages")}
                                   />
                                 </div>
-                                <div className="w-14 flex justify-center">
+                                <div className="flex justify-center">
                                   <Switch
                                     checked={perms.videoCalls}
                                     onCheckedChange={() => toggleVolunteerPerm(member.user.id, "videoCalls")}
