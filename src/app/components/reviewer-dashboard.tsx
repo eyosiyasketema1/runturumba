@@ -3,7 +3,8 @@ import {
   ClipboardCheck, Clock, MessageSquare, Send,
   CheckCircle2, ChevronLeft, ChevronRight, Eye,
   AlertTriangle, RotateCcw, ArrowUpRight, FileText,
-  Users, Timer,
+  Users, Timer, MessageCircle, Inbox, TrendingUp,
+  Award, BarChart3,
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { toast } from "sonner";
@@ -291,6 +292,44 @@ export const ReviewerDashboard = ({
     }).sort((a, b) => b.conversationsReviewed - a.conversationsReviewed);
   }, []);
 
+  // US15: Per-volunteer current load (open threads, un-responded, capacity)
+  const volunteerLoad = useMemo(() => {
+    return VOLUNTEER_NAMES.map(vol => {
+      const rand = seededRandom(vol.id + "-load-stats");
+      const maxCapacity = 5;
+      const openThreads = Math.floor(rand() * maxCapacity) + 1;
+      const unresponded = Math.floor(rand() * Math.min(openThreads, 3));
+      const online = rand() > 0.3;
+      const avgResponseMin = Math.floor(rand() * 12) + 1;
+      return {
+        userId: vol.id,
+        name: vol.name,
+        openThreads,
+        unresponded,
+        maxCapacity,
+        online,
+        avgResponseMin,
+      };
+    });
+  }, []);
+
+  // US17: Aggregate coaching stats
+  const aggregateStats = useMemo(() => {
+    const totalReviewed = coachingSummary.reduce((s, v) => s + v.conversationsReviewed, 0);
+    const totalApproved = coachingSummary.reduce((s, v) => s + v.approved, 0);
+    const totalReturned = coachingSummary.reduce((s, v) => s + v.returned, 0);
+    const totalEscalated = coachingSummary.reduce((s, v) => s + v.escalated, 0);
+    const overallApprovalRate = totalReviewed > 0 ? Math.round((totalApproved / totalReviewed) * 100) : 0;
+    const topPerformer = coachingSummary.length > 0
+      ? coachingSummary.reduce((best, v) => {
+          const rate = v.conversationsReviewed > 0 ? v.approved / v.conversationsReviewed : 0;
+          const bestRate = best.conversationsReviewed > 0 ? best.approved / best.conversationsReviewed : 0;
+          return rate > bestRate ? v : best;
+        })
+      : null;
+    return { totalReviewed, totalApproved, totalReturned, totalEscalated, overallApprovalRate, topPerformer };
+  }, [coachingSummary]);
+
   // Handlers
   const handleSelectReview = (item: ReviewItem) => {
     setSelectedReviewId(item.id);
@@ -444,6 +483,88 @@ export const ReviewerDashboard = ({
             </p>
           </motion.div>
         ))}
+      </div>
+
+      {/* US15: Volunteer Load Overview — at-a-glance current status */}
+      <div className="bg-card rounded-lg border border-border shadow-sm overflow-hidden">
+        <div className="px-6 pt-5 pb-4 border-b border-border">
+          <div className="flex items-center justify-between">
+            <div>
+              <h2 className="text-sm font-bold text-foreground">Volunteer Load</h2>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                Open threads, un-responded messages &amp; capacity at a glance
+              </p>
+            </div>
+            <Badge variant="outline" className="text-[10px] px-2 py-0.5">
+              <Users className="w-2.5 h-2.5 mr-1" />
+              {volunteerLoad.filter(v => v.online).length}/{volunteerLoad.length} online
+            </Badge>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-7 gap-0 divide-x divide-border">
+          {volunteerLoad.map((vol, i) => {
+            const capacityPct = Math.round((vol.openThreads / vol.maxCapacity) * 100);
+            const capacityColor = capacityPct >= 80 ? "bg-rose-500" : capacityPct >= 60 ? "bg-amber-500" : "bg-emerald-500";
+            const capacityTextColor = capacityPct >= 80 ? "text-rose-600" : capacityPct >= 60 ? "text-amber-600" : "text-emerald-600";
+
+            return (
+              <motion.div
+                key={vol.userId}
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.2, delay: i * 0.04 }}
+                className="px-4 py-4 hover:bg-muted/30 transition-colors"
+              >
+                {/* Avatar + Status */}
+                <div className="flex items-center gap-2.5 mb-3">
+                  <div className="relative">
+                    <div className={cn("w-8 h-8 rounded-full flex items-center justify-center text-white text-[10px] font-bold", avatarColor(vol.userId))}>
+                      {getInitial(vol.name)}
+                    </div>
+                    <span className={cn("absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full border-2 border-card", vol.online ? "bg-emerald-500" : "bg-gray-400")} />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-xs font-semibold text-foreground truncate">{vol.name.split(" ")[0]}</p>
+                    <p className={cn("text-[10px] font-medium", vol.online ? "text-emerald-600" : "text-muted-foreground")}>
+                      {vol.online ? "Online" : "Offline"}
+                    </p>
+                  </div>
+                </div>
+
+                {/* Stats */}
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[10px] text-muted-foreground flex items-center gap-1">
+                      <Inbox className="w-3 h-3" />
+                      Open
+                    </span>
+                    <span className="text-xs font-bold text-foreground">{vol.openThreads}</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-[10px] text-muted-foreground flex items-center gap-1">
+                      <MessageCircle className="w-3 h-3" />
+                      Waiting
+                    </span>
+                    <span className={cn("text-xs font-bold", vol.unresponded > 0 ? "text-rose-600" : "text-emerald-600")}>
+                      {vol.unresponded}
+                    </span>
+                  </div>
+                  {/* Capacity bar */}
+                  <div>
+                    <div className="flex items-center justify-between mb-1">
+                      <span className="text-[10px] text-muted-foreground">Capacity</span>
+                      <span className={cn("text-[10px] font-bold", capacityTextColor)}>{vol.openThreads}/{vol.maxCapacity}</span>
+                    </div>
+                    <div className="h-1.5 bg-muted rounded-full overflow-hidden">
+                      <div className={cn("h-full rounded-full transition-all", capacityColor)} style={{ width: `${Math.min(capacityPct, 100)}%` }} />
+                    </div>
+                  </div>
+                </div>
+              </motion.div>
+            );
+          })}
+        </div>
       </div>
 
       {/* Two-panel layout (60/40) */}
@@ -842,6 +963,72 @@ export const ReviewerDashboard = ({
             )}
           </div>
         </div>
+      </div>
+
+      {/* US17: Aggregate Coaching Stats */}
+      <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
+        {[
+          {
+            label: "Total Reviewed",
+            value: aggregateStats.totalReviewed,
+            icon: BarChart3,
+            color: "text-blue-600",
+            bg: "bg-blue-500/10",
+          },
+          {
+            label: "Approved",
+            value: aggregateStats.totalApproved,
+            icon: CheckCircle2,
+            color: "text-emerald-600",
+            bg: "bg-emerald-500/10",
+          },
+          {
+            label: "Returned",
+            value: aggregateStats.totalReturned,
+            icon: RotateCcw,
+            color: "text-amber-600",
+            bg: "bg-amber-500/10",
+          },
+          {
+            label: "Escalated",
+            value: aggregateStats.totalEscalated,
+            icon: ArrowUpRight,
+            color: "text-rose-600",
+            bg: "bg-rose-500/10",
+          },
+          {
+            label: "Approval Rate",
+            value: `${aggregateStats.overallApprovalRate}%`,
+            icon: TrendingUp,
+            color: aggregateStats.overallApprovalRate >= 80 ? "text-emerald-600" : "text-amber-600",
+            bg: aggregateStats.overallApprovalRate >= 80 ? "bg-emerald-500/10" : "bg-amber-500/10",
+            extra: aggregateStats.topPerformer ? `Top: ${aggregateStats.topPerformer.name.split(" ")[0]}` : undefined,
+          },
+        ].map((stat, i) => (
+          <motion.div
+            key={stat.label}
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.3, delay: i * 0.05 }}
+            className="bg-card p-4 rounded-lg border border-border shadow-sm"
+          >
+            <div className="flex items-center gap-2 mb-2">
+              <div className={cn("p-1.5 rounded-md", stat.bg)}>
+                <stat.icon className={cn("w-3.5 h-3.5", stat.color)} />
+              </div>
+              <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">{stat.label}</span>
+            </div>
+            <p className="text-xl font-bold tracking-tight text-foreground">
+              {typeof stat.value === "number" ? stat.value.toLocaleString() : stat.value}
+            </p>
+            {"extra" in stat && stat.extra && (
+              <p className="text-[10px] text-muted-foreground mt-0.5 flex items-center gap-1">
+                <Award className="w-3 h-3 text-amber-500" />
+                {stat.extra}
+              </p>
+            )}
+          </motion.div>
+        ))}
       </div>
 
       {/* Bottom Section — Volunteer Coaching Summary */}
