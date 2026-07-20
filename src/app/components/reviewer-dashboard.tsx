@@ -150,6 +150,7 @@ export const ReviewerDashboard = ({
   currentUser,
   onOpenConversation,
 }: ReviewerDashboardProps) => {
+  const [pageTab, setPageTab] = useState<"overview" | "volunteer_load">("overview");
   const [activeTab, setActiveTab] = useState<ReviewTab>("Pending");
   const [selectedReviewId, setSelectedReviewId] = useState<string | null>(null);
   const [coachingNotes, setCoachingNotes] = useState("");
@@ -424,6 +425,30 @@ export const ReviewerDashboard = ({
         </div>
       </header>
 
+      {/* Page-level tabs */}
+      <div className="flex gap-1.5 p-1 bg-muted rounded-md border border-border w-fit">
+        {([
+          { id: "overview" as const, label: "Overview" },
+          { id: "volunteer_load" as const, label: "Volunteer Load" },
+        ]).map(tab => (
+          <button
+            key={tab.id}
+            onClick={() => setPageTab(tab.id)}
+            className={cn(
+              "px-4 py-2 rounded-sm text-xs font-semibold transition-all",
+              pageTab === tab.id
+                ? "bg-background text-foreground shadow-sm border border-border"
+                : "text-muted-foreground hover:text-foreground"
+            )}
+          >
+            {tab.label}
+          </button>
+        ))}
+      </div>
+
+      {/* ============ OVERVIEW TAB ============ */}
+      {pageTab === "overview" && (<>
+
       {/* KPI Stats Row */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {[
@@ -483,88 +508,6 @@ export const ReviewerDashboard = ({
             </p>
           </motion.div>
         ))}
-      </div>
-
-      {/* US15: Volunteer Load Overview — at-a-glance current status */}
-      <div className="bg-card rounded-lg border border-border shadow-sm overflow-hidden">
-        <div className="px-6 pt-5 pb-4 border-b border-border">
-          <div className="flex items-center justify-between">
-            <div>
-              <h2 className="text-sm font-bold text-foreground">Volunteer Load</h2>
-              <p className="text-xs text-muted-foreground mt-0.5">
-                Open threads, un-responded messages &amp; capacity at a glance
-              </p>
-            </div>
-            <Badge variant="outline" className="text-[10px] px-2 py-0.5">
-              <Users className="w-2.5 h-2.5 mr-1" />
-              {volunteerLoad.filter(v => v.online).length}/{volunteerLoad.length} online
-            </Badge>
-          </div>
-        </div>
-
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-7 gap-0 divide-x divide-border">
-          {volunteerLoad.map((vol, i) => {
-            const capacityPct = Math.round((vol.openThreads / vol.maxCapacity) * 100);
-            const capacityColor = capacityPct >= 80 ? "bg-rose-500" : capacityPct >= 60 ? "bg-amber-500" : "bg-emerald-500";
-            const capacityTextColor = capacityPct >= 80 ? "text-rose-600" : capacityPct >= 60 ? "text-amber-600" : "text-emerald-600";
-
-            return (
-              <motion.div
-                key={vol.userId}
-                initial={{ opacity: 0, y: 8 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.2, delay: i * 0.04 }}
-                className="px-4 py-4 hover:bg-muted/30 transition-colors"
-              >
-                {/* Avatar + Status */}
-                <div className="flex items-center gap-2.5 mb-3">
-                  <div className="relative">
-                    <div className={cn("w-8 h-8 rounded-full flex items-center justify-center text-white text-[10px] font-bold", avatarColor(vol.userId))}>
-                      {getInitial(vol.name)}
-                    </div>
-                    <span className={cn("absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full border-2 border-card", vol.online ? "bg-emerald-500" : "bg-gray-400")} />
-                  </div>
-                  <div className="min-w-0">
-                    <p className="text-xs font-semibold text-foreground truncate">{vol.name.split(" ")[0]}</p>
-                    <p className={cn("text-[10px] font-medium", vol.online ? "text-emerald-600" : "text-muted-foreground")}>
-                      {vol.online ? "Online" : "Offline"}
-                    </p>
-                  </div>
-                </div>
-
-                {/* Stats */}
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <span className="text-[10px] text-muted-foreground flex items-center gap-1">
-                      <Inbox className="w-3 h-3" />
-                      Open
-                    </span>
-                    <span className="text-xs font-bold text-foreground">{vol.openThreads}</span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-[10px] text-muted-foreground flex items-center gap-1">
-                      <MessageCircle className="w-3 h-3" />
-                      Waiting
-                    </span>
-                    <span className={cn("text-xs font-bold", vol.unresponded > 0 ? "text-rose-600" : "text-emerald-600")}>
-                      {vol.unresponded}
-                    </span>
-                  </div>
-                  {/* Capacity bar */}
-                  <div>
-                    <div className="flex items-center justify-between mb-1">
-                      <span className="text-[10px] text-muted-foreground">Capacity</span>
-                      <span className={cn("text-[10px] font-bold", capacityTextColor)}>{vol.openThreads}/{vol.maxCapacity}</span>
-                    </div>
-                    <div className="h-1.5 bg-muted rounded-full overflow-hidden">
-                      <div className={cn("h-full rounded-full transition-all", capacityColor)} style={{ width: `${Math.min(capacityPct, 100)}%` }} />
-                    </div>
-                  </div>
-                </div>
-              </motion.div>
-            );
-          })}
-        </div>
       </div>
 
       {/* Two-panel layout (60/40) */}
@@ -1152,6 +1095,104 @@ export const ReviewerDashboard = ({
           </table>
         </div>
       </div>
+
+      </>)}
+
+      {/* ============ VOLUNTEER LOAD TAB ============ */}
+      {pageTab === "volunteer_load" && (
+        <div className="bg-card rounded-lg border border-border shadow-sm overflow-hidden">
+          <div className="px-6 pt-5 pb-4 border-b border-border">
+            <div className="flex items-center justify-between">
+              <div>
+                <h2 className="text-sm font-bold text-foreground">Volunteer Load</h2>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  Open threads, un-responded messages &amp; capacity per volunteer
+                </p>
+              </div>
+              <Badge variant="outline" className="text-[10px] px-2 py-0.5">
+                <Users className="w-2.5 h-2.5 mr-1" />
+                {volunteerLoad.filter(v => v.online).length}/{volunteerLoad.length} online
+              </Badge>
+            </div>
+          </div>
+
+          <div className="overflow-x-auto">
+            <table className="w-full text-left">
+              <thead>
+                <tr className="border-b border-border">
+                  <th className="px-6 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-widest">Volunteer</th>
+                  <th className="px-6 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-widest text-center">Status</th>
+                  <th className="px-6 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-widest text-right">Open Threads</th>
+                  <th className="px-6 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-widest text-right">Un-responded</th>
+                  <th className="px-6 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-widest text-right">Avg Response</th>
+                  <th className="px-6 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-widest text-center">Capacity</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-border">
+                {volunteerLoad.map((vol, i) => {
+                  const capacityPct = Math.round((vol.openThreads / vol.maxCapacity) * 100);
+                  const capacityColor = capacityPct >= 80 ? "bg-rose-500" : capacityPct >= 60 ? "bg-amber-500" : "bg-emerald-500";
+                  const capacityTextColor = capacityPct >= 80 ? "text-rose-600" : capacityPct >= 60 ? "text-amber-600" : "text-emerald-600";
+
+                  return (
+                    <motion.tr
+                      key={vol.userId}
+                      initial={{ opacity: 0, y: 4 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.2, delay: i * 0.04 }}
+                      className="hover:bg-muted/30 transition-colors"
+                    >
+                      {/* Name */}
+                      <td className="px-6 py-3.5">
+                        <div className="flex items-center gap-3">
+                          <div className="relative">
+                            <div className={cn("w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold shrink-0", avatarColor(vol.userId))}>
+                              {getInitial(vol.name)}
+                            </div>
+                            <span className={cn("absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full border-2 border-card", vol.online ? "bg-emerald-500" : "bg-gray-400")} />
+                          </div>
+                          <span className="text-sm font-semibold text-foreground">{vol.name}</span>
+                        </div>
+                      </td>
+                      {/* Status */}
+                      <td className="px-6 py-3.5 text-center">
+                        <Badge variant="outline" className={cn("text-[10px] px-2 py-0.5", vol.online ? "text-emerald-600 border-emerald-500/30 bg-emerald-500/10" : "text-muted-foreground border-border bg-muted/50")}>
+                          {vol.online ? "Online" : "Offline"}
+                        </Badge>
+                      </td>
+                      {/* Open Threads */}
+                      <td className="px-6 py-3.5 text-right">
+                        <span className="text-sm font-semibold text-foreground">{vol.openThreads}</span>
+                      </td>
+                      {/* Un-responded */}
+                      <td className="px-6 py-3.5 text-right">
+                        <span className={cn("text-sm font-semibold", vol.unresponded > 0 ? "text-rose-600" : "text-emerald-600")}>
+                          {vol.unresponded}
+                        </span>
+                      </td>
+                      {/* Avg Response */}
+                      <td className="px-6 py-3.5 text-right">
+                        <span className="text-sm font-semibold text-foreground">{vol.avgResponseMin}m</span>
+                      </td>
+                      {/* Capacity */}
+                      <td className="px-6 py-3.5">
+                        <div className="flex items-center gap-3 justify-center">
+                          <div className="w-24 h-2 bg-muted rounded-full overflow-hidden">
+                            <div className={cn("h-full rounded-full transition-all", capacityColor)} style={{ width: `${Math.min(capacityPct, 100)}%` }} />
+                          </div>
+                          <span className={cn("text-xs font-bold min-w-[32px] text-right", capacityTextColor)}>
+                            {vol.openThreads}/{vol.maxCapacity}
+                          </span>
+                        </div>
+                      </td>
+                    </motion.tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
