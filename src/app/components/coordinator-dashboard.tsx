@@ -1017,7 +1017,7 @@ export const CoordinatorDashboard = ({
 
             {/* Escalation Queue (col-span-7) */}
             <div className="lg:col-span-7">
-              <div className="bg-card rounded-lg border border-border shadow-sm overflow-hidden">
+              <div className="bg-card rounded-lg border border-border shadow-sm overflow-visible">
                 <div className="px-6 pt-5 pb-4 border-b border-border">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
@@ -1639,7 +1639,7 @@ export const CoordinatorDashboard = ({
               animate={{ x: 0 }}
               exit={{ x: "100%" }}
               transition={{ type: "spring", damping: 28, stiffness: 300 }}
-              className="fixed top-0 right-0 h-full w-full max-w-md bg-background border-l border-border shadow-2xl z-50 flex flex-col"
+              className="fixed top-0 right-0 h-full w-full max-w-2xl bg-background border-l border-border shadow-2xl z-50 flex flex-col"
             >
               {/* Header */}
               <div className="flex items-center justify-between px-6 py-5 border-b border-border bg-card">
