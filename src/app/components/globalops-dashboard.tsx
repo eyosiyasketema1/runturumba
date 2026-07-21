@@ -16,6 +16,8 @@ import {
 } from "./types";
 import { Button } from "./ui/button";
 import { Badge } from "./ui/badge";
+import { DateRangeFilter } from "./date-range-filter";
+import type { DateRange } from "react-day-picker";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -863,6 +865,7 @@ export const GlobalOpsDashboard = ({
   onNavigate,
 }: GlobalOpsDashboardProps) => {
   // ── State (mutable data) ──
+  const [dateRange, setDateRange] = useState<DateRange | undefined>(undefined);
   const [complianceIssues, setComplianceIssues] = useState<ComplianceIssue[]>(INITIAL_COMPLIANCE);
   const [approvals, setApprovals] = useState<ApprovalItem[]>(INITIAL_APPROVALS);
   const [auditLog, setAuditLog] = useState<AuditEntry[]>(INITIAL_AUDIT);
@@ -1088,6 +1091,7 @@ export const GlobalOpsDashboard = ({
             </p>
           </div>
           <div className="flex items-center gap-3">
+            <DateRangeFilter dateRange={dateRange} onDateRangeChange={setDateRange} />
             <Button
               variant="outline"
               size="sm"

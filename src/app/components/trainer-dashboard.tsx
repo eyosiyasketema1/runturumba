@@ -12,6 +12,8 @@ import {
 } from "./types";
 import { Button } from "./ui/button";
 import { Badge } from "./ui/badge";
+import { DateRangeFilter } from "./date-range-filter";
+import type { DateRange } from "react-day-picker";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -308,6 +310,7 @@ export const TrainerDashboard = ({
   currentUser,
 }: TrainerDashboardProps) => {
   const [selectedTraineeId, setSelectedTraineeId] = useState<string | null>(null);
+  const [dateRange, setDateRange] = useState<DateRange | undefined>(undefined);
 
   // Derived data
   const activeTrainees = TRAINEES.filter(t => t.status !== "Certified").length;
@@ -428,6 +431,7 @@ export const TrainerDashboard = ({
             </p>
           </div>
           <div className="flex items-center gap-3">
+            <DateRangeFilter dateRange={dateRange} onDateRangeChange={setDateRange} />
             <Button
               variant="outline"
               size="sm"

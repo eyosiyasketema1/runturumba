@@ -19,6 +19,8 @@ import { Input } from "./ui/input";
 import { Switch } from "./ui/switch";
 import { Label } from "./ui/label";
 import { Textarea } from "./ui/textarea";
+import { DateRangeFilter } from "./date-range-filter";
+import type { DateRange } from "react-day-picker";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -338,6 +340,7 @@ export const CoordinatorDashboard = ({
 }: CoordinatorDashboardProps) => {
   // -- Dashboard tab --
   const [activeTab, setActiveTab] = useState<DashboardTab>("overview");
+  const [dateRange, setDateRange] = useState<DateRange | undefined>(undefined);
 
   // -- Trigger words --
   const [triggerWords, setTriggerWords] = useState<string[]>(DEFAULT_TRIGGER_WORDS);
@@ -875,6 +878,7 @@ export const CoordinatorDashboard = ({
             </p>
           </div>
           <div className="flex items-center gap-3">
+            <DateRangeFilter dateRange={dateRange} onDateRangeChange={setDateRange} />
             <Button
               variant="outline"
               size="sm"
@@ -1002,17 +1006,6 @@ export const CoordinatorDashboard = ({
                       </motion.div>
                     ))
                   )}
-                </div>
-                <div className="px-5 py-3.5 border-t border-border">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="w-full text-xs gap-2 justify-center"
-                    onClick={() => toast.info("Opening team member directory...")}
-                  >
-                    <UserPlus className="w-3.5 h-3.5" />
-                    Add Team Member
-                  </Button>
                 </div>
               </div>
             </div>

@@ -15,6 +15,8 @@ import {
 import { Button } from "./ui/button";
 import { Badge } from "./ui/badge";
 import { Textarea } from "./ui/textarea";
+import { DateRangeFilter } from "./date-range-filter";
+import type { DateRange } from "react-day-picker";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -152,6 +154,7 @@ export const ReviewerDashboard = ({
 }: ReviewerDashboardProps) => {
   const [pageTab, setPageTab] = useState<"overview" | "volunteer_load">("overview");
   const [activeTab, setActiveTab] = useState<ReviewTab>("Pending");
+  const [dateRange, setDateRange] = useState<DateRange | undefined>(undefined);
   const [selectedReviewId, setSelectedReviewId] = useState<string | null>(null);
   const [coachingNotes, setCoachingNotes] = useState("");
   const [page, setPage] = useState(1);
@@ -421,6 +424,9 @@ export const ReviewerDashboard = ({
                 {coachingNotesSent} coaching notes sent
               </span>
             </p>
+          </div>
+          <div className="flex items-center gap-3">
+            <DateRangeFilter dateRange={dateRange} onDateRangeChange={setDateRange} />
           </div>
         </div>
       </header>

@@ -12,6 +12,8 @@ import {
 } from "./types";
 import { Button } from "./ui/button";
 import { Badge } from "./ui/badge";
+import { DateRangeFilter } from "./date-range-filter";
+import type { DateRange } from "react-day-picker";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -96,6 +98,7 @@ export const VolunteerDashboard = ({
   const [activeTab, setActiveTab] = useState<TabOption>("Active");
   const [readConversations, setReadConversations] = useState<Set<string>>(new Set());
   const [selectedConvoId, setSelectedConvoId] = useState<string | null>(null);
+  const [dateRange, setDateRange] = useState<DateRange | undefined>(undefined);
 
   // ── US32: Practice Chat Mode ──────────────────────────────────────────────
   const [testChats, setTestChats] = useState<Set<string>>(new Set());
@@ -291,6 +294,7 @@ export const VolunteerDashboard = ({
             </p>
           </div>
           <div className="flex items-center gap-3">
+            <DateRangeFilter dateRange={dateRange} onDateRangeChange={setDateRange} />
             {testChatCount > 0 && (
               <Button
                 variant="outline"
