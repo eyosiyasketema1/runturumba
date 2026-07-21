@@ -1106,129 +1106,187 @@ export const TrainerDashboard = ({
           <>
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40" onClick={() => setIsModuleEditorOpen(false)} />
             <motion.div initial={{ opacity: 0, scale: 0.95, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 20 }} transition={{ type: "spring", damping: 25, stiffness: 350 }}
-              className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-background rounded-xl border border-border shadow-2xl z-50 w-full max-w-2xl max-h-[85vh] flex flex-col">
+              className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-background rounded-xl border border-border shadow-2xl z-50 w-full max-w-3xl max-h-[88vh] flex flex-col">
               {/* Modal Header */}
-              <div className="px-6 py-5 border-b border-border flex items-center justify-between shrink-0">
+              <div className="px-8 py-6 border-b border-border flex items-center justify-between shrink-0">
                 <div>
-                  <h2 className="text-lg font-bold text-foreground">{editingModuleId ? "Edit Module" : "New Module"}</h2>
-                  <p className="text-xs text-muted-foreground mt-0.5">{editingModuleId ? "Update module details and lessons" : "Add a new module to your course"}</p>
+                  <h2 className="text-xl font-bold text-foreground">{editingModuleId ? "Edit Module" : "Create New Module"}</h2>
+                  <p className="text-sm text-muted-foreground mt-1">{editingModuleId ? "Update the module details and manage its lessons below." : "Give your module a name, choose what type of content it contains, then add lessons."}</p>
                 </div>
-                <Button variant="ghost" size="sm" className="h-8 w-8 p-0 rounded-full hover:bg-muted" onClick={() => setIsModuleEditorOpen(false)}><X className="w-4 h-4" /></Button>
+                <Button variant="ghost" size="sm" className="h-9 w-9 p-0 rounded-full hover:bg-muted shrink-0" onClick={() => setIsModuleEditorOpen(false)}><X className="w-4 h-4" /></Button>
               </div>
 
               {/* Modal Body */}
-              <div className="flex-1 overflow-y-auto px-6 py-5 space-y-6">
-                {/* Module info — single row */}
-                <div className="grid grid-cols-12 gap-3">
-                  <div className="col-span-6">
-                    <Label className="text-xs font-semibold text-muted-foreground">Module Title</Label>
-                    <Input className="mt-1.5 h-10" placeholder="e.g., Gospel Conversation Fundamentals" value={edModTitle} onChange={e => setEdModTitle(e.target.value)} />
-                  </div>
-                  <div className="col-span-3">
-                    <Label className="text-xs font-semibold text-muted-foreground">Type</Label>
-                    <select className="mt-1.5 h-10 w-full rounded-md border border-input bg-background px-3 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                      value={edModType} onChange={e => setEdModType(e.target.value as MaterialType)}>
-                      <option value="Module">Module</option>
-                      <option value="Video">Video</option>
-                      <option value="Quiz">Quiz</option>
-                      <option value="Practice">Practice</option>
-                    </select>
-                  </div>
-                  <div className="col-span-3">
-                    <Label className="text-xs font-semibold text-muted-foreground">Duration</Label>
-                    <Input className="mt-1.5 h-10" placeholder="e.g., 25 min" value={edModDuration} onChange={e => setEdModDuration(e.target.value)} />
-                  </div>
-                </div>
+              <div className="flex-1 overflow-y-auto px-8 py-8 space-y-10">
 
-                {/* Lessons */}
+                {/* ── Section 1: Module Details ── */}
                 <div>
-                  <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center gap-3 mb-5">
+                    <div className="w-8 h-8 rounded-lg bg-blue-500/10 border border-blue-500/20 flex items-center justify-center shrink-0">
+                      <span className="text-sm font-bold text-blue-600">1</span>
+                    </div>
                     <div>
-                      <Label className="text-sm font-semibold text-foreground">Lessons</Label>
-                      <p className="text-xs text-muted-foreground mt-0.5">Build out the content for this module</p>
+                      <h3 className="text-sm font-bold text-foreground">Module Details</h3>
+                      <p className="text-xs text-muted-foreground">Name your module and set its type and estimated duration.</p>
                     </div>
                   </div>
 
-                  <div className="space-y-3">
-                    {edModLessons.map((les, i) => (
-                      <div key={les.id} className="rounded-lg border border-border bg-muted/20 overflow-hidden">
-                        {/* Lesson header row */}
-                        <div className="flex items-center gap-3 px-4 py-3">
-                          <span className="text-xs font-bold text-muted-foreground bg-muted w-6 h-6 rounded flex items-center justify-center shrink-0">{i + 1}</span>
-                          <Input className="flex-1 h-8 text-sm border-0 bg-transparent px-0 focus-visible:ring-0 font-medium" placeholder="Lesson title" value={les.title}
-                            onChange={e => setEdModLessons(prev => prev.map(l => l.id === les.id ? { ...l, title: e.target.value } : l))} />
-                          <div className="flex items-center gap-1 shrink-0">
-                            <button title="Text" className={cn("p-1.5 rounded-md transition-colors", les.type === "text" ? "bg-blue-500/10 text-blue-600" : "text-muted-foreground hover:text-foreground hover:bg-muted")}
-                              onClick={() => setEdModLessons(prev => prev.map(l => l.id === les.id ? { ...l, type: "text" } : l))}>
-                              <FileText className="w-3.5 h-3.5" />
-                            </button>
-                            <button title="Video" className={cn("p-1.5 rounded-md transition-colors", les.type === "video" ? "bg-violet-500/10 text-violet-600" : "text-muted-foreground hover:text-foreground hover:bg-muted")}
-                              onClick={() => setEdModLessons(prev => prev.map(l => l.id === les.id ? { ...l, type: "video" } : l))}>
-                              <Video className="w-3.5 h-3.5" />
-                            </button>
-                            <button title="Quiz" className={cn("p-1.5 rounded-md transition-colors", les.type === "quiz" ? "bg-amber-500/10 text-amber-600" : "text-muted-foreground hover:text-foreground hover:bg-muted")}
-                              onClick={() => setEdModLessons(prev => prev.map(l => l.id === les.id ? { ...l, type: "quiz" } : l))}>
-                              <ClipboardList className="w-3.5 h-3.5" />
-                            </button>
-                            <div className="w-px h-4 bg-border mx-1" />
-                            <button title="Remove lesson" className="p-1.5 rounded-md text-muted-foreground hover:text-rose-500 hover:bg-rose-500/10 transition-colors"
-                              onClick={() => setEdModLessons(prev => prev.filter(l => l.id !== les.id))}>
-                              <Trash2 className="w-3.5 h-3.5" />
-                            </button>
-                          </div>
-                        </div>
+                  <div className="space-y-5 pl-11">
+                    <div>
+                      <Label className="text-sm font-medium text-foreground">Module Title</Label>
+                      <Input className="mt-2 h-11 text-sm" placeholder="e.g., Gospel Conversation Fundamentals" value={edModTitle} onChange={e => setEdModTitle(e.target.value)} />
+                    </div>
+                    <div className="grid grid-cols-2 gap-5">
+                      <div>
+                        <Label className="text-sm font-medium text-foreground">Content Type</Label>
+                        <p className="text-xs text-muted-foreground mt-0.5 mb-2">What kind of material is this module?</p>
+                        <select className="h-11 w-full rounded-md border border-input bg-background px-3 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                          value={edModType} onChange={e => setEdModType(e.target.value as MaterialType)}>
+                          <option value="Module">Reading / Text Module</option>
+                          <option value="Video">Video Content</option>
+                          <option value="Quiz">Quiz / Assessment</option>
+                          <option value="Practice">Hands-on Practice</option>
+                        </select>
+                      </div>
+                      <div>
+                        <Label className="text-sm font-medium text-foreground">Estimated Duration</Label>
+                        <p className="text-xs text-muted-foreground mt-0.5 mb-2">How long will this take to complete?</p>
+                        <Input className="h-11 text-sm" placeholder="e.g., 25 min" value={edModDuration} onChange={e => setEdModDuration(e.target.value)} />
+                      </div>
+                    </div>
+                  </div>
+                </div>
 
-                        {/* Lesson content area */}
-                        <div className="px-4 pb-3 space-y-2">
-                          {les.type === "video" && (
-                            <div className="flex items-center gap-2">
-                              <div className="flex p-0.5 bg-muted rounded-md border border-border shrink-0">
-                                <button className={cn("px-2.5 py-1 text-xs font-medium rounded-sm transition-colors flex items-center gap-1.5",
-                                    (les.videoSource ?? "link") === "link" ? "bg-background shadow-sm text-foreground" : "text-muted-foreground")}
-                                  onClick={() => setEdModLessons(prev => prev.map(l => l.id === les.id ? { ...l, videoSource: "link" } : l))}>
-                                  <Link2 className="w-3 h-3" /> Link
+                {/* ── Section 2: Lessons ── */}
+                <div>
+                  <div className="flex items-center gap-3 mb-5">
+                    <div className="w-8 h-8 rounded-lg bg-violet-500/10 border border-violet-500/20 flex items-center justify-center shrink-0">
+                      <span className="text-sm font-bold text-violet-600">2</span>
+                    </div>
+                    <div>
+                      <h3 className="text-sm font-bold text-foreground">Lessons</h3>
+                      <p className="text-xs text-muted-foreground">Add the individual lessons that make up this module. Each lesson can be text, video, or a quiz.</p>
+                    </div>
+                  </div>
+
+                  <div className="space-y-4 pl-11">
+                    {edModLessons.map((les, i) => (
+                      <div key={les.id} className="rounded-xl border border-border bg-muted/15 overflow-hidden">
+                        {/* Lesson top bar */}
+                        <div className="px-5 py-4 flex items-start gap-4">
+                          <span className="text-xs font-bold text-white bg-slate-500 w-7 h-7 rounded-lg flex items-center justify-center shrink-0 mt-0.5">{i + 1}</span>
+                          <div className="flex-1 space-y-4">
+                            {/* Title */}
+                            <div>
+                              <Label className="text-xs font-medium text-muted-foreground">Lesson Title</Label>
+                              <Input className="mt-1.5 h-10 text-sm" placeholder="Give this lesson a clear name" value={les.title}
+                                onChange={e => setEdModLessons(prev => prev.map(l => l.id === les.id ? { ...l, title: e.target.value } : l))} />
+                            </div>
+
+                            {/* Content Type selector — icon + label */}
+                            <div>
+                              <Label className="text-xs font-medium text-muted-foreground">Content Type</Label>
+                              <div className="flex gap-2 mt-1.5">
+                                <button className={cn("flex items-center gap-2 px-4 py-2.5 rounded-lg border text-sm font-medium transition-all",
+                                    les.type === "text" ? "border-blue-500 bg-blue-500/10 text-blue-700 ring-1 ring-blue-500/30" : "border-border text-muted-foreground hover:text-foreground hover:border-muted-foreground")}
+                                  onClick={() => setEdModLessons(prev => prev.map(l => l.id === les.id ? { ...l, type: "text" } : l))}>
+                                  <FileText className="w-4 h-4" /> Text
                                 </button>
-                                <button className={cn("px-2.5 py-1 text-xs font-medium rounded-sm transition-colors flex items-center gap-1.5",
-                                    les.videoSource === "upload" ? "bg-background shadow-sm text-foreground" : "text-muted-foreground")}
-                                  onClick={() => setEdModLessons(prev => prev.map(l => l.id === les.id ? { ...l, videoSource: "upload" } : l))}>
-                                  <Upload className="w-3 h-3" /> Upload
+                                <button className={cn("flex items-center gap-2 px-4 py-2.5 rounded-lg border text-sm font-medium transition-all",
+                                    les.type === "video" ? "border-violet-500 bg-violet-500/10 text-violet-700 ring-1 ring-violet-500/30" : "border-border text-muted-foreground hover:text-foreground hover:border-muted-foreground")}
+                                  onClick={() => setEdModLessons(prev => prev.map(l => l.id === les.id ? { ...l, type: "video" } : l))}>
+                                  <Video className="w-4 h-4" /> Video
+                                </button>
+                                <button className={cn("flex items-center gap-2 px-4 py-2.5 rounded-lg border text-sm font-medium transition-all",
+                                    les.type === "quiz" ? "border-amber-500 bg-amber-500/10 text-amber-700 ring-1 ring-amber-500/30" : "border-border text-muted-foreground hover:text-foreground hover:border-muted-foreground")}
+                                  onClick={() => setEdModLessons(prev => prev.map(l => l.id === les.id ? { ...l, type: "quiz" } : l))}>
+                                  <ClipboardList className="w-4 h-4" /> Quiz
                                 </button>
                               </div>
-                              {(les.videoSource ?? "link") === "link" ? (
-                                <Input className="flex-1 h-8 text-xs" placeholder="Paste YouTube, Vimeo, or video URL..." value={les.videoUrl ?? ""}
-                                  onChange={e => setEdModLessons(prev => prev.map(l => l.id === les.id ? { ...l, videoUrl: e.target.value } : l))} />
-                              ) : (
-                                <button className="flex-1 h-8 rounded-md border border-dashed border-border bg-muted/30 text-xs text-muted-foreground hover:text-foreground hover:border-muted-foreground transition-colors flex items-center justify-center gap-2"
-                                  onClick={() => toast.info("File picker would open here")}>
-                                  <Upload className="w-3.5 h-3.5" /> Choose video file
-                                </button>
-                              )}
                             </div>
-                          )}
-                          <Textarea className="text-xs min-h-[48px] resize-none bg-background" rows={2}
-                            placeholder={les.type === "video" ? "Video description or notes..." : les.type === "quiz" ? "Quiz instructions or questions..." : "Lesson content..."}
-                            value={les.content}
-                            onChange={e => setEdModLessons(prev => prev.map(l => l.id === les.id ? { ...l, content: e.target.value } : l))} />
+
+                            {/* Video source — only when video is selected */}
+                            {les.type === "video" && (
+                              <div className="rounded-lg border border-violet-500/20 bg-violet-500/5 p-4 space-y-3">
+                                <p className="text-xs font-semibold text-violet-700 flex items-center gap-1.5"><Video className="w-3.5 h-3.5" /> Video Source</p>
+                                <div className="flex gap-2">
+                                  <button className={cn("flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg border text-sm font-medium transition-all",
+                                      (les.videoSource ?? "link") === "link" ? "border-violet-500 bg-background text-violet-700 ring-1 ring-violet-500/30" : "border-border text-muted-foreground hover:border-muted-foreground")}
+                                    onClick={() => setEdModLessons(prev => prev.map(l => l.id === les.id ? { ...l, videoSource: "link" } : l))}>
+                                    <Link2 className="w-4 h-4" /> Paste a Link
+                                  </button>
+                                  <button className={cn("flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg border text-sm font-medium transition-all",
+                                      les.videoSource === "upload" ? "border-violet-500 bg-background text-violet-700 ring-1 ring-violet-500/30" : "border-border text-muted-foreground hover:border-muted-foreground")}
+                                    onClick={() => setEdModLessons(prev => prev.map(l => l.id === les.id ? { ...l, videoSource: "upload" } : l))}>
+                                    <Upload className="w-4 h-4" /> Upload File
+                                  </button>
+                                </div>
+                                {(les.videoSource ?? "link") === "link" ? (
+                                  <div>
+                                    <Input className="h-10 text-sm" placeholder="https://youtube.com/watch?v=... or https://vimeo.com/..." value={les.videoUrl ?? ""}
+                                      onChange={e => setEdModLessons(prev => prev.map(l => l.id === les.id ? { ...l, videoUrl: e.target.value } : l))} />
+                                    <p className="text-xs text-muted-foreground mt-1.5">Supports YouTube, Vimeo, and direct video URLs.</p>
+                                  </div>
+                                ) : (
+                                  <button className="w-full py-5 rounded-lg border-2 border-dashed border-violet-500/30 bg-background text-sm text-muted-foreground hover:text-violet-700 hover:border-violet-500/50 transition-colors flex flex-col items-center gap-2"
+                                    onClick={() => toast.info("File picker would open here")}>
+                                    <Upload className="w-5 h-5" />
+                                    <span>Click to choose a video file</span>
+                                    <span className="text-xs text-muted-foreground">MP4, MOV, or WebM — up to 500MB</span>
+                                  </button>
+                                )}
+                              </div>
+                            )}
+
+                            {/* Content / Description */}
+                            <div>
+                              <Label className="text-xs font-medium text-muted-foreground">
+                                {les.type === "video" ? "Video Description (optional)" : les.type === "quiz" ? "Quiz Instructions & Questions" : "Lesson Content"}
+                              </Label>
+                              <Textarea className="mt-1.5 text-sm min-h-[80px] bg-background" rows={3}
+                                placeholder={les.type === "video" ? "Describe what this video covers..." : les.type === "quiz" ? "Write quiz instructions, questions, and answer choices..." : "Write the lesson content that trainees will read..."}
+                                value={les.content}
+                                onChange={e => setEdModLessons(prev => prev.map(l => l.id === les.id ? { ...l, content: e.target.value } : l))} />
+                            </div>
+                          </div>
+
+                          {/* Delete */}
+                          <button title="Remove this lesson" className="p-2 rounded-lg text-muted-foreground hover:text-rose-500 hover:bg-rose-500/10 transition-colors shrink-0 mt-0.5"
+                            onClick={() => setEdModLessons(prev => prev.filter(l => l.id !== les.id))}>
+                            <Trash2 className="w-4 h-4" />
+                          </button>
                         </div>
                       </div>
                     ))}
 
-                    {/* Add lesson row */}
-                    <button className="w-full py-3 rounded-lg border-2 border-dashed border-border text-sm text-muted-foreground hover:text-foreground hover:border-muted-foreground hover:bg-muted/20 transition-all flex items-center justify-center gap-2"
-                      onClick={() => setEdModLessons(prev => [...prev, { id: `les-${Date.now()}`, title: "", content: "", type: "text" }])}>
-                      <Plus className="w-4 h-4" /> Add Lesson
-                    </button>
+                    {/* Empty state or add more */}
+                    {edModLessons.length === 0 ? (
+                      <div className="rounded-xl border-2 border-dashed border-border py-10 text-center">
+                        <BookOpen className="w-8 h-8 text-muted-foreground/30 mx-auto mb-3" />
+                        <p className="text-sm font-medium text-muted-foreground">No lessons yet</p>
+                        <p className="text-xs text-muted-foreground mt-1 mb-4">Start building your module by adding the first lesson.</p>
+                        <Button variant="outline" size="sm" className="gap-2"
+                          onClick={() => setEdModLessons(prev => [...prev, { id: `les-${Date.now()}`, title: "", content: "", type: "text" }])}>
+                          <Plus className="w-4 h-4" /> Add First Lesson
+                        </Button>
+                      </div>
+                    ) : (
+                      <button className="w-full py-4 rounded-xl border-2 border-dashed border-border text-sm font-medium text-muted-foreground hover:text-foreground hover:border-primary/40 hover:bg-primary/5 transition-all flex items-center justify-center gap-2"
+                        onClick={() => setEdModLessons(prev => [...prev, { id: `les-${Date.now()}`, title: "", content: "", type: "text" }])}>
+                        <Plus className="w-4 h-4" /> Add Another Lesson
+                      </button>
+                    )}
                   </div>
                 </div>
               </div>
 
               {/* Modal Footer */}
-              <div className="px-6 py-4 border-t border-border flex items-center justify-between shrink-0 bg-muted/10">
-                <p className="text-xs text-muted-foreground">{edModLessons.length} lesson{edModLessons.length !== 1 ? "s" : ""}</p>
-                <div className="flex gap-2">
-                  <Button variant="outline" size="sm" onClick={() => setIsModuleEditorOpen(false)}>Cancel</Button>
-                  <Button size="sm" className="gap-1.5" onClick={saveModule} disabled={!edModTitle.trim()}>
-                    <Save className="w-3.5 h-3.5" /> {editingModuleId ? "Save Changes" : "Add Module"}
+              <div className="px-8 py-5 border-t border-border flex items-center justify-between shrink-0 bg-muted/10 rounded-b-xl">
+                <p className="text-sm text-muted-foreground">{edModLessons.length} lesson{edModLessons.length !== 1 ? "s" : ""} in this module</p>
+                <div className="flex gap-3">
+                  <Button variant="outline" onClick={() => setIsModuleEditorOpen(false)}>Cancel</Button>
+                  <Button className="gap-2" onClick={saveModule} disabled={!edModTitle.trim()}>
+                    <Save className="w-4 h-4" /> {editingModuleId ? "Save Changes" : "Add Module"}
                   </Button>
                 </div>
               </div>
@@ -1243,30 +1301,31 @@ export const TrainerDashboard = ({
           <>
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40" onClick={() => setIsNewCourseOpen(false)} />
             <motion.div initial={{ opacity: 0, scale: 0.95, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 20 }} transition={{ type: "spring", damping: 25, stiffness: 350 }}
-              className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-background rounded-xl border border-border shadow-2xl z-50 w-full max-w-md">
-              <div className="px-6 pt-6 pb-0">
-                <h3 className="text-lg font-bold text-foreground">Create New Course</h3>
-                <p className="text-xs text-muted-foreground mt-0.5">Set up a new training course for your volunteers</p>
+              className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-background rounded-xl border border-border shadow-2xl z-50 w-full max-w-lg">
+              <div className="px-8 pt-8 pb-0">
+                <h3 className="text-xl font-bold text-foreground">Create New Course</h3>
+                <p className="text-sm text-muted-foreground mt-1">Set up a new training course. You can add modules and lessons after creating it.</p>
               </div>
-              <div className="px-6 py-5 space-y-4">
+              <div className="px-8 py-6 space-y-5">
                 <div>
-                  <Label className="text-xs font-semibold text-muted-foreground">Course Title</Label>
-                  <Input className="mt-1.5 h-10" placeholder="e.g., Advanced Counseling Techniques" value={newCourseTitle} onChange={e => setNewCourseTitle(e.target.value)} />
+                  <Label className="text-sm font-medium text-foreground">Course Title</Label>
+                  <Input className="mt-2 h-11 text-sm" placeholder="e.g., Advanced Counseling Techniques" value={newCourseTitle} onChange={e => setNewCourseTitle(e.target.value)} />
                 </div>
                 <div>
-                  <Label className="text-xs font-semibold text-muted-foreground">Description</Label>
-                  <Textarea className="mt-1.5 text-sm min-h-[80px]" placeholder="What will trainees learn in this course?" value={newCourseDesc} onChange={e => setNewCourseDesc(e.target.value)} />
+                  <Label className="text-sm font-medium text-foreground">Description</Label>
+                  <p className="text-xs text-muted-foreground mt-0.5 mb-2">Briefly describe what trainees will learn in this course.</p>
+                  <Textarea className="text-sm min-h-[100px]" placeholder="What topics will this course cover? What skills will trainees gain?" value={newCourseDesc} onChange={e => setNewCourseDesc(e.target.value)} />
                 </div>
               </div>
-              <div className="px-6 py-4 border-t border-border flex justify-end gap-2 bg-muted/10 rounded-b-xl">
-                <Button variant="outline" size="sm" onClick={() => setIsNewCourseOpen(false)}>Cancel</Button>
-                <Button size="sm" className="gap-1.5" disabled={!newCourseTitle.trim()}
+              <div className="px-8 py-5 border-t border-border flex justify-end gap-3 bg-muted/10 rounded-b-xl">
+                <Button variant="outline" onClick={() => setIsNewCourseOpen(false)}>Cancel</Button>
+                <Button className="gap-2" disabled={!newCourseTitle.trim()}
                   onClick={() => {
                     setCourses(prev => [...prev, { id: `course-${Date.now()}`, title: newCourseTitle, description: newCourseDesc, status: "draft", modules: [], enrolledCount: 0, completionRate: 0, createdAt: new Date().toISOString().split("T")[0] }]);
                     setIsNewCourseOpen(false);
                     toast.success("Course created as draft");
                   }}>
-                  <Plus className="w-3.5 h-3.5" /> Create Course
+                  <Plus className="w-4 h-4" /> Create Course
                 </Button>
               </div>
             </motion.div>
