@@ -30,6 +30,7 @@ interface TrainerDashboardProps {
   messages: Message[];
   users: User[];
   currentUser: User;
+  initialTab?: TrainerTab;
 }
 
 type TrainerTab = "overview" | "trainees" | "content_studio" | "practice_chat";
@@ -268,9 +269,15 @@ export const TrainerDashboard = ({
   messages,
   users,
   currentUser,
+  initialTab,
 }: TrainerDashboardProps) => {
   // -- Tab state --
-  const [activeTab, setActiveTab] = useState<TrainerTab>("overview");
+  const [activeTab, setActiveTab] = useState<TrainerTab>(initialTab ?? "overview");
+
+  // Sync tab when navigated via sidebar
+  useEffect(() => {
+    if (initialTab) setActiveTab(initialTab);
+  }, [initialTab]);
   const [dateRange, setDateRange] = useState<DateRange | undefined>(undefined);
 
   // -- Trainees tab --

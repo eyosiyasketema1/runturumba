@@ -9,7 +9,8 @@ import {
   Phone, Mail, StickyNote, BarChart3, Send,
   Globe, CreditCard, UserPlus, Info, Radio,
   UserSearch, Shield, GitBranch, Route, Library, Flag,
-  Activity, TrendingUp, HelpCircle, Sparkles, PenTool, ChevronUp, ClipboardList
+  Activity, TrendingUp, HelpCircle, Sparkles, PenTool, ChevronUp, ClipboardList,
+  GraduationCap, Layers, MessagesSquare
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { toast, Toaster } from "sonner";
@@ -196,7 +197,7 @@ const ROLE_VIEW_ACCESS: Record<ViewRole, string[]> = {
   global_ops:  ["dashboard", "contacts", "messages", "conversations", "seekers", "mentors", "matches", "faith_journeys", "milestones", "channels", "automations", "campaigns", "skill_sets", "content_library", "gamification", "growth_metrics", "vital_analytics", "reporting", "validations", "team", "settings"],
   coordinator: ["dashboard", "contacts", "messages", "conversations", "seekers", "mentors", "matches", "faith_journeys", "milestones", "channels", "automations", "campaigns", "skill_sets", "content_library", "growth_metrics", "vital_analytics", "reporting", "validations", "team", "settings"],
   reviewer:    ["dashboard", "contacts", "messages", "conversations", "seekers", "mentors", "matches", "faith_journeys", "milestones", "content_library", "growth_metrics", "vital_analytics", "reporting", "validations"],
-  trainer:     ["dashboard", "contacts", "messages", "conversations", "seekers", "content_library", "skill_sets"],
+  trainer:     ["dashboard", "contacts", "messages", "conversations", "seekers", "content_library", "skill_sets", "trainees", "content_studio", "practice_chat"],
   volunteer:   ["dashboard", "contacts", "messages", "conversations", "seekers", "matches", "faith_journeys", "milestones", "content_library"],
 };
 
@@ -406,6 +407,14 @@ export default function App() {
         { id: "skill_sets",      name: "Skill Sets",      icon: Brain },
         { id: "content_library", name: "Content Library", icon: Library },
         { id: "gamification",    name: "Gamification",    icon: Sparkles },
+      ]
+    },
+    {
+      label: "Training",
+      items: [
+        { id: "trainees",       name: "Trainees",        icon: GraduationCap },
+        { id: "content_studio", name: "Content Studio",  icon: Layers },
+        { id: "practice_chat",  name: "Practice Chat",   icon: MessagesSquare },
       ]
     },
     {
@@ -1181,6 +1190,7 @@ export default function App() {
                     messages={messages}
                     users={users}
                     currentUser={currentUser}
+                    initialTab="overview"
                   />
                 )}
                 {viewMode === "executive" && (
@@ -1740,6 +1750,23 @@ export default function App() {
             {currentView === "gamification" && (
               <motion.div key="gamification" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.2 }}>
                 <GamificationAdminView accountId={activeTenant.id} />
+              </motion.div>
+            )}
+
+            {/* Trainer-specific sidebar views */}
+            {currentView === "trainees" && viewMode === "trainer" && (
+              <motion.div key="trainees" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.2 }}>
+                <TrainerDashboard contacts={contacts} messages={messages} users={users} currentUser={currentUser} initialTab="trainees" />
+              </motion.div>
+            )}
+            {currentView === "content_studio" && viewMode === "trainer" && (
+              <motion.div key="content_studio" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.2 }}>
+                <TrainerDashboard contacts={contacts} messages={messages} users={users} currentUser={currentUser} initialTab="content_studio" />
+              </motion.div>
+            )}
+            {currentView === "practice_chat" && viewMode === "trainer" && (
+              <motion.div key="practice_chat" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.2 }}>
+                <TrainerDashboard contacts={contacts} messages={messages} users={users} currentUser={currentUser} initialTab="practice_chat" />
               </motion.div>
             )}
 
