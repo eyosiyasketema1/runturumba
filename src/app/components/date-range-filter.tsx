@@ -79,16 +79,15 @@ export function DateRangeFilter({ dateRange, onDateRangeChange, className }: Dat
             className={cn(
               "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md border text-xs font-medium transition-colors",
               "h-8 px-3 shadow-sm",
-              "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
-              "hover:bg-accent hover:text-accent-foreground",
+              "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950",
               hasRange
-                ? "border-primary/40 bg-primary/5 text-foreground"
-                : "border-input bg-background text-foreground"
+                ? "border-blue-400/50 bg-blue-500/20 text-white hover:bg-blue-500/30"
+                : "border-white/20 bg-white/10 text-white hover:bg-white/20 backdrop-blur-sm"
             )}
           >
-            <CalendarDays className="w-3.5 h-3.5 text-muted-foreground" />
+            <CalendarDays className="w-3.5 h-3.5 text-white/70" />
             <span className="max-w-[200px] truncate">{label}</span>
-            <ChevronDown className="w-3 h-3 text-muted-foreground" />
+            <ChevronDown className="w-3 h-3 text-white/70" />
           </button>
         </PopoverTrigger>
         <PopoverContent className="w-auto p-0" align="end" sideOffset={8}>
@@ -148,7 +147,7 @@ export function DateRangeFilter({ dateRange, onDateRangeChange, className }: Dat
       {hasRange && (
         <button
           type="button"
-          className="inline-flex items-center justify-center h-8 w-8 rounded-md text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
+          className="inline-flex items-center justify-center h-8 w-8 rounded-md text-white/60 hover:text-white hover:bg-white/10 transition-colors"
           onClick={() => onDateRangeChange(undefined)}
         >
           <X className="w-3.5 h-3.5" />
