@@ -8,6 +8,7 @@ import {
   ChevronDown, ChevronLeft, Filter, MoreHorizontal,
   ChevronUp, FolderOpen, GripVertical, Copy, Globe,
   UserCircle, Mail, CalendarDays, History, Link2, Upload,
+  Settings, Sparkles, Headphones, File,
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { toast } from "sonner";
@@ -39,6 +40,7 @@ type TrainerTab = "overview" | "trainees" | "content_studio" | "practice_chat";
 type TraineeStatus = "In Training" | "Practice Phase" | "Ready for Review" | "Certified";
 type MaterialType = "Module" | "Video" | "Quiz" | "Practice";
 type TutorialStatus = "draft" | "published";
+type LessonType = "video" | "article" | "quiz" | "pdf" | "audio" | "assignment";
 
 interface Trainee {
   id: string;
@@ -78,16 +80,28 @@ interface Lesson {
   id: string;
   title: string;
   content: string;
-  type: "text" | "video" | "quiz";
+  type: LessonType;
   videoUrl?: string;
   videoSource?: "link" | "upload";
+  thumbnailUrl?: string;
+  transcript?: string;
+  duration?: string;
+  quizQuestions?: QuizQuestion[];
+  passingScore?: number;
+  randomizeQuestions?: boolean;
+  showCorrectAnswers?: boolean;
+  pdfUrl?: string;
+  isRequired?: boolean;
 }
 
 interface QuizQuestion {
   id: string;
   question: string;
+  questionType: "multiple_choice" | "true_false" | "checkbox" | "short_answer";
   options: string[];
   correctIndex: number;
+  correctIndices?: number[];
+  correctAnswer?: string;
 }
 
 interface ChatMessage {
@@ -154,6 +168,15 @@ const DIFFICULTY_BADGE: Record<string, string> = {
   Advanced: "bg-rose-500/10 text-rose-600 border-rose-500/20",
 };
 
+const LESSON_TYPE_CONFIG: Record<LessonType, { icon: React.ElementType; label: string; color: string; bg: string }> = {
+  video: { icon: Video, label: "Video", color: "text-violet-600", bg: "bg-violet-500/10" },
+  article: { icon: FileText, label: "Article", color: "text-blue-600", bg: "bg-blue-500/10" },
+  quiz: { icon: ClipboardList, label: "Quiz", color: "text-amber-600", bg: "bg-amber-500/10" },
+  pdf: { icon: File, label: "PDF", color: "text-rose-600", bg: "bg-rose-500/10" },
+  audio: { icon: Headphones, label: "Audio", color: "text-emerald-600", bg: "bg-emerald-500/10" },
+  assignment: { icon: Edit3, label: "Assignment", color: "text-cyan-600", bg: "bg-cyan-500/10" },
+};
+
 // ═══════════════════════════════════════════════════════════════════════════
 // MOCK DATA
 // ═══════════════════════════════════════════════════════════════════════════
@@ -176,21 +199,28 @@ const COURSES: Course[] = [
     status: "published", enrolledCount: 7, completionRate: 58, createdAt: "2026-06-10",
     modules: [
       { id: "mod-1", title: "Getting Started", type: "Module", duration: "20 min", order: 1, lessons: [
-        { id: "l1", title: "Welcome & Platform Overview", content: "Introduction to the platform features and navigation.", type: "text" },
-        { id: "l2", title: "Setting Up Your Account", content: "Step-by-step guide to configuring your volunteer profile.", type: "text" },
+        { id: "l1", title: "Welcome & Platform Overview", content: "Introduction to the platform features and navigation.", type: "article" },
+        { id: "l2", title: "Setting Up Your Account", content: "Step-by-step guide to configuring your volunteer profile.", type: "article" },
       ]},
       { id: "mod-2", title: "Gospel Conversation Fundamentals", type: "Video", duration: "35 min", order: 2, lessons: [
-        { id: "l3", title: "Gospel Conversation Basics", content: "Core principles for engaging in gospel conversations online.", type: "video" },
-        { id: "l4", title: "Responding to Difficult Questions", content: "Strategies for handling challenging questions.", type: "text" },
+        { id: "l3", title: "Gospel Conversation Basics", content: "Core principles for engaging in gospel conversations online.", type: "video", videoUrl: "https://youtube.com/watch?v=example123" },
+        { id: "l4", title: "Responding to Difficult Questions", content: "Strategies for handling challenging questions.", type: "article" },
       ]},
       { id: "mod-3", title: "Safety & Protocols", type: "Module", duration: "20 min", order: 3, lessons: [
-        { id: "l5", title: "Trigger Word Protocol", content: "Safety protocols for identifying and escalating sensitive content.", type: "text" },
-        { id: "l6", title: "Platform Safety Quiz", content: "Assessment of safety protocol knowledge.", type: "quiz" },
+        { id: "l5", title: "Trigger Word Protocol", content: "Safety protocols for identifying and escalating sensitive content.", type: "article" },
+        { id: "l6", title: "Platform Safety Quiz", content: "Assessment of safety protocol knowledge.", type: "quiz", passingScore: 80, quizQuestions: [
+          { id: "q1", question: "What should you do when a seeker mentions self-harm?", questionType: "multiple_choice", options: ["Continue the conversation normally", "Immediately escalate to a supervisor", "Ignore the message", "End the chat"], correctIndex: 1 },
+          { id: "q2", question: "Trigger words should always be reported.", questionType: "true_false", options: ["True", "False"], correctIndex: 0 },
+          { id: "q3", question: "Which of the following are considered trigger words?", questionType: "checkbox", options: ["Suicide", "Hopeless", "Weather", "Harm"], correctIndex: 0, correctIndices: [0, 1, 3] },
+        ]},
       ]},
       { id: "mod-4", title: "Practice & Certification", type: "Practice", duration: "45 min", order: 4, lessons: [
-        { id: "l7", title: "Practice Chat Session 1", content: "First contact scenario practice.", type: "text" },
-        { id: "l8", title: "Practice Chat Session 2", content: "Crisis response scenario practice.", type: "text" },
-        { id: "l9", title: "Final Certification Assessment", content: "Comprehensive evaluation for volunteer certification.", type: "quiz" },
+        { id: "l7", title: "Practice Chat Session 1", content: "First contact scenario practice.", type: "article" },
+        { id: "l8", title: "Practice Chat Session 2", content: "Crisis response scenario practice.", type: "article" },
+        { id: "l9", title: "Final Certification Assessment", content: "Comprehensive evaluation for volunteer certification.", type: "quiz", passingScore: 80, quizQuestions: [
+          { id: "q4", question: "What is the primary goal of a first-contact conversation?", questionType: "multiple_choice", options: ["Convert the seeker immediately", "Build trust and rapport", "Share as much information as possible", "Get personal details"], correctIndex: 1 },
+          { id: "q5", question: "Active listening involves only hearing the words spoken.", questionType: "true_false", options: ["True", "False"], correctIndex: 1 },
+        ]},
       ]},
     ],
   },
@@ -199,8 +229,8 @@ const COURSES: Course[] = [
     status: "published", enrolledCount: 4, completionRate: 30, createdAt: "2026-06-25",
     modules: [
       { id: "mod-5", title: "Cultural Awareness", type: "Video", duration: "40 min", order: 1, lessons: [
-        { id: "l10", title: "Understanding Cultural Context", content: "Why culture matters in digital evangelism.", type: "video" },
-        { id: "l11", title: "Regional Considerations", content: "Key cultural considerations by region.", type: "text" },
+        { id: "l10", title: "Understanding Cultural Context", content: "Why culture matters in digital evangelism.", type: "video", videoUrl: "https://youtube.com/watch?v=example123" },
+        { id: "l11", title: "Regional Considerations", content: "Key cultural considerations by region.", type: "article" },
       ]},
     ],
   },
@@ -209,7 +239,7 @@ const COURSES: Course[] = [
     status: "draft", enrolledCount: 0, completionRate: 0, createdAt: "2026-07-10",
     modules: [
       { id: "mod-6", title: "Active Listening", type: "Module", duration: "30 min", order: 1, lessons: [
-        { id: "l12", title: "Listening Techniques", content: "Techniques for demonstrating genuine care.", type: "text" },
+        { id: "l12", title: "Listening Techniques", content: "Techniques for demonstrating genuine care.", type: "article" },
       ]},
     ],
   },
@@ -286,20 +316,21 @@ export const TrainerDashboard = ({
   const [traineePage, setTraineePage] = useState(1);
   const [selectedTraineeId, setSelectedTraineeId] = useState<string | null>(null);
 
-  // -- Content Studio (US31 — course builder) --
+  // -- Content Studio (course builder) --
   const [courses, setCourses] = useState<Course[]>(COURSES);
-  const [expandedCourseId, setExpandedCourseId] = useState<string | null>(null);
-  const [isModuleEditorOpen, setIsModuleEditorOpen] = useState(false);
-  const [editingCourseId, setEditingCourseId] = useState<string | null>(null);
-  const [editingModuleId, setEditingModuleId] = useState<string | null>(null);
-  const [edModTitle, setEdModTitle] = useState("");
-  const [edModType, setEdModType] = useState<MaterialType>("Module");
-  const [edModDuration, setEdModDuration] = useState("");
-  const [edModLessons, setEdModLessons] = useState<Lesson[]>([]);
-  // New course
   const [isNewCourseOpen, setIsNewCourseOpen] = useState(false);
   const [newCourseTitle, setNewCourseTitle] = useState("");
   const [newCourseDesc, setNewCourseDesc] = useState("");
+
+  // Studio editor states
+  const [studioCourseId, setStudioCourseId] = useState<string | null>(null);
+  const [studioLessonPath, setStudioLessonPath] = useState<{moduleId: string, lessonId: string} | null>(null);
+  const [studioExpandedMods, setStudioExpandedMods] = useState<string[]>([]);
+  const [studioSearch, setStudioSearch] = useState("");
+  const [lastAutoSave, setLastAutoSave] = useState<Date>(new Date());
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [newModuleTitle, setNewModuleTitle] = useState("");
+  const [isAddingModule, setIsAddingModule] = useState(false);
 
   // -- Practice Chat (US32 — guided flow) --
   const [chatStep, setChatStep] = useState<PracticeChatStep>("select_trainee");
@@ -347,6 +378,15 @@ export const TrainerDashboard = ({
 
   useEffect(() => { chatEndRef.current?.scrollIntoView({ behavior: "smooth" }); }, [pcMessages.length]);
 
+  // Studio derived values
+  const studioCourse = studioCourseId ? courses.find(c => c.id === studioCourseId) ?? null : null;
+  const studioLesson = studioLessonPath && studioCourse
+    ? studioCourse.modules.find(m => m.id === studioLessonPath.moduleId)?.lessons.find(l => l.id === studioLessonPath.lessonId) ?? null
+    : null;
+  const studioModule = studioLessonPath && studioCourse
+    ? studioCourse.modules.find(m => m.id === studioLessonPath.moduleId) ?? null
+    : null;
+
   // Greeting
   const hour = new Date().getHours();
   const greeting = hour < 12 ? "Good morning" : hour < 18 ? "Good afternoon" : "Good evening";
@@ -374,36 +414,98 @@ export const TrainerDashboard = ({
     setEvalNotes("");
   }, []);
 
-  const openModuleEditor = useCallback((courseId: string, mod?: CourseModule) => {
-    setEditingCourseId(courseId);
-    if (mod) {
-      setEditingModuleId(mod.id);
-      setEdModTitle(mod.title);
-      setEdModType(mod.type);
-      setEdModDuration(mod.duration);
-      setEdModLessons([...mod.lessons]);
-    } else {
-      setEditingModuleId(null);
-      setEdModTitle("");
-      setEdModType("Module");
-      setEdModDuration("");
-      setEdModLessons([]);
-    }
-    setIsModuleEditorOpen(true);
-  }, []);
-
-  const saveModule = useCallback(() => {
-    if (!edModTitle.trim() || !editingCourseId) return;
+  // Studio handlers
+  const updateLesson = useCallback((moduleId: string, lessonId: string, updates: Partial<Lesson>) => {
+    if (!studioCourseId) return;
     setCourses(prev => prev.map(c => {
-      if (c.id !== editingCourseId) return c;
-      if (editingModuleId) {
-        return { ...c, modules: c.modules.map(m => m.id === editingModuleId ? { ...m, title: edModTitle, type: edModType, duration: edModDuration, lessons: edModLessons } : m) };
-      }
-      return { ...c, modules: [...c.modules, { id: `mod-${Date.now()}`, title: edModTitle, type: edModType, duration: edModDuration, lessons: edModLessons, order: c.modules.length + 1 }] };
+      if (c.id !== studioCourseId) return c;
+      return { ...c, modules: c.modules.map(m => {
+        if (m.id !== moduleId) return m;
+        return { ...m, lessons: m.lessons.map(l => l.id === lessonId ? { ...l, ...updates } : l) };
+      })};
     }));
-    setIsModuleEditorOpen(false);
-    toast.success(editingModuleId ? "Module updated" : "Module added");
-  }, [editingCourseId, editingModuleId, edModTitle, edModType, edModDuration, edModLessons]);
+    setLastAutoSave(new Date());
+  }, [studioCourseId]);
+
+  const addStudioModule = useCallback((title: string) => {
+    if (!studioCourseId || !title.trim()) return;
+    const newId = `mod-${Date.now()}`;
+    setCourses(prev => prev.map(c => {
+      if (c.id !== studioCourseId) return c;
+      return { ...c, modules: [...c.modules, { id: newId, title, type: "Module" as MaterialType, duration: "0 min", lessons: [], order: c.modules.length + 1 }] };
+    }));
+    setStudioExpandedMods(prev => [...prev, newId]);
+    toast.success("Module added");
+  }, [studioCourseId]);
+
+  const addStudioLesson = useCallback((moduleId: string, type: LessonType = "article") => {
+    if (!studioCourseId) return;
+    const newId = `les-${Date.now()}`;
+    setCourses(prev => prev.map(c => {
+      if (c.id !== studioCourseId) return c;
+      return { ...c, modules: c.modules.map(m => {
+        if (m.id !== moduleId) return m;
+        return { ...m, lessons: [...m.lessons, { id: newId, title: "Untitled Lesson", content: "", type }] };
+      })};
+    }));
+    setStudioLessonPath({ moduleId, lessonId: newId });
+    setLastAutoSave(new Date());
+  }, [studioCourseId]);
+
+  const deleteStudioModule = useCallback((moduleId: string) => {
+    if (!studioCourseId) return;
+    setCourses(prev => prev.map(c => {
+      if (c.id !== studioCourseId) return c;
+      return { ...c, modules: c.modules.filter(m => m.id !== moduleId) };
+    }));
+    if (studioLessonPath?.moduleId === moduleId) setStudioLessonPath(null);
+    toast.success("Module deleted");
+  }, [studioCourseId, studioLessonPath]);
+
+  const deleteStudioLesson = useCallback((moduleId: string, lessonId: string) => {
+    if (!studioCourseId) return;
+    setCourses(prev => prev.map(c => {
+      if (c.id !== studioCourseId) return c;
+      return { ...c, modules: c.modules.map(m => {
+        if (m.id !== moduleId) return m;
+        return { ...m, lessons: m.lessons.filter(l => l.id !== lessonId) };
+      })};
+    }));
+    if (studioLessonPath?.lessonId === lessonId) setStudioLessonPath(null);
+    setLastAutoSave(new Date());
+  }, [studioCourseId, studioLessonPath]);
+
+  const duplicateStudioModule = useCallback((moduleId: string) => {
+    if (!studioCourseId) return;
+    setCourses(prev => prev.map(c => {
+      if (c.id !== studioCourseId) return c;
+      const mod = c.modules.find(m => m.id === moduleId);
+      if (!mod) return c;
+      const newMod = { ...mod, id: `mod-${Date.now()}`, title: `${mod.title} (Copy)`, lessons: mod.lessons.map(l => ({ ...l, id: `les-${Date.now()}-${Math.random().toString(36).slice(2, 6)}` })) };
+      const idx = c.modules.findIndex(m => m.id === moduleId);
+      const mods = [...c.modules];
+      mods.splice(idx + 1, 0, newMod);
+      return { ...c, modules: mods };
+    }));
+    toast.success("Module duplicated");
+  }, [studioCourseId]);
+
+  const addQuizQuestion = useCallback((moduleId: string, lessonId: string) => {
+    updateLesson(moduleId, lessonId, {
+      quizQuestions: [
+        ...(studioLesson?.quizQuestions ?? []),
+        { id: `q-${Date.now()}`, question: "", questionType: "multiple_choice", options: ["", "", "", ""], correctIndex: 0 }
+      ]
+    });
+  }, [updateLesson, studioLesson]);
+
+  // Autosave time ago
+  const autoSaveAgo = useMemo(() => {
+    const diff = Math.floor((Date.now() - lastAutoSave.getTime()) / 1000);
+    if (diff < 5) return "just now";
+    if (diff < 60) return `${diff}s ago`;
+    return `${Math.floor(diff / 60)}m ago`;
+  }, [lastAutoSave]);
 
   // ═════════════════════════════════════════════════════════════════════════
   // RENDER
@@ -729,10 +831,10 @@ export const TrainerDashboard = ({
       )}
 
       {/* ================================================================ */}
-      {/* CONTENT STUDIO — Course Builder (US31)                           */}
+      {/* CONTENT STUDIO — Course Builder                                  */}
       {/* ================================================================ */}
-      {activeTab === "content_studio" && (
-        <div className="space-y-4">
+      {activeTab === "content_studio" && !studioCourseId && (
+        <div className="space-y-6">
           <div className="flex items-center justify-between">
             <div>
               <h2 className="text-lg font-bold text-foreground">Content Studio</h2>
@@ -743,90 +845,688 @@ export const TrainerDashboard = ({
             </Button>
           </div>
 
-          {/* Course list */}
-          <div className="space-y-4">
-            {courses.map(course => (
-              <div key={course.id} className="bg-card rounded-lg border border-border shadow-sm overflow-hidden">
-                {/* Course header */}
-                <button className="w-full text-left px-6 py-5 flex items-center gap-4 hover:bg-muted/30 transition-colors"
-                  onClick={() => setExpandedCourseId(expandedCourseId === course.id ? null : course.id)}>
-                  <div className={cn("p-2.5 rounded-lg border border-border shrink-0", course.status === "published" ? "bg-emerald-500/10" : "bg-slate-500/10")}>
-                    <BookOpen className={cn("w-5 h-5", course.status === "published" ? "text-emerald-600" : "text-slate-500")} />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 mb-0.5">
-                      <h3 className="text-sm font-bold text-foreground">{course.title}</h3>
-                      <Badge variant="outline" className={cn("text-[10px]", course.status === "published" ? "bg-emerald-500/10 text-emerald-600 border-emerald-500/20" : "bg-slate-500/10 text-slate-500 border-slate-500/20")}>
-                        {course.status}
+          {/* Course Card Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
+            {courses.map(course => {
+              const lessonCount = course.modules.reduce((s, m) => s + m.lessons.length, 0);
+              return (
+                <motion.div key={course.id} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
+                  className="bg-card rounded-xl border border-border shadow-sm hover:shadow-md hover:border-primary/20 transition-all cursor-pointer group"
+                  onClick={() => { setStudioCourseId(course.id); setStudioLessonPath(null); setStudioExpandedMods(course.modules.map(m => m.id)); }}>
+                  <div className="p-6">
+                    <div className="flex items-start justify-between mb-3">
+                      <div className={cn("p-2.5 rounded-xl border border-border", course.status === "published" ? "bg-emerald-500/10" : "bg-slate-500/10")}>
+                        <BookOpen className={cn("w-5 h-5", course.status === "published" ? "text-emerald-600" : "text-slate-500")} />
+                      </div>
+                      <Badge variant="outline" className={cn("text-[10px] font-semibold", course.status === "published" ? "bg-emerald-500/10 text-emerald-600 border-emerald-500/20" : "bg-slate-500/10 text-slate-500 border-slate-500/20")}>
+                        {course.status === "published" ? "Published" : "Draft"}
                       </Badge>
                     </div>
-                    <p className="text-xs text-muted-foreground line-clamp-1">{course.description}</p>
-                    <div className="flex items-center gap-4 mt-2 text-[11px] text-muted-foreground">
-                      <span>{course.modules.length} modules</span>
-                      <span>{course.modules.reduce((s, m) => s + m.lessons.length, 0)} lessons</span>
-                      {course.status === "published" && (<>
-                        <span>{course.enrolledCount} enrolled</span>
-                        <span>{course.completionRate}% completion</span>
-                      </>)}
+                    <h3 className="text-sm font-bold text-foreground mb-1 group-hover:text-primary transition-colors">{course.title}</h3>
+                    <p className="text-xs text-muted-foreground line-clamp-2 mb-4 leading-relaxed">{course.description}</p>
+                    <div className="flex items-center gap-3 text-[11px] text-muted-foreground">
+                      <span className="flex items-center gap-1"><Layers className="w-3 h-3" />{course.modules.length} modules</span>
+                      <span className="flex items-center gap-1"><FileText className="w-3 h-3" />{lessonCount} lessons</span>
                     </div>
                   </div>
-                  <ChevronDown className={cn("w-5 h-5 text-muted-foreground transition-transform shrink-0", expandedCourseId === course.id && "rotate-180")} />
-                </button>
+                  {course.status === "published" && (
+                    <div className="px-6 py-3.5 border-t border-border bg-muted/20 rounded-b-xl flex items-center justify-between">
+                      <span className="text-[11px] text-muted-foreground"><span className="font-semibold text-foreground">{course.enrolledCount}</span> enrolled</span>
+                      <div className="flex items-center gap-2">
+                        <div className="w-16 h-1.5 bg-muted rounded-full overflow-hidden">
+                          <div className="h-full bg-emerald-500 rounded-full" style={{ width: `${course.completionRate}%` }} />
+                        </div>
+                        <span className="text-[11px] font-semibold text-muted-foreground">{course.completionRate}%</span>
+                      </div>
+                    </div>
+                  )}
+                </motion.div>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
-                {/* Expanded: Module list */}
-                <AnimatePresence>
-                  {expandedCourseId === course.id && (
-                    <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }}
-                      className="border-t border-border overflow-hidden">
-                      <div className="divide-y divide-border">
-                        {course.modules.map((mod, mi) => {
-                          const typeIcon = mod.type === "Video" ? Video : mod.type === "Quiz" ? ClipboardList : mod.type === "Practice" ? Play : BookOpen;
-                          const TypeIcon = typeIcon;
-                          return (
-                            <div key={mod.id} className="px-6 py-3.5 flex items-center gap-4 hover:bg-muted/20 transition-colors group cursor-pointer"
-                              onClick={() => openModuleEditor(course.id, mod)}>
-                              <span className="text-xs font-bold text-muted-foreground bg-muted w-7 h-7 rounded flex items-center justify-center shrink-0">{mi + 1}</span>
-                              <TypeIcon className={cn("w-4 h-4 shrink-0", mod.type === "Video" ? "text-violet-500" : mod.type === "Quiz" ? "text-amber-500" : mod.type === "Practice" ? "text-emerald-500" : "text-blue-500")} />
-                              <div className="flex-1 min-w-0">
-                                <p className="text-sm font-medium text-foreground">{mod.title}</p>
-                                <p className="text-[11px] text-muted-foreground mt-0.5">{mod.lessons.length} lesson{mod.lessons.length !== 1 ? "s" : ""} &middot; {mod.duration}</p>
+      {/* ================================================================ */}
+      {/* CONTENT STUDIO — Two-Panel Course Editor                         */}
+      {/* ================================================================ */}
+      {activeTab === "content_studio" && studioCourseId && studioCourse && (
+        <div className="-m-6 lg:-m-8 flex flex-col" style={{ height: "calc(100vh - 64px)" }}>
+          {/* Top Action Bar */}
+          <div className="bg-white border-b border-border px-6 py-3 flex items-center justify-between shrink-0">
+            <div className="flex items-center gap-4">
+              <Button variant="ghost" size="sm" className="text-xs gap-1.5 text-muted-foreground hover:text-foreground" onClick={() => { setStudioCourseId(null); setStudioLessonPath(null); }}>
+                <ChevronLeft className="w-4 h-4" /> Back to Courses
+              </Button>
+              <div className="h-5 w-px bg-border" />
+              <input
+                className="text-sm font-bold text-foreground bg-transparent border-none outline-none focus:ring-0 w-auto min-w-[200px]"
+                value={studioCourse.title}
+                onChange={e => setCourses(prev => prev.map(c => c.id === studioCourseId ? { ...c, title: e.target.value } : c))}
+              />
+            </div>
+            <div className="flex items-center gap-3">
+              <Badge variant="outline" className={cn("text-[10px] font-semibold", studioCourse.status === "published" ? "bg-emerald-500/10 text-emerald-600 border-emerald-500/20" : "bg-slate-500/10 text-slate-500 border-slate-500/20")}>
+                {studioCourse.status === "published" ? "Published" : "Draft"}
+              </Badge>
+              <span className="text-[11px] text-muted-foreground">Autosaved {autoSaveAgo}</span>
+              <div className="h-5 w-px bg-border" />
+              <Button variant="outline" size="sm" className="text-xs gap-1.5" onClick={() => toast.info("Preview mode coming soon")}>
+                <Eye className="w-3.5 h-3.5" /> Preview
+              </Button>
+              <Button variant="outline" size="sm" className="text-xs gap-1.5" onClick={() => { setLastAutoSave(new Date()); toast.success("Draft saved"); }}>
+                <Save className="w-3.5 h-3.5" /> Save Draft
+              </Button>
+              {studioCourse.status === "draft" ? (
+                <Button size="sm" className="text-xs gap-1.5" onClick={() => { setCourses(prev => prev.map(c => c.id === studioCourseId ? { ...c, status: "published" } : c)); toast.success("Course published!"); }}>
+                  <CheckCircle2 className="w-3.5 h-3.5" /> Publish
+                </Button>
+              ) : (
+                <Button variant="outline" size="sm" className="text-xs gap-1.5" onClick={() => { setCourses(prev => prev.map(c => c.id === studioCourseId ? { ...c, status: "draft" } : c)); toast.info("Course unpublished"); }}>
+                  Unpublish
+                </Button>
+              )}
+              <Button variant="ghost" size="sm" className="h-8 w-8 p-0" onClick={() => setIsSettingsOpen(true)}>
+                <Settings className="w-4 h-4 text-muted-foreground" />
+              </Button>
+            </div>
+          </div>
+
+          {/* Two panels container */}
+          <div className="flex flex-1 overflow-hidden">
+            {/* ── Left Panel: Course Structure ── */}
+            <div className="w-[300px] shrink-0 border-r border-border bg-muted/30 flex flex-col overflow-hidden">
+              {/* Search */}
+              <div className="px-4 pt-4 pb-3 space-y-3 shrink-0">
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
+                  <Input placeholder="Search lessons..." className="pl-9 h-8 text-xs bg-background" value={studioSearch} onChange={e => setStudioSearch(e.target.value)} />
+                </div>
+                {/* Add module */}
+                {isAddingModule ? (
+                  <div className="flex gap-1.5">
+                    <Input className="h-8 text-xs flex-1" placeholder="Module title..." value={newModuleTitle} onChange={e => setNewModuleTitle(e.target.value)}
+                      onKeyDown={e => { if (e.key === "Enter") { addStudioModule(newModuleTitle); setNewModuleTitle(""); setIsAddingModule(false); } if (e.key === "Escape") { setIsAddingModule(false); setNewModuleTitle(""); } }}
+                      autoFocus />
+                    <Button size="sm" className="h-8 px-2 text-xs" onClick={() => { addStudioModule(newModuleTitle); setNewModuleTitle(""); setIsAddingModule(false); }} disabled={!newModuleTitle.trim()}>
+                      <Plus className="w-3.5 h-3.5" />
+                    </Button>
+                  </div>
+                ) : (
+                  <Button variant="outline" size="sm" className="w-full h-8 text-xs gap-1.5 justify-center" onClick={() => setIsAddingModule(true)}>
+                    <Plus className="w-3.5 h-3.5" /> New Module
+                  </Button>
+                )}
+              </div>
+
+              {/* Module tree */}
+              <div className="flex-1 overflow-y-auto px-2 pb-3">
+                {studioCourse.modules.map((mod, mi) => {
+                  const isExpanded = studioExpandedMods.includes(mod.id);
+                  const filteredLessons = studioSearch.trim()
+                    ? mod.lessons.filter(l => l.title.toLowerCase().includes(studioSearch.toLowerCase()))
+                    : mod.lessons;
+                  if (studioSearch.trim() && filteredLessons.length === 0) return null;
+
+                  return (
+                    <div key={mod.id} className="mb-1">
+                      {/* Module header */}
+                      <div className="flex items-center gap-1 group rounded-lg hover:bg-muted/50 transition-colors">
+                        <button className="p-1 text-muted-foreground/50 cursor-grab"><GripVertical className="w-3.5 h-3.5" /></button>
+                        <button className="flex-1 flex items-center gap-2 py-2 pr-1 text-left" onClick={() => setStudioExpandedMods(prev => prev.includes(mod.id) ? prev.filter(id => id !== mod.id) : [...prev, mod.id])}>
+                          <ChevronRight className={cn("w-3.5 h-3.5 text-muted-foreground transition-transform shrink-0", isExpanded && "rotate-90")} />
+                          <span className="text-xs font-semibold text-foreground truncate">{mod.title}</span>
+                          <span className="text-[10px] text-muted-foreground ml-auto shrink-0">{mod.lessons.length}</span>
+                        </button>
+                        <div className="flex items-center opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
+                          <button className="p-1 rounded text-muted-foreground hover:text-foreground" title="Duplicate" onClick={() => duplicateStudioModule(mod.id)}>
+                            <Copy className="w-3 h-3" />
+                          </button>
+                          <button className="p-1 rounded text-muted-foreground hover:text-rose-500" title="Delete" onClick={() => deleteStudioModule(mod.id)}>
+                            <Trash2 className="w-3 h-3" />
+                          </button>
+                        </div>
+                      </div>
+
+                      {/* Lessons */}
+                      <AnimatePresence>
+                        {isExpanded && (
+                          <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="overflow-hidden">
+                            <div className="ml-5 pl-3 border-l border-border/60 space-y-0.5 py-1">
+                              {filteredLessons.map(les => {
+                                const isSelected = studioLessonPath?.lessonId === les.id;
+                                const cfg = LESSON_TYPE_CONFIG[les.type] || LESSON_TYPE_CONFIG.article;
+                                const LesIcon = cfg.icon;
+                                return (
+                                  <button key={les.id}
+                                    className={cn("w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-left transition-all text-xs",
+                                      isSelected ? "bg-primary/10 border-l-2 border-primary -ml-px" : "hover:bg-muted/50"
+                                    )}
+                                    onClick={() => setStudioLessonPath({ moduleId: mod.id, lessonId: les.id })}>
+                                    <LesIcon className={cn("w-3.5 h-3.5 shrink-0", isSelected ? "text-primary" : cfg.color)} />
+                                    <span className={cn("truncate", isSelected ? "font-semibold text-foreground" : "text-muted-foreground")}>{les.title}</span>
+                                    {les.duration && <span className="text-[10px] text-muted-foreground/70 ml-auto shrink-0">{les.duration}</span>}
+                                  </button>
+                                );
+                              })}
+
+                              {/* Add lesson */}
+                              <div className="pt-1">
+                                <div className="flex items-center gap-1 pl-2">
+                                  <button className="text-[11px] text-muted-foreground hover:text-primary flex items-center gap-1 transition-colors" onClick={() => addStudioLesson(mod.id, "article")}>
+                                    <Plus className="w-3 h-3" /> Add
+                                  </button>
+                                  <div className="flex items-center gap-0.5 ml-1">
+                                    {(["article", "video", "quiz", "pdf"] as LessonType[]).map(lt => {
+                                      const ltCfg = LESSON_TYPE_CONFIG[lt];
+                                      const LtIcon = ltCfg.icon;
+                                      return (
+                                        <button key={lt} className={cn("p-1 rounded hover:bg-muted transition-colors", ltCfg.color)} title={ltCfg.label}
+                                          onClick={() => addStudioLesson(mod.id, lt)}>
+                                          <LtIcon className="w-3 h-3" />
+                                        </button>
+                                      );
+                                    })}
+                                  </div>
+                                </div>
                               </div>
-                              <Badge variant="outline" className={cn("text-[10px] px-1.5 py-0 shrink-0", MATERIAL_BADGE[mod.type])}>{mod.type}</Badge>
-                              <button className="p-1.5 rounded-md text-muted-foreground hover:text-rose-500 hover:bg-rose-500/10 transition-colors opacity-0 group-hover:opacity-100 shrink-0"
-                                onClick={(e) => { e.stopPropagation(); setCourses(prev => prev.map(c => c.id === course.id ? { ...c, modules: c.modules.filter(m => m.id !== mod.id) } : c)); toast.success("Module removed"); }}>
-                                <Trash2 className="w-3.5 h-3.5" />
-                              </button>
                             </div>
-                          );
-                        })}
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
+                    </div>
+                  );
+                })}
 
-                        {/* Add module row — always visible */}
-                        <button className="w-full px-6 py-4 flex items-center justify-center gap-2 text-sm text-muted-foreground hover:text-foreground hover:bg-muted/30 transition-colors"
-                          onClick={() => openModuleEditor(course.id)}>
-                          <Plus className="w-4 h-4" /> Add Module
+                {studioCourse.modules.length === 0 && (
+                  <div className="text-center py-8 px-4">
+                    <FolderOpen className="w-8 h-8 text-muted-foreground/20 mx-auto mb-2" />
+                    <p className="text-xs text-muted-foreground">No modules yet. Add one above.</p>
+                  </div>
+                )}
+              </div>
+
+              {/* Bottom actions */}
+              {studioCourse.modules.length > 0 && (
+                <div className="px-4 py-3 border-t border-border shrink-0">
+                  <button className="text-[11px] text-muted-foreground hover:text-foreground transition-colors"
+                    onClick={() => setStudioExpandedMods(studioExpandedMods.length === studioCourse.modules.length ? [] : studioCourse.modules.map(m => m.id))}>
+                    {studioExpandedMods.length === studioCourse.modules.length ? "Collapse All" : "Expand All"}
+                  </button>
+                </div>
+              )}
+            </div>
+
+            {/* ── Right Panel: Content Editor ── */}
+            <div className="flex-1 overflow-y-auto bg-background">
+              {/* Empty state */}
+              {!studioLesson && (
+                <div className="flex-1 flex items-center justify-center h-full">
+                  <div className="text-center max-w-sm">
+                    <BookOpen className="w-12 h-12 text-muted-foreground/20 mx-auto mb-4" />
+                    <h3 className="text-base font-semibold text-foreground mb-2">Select a lesson to edit</h3>
+                    <p className="text-sm text-muted-foreground leading-relaxed">Choose a lesson from the course structure on the left, or create a new one.</p>
+                  </div>
+                </div>
+              )}
+
+              {/* Lesson editor */}
+              {studioLesson && studioLessonPath && (
+                <div className="max-w-3xl mx-auto px-8 py-8 space-y-8">
+                  {/* Lesson title */}
+                  <div>
+                    <input
+                      className="w-full h-12 text-lg font-semibold text-foreground bg-transparent border-none outline-none focus:ring-0 placeholder:text-muted-foreground/50"
+                      value={studioLesson.title}
+                      onChange={e => updateLesson(studioLessonPath.moduleId, studioLessonPath.lessonId, { title: e.target.value })}
+                      placeholder="Lesson title..."
+                    />
+                  </div>
+
+                  {/* Lesson type selector + actions */}
+                  <div className="flex items-center justify-between gap-4">
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      {(Object.keys(LESSON_TYPE_CONFIG) as LessonType[]).map(lt => {
+                        const cfg = LESSON_TYPE_CONFIG[lt];
+                        const LtIcon = cfg.icon;
+                        const isActive = studioLesson.type === lt;
+                        return (
+                          <button key={lt}
+                            className={cn("flex items-center gap-1.5 px-3 py-2 rounded-lg border text-xs font-medium transition-all",
+                              isActive ? `${cfg.bg} ${cfg.color} border-current ring-1 ring-current/20` : "border-border text-muted-foreground hover:text-foreground hover:border-muted-foreground"
+                            )}
+                            onClick={() => updateLesson(studioLessonPath.moduleId, studioLessonPath.lessonId, { type: lt })}>
+                            <LtIcon className="w-3.5 h-3.5" /> {cfg.label}
+                          </button>
+                        );
+                      })}
+                    </div>
+                    <div className="flex items-center gap-2 shrink-0">
+                      <Button variant="outline" size="sm" className="text-xs gap-1.5" onClick={() => toast.info("AI content generation coming soon!")}>
+                        <Sparkles className="w-3.5 h-3.5" /> AI Generate
+                      </Button>
+                      <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-muted-foreground hover:text-rose-500 hover:bg-rose-500/10"
+                        onClick={() => deleteStudioLesson(studioLessonPath.moduleId, studioLessonPath.lessonId)}>
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  </div>
+
+                  <div className="h-px bg-border" />
+
+                  {/* ── Video Editor ── */}
+                  {studioLesson.type === "video" && (
+                    <div className="space-y-8">
+                      {/* Video Source */}
+                      <div>
+                        <Label className="text-sm font-semibold text-foreground mb-3 block">Video Source</Label>
+                        <div className="grid grid-cols-2 gap-3 mb-4">
+                          <button className={cn("flex flex-col items-center gap-2 p-5 rounded-xl border-2 transition-all",
+                              (studioLesson.videoSource ?? "link") === "link" ? "border-violet-500 bg-violet-500/5 text-violet-700" : "border-border text-muted-foreground hover:border-muted-foreground")}
+                            onClick={() => updateLesson(studioLessonPath.moduleId, studioLessonPath.lessonId, { videoSource: "link" })}>
+                            <Link2 className="w-5 h-5" />
+                            <span className="text-sm font-medium">Paste a Link</span>
+                          </button>
+                          <button className={cn("flex flex-col items-center gap-2 p-5 rounded-xl border-2 transition-all",
+                              studioLesson.videoSource === "upload" ? "border-violet-500 bg-violet-500/5 text-violet-700" : "border-border text-muted-foreground hover:border-muted-foreground")}
+                            onClick={() => updateLesson(studioLessonPath.moduleId, studioLessonPath.lessonId, { videoSource: "upload" })}>
+                            <Upload className="w-5 h-5" />
+                            <span className="text-sm font-medium">Upload File</span>
+                          </button>
+                        </div>
+
+                        {(studioLesson.videoSource ?? "link") === "link" ? (
+                          <div>
+                            <Input className="h-11 text-sm" placeholder="https://youtube.com/watch?v=... or https://vimeo.com/..."
+                              value={studioLesson.videoUrl ?? ""}
+                              onChange={e => updateLesson(studioLessonPath.moduleId, studioLessonPath.lessonId, { videoUrl: e.target.value })} />
+                            <p className="text-xs text-muted-foreground mt-2">Supports YouTube, Vimeo, and direct video URLs.</p>
+                          </div>
+                        ) : (
+                          <button className="w-full py-10 rounded-xl border-2 border-dashed border-violet-500/30 bg-violet-500/5 text-sm text-muted-foreground hover:text-violet-700 hover:border-violet-500/50 transition-colors flex flex-col items-center gap-3"
+                            onClick={() => toast.info("File picker would open here")}>
+                            <Upload className="w-8 h-8 text-violet-400" />
+                            <span className="font-medium">Click to choose a video file</span>
+                            <span className="text-xs text-muted-foreground">MP4, MOV, or WebM -- up to 500MB</span>
+                          </button>
+                        )}
+                      </div>
+
+                      {/* Description */}
+                      <div>
+                        <Label className="text-sm font-semibold text-foreground mb-2 block">Description</Label>
+                        <Textarea className="text-sm min-h-[120px] leading-relaxed" placeholder="Describe what this video covers..."
+                          value={studioLesson.content}
+                          onChange={e => updateLesson(studioLessonPath.moduleId, studioLessonPath.lessonId, { content: e.target.value })} />
+                      </div>
+
+                      {/* Transcript */}
+                      <div>
+                        <Label className="text-sm font-semibold text-foreground mb-2 block">Transcript (optional)</Label>
+                        <Textarea className="text-sm min-h-[100px] leading-relaxed font-mono text-xs" placeholder="Paste or generate a transcript..."
+                          value={studioLesson.transcript ?? ""}
+                          onChange={e => updateLesson(studioLessonPath.moduleId, studioLessonPath.lessonId, { transcript: e.target.value })} />
+                      </div>
+
+                      {/* Duration */}
+                      <div>
+                        <Label className="text-sm font-semibold text-foreground mb-2 block">Duration</Label>
+                        <Input className="h-10 text-sm max-w-[200px]" placeholder="e.g., 12:30"
+                          value={studioLesson.duration ?? ""}
+                          onChange={e => updateLesson(studioLessonPath.moduleId, studioLessonPath.lessonId, { duration: e.target.value })} />
+                      </div>
+
+                      {/* Downloadable Resources */}
+                      <div>
+                        <Label className="text-sm font-semibold text-foreground mb-2 block">Downloadable Resources</Label>
+                        <Button variant="outline" size="sm" className="text-xs gap-1.5" onClick={() => toast.info("File upload coming soon")}>
+                          <Plus className="w-3.5 h-3.5" /> Add Resource
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* ── Article Editor ── */}
+                  {studioLesson.type === "article" && (
+                    <div className="space-y-6">
+                      {/* Formatting toolbar (visual only) */}
+                      <div className="flex items-center gap-0.5 p-1 rounded-lg border border-border bg-muted/30">
+                        {[
+                          { icon: "B", title: "Bold", cls: "font-bold" },
+                          { icon: "I", title: "Italic", cls: "italic" },
+                          { icon: "H", title: "Heading", cls: "font-bold" },
+                        ].map(btn => (
+                          <button key={btn.title} className={cn("w-8 h-8 rounded-md flex items-center justify-center text-sm text-muted-foreground hover:text-foreground hover:bg-background transition-colors", btn.cls)} title={btn.title}
+                            onClick={() => toast.info(`${btn.title} formatting -- rich text editor coming soon`)}>
+                            {btn.icon}
+                          </button>
+                        ))}
+                        <div className="w-px h-5 bg-border mx-1" />
+                        {[
+                          { Icon: ClipboardList, title: "List" },
+                          { Icon: Link2, title: "Link" },
+                          { Icon: FileText, title: "Image" },
+                        ].map(btn => (
+                          <button key={btn.title} className="w-8 h-8 rounded-md flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-background transition-colors" title={btn.title}
+                            onClick={() => toast.info(`${btn.title} -- rich text editor coming soon`)}>
+                            <btn.Icon className="w-4 h-4" />
+                          </button>
+                        ))}
+                        <div className="w-px h-5 bg-border mx-1" />
+                        <button className="px-2.5 h-8 rounded-md flex items-center justify-center text-xs text-muted-foreground hover:text-foreground hover:bg-background transition-colors" title="Code block"
+                          onClick={() => toast.info("Code block -- rich text editor coming soon")}>
+                          {"</>"}
+                        </button>
+                        <button className="px-2.5 h-8 rounded-md flex items-center justify-center text-xs text-muted-foreground hover:text-foreground hover:bg-background transition-colors" title="Callout"
+                          onClick={() => toast.info("Callout -- rich text editor coming soon")}>
+                          Callout
                         </button>
                       </div>
 
-                      {/* Course actions */}
-                      <div className="px-6 py-3 bg-muted/20 border-t border-border flex items-center justify-between">
-                        <Button variant="ghost" size="sm" className="text-xs gap-1 text-rose-500 hover:text-rose-600 hover:bg-rose-500/10"
-                          onClick={() => { setCourses(prev => prev.filter(c => c.id !== course.id)); toast.success("Course deleted"); }}>
-                          <Trash2 className="w-3 h-3" /> Delete
+                      {/* Content area */}
+                      <Textarea className="text-sm min-h-[300px] leading-relaxed" placeholder="Write the lesson content that trainees will read..."
+                        value={studioLesson.content}
+                        onChange={e => updateLesson(studioLessonPath.moduleId, studioLessonPath.lessonId, { content: e.target.value })} />
+
+                      {/* Attachments */}
+                      <div>
+                        <Label className="text-sm font-semibold text-foreground mb-2 block">Attachments</Label>
+                        <Button variant="outline" size="sm" className="text-xs gap-1.5" onClick={() => toast.info("File upload coming soon")}>
+                          <Plus className="w-3.5 h-3.5" /> Add Attachment
                         </Button>
-                        <div className="flex gap-2">
-                          {course.status === "draft" && (
-                            <Button size="sm" className="text-xs gap-1"
-                              onClick={() => { setCourses(prev => prev.map(c => c.id === course.id ? { ...c, status: "published" } : c)); toast.success("Course published!"); }}>
-                              <CheckCircle2 className="w-3 h-3" /> Publish Course
-                            </Button>
-                          )}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* ── Quiz Editor ── */}
+                  {studioLesson.type === "quiz" && (
+                    <div className="space-y-8">
+                      {/* Quiz settings */}
+                      <div className="flex items-center gap-6 flex-wrap p-4 rounded-xl border border-border bg-muted/20">
+                        <div className="flex items-center gap-2">
+                          <Label className="text-xs font-medium text-muted-foreground whitespace-nowrap">Passing Score</Label>
+                          <Input className="h-8 w-20 text-xs text-center" type="number" min={0} max={100}
+                            value={studioLesson.passingScore ?? 80}
+                            onChange={e => updateLesson(studioLessonPath.moduleId, studioLessonPath.lessonId, { passingScore: parseInt(e.target.value) || 0 })} />
+                          <span className="text-xs text-muted-foreground">%</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Label className="text-xs font-medium text-muted-foreground whitespace-nowrap">Randomize</Label>
+                          <button className={cn("w-9 h-5 rounded-full transition-colors relative",
+                              studioLesson.randomizeQuestions ? "bg-primary" : "bg-muted-foreground/30")}
+                            onClick={() => updateLesson(studioLessonPath.moduleId, studioLessonPath.lessonId, { randomizeQuestions: !studioLesson.randomizeQuestions })}>
+                            <div className={cn("w-4 h-4 rounded-full bg-white shadow-sm absolute top-0.5 transition-transform",
+                              studioLesson.randomizeQuestions ? "translate-x-4" : "translate-x-0.5")} />
+                          </button>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Label className="text-xs font-medium text-muted-foreground whitespace-nowrap">Show Answers</Label>
+                          <button className={cn("w-9 h-5 rounded-full transition-colors relative",
+                              studioLesson.showCorrectAnswers ? "bg-primary" : "bg-muted-foreground/30")}
+                            onClick={() => updateLesson(studioLessonPath.moduleId, studioLessonPath.lessonId, { showCorrectAnswers: !studioLesson.showCorrectAnswers })}>
+                            <div className={cn("w-4 h-4 rounded-full bg-white shadow-sm absolute top-0.5 transition-transform",
+                              studioLesson.showCorrectAnswers ? "translate-x-4" : "translate-x-0.5")} />
+                          </button>
                         </div>
                       </div>
-                    </motion.div>
+
+                      {/* Questions */}
+                      <div className="space-y-4">
+                        {(studioLesson.quizQuestions ?? []).map((q, qi) => (
+                          <div key={q.id} className="rounded-xl border border-border p-5 space-y-4 bg-card">
+                            <div className="flex items-start gap-3">
+                              <span className="text-xs font-bold text-white bg-amber-500 w-7 h-7 rounded-lg flex items-center justify-center shrink-0 mt-1">{qi + 1}</span>
+                              <div className="flex-1 space-y-3">
+                                <Input className="h-10 text-sm font-medium" placeholder="Enter the question..."
+                                  value={q.question}
+                                  onChange={e => {
+                                    const updated = [...(studioLesson.quizQuestions ?? [])];
+                                    updated[qi] = { ...updated[qi], question: e.target.value };
+                                    updateLesson(studioLessonPath.moduleId, studioLessonPath.lessonId, { quizQuestions: updated });
+                                  }} />
+                                <div className="flex items-center gap-2">
+                                  <Label className="text-xs text-muted-foreground">Type:</Label>
+                                  <select className="h-8 rounded-md border border-input bg-background px-2 text-xs"
+                                    value={q.questionType}
+                                    onChange={e => {
+                                      const updated = [...(studioLesson.quizQuestions ?? [])];
+                                      updated[qi] = { ...updated[qi], questionType: e.target.value as QuizQuestion["questionType"] };
+                                      updateLesson(studioLessonPath.moduleId, studioLessonPath.lessonId, { quizQuestions: updated });
+                                    }}>
+                                    <option value="multiple_choice">Multiple Choice</option>
+                                    <option value="true_false">True / False</option>
+                                    <option value="checkbox">Checkbox</option>
+                                    <option value="short_answer">Short Answer</option>
+                                  </select>
+                                </div>
+
+                                {/* Options (for non-short-answer) */}
+                                {q.questionType !== "short_answer" && (
+                                  <div className="space-y-2 pl-1">
+                                    {q.options.map((opt, oi) => (
+                                      <div key={oi} className="flex items-center gap-2.5">
+                                        <button className={cn("w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 transition-colors",
+                                            (q.questionType === "checkbox" ? (q.correctIndices ?? []).includes(oi) : q.correctIndex === oi)
+                                              ? "bg-emerald-500 border-emerald-500 text-white" : "border-muted-foreground/30 hover:border-muted-foreground")}
+                                          onClick={() => {
+                                            const updated = [...(studioLesson.quizQuestions ?? [])];
+                                            if (q.questionType === "checkbox") {
+                                              const indices = [...(q.correctIndices ?? [])];
+                                              const idx = indices.indexOf(oi);
+                                              if (idx >= 0) indices.splice(idx, 1); else indices.push(oi);
+                                              updated[qi] = { ...updated[qi], correctIndices: indices };
+                                            } else {
+                                              updated[qi] = { ...updated[qi], correctIndex: oi };
+                                            }
+                                            updateLesson(studioLessonPath.moduleId, studioLessonPath.lessonId, { quizQuestions: updated });
+                                          }}>
+                                          {((q.questionType === "checkbox" ? (q.correctIndices ?? []).includes(oi) : q.correctIndex === oi)) && <CheckCircle2 className="w-3 h-3" />}
+                                        </button>
+                                        <Input className="h-8 text-xs flex-1" placeholder={`Option ${oi + 1}`}
+                                          value={opt}
+                                          onChange={e => {
+                                            const updated = [...(studioLesson.quizQuestions ?? [])];
+                                            const opts = [...updated[qi].options];
+                                            opts[oi] = e.target.value;
+                                            updated[qi] = { ...updated[qi], options: opts };
+                                            updateLesson(studioLessonPath.moduleId, studioLessonPath.lessonId, { quizQuestions: updated });
+                                          }} />
+                                        {q.options.length > 2 && (
+                                          <button className="p-1 rounded text-muted-foreground hover:text-rose-500 transition-colors"
+                                            onClick={() => {
+                                              const updated = [...(studioLesson.quizQuestions ?? [])];
+                                              const opts = [...updated[qi].options];
+                                              opts.splice(oi, 1);
+                                              updated[qi] = { ...updated[qi], options: opts };
+                                              updateLesson(studioLessonPath.moduleId, studioLessonPath.lessonId, { quizQuestions: updated });
+                                            }}>
+                                            <X className="w-3 h-3" />
+                                          </button>
+                                        )}
+                                      </div>
+                                    ))}
+                                    {q.questionType !== "true_false" && (
+                                      <button className="text-[11px] text-muted-foreground hover:text-foreground flex items-center gap-1 pl-7 transition-colors"
+                                        onClick={() => {
+                                          const updated = [...(studioLesson.quizQuestions ?? [])];
+                                          updated[qi] = { ...updated[qi], options: [...updated[qi].options, ""] };
+                                          updateLesson(studioLessonPath.moduleId, studioLessonPath.lessonId, { quizQuestions: updated });
+                                        }}>
+                                        <Plus className="w-3 h-3" /> Add option
+                                      </button>
+                                    )}
+                                  </div>
+                                )}
+
+                                {q.questionType === "short_answer" && (
+                                  <div>
+                                    <Label className="text-xs text-muted-foreground mb-1 block">Expected Answer</Label>
+                                    <Input className="h-8 text-xs" placeholder="Enter the correct answer..."
+                                      value={q.correctAnswer ?? ""}
+                                      onChange={e => {
+                                        const updated = [...(studioLesson.quizQuestions ?? [])];
+                                        updated[qi] = { ...updated[qi], correctAnswer: e.target.value };
+                                        updateLesson(studioLessonPath.moduleId, studioLessonPath.lessonId, { quizQuestions: updated });
+                                      }} />
+                                  </div>
+                                )}
+                              </div>
+                              <button className="p-2 rounded-lg text-muted-foreground hover:text-rose-500 hover:bg-rose-500/10 transition-colors shrink-0"
+                                onClick={() => {
+                                  const updated = (studioLesson.quizQuestions ?? []).filter((_: QuizQuestion, i: number) => i !== qi);
+                                  updateLesson(studioLessonPath.moduleId, studioLessonPath.lessonId, { quizQuestions: updated });
+                                }}>
+                                <Trash2 className="w-4 h-4" />
+                              </button>
+                            </div>
+                          </div>
+                        ))}
+
+                        {/* Add question */}
+                        <button className="w-full py-5 rounded-xl border-2 border-dashed border-border text-sm font-medium text-muted-foreground hover:text-foreground hover:border-primary/40 hover:bg-primary/5 transition-all flex items-center justify-center gap-2"
+                          onClick={() => addQuizQuestion(studioLessonPath.moduleId, studioLessonPath.lessonId)}>
+                          <Plus className="w-4 h-4" /> Add Question
+                        </button>
+                      </div>
+                    </div>
                   )}
-                </AnimatePresence>
-              </div>
-            ))}
+
+                  {/* ── PDF Editor ── */}
+                  {studioLesson.type === "pdf" && (
+                    <div className="space-y-8">
+                      {/* Upload zone */}
+                      <div>
+                        <Label className="text-sm font-semibold text-foreground mb-3 block">PDF File</Label>
+                        <button className="w-full py-12 rounded-xl border-2 border-dashed border-rose-500/30 bg-rose-500/5 text-sm text-muted-foreground hover:text-rose-700 hover:border-rose-500/50 transition-colors flex flex-col items-center gap-3"
+                          onClick={() => toast.info("File picker would open here")}>
+                          <File className="w-10 h-10 text-rose-400" />
+                          <span className="font-medium">Click to upload a PDF</span>
+                          <span className="text-xs text-muted-foreground">or drag and drop -- PDF files up to 50MB</span>
+                        </button>
+                      </div>
+
+                      {/* Or external URL */}
+                      <div>
+                        <Label className="text-sm font-semibold text-foreground mb-2 block">Or paste an external URL</Label>
+                        <Input className="h-10 text-sm" placeholder="https://example.com/document.pdf"
+                          value={studioLesson.pdfUrl ?? ""}
+                          onChange={e => updateLesson(studioLessonPath.moduleId, studioLessonPath.lessonId, { pdfUrl: e.target.value })} />
+                      </div>
+
+                      {/* Description */}
+                      <div>
+                        <Label className="text-sm font-semibold text-foreground mb-2 block">Description</Label>
+                        <Textarea className="text-sm min-h-[100px] leading-relaxed" placeholder="Describe this PDF resource..."
+                          value={studioLesson.content}
+                          onChange={e => updateLesson(studioLessonPath.moduleId, studioLessonPath.lessonId, { content: e.target.value })} />
+                      </div>
+
+                      {/* Allow download */}
+                      <div className="flex items-center gap-3">
+                        <Label className="text-sm font-medium text-foreground">Allow download</Label>
+                        <button className={cn("w-9 h-5 rounded-full transition-colors relative",
+                            studioLesson.isRequired ? "bg-primary" : "bg-muted-foreground/30")}
+                          onClick={() => updateLesson(studioLessonPath.moduleId, studioLessonPath.lessonId, { isRequired: !studioLesson.isRequired })}>
+                          <div className={cn("w-4 h-4 rounded-full bg-white shadow-sm absolute top-0.5 transition-transform",
+                            studioLesson.isRequired ? "translate-x-4" : "translate-x-0.5")} />
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* ── Audio Editor ── */}
+                  {studioLesson.type === "audio" && (
+                    <div className="space-y-8">
+                      <div>
+                        <Label className="text-sm font-semibold text-foreground mb-3 block">Audio Source</Label>
+                        <div className="grid grid-cols-2 gap-3 mb-4">
+                          <button className={cn("flex flex-col items-center gap-2 p-5 rounded-xl border-2 transition-all",
+                              (studioLesson.videoSource ?? "link") === "link" ? "border-emerald-500 bg-emerald-500/5 text-emerald-700" : "border-border text-muted-foreground hover:border-muted-foreground")}
+                            onClick={() => updateLesson(studioLessonPath.moduleId, studioLessonPath.lessonId, { videoSource: "link" })}>
+                            <Link2 className="w-5 h-5" />
+                            <span className="text-sm font-medium">Paste a Link</span>
+                          </button>
+                          <button className={cn("flex flex-col items-center gap-2 p-5 rounded-xl border-2 transition-all",
+                              studioLesson.videoSource === "upload" ? "border-emerald-500 bg-emerald-500/5 text-emerald-700" : "border-border text-muted-foreground hover:border-muted-foreground")}
+                            onClick={() => updateLesson(studioLessonPath.moduleId, studioLessonPath.lessonId, { videoSource: "upload" })}>
+                            <Upload className="w-5 h-5" />
+                            <span className="text-sm font-medium">Upload File</span>
+                          </button>
+                        </div>
+
+                        {(studioLesson.videoSource ?? "link") === "link" ? (
+                          <div>
+                            <Input className="h-11 text-sm" placeholder="https://example.com/audio.mp3"
+                              value={studioLesson.videoUrl ?? ""}
+                              onChange={e => updateLesson(studioLessonPath.moduleId, studioLessonPath.lessonId, { videoUrl: e.target.value })} />
+                            <p className="text-xs text-muted-foreground mt-2">Supports MP3, WAV, and direct audio URLs.</p>
+                          </div>
+                        ) : (
+                          <button className="w-full py-10 rounded-xl border-2 border-dashed border-emerald-500/30 bg-emerald-500/5 text-sm text-muted-foreground hover:text-emerald-700 hover:border-emerald-500/50 transition-colors flex flex-col items-center gap-3"
+                            onClick={() => toast.info("File picker would open here")}>
+                            <Headphones className="w-8 h-8 text-emerald-400" />
+                            <span className="font-medium">Click to choose an audio file</span>
+                            <span className="text-xs text-muted-foreground">MP3, WAV, or OGG -- up to 200MB</span>
+                          </button>
+                        )}
+                      </div>
+
+                      {/* Description */}
+                      <div>
+                        <Label className="text-sm font-semibold text-foreground mb-2 block">Description</Label>
+                        <Textarea className="text-sm min-h-[120px] leading-relaxed" placeholder="Describe what this audio covers..."
+                          value={studioLesson.content}
+                          onChange={e => updateLesson(studioLessonPath.moduleId, studioLessonPath.lessonId, { content: e.target.value })} />
+                      </div>
+
+                      {/* Transcript */}
+                      <div>
+                        <Label className="text-sm font-semibold text-foreground mb-2 block">Transcript (optional)</Label>
+                        <Textarea className="text-sm min-h-[100px] leading-relaxed font-mono text-xs" placeholder="Paste or generate a transcript..."
+                          value={studioLesson.transcript ?? ""}
+                          onChange={e => updateLesson(studioLessonPath.moduleId, studioLessonPath.lessonId, { transcript: e.target.value })} />
+                      </div>
+
+                      {/* Duration */}
+                      <div>
+                        <Label className="text-sm font-semibold text-foreground mb-2 block">Duration</Label>
+                        <Input className="h-10 text-sm max-w-[200px]" placeholder="e.g., 15:00"
+                          value={studioLesson.duration ?? ""}
+                          onChange={e => updateLesson(studioLessonPath.moduleId, studioLessonPath.lessonId, { duration: e.target.value })} />
+                      </div>
+                    </div>
+                  )}
+
+                  {/* ── Assignment Editor ── */}
+                  {studioLesson.type === "assignment" && (
+                    <div className="space-y-8">
+                      <div>
+                        <Label className="text-sm font-semibold text-foreground mb-2 block">Assignment Instructions</Label>
+                        <Textarea className="text-sm min-h-[200px] leading-relaxed" placeholder="Describe the assignment, requirements, and expectations..."
+                          value={studioLesson.content}
+                          onChange={e => updateLesson(studioLessonPath.moduleId, studioLessonPath.lessonId, { content: e.target.value })} />
+                      </div>
+
+                      {/* Resources */}
+                      <div>
+                        <Label className="text-sm font-semibold text-foreground mb-2 block">Reference Materials</Label>
+                        <Button variant="outline" size="sm" className="text-xs gap-1.5" onClick={() => toast.info("File upload coming soon")}>
+                          <Plus className="w-3.5 h-3.5" /> Add Reference File
+                        </Button>
+                      </div>
+
+                      {/* Duration */}
+                      <div>
+                        <Label className="text-sm font-semibold text-foreground mb-2 block">Estimated Completion Time</Label>
+                        <Input className="h-10 text-sm max-w-[200px]" placeholder="e.g., 45 min"
+                          value={studioLesson.duration ?? ""}
+                          onChange={e => updateLesson(studioLessonPath.moduleId, studioLessonPath.lessonId, { duration: e.target.value })} />
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
           </div>
         </div>
       )}
@@ -1099,194 +1799,99 @@ export const TrainerDashboard = ({
       )}
 
       {/* ================================================================ */}
-      {/* Module Editor Modal (Content Studio)                             */}
+      {/* Course Settings Drawer                                           */}
       {/* ================================================================ */}
       <AnimatePresence>
-        {isModuleEditorOpen && (
+        {isSettingsOpen && studioCourse && (
           <>
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40" onClick={() => setIsModuleEditorOpen(false)} />
-            <motion.div initial={{ opacity: 0, scale: 0.95, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 20 }} transition={{ type: "spring", damping: 25, stiffness: 350 }}
-              className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-background rounded-xl border border-border shadow-2xl z-50 w-full max-w-3xl max-h-[88vh] flex flex-col">
-              {/* Modal Header */}
-              <div className="px-8 py-6 border-b border-border flex items-center justify-between shrink-0">
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 bg-black/40 backdrop-blur-sm z-40" onClick={() => setIsSettingsOpen(false)} />
+            <motion.div initial={{ x: "100%" }} animate={{ x: 0 }} exit={{ x: "100%" }} transition={{ type: "spring", damping: 30, stiffness: 300 }}
+              className="fixed top-0 right-0 h-full w-full max-w-md bg-background border-l border-border shadow-2xl z-50 flex flex-col">
+              {/* Drawer header */}
+              <div className="px-6 py-5 border-b border-border flex items-center justify-between shrink-0">
                 <div>
-                  <h2 className="text-xl font-bold text-foreground">{editingModuleId ? "Edit Module" : "Create New Module"}</h2>
-                  <p className="text-sm text-muted-foreground mt-1">{editingModuleId ? "Update the module details and manage its lessons below." : "Give your module a name, choose what type of content it contains, then add lessons."}</p>
+                  <h2 className="text-base font-bold text-foreground">Course Settings</h2>
+                  <p className="text-xs text-muted-foreground mt-0.5">Configure course details and options</p>
                 </div>
-                <Button variant="ghost" size="sm" className="h-9 w-9 p-0 rounded-full hover:bg-muted shrink-0" onClick={() => setIsModuleEditorOpen(false)}><X className="w-4 h-4" /></Button>
+                <Button variant="ghost" size="sm" className="h-8 w-8 p-0" onClick={() => setIsSettingsOpen(false)}><X className="w-4 h-4" /></Button>
               </div>
 
-              {/* Modal Body */}
-              <div className="flex-1 overflow-y-auto px-8 py-8 space-y-10">
-
-                {/* ── Section 1: Module Details ── */}
+              {/* Drawer body */}
+              <div className="flex-1 overflow-y-auto px-6 py-6 space-y-6">
                 <div>
-                  <div className="flex items-center gap-3 mb-5">
-                    <div className="w-8 h-8 rounded-lg bg-blue-500/10 border border-blue-500/20 flex items-center justify-center shrink-0">
-                      <span className="text-sm font-bold text-blue-600">1</span>
-                    </div>
-                    <div>
-                      <h3 className="text-sm font-bold text-foreground">Module Details</h3>
-                      <p className="text-xs text-muted-foreground">Name your module and set its type and estimated duration.</p>
-                    </div>
-                  </div>
-
-                  <div className="space-y-5 pl-11">
-                    <div>
-                      <Label className="text-sm font-medium text-foreground">Module Title</Label>
-                      <Input className="mt-2 h-11 text-sm" placeholder="e.g., Gospel Conversation Fundamentals" value={edModTitle} onChange={e => setEdModTitle(e.target.value)} />
-                    </div>
-                    <div className="grid grid-cols-2 gap-5">
-                      <div>
-                        <Label className="text-sm font-medium text-foreground">Content Type</Label>
-                        <p className="text-xs text-muted-foreground mt-0.5 mb-2">What kind of material is this module?</p>
-                        <select className="h-11 w-full rounded-md border border-input bg-background px-3 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                          value={edModType} onChange={e => setEdModType(e.target.value as MaterialType)}>
-                          <option value="Module">Reading / Text Module</option>
-                          <option value="Video">Video Content</option>
-                          <option value="Quiz">Quiz / Assessment</option>
-                          <option value="Practice">Hands-on Practice</option>
-                        </select>
-                      </div>
-                      <div>
-                        <Label className="text-sm font-medium text-foreground">Estimated Duration</Label>
-                        <p className="text-xs text-muted-foreground mt-0.5 mb-2">How long will this take to complete?</p>
-                        <Input className="h-11 text-sm" placeholder="e.g., 25 min" value={edModDuration} onChange={e => setEdModDuration(e.target.value)} />
-                      </div>
-                    </div>
-                  </div>
+                  <Label className="text-sm font-medium text-foreground">Course Title</Label>
+                  <Input className="mt-2 h-10 text-sm" value={studioCourse.title}
+                    onChange={e => setCourses(prev => prev.map(c => c.id === studioCourseId ? { ...c, title: e.target.value } : c))} />
                 </div>
 
-                {/* ── Section 2: Lessons ── */}
                 <div>
-                  <div className="flex items-center gap-3 mb-5">
-                    <div className="w-8 h-8 rounded-lg bg-violet-500/10 border border-violet-500/20 flex items-center justify-center shrink-0">
-                      <span className="text-sm font-bold text-violet-600">2</span>
-                    </div>
-                    <div>
-                      <h3 className="text-sm font-bold text-foreground">Lessons</h3>
-                      <p className="text-xs text-muted-foreground">Add the individual lessons that make up this module. Each lesson can be text, video, or a quiz.</p>
-                    </div>
+                  <Label className="text-sm font-medium text-foreground">Description</Label>
+                  <Textarea className="mt-2 text-sm min-h-[80px]" value={studioCourse.description}
+                    onChange={e => setCourses(prev => prev.map(c => c.id === studioCourseId ? { ...c, description: e.target.value } : c))} />
+                </div>
+
+                <div>
+                  <Label className="text-sm font-medium text-foreground">Difficulty</Label>
+                  <select className="mt-2 h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
+                    defaultValue="Beginner">
+                    <option value="Beginner">Beginner</option>
+                    <option value="Intermediate">Intermediate</option>
+                    <option value="Advanced">Advanced</option>
+                  </select>
+                </div>
+
+                <div>
+                  <Label className="text-sm font-medium text-foreground">Estimated Completion Time</Label>
+                  <Input className="mt-2 h-10 text-sm" placeholder="e.g., 2 hours" />
+                </div>
+
+                <div>
+                  <Label className="text-sm font-medium text-foreground">Category</Label>
+                  <Input className="mt-2 h-10 text-sm" placeholder="e.g., Onboarding, Safety" />
+                </div>
+
+                <div>
+                  <Label className="text-sm font-medium text-foreground">Tags</Label>
+                  <Input className="mt-2 h-10 text-sm" placeholder="e.g., beginner, safety, gospel" />
+                </div>
+
+                <div className="flex items-center justify-between">
+                  <div>
+                    <Label className="text-sm font-medium text-foreground">Certificate Enabled</Label>
+                    <p className="text-xs text-muted-foreground mt-0.5">Award a certificate upon completion</p>
                   </div>
+                  <button className="w-9 h-5 rounded-full bg-primary relative">
+                    <div className="w-4 h-4 rounded-full bg-white shadow-sm absolute top-0.5 translate-x-4" />
+                  </button>
+                </div>
 
-                  <div className="space-y-4 pl-11">
-                    {edModLessons.map((les, i) => (
-                      <div key={les.id} className="rounded-xl border border-border bg-muted/15 overflow-hidden">
-                        {/* Lesson top bar */}
-                        <div className="px-5 py-4 flex items-start gap-4">
-                          <span className="text-xs font-bold text-white bg-slate-500 w-7 h-7 rounded-lg flex items-center justify-center shrink-0 mt-0.5">{i + 1}</span>
-                          <div className="flex-1 space-y-4">
-                            {/* Title */}
-                            <div>
-                              <Label className="text-xs font-medium text-muted-foreground">Lesson Title</Label>
-                              <Input className="mt-1.5 h-10 text-sm" placeholder="Give this lesson a clear name" value={les.title}
-                                onChange={e => setEdModLessons(prev => prev.map(l => l.id === les.id ? { ...l, title: e.target.value } : l))} />
-                            </div>
+                <div>
+                  <Label className="text-sm font-medium text-foreground">Visibility</Label>
+                  <select className="mt-2 h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
+                    defaultValue="Public">
+                    <option value="Public">Public</option>
+                    <option value="Private">Private</option>
+                    <option value="Unlisted">Unlisted</option>
+                  </select>
+                </div>
 
-                            {/* Content Type selector — icon + label */}
-                            <div>
-                              <Label className="text-xs font-medium text-muted-foreground">Content Type</Label>
-                              <div className="flex gap-2 mt-1.5">
-                                <button className={cn("flex items-center gap-2 px-4 py-2.5 rounded-lg border text-sm font-medium transition-all",
-                                    les.type === "text" ? "border-blue-500 bg-blue-500/10 text-blue-700 ring-1 ring-blue-500/30" : "border-border text-muted-foreground hover:text-foreground hover:border-muted-foreground")}
-                                  onClick={() => setEdModLessons(prev => prev.map(l => l.id === les.id ? { ...l, type: "text" } : l))}>
-                                  <FileText className="w-4 h-4" /> Text
-                                </button>
-                                <button className={cn("flex items-center gap-2 px-4 py-2.5 rounded-lg border text-sm font-medium transition-all",
-                                    les.type === "video" ? "border-violet-500 bg-violet-500/10 text-violet-700 ring-1 ring-violet-500/30" : "border-border text-muted-foreground hover:text-foreground hover:border-muted-foreground")}
-                                  onClick={() => setEdModLessons(prev => prev.map(l => l.id === les.id ? { ...l, type: "video" } : l))}>
-                                  <Video className="w-4 h-4" /> Video
-                                </button>
-                                <button className={cn("flex items-center gap-2 px-4 py-2.5 rounded-lg border text-sm font-medium transition-all",
-                                    les.type === "quiz" ? "border-amber-500 bg-amber-500/10 text-amber-700 ring-1 ring-amber-500/30" : "border-border text-muted-foreground hover:text-foreground hover:border-muted-foreground")}
-                                  onClick={() => setEdModLessons(prev => prev.map(l => l.id === les.id ? { ...l, type: "quiz" } : l))}>
-                                  <ClipboardList className="w-4 h-4" /> Quiz
-                                </button>
-                              </div>
-                            </div>
+                <div>
+                  <Label className="text-sm font-medium text-foreground">Enrollment Limit</Label>
+                  <Input className="mt-2 h-10 text-sm" type="number" placeholder="Unlimited" />
+                </div>
 
-                            {/* Video source — only when video is selected */}
-                            {les.type === "video" && (
-                              <div className="rounded-lg border border-violet-500/20 bg-violet-500/5 p-4 space-y-3">
-                                <p className="text-xs font-semibold text-violet-700 flex items-center gap-1.5"><Video className="w-3.5 h-3.5" /> Video Source</p>
-                                <div className="flex gap-2">
-                                  <button className={cn("flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg border text-sm font-medium transition-all",
-                                      (les.videoSource ?? "link") === "link" ? "border-violet-500 bg-background text-violet-700 ring-1 ring-violet-500/30" : "border-border text-muted-foreground hover:border-muted-foreground")}
-                                    onClick={() => setEdModLessons(prev => prev.map(l => l.id === les.id ? { ...l, videoSource: "link" } : l))}>
-                                    <Link2 className="w-4 h-4" /> Paste a Link
-                                  </button>
-                                  <button className={cn("flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg border text-sm font-medium transition-all",
-                                      les.videoSource === "upload" ? "border-violet-500 bg-background text-violet-700 ring-1 ring-violet-500/30" : "border-border text-muted-foreground hover:border-muted-foreground")}
-                                    onClick={() => setEdModLessons(prev => prev.map(l => l.id === les.id ? { ...l, videoSource: "upload" } : l))}>
-                                    <Upload className="w-4 h-4" /> Upload File
-                                  </button>
-                                </div>
-                                {(les.videoSource ?? "link") === "link" ? (
-                                  <div>
-                                    <Input className="h-10 text-sm" placeholder="https://youtube.com/watch?v=... or https://vimeo.com/..." value={les.videoUrl ?? ""}
-                                      onChange={e => setEdModLessons(prev => prev.map(l => l.id === les.id ? { ...l, videoUrl: e.target.value } : l))} />
-                                    <p className="text-xs text-muted-foreground mt-1.5">Supports YouTube, Vimeo, and direct video URLs.</p>
-                                  </div>
-                                ) : (
-                                  <button className="w-full py-5 rounded-lg border-2 border-dashed border-violet-500/30 bg-background text-sm text-muted-foreground hover:text-violet-700 hover:border-violet-500/50 transition-colors flex flex-col items-center gap-2"
-                                    onClick={() => toast.info("File picker would open here")}>
-                                    <Upload className="w-5 h-5" />
-                                    <span>Click to choose a video file</span>
-                                    <span className="text-xs text-muted-foreground">MP4, MOV, or WebM — up to 500MB</span>
-                                  </button>
-                                )}
-                              </div>
-                            )}
-
-                            {/* Content / Description */}
-                            <div>
-                              <Label className="text-xs font-medium text-muted-foreground">
-                                {les.type === "video" ? "Video Description (optional)" : les.type === "quiz" ? "Quiz Instructions & Questions" : "Lesson Content"}
-                              </Label>
-                              <Textarea className="mt-1.5 text-sm min-h-[80px] bg-background" rows={3}
-                                placeholder={les.type === "video" ? "Describe what this video covers..." : les.type === "quiz" ? "Write quiz instructions, questions, and answer choices..." : "Write the lesson content that trainees will read..."}
-                                value={les.content}
-                                onChange={e => setEdModLessons(prev => prev.map(l => l.id === les.id ? { ...l, content: e.target.value } : l))} />
-                            </div>
-                          </div>
-
-                          {/* Delete */}
-                          <button title="Remove this lesson" className="p-2 rounded-lg text-muted-foreground hover:text-rose-500 hover:bg-rose-500/10 transition-colors shrink-0 mt-0.5"
-                            onClick={() => setEdModLessons(prev => prev.filter(l => l.id !== les.id))}>
-                            <Trash2 className="w-4 h-4" />
-                          </button>
-                        </div>
-                      </div>
-                    ))}
-
-                    {/* Empty state or add more */}
-                    {edModLessons.length === 0 ? (
-                      <div className="rounded-xl border-2 border-dashed border-border py-10 text-center">
-                        <BookOpen className="w-8 h-8 text-muted-foreground/30 mx-auto mb-3" />
-                        <p className="text-sm font-medium text-muted-foreground">No lessons yet</p>
-                        <p className="text-xs text-muted-foreground mt-1 mb-4">Start building your module by adding the first lesson.</p>
-                        <Button variant="outline" size="sm" className="gap-2"
-                          onClick={() => setEdModLessons(prev => [...prev, { id: `les-${Date.now()}`, title: "", content: "", type: "text" }])}>
-                          <Plus className="w-4 h-4" /> Add First Lesson
-                        </Button>
-                      </div>
-                    ) : (
-                      <button className="w-full py-4 rounded-xl border-2 border-dashed border-border text-sm font-medium text-muted-foreground hover:text-foreground hover:border-primary/40 hover:bg-primary/5 transition-all flex items-center justify-center gap-2"
-                        onClick={() => setEdModLessons(prev => [...prev, { id: `les-${Date.now()}`, title: "", content: "", type: "text" }])}>
-                        <Plus className="w-4 h-4" /> Add Another Lesson
-                      </button>
-                    )}
-                  </div>
+                <div>
+                  <Label className="text-sm font-medium text-foreground">Language</Label>
+                  <Input className="mt-2 h-10 text-sm" placeholder="e.g., English" />
                 </div>
               </div>
 
-              {/* Modal Footer */}
-              <div className="px-8 py-5 border-t border-border flex items-center justify-between shrink-0 bg-muted/10 rounded-b-xl">
-                <p className="text-sm text-muted-foreground">{edModLessons.length} lesson{edModLessons.length !== 1 ? "s" : ""} in this module</p>
+              {/* Drawer footer */}
+              <div className="px-6 py-4 border-t border-border shrink-0">
                 <div className="flex gap-3">
-                  <Button variant="outline" onClick={() => setIsModuleEditorOpen(false)}>Cancel</Button>
-                  <Button className="gap-2" onClick={saveModule} disabled={!edModTitle.trim()}>
-                    <Save className="w-4 h-4" /> {editingModuleId ? "Save Changes" : "Add Module"}
+                  <Button variant="outline" className="flex-1" onClick={() => setIsSettingsOpen(false)}>Cancel</Button>
+                  <Button className="flex-1 gap-2" onClick={() => { setIsSettingsOpen(false); toast.success("Settings saved"); }}>
+                    <Save className="w-4 h-4" /> Save Settings
                   </Button>
                 </div>
               </div>
@@ -1321,7 +1926,8 @@ export const TrainerDashboard = ({
                 <Button variant="outline" onClick={() => setIsNewCourseOpen(false)}>Cancel</Button>
                 <Button className="gap-2" disabled={!newCourseTitle.trim()}
                   onClick={() => {
-                    setCourses(prev => [...prev, { id: `course-${Date.now()}`, title: newCourseTitle, description: newCourseDesc, status: "draft", modules: [], enrolledCount: 0, completionRate: 0, createdAt: new Date().toISOString().split("T")[0] }]);
+                    const newId = `course-${Date.now()}`;
+                    setCourses(prev => [...prev, { id: newId, title: newCourseTitle, description: newCourseDesc, status: "draft", modules: [], enrolledCount: 0, completionRate: 0, createdAt: new Date().toISOString().split("T")[0] }]);
                     setIsNewCourseOpen(false);
                     toast.success("Course created as draft");
                   }}>
