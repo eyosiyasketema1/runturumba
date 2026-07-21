@@ -5,7 +5,9 @@ import {
   Plus, GraduationCap, ClipboardList, Timer, TrendingUp,
   Layers, Search, Edit3, Trash2, Send, Star, X,
   AlertCircle, ArrowRight, Eye, Save, BarChart3,
-  ChevronDown, Filter, MoreHorizontal,
+  ChevronDown, ChevronLeft, Filter, MoreHorizontal,
+  ChevronUp, FolderOpen, GripVertical, Copy, Globe,
+  UserCircle, Mail, CalendarDays, History,
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { toast } from "sonner";
@@ -46,26 +48,37 @@ interface Trainee {
   daysInTraining: number;
   checklistCompleted: number[];
   email: string;
+  phone: string;
+  enrolledDate: string;
+  language: string;
+  notes: string;
 }
 
-interface Tutorial {
+interface Course {
+  id: string;
+  title: string;
+  description: string;
+  status: TutorialStatus;
+  modules: CourseModule[];
+  enrolledCount: number;
+  completionRate: number;
+  createdAt: string;
+}
+
+interface CourseModule {
   id: string;
   title: string;
   type: MaterialType;
   duration: string;
-  description: string;
-  steps: TutorialStep[];
-  questions: QuizQuestion[];
-  status: TutorialStatus;
-  completionPercent: number;
-  createdAt: string;
-  icon: React.ElementType;
+  lessons: Lesson[];
+  order: number;
 }
 
-interface TutorialStep {
+interface Lesson {
   id: string;
   title: string;
   content: string;
+  type: "text" | "video" | "quiz";
 }
 
 interface QuizQuestion {
@@ -92,17 +105,7 @@ interface PracticeScenario {
   suggestedOpeners: string[];
 }
 
-interface PracticeSessionData {
-  id: string;
-  traineeId: string;
-  traineeName: string;
-  scenarioId: string;
-  scenarioTitle: string;
-  status: "active" | "completed";
-  startedAt: string;
-  duration: string;
-  score?: number;
-}
+type PracticeChatStep = "select_trainee" | "select_scenario" | "chatting" | "evaluate";
 
 interface ActivityItem {
   id: string;
@@ -116,12 +119,7 @@ interface ActivityItem {
 // CONSTANTS
 // ═══════════════════════════════════════════════════════════════════════════
 
-const TABS: { id: TrainerTab; label: string; icon: React.ElementType }[] = [
-  { id: "overview", label: "Overview", icon: TrendingUp },
-  { id: "trainees", label: "Trainees", icon: GraduationCap },
-  { id: "content_studio", label: "Content Studio", icon: Layers },
-  { id: "practice_chat", label: "Practice Chat", icon: MessageSquare },
-];
+const PAGE_SIZE = 5;
 
 const CHECKLIST_STEPS: { step: number; title: string }[] = [
   { step: 1, title: "Account Setup" },
@@ -159,60 +157,68 @@ const DIFFICULTY_BADGE: Record<string, string> = {
 // ═══════════════════════════════════════════════════════════════════════════
 
 const TRAINEES: Trainee[] = [
-  { id: "trainee-henok", name: "Henok Tadesse", progress: 88, status: "Ready for Review", daysInTraining: 14, checklistCompleted: [1,2,3,4,5,6,7], email: "henok@example.com" },
-  { id: "trainee-selam", name: "Selam Girma", progress: 100, status: "Certified", daysInTraining: 11, checklistCompleted: [1,2,3,4,5,6,7,8], email: "selam@example.com" },
-  { id: "trainee-yared", name: "Yared Bekele", progress: 62, status: "Practice Phase", daysInTraining: 9, checklistCompleted: [1,2,3,4,5], email: "yared@example.com" },
-  { id: "trainee-mahlet", name: "Mahlet Hailu", progress: 38, status: "In Training", daysInTraining: 6, checklistCompleted: [1,2,3], email: "mahlet@example.com" },
-  { id: "trainee-bereket", name: "Bereket Abebe", progress: 50, status: "In Training", daysInTraining: 8, checklistCompleted: [1,2,3,4], email: "bereket@example.com" },
-  { id: "trainee-naomi", name: "Naomi Worku", progress: 75, status: "Practice Phase", daysInTraining: 12, checklistCompleted: [1,2,3,4,5,6], email: "naomi@example.com" },
-  { id: "trainee-eyob", name: "Eyob Desta", progress: 12, status: "In Training", daysInTraining: 2, checklistCompleted: [1], email: "eyob@example.com" },
+  { id: "trainee-henok", name: "Henok Tadesse", progress: 88, status: "Ready for Review", daysInTraining: 14, checklistCompleted: [1,2,3,4,5,6,7], email: "henok@turumba.org", phone: "+251-911-234567", enrolledDate: "2026-07-07", language: "Amharic", notes: "Strong in conversations, needs more practice with crisis scenarios." },
+  { id: "trainee-selam", name: "Selam Girma", progress: 100, status: "Certified", daysInTraining: 11, checklistCompleted: [1,2,3,4,5,6,7,8], email: "selam@turumba.org", phone: "+251-912-345678", enrolledDate: "2026-07-01", language: "Amharic", notes: "Completed all modules ahead of schedule. Excellent performance." },
+  { id: "trainee-yared", name: "Yared Bekele", progress: 62, status: "Practice Phase", daysInTraining: 9, checklistCompleted: [1,2,3,4,5], email: "yared@turumba.org", phone: "+251-913-456789", enrolledDate: "2026-07-12", language: "Amharic", notes: "Progressing well through practice sessions." },
+  { id: "trainee-mahlet", name: "Mahlet Hailu", progress: 38, status: "In Training", daysInTraining: 6, checklistCompleted: [1,2,3], email: "mahlet@turumba.org", phone: "+251-914-567890", enrolledDate: "2026-07-15", language: "Amharic", notes: "" },
+  { id: "trainee-bereket", name: "Bereket Abebe", progress: 50, status: "In Training", daysInTraining: 8, checklistCompleted: [1,2,3,4], email: "bereket@turumba.org", phone: "+251-915-678901", enrolledDate: "2026-07-13", language: "Amharic", notes: "Needs extra support with trigger word protocol." },
+  { id: "trainee-naomi", name: "Naomi Worku", progress: 75, status: "Practice Phase", daysInTraining: 12, checklistCompleted: [1,2,3,4,5,6], email: "naomi@turumba.org", phone: "+251-916-789012", enrolledDate: "2026-07-09", language: "Amharic", notes: "Very engaged, asking great questions during practice." },
+  { id: "trainee-eyob", name: "Eyob Desta", progress: 12, status: "In Training", daysInTraining: 2, checklistCompleted: [1], email: "eyob@turumba.org", phone: "+251-917-890123", enrolledDate: "2026-07-19", language: "Tigrinya", notes: "" },
+  { id: "trainee-tsion", name: "Tsion Mekonnen", progress: 25, status: "In Training", daysInTraining: 4, checklistCompleted: [1,2], email: "tsion@turumba.org", phone: "+251-918-901234", enrolledDate: "2026-07-17", language: "Amharic", notes: "" },
+  { id: "trainee-dawit", name: "Dawit Kebede", progress: 100, status: "Certified", daysInTraining: 10, checklistCompleted: [1,2,3,4,5,6,7,8], email: "dawit@turumba.org", phone: "+251-919-012345", enrolledDate: "2026-06-28", language: "Amharic", notes: "Fast learner. Now active as volunteer." },
 ];
 
-const INITIAL_TUTORIALS: Tutorial[] = [
-  { id: "tut-1", title: "Welcome & Platform Overview", type: "Module", icon: BookOpen, duration: "20 min", description: "Introduction to the platform features and navigation.", steps: [{ id: "s1", title: "Getting Started", content: "Learn how to navigate the dashboard." }, { id: "s2", title: "Key Features", content: "Overview of messaging, contacts, and reporting." }], questions: [], status: "published", completionPercent: 100, createdAt: "2026-06-15" },
-  { id: "tut-2", title: "Gospel Conversation Basics", type: "Video", icon: Video, duration: "35 min", description: "Core principles for engaging in gospel conversations online.", steps: [{ id: "s1", title: "Introduction", content: "Why digital evangelism matters." }], questions: [], status: "published", completionPercent: 86, createdAt: "2026-06-16" },
-  { id: "tut-3", title: "Responding to Difficult Questions", type: "Module", icon: BookOpen, duration: "25 min", description: "Strategies for handling challenging theological and personal questions.", steps: [{ id: "s1", title: "Common Objections", content: "The most frequent questions seekers ask." }, { id: "s2", title: "Response Framework", content: "Listen, Empathize, Share, Invite." }], questions: [], status: "published", completionPercent: 71, createdAt: "2026-06-17" },
-  { id: "tut-4", title: "Trigger Word Protocol", type: "Module", icon: FileText, duration: "10 min", description: "Safety protocols for identifying and escalating sensitive content.", steps: [{ id: "s1", title: "Trigger Words List", content: "Words that require immediate escalation." }], questions: [], status: "published", completionPercent: 71, createdAt: "2026-06-18" },
-  { id: "tut-5", title: "Platform Safety Quiz", type: "Quiz", icon: ClipboardList, duration: "12 questions", description: "Assessment of safety protocol knowledge.", steps: [], questions: [{ id: "q1", question: "What should you do when a seeker mentions self-harm?", options: ["Continue the conversation normally", "Escalate immediately to coordinator", "End the conversation", "Ask more details"], correctIndex: 1 }, { id: "q2", question: "Which of these is a trigger word?", options: ["Prayer", "Church", "Suicide", "Bible"], correctIndex: 2 }], status: "published", completionPercent: 57, createdAt: "2026-06-20" },
-  { id: "tut-6", title: "Practice: First Contact Scenario", type: "Practice", icon: MessageSquare, duration: "3 scenarios", description: "Simulated first interactions with seekers.", steps: [{ id: "s1", title: "Scenario 1: Curious Seeker", content: "A young person asking about Christianity for the first time." }], questions: [], status: "published", completionPercent: 43, createdAt: "2026-06-22" },
-  { id: "tut-7", title: "Cultural Sensitivity Training", type: "Video", icon: Video, duration: "40 min", description: "Understanding cultural contexts in digital ministry.", steps: [], questions: [], status: "published", completionPercent: 29, createdAt: "2026-06-25" },
-  { id: "tut-8", title: "Final Certification Assessment", type: "Quiz", icon: ClipboardList, duration: "20 questions", description: "Comprehensive evaluation for volunteer certification.", steps: [], questions: [{ id: "q1", question: "What is the recommended response time?", options: ["Within 1 hour", "Within 24 hours", "Within 1 week", "No deadline"], correctIndex: 1 }], status: "published", completionPercent: 14, createdAt: "2026-07-01" },
-  { id: "tut-9", title: "Advanced Counseling Techniques", type: "Module", icon: BookOpen, duration: "30 min", description: "Deep-dive into pastoral counseling best practices for complex situations.", steps: [{ id: "s1", title: "Active Listening", content: "Techniques for demonstrating genuine care." }], questions: [], status: "draft", completionPercent: 0, createdAt: "2026-07-10" },
+const COURSES: Course[] = [
+  {
+    id: "course-1", title: "Volunteer Onboarding Program", description: "Complete training path for new volunteers — from platform basics to certification.",
+    status: "published", enrolledCount: 7, completionRate: 58, createdAt: "2026-06-10",
+    modules: [
+      { id: "mod-1", title: "Getting Started", type: "Module", duration: "20 min", order: 1, lessons: [
+        { id: "l1", title: "Welcome & Platform Overview", content: "Introduction to the platform features and navigation.", type: "text" },
+        { id: "l2", title: "Setting Up Your Account", content: "Step-by-step guide to configuring your volunteer profile.", type: "text" },
+      ]},
+      { id: "mod-2", title: "Gospel Conversation Fundamentals", type: "Video", duration: "35 min", order: 2, lessons: [
+        { id: "l3", title: "Gospel Conversation Basics", content: "Core principles for engaging in gospel conversations online.", type: "video" },
+        { id: "l4", title: "Responding to Difficult Questions", content: "Strategies for handling challenging questions.", type: "text" },
+      ]},
+      { id: "mod-3", title: "Safety & Protocols", type: "Module", duration: "20 min", order: 3, lessons: [
+        { id: "l5", title: "Trigger Word Protocol", content: "Safety protocols for identifying and escalating sensitive content.", type: "text" },
+        { id: "l6", title: "Platform Safety Quiz", content: "Assessment of safety protocol knowledge.", type: "quiz" },
+      ]},
+      { id: "mod-4", title: "Practice & Certification", type: "Practice", duration: "45 min", order: 4, lessons: [
+        { id: "l7", title: "Practice Chat Session 1", content: "First contact scenario practice.", type: "text" },
+        { id: "l8", title: "Practice Chat Session 2", content: "Crisis response scenario practice.", type: "text" },
+        { id: "l9", title: "Final Certification Assessment", content: "Comprehensive evaluation for volunteer certification.", type: "quiz" },
+      ]},
+    ],
+  },
+  {
+    id: "course-2", title: "Cultural Sensitivity Training", description: "Understanding cultural contexts in digital ministry across different regions.",
+    status: "published", enrolledCount: 4, completionRate: 30, createdAt: "2026-06-25",
+    modules: [
+      { id: "mod-5", title: "Cultural Awareness", type: "Video", duration: "40 min", order: 1, lessons: [
+        { id: "l10", title: "Understanding Cultural Context", content: "Why culture matters in digital evangelism.", type: "video" },
+        { id: "l11", title: "Regional Considerations", content: "Key cultural considerations by region.", type: "text" },
+      ]},
+    ],
+  },
+  {
+    id: "course-3", title: "Advanced Counseling Techniques", description: "Deep-dive into pastoral counseling for complex situations.",
+    status: "draft", enrolledCount: 0, completionRate: 0, createdAt: "2026-07-10",
+    modules: [
+      { id: "mod-6", title: "Active Listening", type: "Module", duration: "30 min", order: 1, lessons: [
+        { id: "l12", title: "Listening Techniques", content: "Techniques for demonstrating genuine care.", type: "text" },
+      ]},
+    ],
+  },
 ];
 
 const SCENARIOS: PracticeScenario[] = [
-  { id: "sc-1", title: "First Contact", description: "A seeker reaches out for the first time after seeing a social media post.", difficulty: "Beginner", objectives: ["Warm greeting", "Active listening", "Open-ended questions", "Invite to continue conversation"], suggestedOpeners: ["Hi, I saw your post on Instagram about finding peace. I've been going through a really tough time.", "Hello, someone shared your page with me. I'm curious about what you believe.", "Hey, is this where I can talk to someone about God? I have a lot of questions."] },
+  { id: "sc-1", title: "First Contact", description: "A seeker reaches out for the first time after seeing a social media post.", difficulty: "Beginner", objectives: ["Warm greeting & welcome", "Active listening demonstrated", "Open-ended questions used", "Invite to continue conversation"], suggestedOpeners: ["Hi, I saw your post on Instagram about finding peace. I've been going through a really tough time.", "Hello, someone shared your page with me. I'm curious about what you believe.", "Hey, is this where I can talk to someone about God? I have a lot of questions."] },
   { id: "sc-2", title: "Crisis Response", description: "A seeker expresses emotional distress or mentions concerning language.", difficulty: "Advanced", objectives: ["Immediate acknowledgment", "Safety assessment", "Empathetic response", "Appropriate escalation", "Follow-up plan"], suggestedOpeners: ["I don't know if I can keep going anymore. Nothing makes sense.", "Everything is falling apart. My family doesn't care about me.", "I feel so alone and hopeless. I just want the pain to stop."] },
   { id: "sc-3", title: "Follow-up Conversation", description: "Continuing a conversation with a seeker who previously expressed interest.", difficulty: "Intermediate", objectives: ["Reference previous conversation", "Build on established rapport", "Deepen engagement", "Offer next steps"], suggestedOpeners: ["Hey, we talked last week about prayer. I actually tried it and something happened.", "Hi again! I've been thinking about what you said about forgiveness.", "I wanted to come back and ask more. Last time was really helpful."] },
-  { id: "sc-4", title: "Difficult Questions", description: "A seeker asks challenging theological or philosophical questions.", difficulty: "Advanced", objectives: ["Acknowledge the question's validity", "Respond with humility", "Share relevant scripture", "Maintain relationship"], suggestedOpeners: ["If God is real, why does he allow so much suffering?", "How can you believe in something you can't see or prove?", "I was raised in a different religion. Why should I change?"] },
+  { id: "sc-4", title: "Difficult Questions", description: "A seeker asks challenging theological or philosophical questions.", difficulty: "Advanced", objectives: ["Acknowledge the question's validity", "Respond with humility", "Share relevant perspective", "Maintain relationship"], suggestedOpeners: ["If God is real, why does he allow so much suffering?", "How can you believe in something you can't see or prove?", "I was raised in a different religion. Why should I change?"] },
 ];
-
-const PRACTICE_SESSIONS: PracticeSessionData[] = [
-  { id: "ps-1", traineeId: "trainee-yared", traineeName: "Yared Bekele", scenarioId: "sc-1", scenarioTitle: "First Contact", status: "active", startedAt: "12 min ago", duration: "12 min" },
-  { id: "ps-2", traineeId: "trainee-naomi", traineeName: "Naomi Worku", scenarioId: "sc-2", scenarioTitle: "Crisis Response", status: "active", startedAt: "8 min ago", duration: "8 min" },
-  { id: "ps-3", traineeId: "trainee-henok", traineeName: "Henok Tadesse", scenarioId: "sc-3", scenarioTitle: "Follow-up Conversation", status: "completed", startedAt: "1 hour ago", duration: "22 min", score: 9 },
-  { id: "ps-4", traineeId: "trainee-bereket", traineeName: "Bereket Abebe", scenarioId: "sc-1", scenarioTitle: "First Contact", status: "completed", startedAt: "3 hours ago", duration: "18 min", score: 7 },
-];
-
-const INITIAL_CHAT_MESSAGES: Record<string, ChatMessage[]> = {
-  "ps-1": [
-    { id: "m1", sender: "seeker", senderName: "Trainer (as Seeker)", text: "Hi, I saw your post on Instagram about finding peace. I've been going through a really tough time and I'm not sure what to believe anymore.", timestamp: "2:14 PM" },
-    { id: "m2", sender: "trainee", senderName: "Yared Bekele", text: "Hello! Thank you so much for reaching out. I'm really glad you did. I'd love to hear more about what you're going through. What's been on your mind lately?", timestamp: "2:15 PM" },
-    { id: "m3", sender: "seeker", senderName: "Trainer (as Seeker)", text: "My parents just got divorced and I feel like everything is falling apart. A friend told me about God but I don't know if I believe in that stuff.", timestamp: "2:17 PM" },
-    { id: "m4", sender: "trainee", senderName: "Yared Bekele", text: "I'm so sorry to hear about your parents. That must be incredibly painful. It's completely normal to have questions and doubts during hard times like these. Can I ask — what made you decide to reach out today?", timestamp: "2:18 PM" },
-  ],
-  "ps-2": [
-    { id: "m1", sender: "seeker", senderName: "Trainer (as Seeker)", text: "I don't know if I can keep going anymore. Nothing makes sense.", timestamp: "2:22 PM" },
-    { id: "m2", sender: "trainee", senderName: "Naomi Worku", text: "I hear you, and I want you to know that what you're feeling matters. You reached out, and that takes courage. Can you tell me a little more about what's going on right now?", timestamp: "2:23 PM" },
-    { id: "m3", sender: "seeker", senderName: "Trainer (as Seeker)", text: "I just lost my job and my girlfriend left me. I have nothing left.", timestamp: "2:24 PM" },
-  ],
-  "ps-3": [
-    { id: "m1", sender: "seeker", senderName: "Trainer (as Seeker)", text: "Hey, we talked last week about prayer. I actually tried it and something happened.", timestamp: "1:00 PM" },
-    { id: "m2", sender: "trainee", senderName: "Henok Tadesse", text: "That's wonderful to hear! I'm so glad you tried it. I'd love to hear what happened — what was your experience like?", timestamp: "1:01 PM" },
-    { id: "m3", sender: "seeker", senderName: "Trainer (as Seeker)", text: "I felt this peace I haven't felt in years. Like something lifted off my shoulders. Is that normal?", timestamp: "1:03 PM" },
-    { id: "m4", sender: "trainee", senderName: "Henok Tadesse", text: "What you're describing is something many people experience when they begin connecting with God. That sense of peace is a beautiful thing. Would you like to explore that connection further? I can share some passages that speak to what you felt.", timestamp: "1:04 PM" },
-  ],
-};
 
 const TRAINEE_RESPONSES: string[] = [
   "Thank you for sharing that with me. I can see this is really weighing on you. Can you tell me more about how you've been feeling?",
@@ -229,7 +235,7 @@ const ACTIVITY_FEED: ActivityItem[] = [
   { id: "a3", text: "Naomi Worku started crisis response practice", icon: Play, color: "text-violet-500", time: "3 hours ago" },
   { id: "a4", text: "Yared Bekele completed Platform Safety Quiz", icon: ClipboardList, color: "text-blue-500", time: "5 hours ago" },
   { id: "a5", text: "Mahlet Hailu started Gospel Conversation Training", icon: BookOpen, color: "text-blue-500", time: "1 day ago" },
-  { id: "a6", text: "New tutorial draft: Advanced Counseling Techniques", icon: Edit3, color: "text-slate-500", time: "2 days ago" },
+  { id: "a6", text: "New course draft: Advanced Counseling Techniques", icon: Edit3, color: "text-slate-500", time: "2 days ago" },
   { id: "a7", text: "Bereket Abebe completed Safety & Trigger Word Protocol", icon: CheckCircle2, color: "text-emerald-500", time: "2 days ago" },
   { id: "a8", text: "Eyob Desta enrolled in training program", icon: Users, color: "text-blue-500", time: "3 days ago" },
 ];
@@ -265,188 +271,137 @@ function getNextTraineeResponse() {
 // ═══════════════════════════════════════════════════════════════════════════
 
 export const TrainerDashboard = ({
-  contacts,
-  messages,
-  users,
-  currentUser,
-  initialTab,
+  contacts, messages, users, currentUser, initialTab,
 }: TrainerDashboardProps) => {
-  // -- Tab state --
   const [activeTab, setActiveTab] = useState<TrainerTab>(initialTab ?? "overview");
-
-  // Sync tab when navigated via sidebar
-  useEffect(() => {
-    if (initialTab) setActiveTab(initialTab);
-  }, [initialTab]);
   const [dateRange, setDateRange] = useState<DateRange | undefined>(undefined);
 
-  // -- Trainees tab --
+  useEffect(() => { if (initialTab) setActiveTab(initialTab); }, [initialTab]);
+
+  // -- Trainees --
+  const [traineeSearch, setTraineeSearch] = useState("");
+  const [traineeStatusFilter, setTraineeStatusFilter] = useState<TraineeStatus | "all">("all");
+  const [traineePage, setTraineePage] = useState(1);
   const [selectedTraineeId, setSelectedTraineeId] = useState<string | null>(null);
 
-  // -- Content Studio (US31) --
-  const [tutorials, setTutorials] = useState<Tutorial[]>(INITIAL_TUTORIALS);
-  const [contentFilter, setContentFilter] = useState<MaterialType | "all">("all");
-  const [contentSearch, setContentSearch] = useState("");
-  const [isEditorOpen, setIsEditorOpen] = useState(false);
-  const [editingId, setEditingId] = useState<string | null>(null);
-  const [editorTitle, setEditorTitle] = useState("");
-  const [editorType, setEditorType] = useState<MaterialType>("Module");
-  const [editorDuration, setEditorDuration] = useState("");
-  const [editorDescription, setEditorDescription] = useState("");
-  const [editorSteps, setEditorSteps] = useState<TutorialStep[]>([]);
-  const [editorQuestions, setEditorQuestions] = useState<QuizQuestion[]>([]);
-  const [editorStatus, setEditorStatus] = useState<TutorialStatus>("draft");
+  // -- Content Studio (US31 — course builder) --
+  const [courses, setCourses] = useState<Course[]>(COURSES);
+  const [expandedCourseId, setExpandedCourseId] = useState<string | null>(null);
+  const [isModuleEditorOpen, setIsModuleEditorOpen] = useState(false);
+  const [editingCourseId, setEditingCourseId] = useState<string | null>(null);
+  const [editingModuleId, setEditingModuleId] = useState<string | null>(null);
+  const [edModTitle, setEdModTitle] = useState("");
+  const [edModType, setEdModType] = useState<MaterialType>("Module");
+  const [edModDuration, setEdModDuration] = useState("");
+  const [edModLessons, setEdModLessons] = useState<Lesson[]>([]);
+  // New course
+  const [isNewCourseOpen, setIsNewCourseOpen] = useState(false);
+  const [newCourseTitle, setNewCourseTitle] = useState("");
+  const [newCourseDesc, setNewCourseDesc] = useState("");
 
-  // -- Practice Chat (US32) --
-  const [activeSessionId, setActiveSessionId] = useState<string | null>(null);
-  const [chatMessages, setChatMessages] = useState<Record<string, ChatMessage[]>>(INITIAL_CHAT_MESSAGES);
+  // -- Practice Chat (US32 — guided flow) --
+  const [chatStep, setChatStep] = useState<PracticeChatStep>("select_trainee");
+  const [pcTraineeId, setPcTraineeId] = useState<string | null>(null);
+  const [pcScenarioId, setPcScenarioId] = useState<string | null>(null);
+  const [pcMessages, setPcMessages] = useState<ChatMessage[]>([]);
   const [chatInput, setChatInput] = useState("");
-  const [evalChecks, setEvalChecks] = useState<Record<string, Record<string, boolean>>>({});
-  const [evalNotes, setEvalNotes] = useState<Record<string, string>>({});
-  const [showNewSessionModal, setShowNewSessionModal] = useState(false);
-  const [newSessionTrainee, setNewSessionTrainee] = useState("");
-  const [newSessionScenario, setNewSessionScenario] = useState("");
+  const [evalChecks, setEvalChecks] = useState<Record<string, boolean>>({});
+  const [evalScore, setEvalScore] = useState<number | null>(null);
+  const [evalNotes, setEvalNotes] = useState("");
   const chatEndRef = useRef<HTMLDivElement>(null);
 
-  // -- Derived data --
+  // -- Derived --
   const activeTrainees = TRAINEES.filter(t => t.status !== "Certified").length;
   const certifiedCount = TRAINEES.filter(t => t.status === "Certified").length;
-  const activeSessionCount = PRACTICE_SESSIONS.filter(p => p.status === "active").length;
   const avgCertDays = Math.round(TRAINEES.reduce((s, t) => s + t.daysInTraining, 0) / TRAINEES.length);
 
   const pipelineStages = useMemo(() => [
-    { label: "In Training", count: TRAINEES.filter(t => t.status === "In Training").length, color: "bg-blue-500", textColor: "text-blue-600" },
-    { label: "Practice", count: TRAINEES.filter(t => t.status === "Practice Phase").length, color: "bg-violet-500", textColor: "text-violet-600" },
-    { label: "Review", count: TRAINEES.filter(t => t.status === "Ready for Review").length, color: "bg-amber-500", textColor: "text-amber-600" },
-    { label: "Certified", count: TRAINEES.filter(t => t.status === "Certified").length, color: "bg-emerald-500", textColor: "text-emerald-600" },
+    { label: "In Training", count: TRAINEES.filter(t => t.status === "In Training").length, color: "bg-blue-500", text: "text-blue-600" },
+    { label: "Practice", count: TRAINEES.filter(t => t.status === "Practice Phase").length, color: "bg-violet-500", text: "text-violet-600" },
+    { label: "Review", count: TRAINEES.filter(t => t.status === "Ready for Review").length, color: "bg-amber-500", text: "text-amber-600" },
+    { label: "Certified", count: TRAINEES.filter(t => t.status === "Certified").length, color: "bg-emerald-500", text: "text-emerald-600" },
   ], []);
 
+  // Trainee filtering + pagination
+  const filteredTrainees = useMemo(() => {
+    let list = TRAINEES;
+    if (traineeStatusFilter !== "all") list = list.filter(t => t.status === traineeStatusFilter);
+    if (traineeSearch.trim()) {
+      const q = traineeSearch.toLowerCase();
+      list = list.filter(t => t.name.toLowerCase().includes(q) || t.email.toLowerCase().includes(q));
+    }
+    return list;
+  }, [traineeStatusFilter, traineeSearch]);
+
+  const totalPages = Math.max(1, Math.ceil(filteredTrainees.length / PAGE_SIZE));
+  const pagedTrainees = filteredTrainees.slice((traineePage - 1) * PAGE_SIZE, traineePage * PAGE_SIZE);
   const selectedTrainee = selectedTraineeId ? TRAINEES.find(t => t.id === selectedTraineeId) ?? null : null;
 
-  const filteredTutorials = useMemo(() => {
-    let result = tutorials;
-    if (contentFilter !== "all") result = result.filter(t => t.type === contentFilter);
-    if (contentSearch.trim()) {
-      const q = contentSearch.toLowerCase();
-      result = result.filter(t => t.title.toLowerCase().includes(q) || t.description.toLowerCase().includes(q));
-    }
-    return result;
-  }, [tutorials, contentFilter, contentSearch]);
+  useEffect(() => { setTraineePage(1); }, [traineeStatusFilter, traineeSearch]);
 
-  const activeSession = activeSessionId ? PRACTICE_SESSIONS.find(s => s.id === activeSessionId) ?? null : null;
-  const activeScenario = activeSession ? SCENARIOS.find(s => s.id === activeSession.scenarioId) ?? null : null;
-  const sessionMessages = activeSessionId ? (chatMessages[activeSessionId] ?? []) : [];
+  // Practice Chat
+  const pcTrainee = pcTraineeId ? TRAINEES.find(t => t.id === pcTraineeId) ?? null : null;
+  const pcScenario = pcScenarioId ? SCENARIOS.find(s => s.id === pcScenarioId) ?? null : null;
 
-  // Scroll chat to bottom on new messages
-  useEffect(() => {
-    chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [sessionMessages.length]);
+  useEffect(() => { chatEndRef.current?.scrollIntoView({ behavior: "smooth" }); }, [pcMessages.length]);
 
-  // -- Greeting --
+  // Greeting
   const hour = new Date().getHours();
   const greeting = hour < 12 ? "Good morning" : hour < 18 ? "Good afternoon" : "Good evening";
   const firstName = currentUser.name.split(" ")[0];
 
-  // -- Editor actions --
-  const openNewTutorial = useCallback(() => {
-    setEditingId(null);
-    setEditorTitle("");
-    setEditorType("Module");
-    setEditorDuration("");
-    setEditorDescription("");
-    setEditorSteps([]);
-    setEditorQuestions([]);
-    setEditorStatus("draft");
-    setIsEditorOpen(true);
-  }, []);
-
-  const openEditTutorial = useCallback((tut: Tutorial) => {
-    setEditingId(tut.id);
-    setEditorTitle(tut.title);
-    setEditorType(tut.type);
-    setEditorDuration(tut.duration);
-    setEditorDescription(tut.description);
-    setEditorSteps([...tut.steps]);
-    setEditorQuestions([...tut.questions]);
-    setEditorStatus(tut.status);
-    setIsEditorOpen(true);
-  }, []);
-
-  const saveTutorial = useCallback((asStatus: TutorialStatus) => {
-    if (!editorTitle.trim()) { toast.error("Title is required"); return; }
-    const icon = editorType === "Video" ? Video : editorType === "Quiz" ? ClipboardList : editorType === "Practice" ? MessageSquare : BookOpen;
-    if (editingId) {
-      setTutorials(prev => prev.map(t => t.id === editingId ? {
-        ...t, title: editorTitle, type: editorType, duration: editorDuration, description: editorDescription,
-        steps: editorSteps, questions: editorQuestions, status: asStatus, icon,
-      } : t));
-      toast.success(`Tutorial updated${asStatus === "published" ? " and published" : ""}`);
-    } else {
-      const newTut: Tutorial = {
-        id: `tut-${Date.now()}`, title: editorTitle, type: editorType, icon, duration: editorDuration,
-        description: editorDescription, steps: editorSteps, questions: editorQuestions,
-        status: asStatus, completionPercent: 0, createdAt: new Date().toISOString().split("T")[0],
-      };
-      setTutorials(prev => [newTut, ...prev]);
-      toast.success(`Tutorial created${asStatus === "published" ? " and published" : " as draft"}`);
-    }
-    setIsEditorOpen(false);
-  }, [editingId, editorTitle, editorType, editorDuration, editorDescription, editorSteps, editorQuestions]);
-
-  const addStep = useCallback(() => {
-    setEditorSteps(prev => [...prev, { id: `step-${Date.now()}`, title: "", content: "" }]);
-  }, []);
-
-  const removeStep = useCallback((stepId: string) => {
-    setEditorSteps(prev => prev.filter(s => s.id !== stepId));
-  }, []);
-
-  const addQuestion = useCallback(() => {
-    setEditorQuestions(prev => [...prev, { id: `q-${Date.now()}`, question: "", options: ["", "", "", ""], correctIndex: 0 }]);
-  }, []);
-
-  const removeQuestion = useCallback((qId: string) => {
-    setEditorQuestions(prev => prev.filter(q => q.id !== qId));
-  }, []);
-
-  // -- Chat actions (US32) --
-  const sendMessage = useCallback(() => {
-    if (!chatInput.trim() || !activeSessionId || !activeSession) return;
-    const newMsg: ChatMessage = {
-      id: `msg-${Date.now()}`,
-      sender: "seeker",
-      senderName: "Trainer (as Seeker)",
-      text: chatInput.trim(),
-      timestamp: new Date().toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" }),
-    };
-    setChatMessages(prev => ({
-      ...prev,
-      [activeSessionId]: [...(prev[activeSessionId] ?? []), newMsg],
-    }));
+  // -- Handlers --
+  const sendChatMessage = useCallback(() => {
+    if (!chatInput.trim() || !pcTrainee) return;
+    const msg: ChatMessage = { id: `m-${Date.now()}`, sender: "seeker", senderName: "You (as Seeker)", text: chatInput.trim(), timestamp: new Date().toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" }) };
+    setPcMessages(prev => [...prev, msg]);
     setChatInput("");
-
-    // Simulate trainee response after a brief delay
     setTimeout(() => {
-      const response: ChatMessage = {
-        id: `msg-${Date.now() + 1}`,
-        sender: "trainee",
-        senderName: activeSession.traineeName,
-        text: getNextTraineeResponse(),
-        timestamp: new Date().toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" }),
-      };
-      setChatMessages(prev => ({
-        ...prev,
-        [activeSessionId]: [...(prev[activeSessionId] ?? []), response],
-      }));
+      setPcMessages(prev => [...prev, { id: `m-${Date.now()}`, sender: "trainee", senderName: pcTrainee.name, text: getNextTraineeResponse(), timestamp: new Date().toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" }) }]);
     }, 1500);
-  }, [chatInput, activeSessionId, activeSession]);
+  }, [chatInput, pcTrainee]);
 
-  const toggleEvalCheck = useCallback((sessionId: string, key: string) => {
-    setEvalChecks(prev => ({
-      ...prev,
-      [sessionId]: { ...(prev[sessionId] ?? {}), [key]: !(prev[sessionId]?.[key]) },
-    }));
+  const startNewPractice = useCallback(() => {
+    setChatStep("select_trainee");
+    setPcTraineeId(null);
+    setPcScenarioId(null);
+    setPcMessages([]);
+    setChatInput("");
+    setEvalChecks({});
+    setEvalScore(null);
+    setEvalNotes("");
   }, []);
+
+  const openModuleEditor = useCallback((courseId: string, mod?: CourseModule) => {
+    setEditingCourseId(courseId);
+    if (mod) {
+      setEditingModuleId(mod.id);
+      setEdModTitle(mod.title);
+      setEdModType(mod.type);
+      setEdModDuration(mod.duration);
+      setEdModLessons([...mod.lessons]);
+    } else {
+      setEditingModuleId(null);
+      setEdModTitle("");
+      setEdModType("Module");
+      setEdModDuration("");
+      setEdModLessons([]);
+    }
+    setIsModuleEditorOpen(true);
+  }, []);
+
+  const saveModule = useCallback(() => {
+    if (!edModTitle.trim() || !editingCourseId) return;
+    setCourses(prev => prev.map(c => {
+      if (c.id !== editingCourseId) return c;
+      if (editingModuleId) {
+        return { ...c, modules: c.modules.map(m => m.id === editingModuleId ? { ...m, title: edModTitle, type: edModType, duration: edModDuration, lessons: edModLessons } : m) };
+      }
+      return { ...c, modules: [...c.modules, { id: `mod-${Date.now()}`, title: edModTitle, type: edModType, duration: edModDuration, lessons: edModLessons, order: c.modules.length + 1 }] };
+    }));
+    setIsModuleEditorOpen(false);
+    toast.success(editingModuleId ? "Module updated" : "Module added");
+  }, [editingCourseId, editingModuleId, edModTitle, edModType, edModDuration, edModLessons]);
 
   // ═════════════════════════════════════════════════════════════════════════
   // RENDER
@@ -454,196 +409,131 @@ export const TrainerDashboard = ({
 
   return (
     <div className="space-y-6 p-6 lg:p-8 animate-in fade-in duration-500 bg-gradient-to-br from-slate-50 via-background to-blue-50/30 min-h-full">
+
       {/* ================================================================ */}
-      {/* Hero Header                                                      */}
+      {/* OVERVIEW (Dashboard)                                             */}
       {/* ================================================================ */}
-      <header className="relative overflow-hidden rounded-sm bg-slate-950 text-white p-8 shadow-[0_24px_60px_-28px_rgba(15,23,42,0.55)]">
-        <div className="absolute -top-24 -right-20 w-80 h-80 rounded-full bg-gradient-to-br from-violet-500/40 to-blue-500/10 blur-3xl pointer-events-none" />
-        <div className="absolute -bottom-32 -left-20 w-96 h-96 rounded-full bg-gradient-to-tr from-emerald-500/20 to-violet-500/10 blur-3xl pointer-events-none" />
-        <div className="absolute inset-0 opacity-[0.06] pointer-events-none" style={{ backgroundImage: "linear-gradient(to right, #fff 1px, transparent 1px), linear-gradient(to bottom, #fff 1px, transparent 1px)", backgroundSize: "64px 64px" }} />
-        <div className="relative flex flex-col md:flex-row md:items-end justify-between gap-4">
-          <div>
-            <div className="flex items-center gap-2 mb-3">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-              <span className="text-xs font-semibold text-emerald-300 uppercase tracking-[0.18em]">
-                Trainer &middot; Volunteer Development
-              </span>
+      {activeTab === "overview" && (<>
+        {/* Hero Header */}
+        <header className="relative overflow-hidden rounded-sm bg-slate-950 text-white p-8 shadow-[0_24px_60px_-28px_rgba(15,23,42,0.55)]">
+          <div className="absolute -top-24 -right-20 w-80 h-80 rounded-full bg-gradient-to-br from-violet-500/40 to-blue-500/10 blur-3xl pointer-events-none" />
+          <div className="absolute -bottom-32 -left-20 w-96 h-96 rounded-full bg-gradient-to-tr from-emerald-500/20 to-violet-500/10 blur-3xl pointer-events-none" />
+          <div className="absolute inset-0 opacity-[0.06] pointer-events-none" style={{ backgroundImage: "linear-gradient(to right, #fff 1px, transparent 1px), linear-gradient(to bottom, #fff 1px, transparent 1px)", backgroundSize: "64px 64px" }} />
+          <div className="relative flex flex-col md:flex-row md:items-end justify-between gap-4">
+            <div>
+              <div className="flex items-center gap-2 mb-3">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                <span className="text-xs font-semibold text-emerald-300 uppercase tracking-[0.18em]">Trainer &middot; Volunteer Development</span>
+              </div>
+              <h1 className="text-4xl lg:text-5xl font-bold tracking-tight leading-[1.05]">
+                {greeting}, <span className="text-violet-300">{firstName}</span>.
+              </h1>
+              <p className="text-base text-slate-300 mt-3 max-w-2xl leading-relaxed">
+                <span className="font-semibold text-white">{activeTrainees} trainees in progress</span>
+                <span className="mx-2 text-slate-500">&middot;</span>
+                <span className="font-semibold text-emerald-300">{certifiedCount} certified</span>
+                <span className="mx-2 text-slate-500">&middot;</span>
+                <span className="font-semibold text-pink-300">{courses.filter(c => c.status === "published").length} active courses</span>
+              </p>
             </div>
-            <h1 className="text-4xl lg:text-5xl font-bold tracking-tight leading-[1.05]">
-              {greeting},{" "}
-              <span className="text-violet-300">{firstName}</span>.
-            </h1>
-            <p className="text-base text-slate-300 mt-3 max-w-2xl leading-relaxed">
-              <span className="font-semibold text-white">{activeTrainees} trainees in progress</span>
-              <span className="mx-2 text-slate-500">&middot;</span>
-              <span className="font-semibold text-emerald-300">{certifiedCount} certified</span>
-              <span className="mx-2 text-slate-500">&middot;</span>
-              <span className="font-semibold text-pink-300">{activeSessionCount} active practice sessions</span>
-            </p>
-          </div>
-          <div className="flex items-center gap-3">
             <DateRangeFilter dateRange={dateRange} onDateRangeChange={setDateRange} />
           </div>
+        </header>
+
+        {/* KPI Stats */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          {[
+            { label: "Active Trainees", value: activeTrainees, icon: Users, color: "text-blue-600", bg: "bg-blue-500/10" },
+            { label: "Certified This Month", value: certifiedCount, icon: Award, color: "text-emerald-600", bg: "bg-emerald-500/10" },
+            { label: "Published Courses", value: courses.filter(c => c.status === "published").length, icon: BookOpen, color: "text-violet-600", bg: "bg-violet-500/10" },
+            { label: "Avg Certification Time", value: `${avgCertDays}d`, icon: Timer, color: "text-amber-600", bg: "bg-amber-500/10" },
+          ].map((kpi, i) => (
+            <motion.div key={kpi.label} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3, delay: i * 0.06 }}
+              className="bg-card p-5 rounded-lg border border-border shadow-sm group hover:border-primary/30 transition-all">
+              <div className={cn("p-2 rounded-md border border-border mb-3 w-fit", kpi.bg)}>
+                <kpi.icon className={cn("w-4 h-4", kpi.color)} />
+              </div>
+              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-widest">{kpi.label}</p>
+              <p className="text-2xl font-bold tracking-tight text-foreground mt-0.5">{kpi.value}</p>
+            </motion.div>
+          ))}
         </div>
-      </header>
 
-      {/* ================================================================ */}
-      {/* Tab Bar                                                          */}
-      {/* ================================================================ */}
-      <div className="flex gap-1 p-1 bg-muted rounded-lg border border-border">
-        {TABS.map(tab => (
-          <button
-            key={tab.id}
-            onClick={() => setActiveTab(tab.id)}
-            className={cn(
-              "flex items-center gap-2 px-4 py-2 rounded-md text-sm font-semibold transition-all",
-              activeTab === tab.id
-                ? "bg-background text-foreground shadow-sm border border-border"
-                : "text-muted-foreground hover:text-foreground hover:bg-background/50"
-            )}
-          >
-            <tab.icon className="w-4 h-4" />
-            {tab.label}
-          </button>
-        ))}
-      </div>
-
-      {/* ================================================================ */}
-      {/* OVERVIEW TAB                                                     */}
-      {/* ================================================================ */}
-      {activeTab === "overview" && (
-        <>
-          {/* KPI Stats */}
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-            {[
-              { label: "Active Trainees", value: activeTrainees, icon: Users, color: "text-blue-600", bg: "bg-blue-500/10" },
-              { label: "Certified This Month", value: certifiedCount, icon: Award, color: "text-emerald-600", bg: "bg-emerald-500/10" },
-              { label: "Active Practice Sessions", value: activeSessionCount, icon: Play, color: "text-violet-600", bg: "bg-violet-500/10" },
-              { label: "Avg Certification Time", value: `${avgCertDays}d`, icon: Timer, color: "text-amber-600", bg: "bg-amber-500/10" },
-            ].map((kpi, i) => (
-              <motion.div key={kpi.label} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3, delay: i * 0.06 }}
-                className="bg-card p-5 rounded-lg border border-border shadow-sm group hover:border-primary/30 transition-all"
-              >
-                <div className="flex items-center justify-between mb-3">
-                  <div className={cn("p-2 rounded-md border border-border group-hover:border-primary/20 transition-all", kpi.bg)}>
-                    <kpi.icon className={cn("w-4 h-4", kpi.color)} />
+        {/* Pipeline + Activity */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+          <div className="lg:col-span-7">
+            <div className="bg-card rounded-lg border border-border shadow-sm p-6">
+              <h2 className="text-sm font-bold text-foreground mb-1">Training Pipeline</h2>
+              <p className="text-xs text-muted-foreground mb-5">Volunteer progression through onboarding stages</p>
+              <div className="flex items-center gap-2">
+                {pipelineStages.map((stage, i) => (
+                  <React.Fragment key={stage.label}>
+                    <div className="flex-1 text-center">
+                      <div className={cn("mx-auto w-14 h-14 rounded-xl flex items-center justify-center text-white font-bold text-xl mb-2", stage.color)}>{stage.count}</div>
+                      <p className={cn("text-xs font-semibold", stage.text)}>{stage.label}</p>
+                    </div>
+                    {i < pipelineStages.length - 1 && <ArrowRight className="w-4 h-4 text-muted-foreground/40 shrink-0" />}
+                  </React.Fragment>
+                ))}
+              </div>
+            </div>
+          </div>
+          <div className="lg:col-span-5">
+            <div className="bg-card rounded-lg border border-border shadow-sm overflow-hidden">
+              <div className="px-6 pt-5 pb-4 border-b border-border">
+                <h2 className="text-sm font-bold text-foreground">Recent Activity</h2>
+              </div>
+              <div className="divide-y divide-border max-h-[300px] overflow-y-auto">
+                {ACTIVITY_FEED.map((item, i) => (
+                  <div key={item.id} className="px-5 py-3 flex items-start gap-3 hover:bg-muted/30 transition-colors">
+                    <div className={cn("mt-0.5 shrink-0", item.color)}><item.icon className="w-4 h-4" /></div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs font-medium text-foreground">{item.text}</p>
+                      <p className="text-[11px] text-muted-foreground mt-0.5">{item.time}</p>
+                    </div>
                   </div>
-                </div>
-                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-widest">{kpi.label}</p>
-                <p className="text-2xl font-bold tracking-tight text-foreground mt-0.5">{kpi.value}</p>
-              </motion.div>
-            ))}
-          </div>
-
-          {/* Pipeline + Activity */}
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-            {/* Training Pipeline */}
-            <div className="lg:col-span-7">
-              <div className="bg-card rounded-lg border border-border shadow-sm p-6">
-                <h2 className="text-sm font-bold text-foreground mb-1">Training Pipeline</h2>
-                <p className="text-xs text-muted-foreground mb-5">Volunteer progression through onboarding stages</p>
-                <div className="flex items-center gap-2">
-                  {pipelineStages.map((stage, i) => (
-                    <React.Fragment key={stage.label}>
-                      <motion.div
-                        initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }}
-                        transition={{ delay: i * 0.1 }}
-                        className="flex-1 text-center"
-                      >
-                        <div className={cn("mx-auto w-14 h-14 rounded-xl flex items-center justify-center text-white font-bold text-xl mb-2", stage.color)}>
-                          {stage.count}
-                        </div>
-                        <p className={cn("text-xs font-semibold", stage.textColor)}>{stage.label}</p>
-                      </motion.div>
-                      {i < pipelineStages.length - 1 && (
-                        <ArrowRight className="w-4 h-4 text-muted-foreground/40 shrink-0" />
-                      )}
-                    </React.Fragment>
-                  ))}
-                </div>
-                {/* Trainee names under each stage */}
-                <div className="flex gap-2 mt-4">
-                  {pipelineStages.map((stage) => {
-                    const traineesInStage = TRAINEES.filter(t => {
-                      if (stage.label === "In Training") return t.status === "In Training";
-                      if (stage.label === "Practice") return t.status === "Practice Phase";
-                      if (stage.label === "Review") return t.status === "Ready for Review";
-                      return t.status === "Certified";
-                    });
-                    return (
-                      <div key={stage.label} className="flex-1 text-center">
-                        {traineesInStage.map(t => (
-                          <p key={t.id} className="text-[11px] text-muted-foreground truncate">{t.name.split(" ")[0]}</p>
-                        ))}
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-
-              {/* Quick Stats */}
-              <div className="grid grid-cols-3 gap-4 mt-4">
-                <div className="bg-card rounded-lg border border-border p-4 text-center">
-                  <p className="text-2xl font-bold text-foreground">{tutorials.filter(t => t.status === "published").length}</p>
-                  <p className="text-xs text-muted-foreground mt-1">Published Tutorials</p>
-                </div>
-                <div className="bg-card rounded-lg border border-border p-4 text-center">
-                  <p className="text-2xl font-bold text-foreground">{tutorials.filter(t => t.status === "draft").length}</p>
-                  <p className="text-xs text-muted-foreground mt-1">Draft Tutorials</p>
-                </div>
-                <div className="bg-card rounded-lg border border-border p-4 text-center">
-                  <p className="text-2xl font-bold text-foreground">{PRACTICE_SESSIONS.filter(s => s.score).length}</p>
-                  <p className="text-xs text-muted-foreground mt-1">Sessions Scored</p>
-                </div>
-              </div>
-            </div>
-
-            {/* Activity Feed */}
-            <div className="lg:col-span-5">
-              <div className="bg-card rounded-lg border border-border shadow-sm overflow-hidden">
-                <div className="px-6 pt-5 pb-4 border-b border-border">
-                  <h2 className="text-sm font-bold text-foreground">Recent Activity</h2>
-                  <p className="text-xs text-muted-foreground mt-0.5">Latest updates from your trainees</p>
-                </div>
-                <div className="divide-y divide-border max-h-[420px] overflow-y-auto">
-                  {ACTIVITY_FEED.map((item, i) => (
-                    <motion.div key={item.id} initial={{ opacity: 0, x: 8 }} animate={{ opacity: 1, x: 0 }}
-                      transition={{ delay: i * 0.04 }}
-                      className="px-5 py-3.5 flex items-start gap-3 hover:bg-muted/30 transition-colors"
-                    >
-                      <div className={cn("mt-0.5 shrink-0", item.color)}>
-                        <item.icon className="w-4 h-4" />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-xs font-medium text-foreground leading-relaxed">{item.text}</p>
-                        <p className="text-[11px] text-muted-foreground mt-0.5">{item.time}</p>
-                      </div>
-                    </motion.div>
-                  ))}
-                </div>
+                ))}
               </div>
             </div>
           </div>
-        </>
-      )}
+        </div>
+      </>)}
 
       {/* ================================================================ */}
-      {/* TRAINEES TAB                                                     */}
+      {/* TRAINEES PAGE                                                    */}
       {/* ================================================================ */}
-      {activeTab === "trainees" && (
-        <div className="space-y-6">
-          {/* Trainee Table */}
+      {activeTab === "trainees" && !selectedTraineeId && (
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <h2 className="text-lg font-bold text-foreground">Trainees</h2>
+              <p className="text-sm text-muted-foreground">{filteredTrainees.length} volunteers in onboarding pipeline</p>
+            </div>
+            <Button size="sm" className="text-xs gap-2" onClick={() => toast.info("Opening enrollment form...")}>
+              <Plus className="w-3.5 h-3.5" /> Enroll Volunteer
+            </Button>
+          </div>
+
+          {/* Filters */}
+          <div className="flex items-center gap-3 flex-wrap">
+            <div className="relative flex-1 max-w-xs">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+              <Input placeholder="Search by name or email..." className="pl-9 h-9 text-sm" value={traineeSearch} onChange={e => setTraineeSearch(e.target.value)} />
+            </div>
+            <div className="flex gap-1 p-0.5 bg-muted rounded-md border border-border">
+              {(["all", "In Training", "Practice Phase", "Ready for Review", "Certified"] as const).map(f => (
+                <button key={f} onClick={() => setTraineeStatusFilter(f)}
+                  className={cn("px-3 py-1.5 text-xs font-medium rounded-sm transition-colors whitespace-nowrap",
+                    traineeStatusFilter === f ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
+                  )}>
+                  {f === "all" ? "All" : f}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Table */}
           <div className="bg-card rounded-lg border border-border shadow-sm overflow-hidden">
-            <div className="px-6 pt-5 pb-4 border-b border-border flex items-center justify-between">
-              <div>
-                <h2 className="text-sm font-bold text-foreground">Trainee Roster</h2>
-                <p className="text-xs text-muted-foreground mt-0.5">{TRAINEES.length} volunteers in onboarding pipeline</p>
-              </div>
-              <Button size="sm" className="text-xs gap-2" onClick={() => toast.info("Opening enrollment form...")}>
-                <Plus className="w-3.5 h-3.5" />
-                Enroll Trainee
-              </Button>
-            </div>
             <div className="overflow-x-auto">
               <table className="w-full">
                 <thead>
@@ -653,20 +543,14 @@ export const TrainerDashboard = ({
                     <th className="text-left text-[11px] font-semibold text-muted-foreground uppercase tracking-widest px-5 py-3">Progress</th>
                     <th className="text-left text-[11px] font-semibold text-muted-foreground uppercase tracking-widest px-5 py-3">Current Step</th>
                     <th className="text-left text-[11px] font-semibold text-muted-foreground uppercase tracking-widest px-5 py-3">Days</th>
-                    <th className="text-right text-[11px] font-semibold text-muted-foreground uppercase tracking-widest px-5 py-3">Actions</th>
+                    <th className="text-left text-[11px] font-semibold text-muted-foreground uppercase tracking-widest px-5 py-3">Enrolled</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border">
-                  {TRAINEES.map((trainee, i) => {
+                  {pagedTrainees.map((trainee, i) => {
                     const nextStep = CHECKLIST_STEPS.find(s => !trainee.checklistCompleted.includes(s.step));
                     return (
-                      <motion.tr key={trainee.id} initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: i * 0.03 }}
-                        className={cn(
-                          "hover:bg-muted/30 transition-colors cursor-pointer",
-                          selectedTraineeId === trainee.id && "bg-muted/50"
-                        )}
-                        onClick={() => setSelectedTraineeId(selectedTraineeId === trainee.id ? null : trainee.id)}
-                      >
+                      <tr key={trainee.id} className="hover:bg-muted/30 transition-colors cursor-pointer" onClick={() => setSelectedTraineeId(trainee.id)}>
                         <td className="px-5 py-3.5">
                           <div className="flex items-center gap-3">
                             <div className={cn("w-8 h-8 rounded-full flex items-center justify-center text-white text-[11px] font-bold shrink-0", avatarColor(trainee.id))}>
@@ -679,12 +563,10 @@ export const TrainerDashboard = ({
                           </div>
                         </td>
                         <td className="px-5 py-3.5">
-                          <Badge variant="outline" className={cn("text-[10px] px-2 py-0.5", STATUS_BADGE[trainee.status])}>
-                            {trainee.status}
-                          </Badge>
+                          <Badge variant="outline" className={cn("text-[10px] px-2 py-0.5", STATUS_BADGE[trainee.status])}>{trainee.status}</Badge>
                         </td>
                         <td className="px-5 py-3.5">
-                          <div className="flex items-center gap-2 w-32">
+                          <div className="flex items-center gap-2 w-28">
                             <div className="flex-1 h-1.5 bg-muted rounded-full overflow-hidden">
                               <div className={cn("h-full rounded-full", trainee.progress >= 100 ? "bg-emerald-500" : trainee.progress >= 60 ? "bg-blue-500" : "bg-amber-500")}
                                 style={{ width: `${trainee.progress}%` }} />
@@ -693,713 +575,639 @@ export const TrainerDashboard = ({
                           </div>
                         </td>
                         <td className="px-5 py-3.5">
-                          <p className="text-xs text-foreground">{nextStep ? `Step ${nextStep.step}: ${nextStep.title}` : "Completed"}</p>
+                          <p className="text-xs text-foreground">{nextStep ? nextStep.title : "Completed"}</p>
                         </td>
                         <td className="px-5 py-3.5">
-                          <span className="text-xs text-muted-foreground flex items-center gap-1"><Clock className="w-3 h-3" />{trainee.daysInTraining}d</span>
+                          <span className="text-xs text-muted-foreground">{trainee.daysInTraining}d</span>
                         </td>
-                        <td className="px-5 py-3.5 text-right">
-                          <div className="flex items-center justify-end gap-1">
-                            <Button variant="ghost" size="sm" className="h-7 w-7 p-0" onClick={(e) => { e.stopPropagation(); setActiveTab("practice_chat"); toast.info(`Select ${trainee.name.split(" ")[0]} in Practice Chat to start a session`); }}>
-                              <MessageSquare className="w-3.5 h-3.5" />
-                            </Button>
-                            <Button variant="ghost" size="sm" className="h-7 w-7 p-0" onClick={(e) => { e.stopPropagation(); }}>
-                              <MoreHorizontal className="w-3.5 h-3.5" />
-                            </Button>
-                          </div>
+                        <td className="px-5 py-3.5">
+                          <span className="text-xs text-muted-foreground">{trainee.enrolledDate}</span>
                         </td>
-                      </motion.tr>
+                      </tr>
                     );
                   })}
                 </tbody>
               </table>
             </div>
-          </div>
 
-          {/* Trainee Detail — Onboarding Checklist (shown when a trainee is selected) */}
-          <AnimatePresence>
-            {selectedTrainee && (
-              <motion.div
-                initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }}
-                className="bg-card rounded-lg border border-border shadow-sm overflow-hidden"
-              >
-                <div className="px-6 pt-5 pb-4 border-b border-border flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className={cn("w-10 h-10 rounded-full flex items-center justify-center text-white text-sm font-bold", avatarColor(selectedTrainee.id))}>
-                      {getInitial(selectedTrainee.name)}
-                    </div>
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <h2 className="text-sm font-bold text-foreground">{selectedTrainee.name}</h2>
-                        <Badge variant="outline" className={cn("text-[10px]", STATUS_BADGE[selectedTrainee.status])}>{selectedTrainee.status}</Badge>
-                      </div>
-                      <p className="text-xs text-muted-foreground">
-                        {selectedTrainee.checklistCompleted.length} of {CHECKLIST_STEPS.length} steps completed &middot; Day {selectedTrainee.daysInTraining}
-                      </p>
-                    </div>
-                  </div>
-                  <Button variant="ghost" size="sm" className="text-xs" onClick={() => setSelectedTraineeId(null)}>
-                    <X className="w-3.5 h-3.5 mr-1" /> Close
+            {/* Pagination */}
+            {totalPages > 1 && (
+              <div className="px-5 py-3 border-t border-border flex items-center justify-between">
+                <p className="text-xs text-muted-foreground">
+                  Showing {(traineePage - 1) * PAGE_SIZE + 1}–{Math.min(traineePage * PAGE_SIZE, filteredTrainees.length)} of {filteredTrainees.length}
+                </p>
+                <div className="flex items-center gap-1">
+                  <Button variant="outline" size="sm" className="h-7 w-7 p-0" disabled={traineePage <= 1} onClick={() => setTraineePage(p => p - 1)}>
+                    <ChevronLeft className="w-3.5 h-3.5" />
+                  </Button>
+                  {Array.from({ length: totalPages }, (_, i) => (
+                    <Button key={i} variant={traineePage === i + 1 ? "default" : "outline"} size="sm" className="h-7 w-7 p-0 text-xs"
+                      onClick={() => setTraineePage(i + 1)}>{i + 1}</Button>
+                  ))}
+                  <Button variant="outline" size="sm" className="h-7 w-7 p-0" disabled={traineePage >= totalPages} onClick={() => setTraineePage(p => p + 1)}>
+                    <ChevronRight className="w-3.5 h-3.5" />
                   </Button>
                 </div>
-
-                {/* Progress bar */}
-                <div className="px-6 py-3 border-b border-border bg-muted/20">
-                  <div className="flex items-center gap-3">
-                    <div className="flex-1 h-2 bg-muted rounded-full overflow-hidden">
-                      <motion.div className="h-full bg-emerald-500 rounded-full"
-                        initial={{ width: 0 }} animate={{ width: `${selectedTrainee.progress}%` }}
-                        transition={{ duration: 0.5 }} />
-                    </div>
-                    <span className="text-xs font-bold text-foreground w-10 text-right">{selectedTrainee.progress}%</span>
-                  </div>
-                </div>
-
-                {/* Checklist grid */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-0 divide-y sm:divide-y-0 sm:divide-x divide-border">
-                  {CHECKLIST_STEPS.map((step, i) => {
-                    const isCompleted = selectedTrainee.checklistCompleted.includes(step.step);
-                    const isNext = !isCompleted && selectedTrainee.checklistCompleted.includes(step.step - 1);
-                    return (
-                      <div key={step.step} className={cn("px-5 py-4 flex items-start gap-3", isCompleted && "bg-emerald-500/5")}>
-                        <div className="shrink-0 mt-0.5">
-                          {isCompleted ? <CheckCircle2 className="w-5 h-5 text-emerald-500" />
-                            : isNext ? <Loader2 className="w-5 h-5 text-blue-500 animate-spin" />
-                            : <Circle className="w-5 h-5 text-muted-foreground/30" />}
-                        </div>
-                        <div className="min-w-0">
-                          <span className="text-[10px] font-bold text-muted-foreground">STEP {step.step}</span>
-                          <p className={cn("text-xs font-medium mt-0.5", isCompleted || isNext ? "text-foreground" : "text-muted-foreground")}>{step.title}</p>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </motion.div>
+              </div>
             )}
-          </AnimatePresence>
+          </div>
         </div>
       )}
 
       {/* ================================================================ */}
-      {/* CONTENT STUDIO TAB (US31)                                        */}
+      {/* TRAINEE PROFILE (full page)                                      */}
+      {/* ================================================================ */}
+      {activeTab === "trainees" && selectedTrainee && (
+        <div className="space-y-6">
+          {/* Back button */}
+          <Button variant="ghost" size="sm" className="text-xs gap-1.5 -ml-2" onClick={() => setSelectedTraineeId(null)}>
+            <ChevronLeft className="w-4 h-4" /> Back to Trainees
+          </Button>
+
+          {/* Profile Header */}
+          <div className="bg-card rounded-lg border border-border shadow-sm p-6">
+            <div className="flex items-start gap-5">
+              <div className={cn("w-16 h-16 rounded-full flex items-center justify-center text-white text-xl font-bold shrink-0", avatarColor(selectedTrainee.id))}>
+                {getInitial(selectedTrainee.name)}
+              </div>
+              <div className="flex-1">
+                <div className="flex items-center gap-3 mb-1">
+                  <h2 className="text-xl font-bold text-foreground">{selectedTrainee.name}</h2>
+                  <Badge variant="outline" className={cn("text-xs", STATUS_BADGE[selectedTrainee.status])}>{selectedTrainee.status}</Badge>
+                </div>
+                <div className="flex items-center gap-4 text-sm text-muted-foreground flex-wrap">
+                  <span className="flex items-center gap-1.5"><Mail className="w-3.5 h-3.5" />{selectedTrainee.email}</span>
+                  <span className="flex items-center gap-1.5"><UserCircle className="w-3.5 h-3.5" />{selectedTrainee.phone}</span>
+                  <span className="flex items-center gap-1.5"><CalendarDays className="w-3.5 h-3.5" />Enrolled {selectedTrainee.enrolledDate}</span>
+                  <span className="flex items-center gap-1.5"><Globe className="w-3.5 h-3.5" />{selectedTrainee.language}</span>
+                </div>
+              </div>
+              <div className="text-right shrink-0">
+                <p className="text-3xl font-bold text-foreground">{selectedTrainee.progress}%</p>
+                <p className="text-xs text-muted-foreground">Overall Progress</p>
+              </div>
+            </div>
+            {/* Progress bar */}
+            <div className="mt-4 flex items-center gap-3">
+              <div className="flex-1 h-2.5 bg-muted rounded-full overflow-hidden">
+                <motion.div className="h-full bg-emerald-500 rounded-full" initial={{ width: 0 }} animate={{ width: `${selectedTrainee.progress}%` }} transition={{ duration: 0.5 }} />
+              </div>
+              <span className="text-xs font-semibold text-muted-foreground">{selectedTrainee.checklistCompleted.length}/{CHECKLIST_STEPS.length} steps</span>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            {/* Onboarding Checklist */}
+            <div className="lg:col-span-2 bg-card rounded-lg border border-border shadow-sm overflow-hidden">
+              <div className="px-6 pt-5 pb-4 border-b border-border">
+                <h3 className="text-sm font-bold text-foreground">Onboarding Checklist</h3>
+                <p className="text-xs text-muted-foreground mt-0.5">Training milestones and completion status</p>
+              </div>
+              <div className="divide-y divide-border">
+                {CHECKLIST_STEPS.map(step => {
+                  const done = selectedTrainee.checklistCompleted.includes(step.step);
+                  const isNext = !done && selectedTrainee.checklistCompleted.includes(step.step - 1);
+                  return (
+                    <div key={step.step} className={cn("px-6 py-4 flex items-center gap-4", done && "bg-emerald-500/5")}>
+                      <div className="shrink-0">
+                        {done ? <CheckCircle2 className="w-5 h-5 text-emerald-500" />
+                          : isNext ? <Loader2 className="w-5 h-5 text-blue-500 animate-spin" />
+                          : <Circle className="w-5 h-5 text-muted-foreground/30" />}
+                      </div>
+                      <div className="flex-1">
+                        <p className={cn("text-sm font-medium", done || isNext ? "text-foreground" : "text-muted-foreground")}>{step.title}</p>
+                      </div>
+                      <span className="text-[10px] font-bold text-muted-foreground bg-muted px-2 py-0.5 rounded">Step {step.step}</span>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Sidebar: Notes + Quick Actions */}
+            <div className="space-y-4">
+              <div className="bg-card rounded-lg border border-border shadow-sm p-5">
+                <h3 className="text-sm font-bold text-foreground mb-3">Trainer Notes</h3>
+                <Textarea className="text-sm min-h-[120px]" placeholder="Add notes about this trainee..."
+                  defaultValue={selectedTrainee.notes} />
+                <Button size="sm" className="mt-3 w-full text-xs gap-1" onClick={() => toast.success("Notes saved")}>
+                  <Save className="w-3 h-3" /> Save Notes
+                </Button>
+              </div>
+
+              <div className="bg-card rounded-lg border border-border shadow-sm p-5">
+                <h3 className="text-sm font-bold text-foreground mb-3">Quick Actions</h3>
+                <div className="space-y-2">
+                  <Button variant="outline" size="sm" className="w-full text-xs gap-2 justify-start" onClick={() => { setActiveTab("practice_chat"); startNewPractice(); setPcTraineeId(selectedTrainee.id); setChatStep("select_scenario"); }}>
+                    <MessageSquare className="w-3.5 h-3.5" /> Start Practice Chat
+                  </Button>
+                  <Button variant="outline" size="sm" className="w-full text-xs gap-2 justify-start" onClick={() => toast.info("Sending reminder to " + selectedTrainee.name)}>
+                    <Mail className="w-3.5 h-3.5" /> Send Reminder
+                  </Button>
+                  {selectedTrainee.status === "Ready for Review" && (
+                    <Button size="sm" className="w-full text-xs gap-2 justify-start" onClick={() => toast.success(selectedTrainee.name + " submitted for certification review")}>
+                      <Award className="w-3.5 h-3.5" /> Submit for Certification
+                    </Button>
+                  )}
+                </div>
+              </div>
+
+              <div className="bg-card rounded-lg border border-border shadow-sm p-5">
+                <h3 className="text-sm font-bold text-foreground mb-3">Training Info</h3>
+                <div className="space-y-2 text-xs">
+                  <div className="flex justify-between"><span className="text-muted-foreground">Days in Training</span><span className="font-semibold">{selectedTrainee.daysInTraining}</span></div>
+                  <div className="flex justify-between"><span className="text-muted-foreground">Language Team</span><span className="font-semibold">{selectedTrainee.language}</span></div>
+                  <div className="flex justify-between"><span className="text-muted-foreground">Enrolled</span><span className="font-semibold">{selectedTrainee.enrolledDate}</span></div>
+                  <div className="flex justify-between"><span className="text-muted-foreground">Practice Sessions</span><span className="font-semibold">{selectedTrainee.checklistCompleted.filter(s => s >= 6 && s <= 7).length}/2</span></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ================================================================ */}
+      {/* CONTENT STUDIO — Course Builder (US31)                           */}
       {/* ================================================================ */}
       {activeTab === "content_studio" && (
         <div className="space-y-4">
-          {/* Header */}
           <div className="flex items-center justify-between">
             <div>
               <h2 className="text-lg font-bold text-foreground">Content Studio</h2>
-              <p className="text-sm text-muted-foreground">Create and manage training tutorials, quizzes, and practice scenarios</p>
+              <p className="text-sm text-muted-foreground">Build and manage training courses for your volunteers</p>
             </div>
-            <Button size="sm" className="gap-2" onClick={openNewTutorial}>
-              <Plus className="w-4 h-4" />
-              Create Tutorial
+            <Button size="sm" className="gap-2" onClick={() => { setNewCourseTitle(""); setNewCourseDesc(""); setIsNewCourseOpen(true); }}>
+              <Plus className="w-4 h-4" /> New Course
             </Button>
           </div>
 
-          {/* Filters */}
-          <div className="flex items-center gap-3">
-            <div className="relative flex-1 max-w-xs">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-              <Input
-                placeholder="Search tutorials..."
-                className="pl-9 h-9 text-sm"
-                value={contentSearch}
-                onChange={e => setContentSearch(e.target.value)}
-              />
-            </div>
-            <div className="flex gap-1 p-0.5 bg-muted rounded-md border border-border">
-              {(["all", "Module", "Video", "Quiz", "Practice"] as const).map(f => (
-                <button key={f} onClick={() => setContentFilter(f)}
-                  className={cn(
-                    "px-3 py-1.5 text-xs font-medium rounded-sm transition-colors",
-                    contentFilter === f ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
-                  )}
-                >
-                  {f === "all" ? "All" : f}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Content Grid */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-            {filteredTutorials.map((tut, i) => (
-              <motion.div key={tut.id} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: i * 0.04 }}
-                className="bg-card rounded-lg border border-border shadow-sm overflow-hidden group hover:border-primary/30 transition-all"
-              >
-                {/* Card top accent */}
-                <div className={cn("h-1", tut.type === "Module" ? "bg-blue-500" : tut.type === "Video" ? "bg-violet-500" : tut.type === "Quiz" ? "bg-amber-500" : "bg-emerald-500")} />
-
-                <div className="p-4">
-                  <div className="flex items-start justify-between mb-3">
-                    <div className={cn("p-2 rounded-md border border-border", MATERIAL_BADGE[tut.type].split(" ")[0])}>
-                      <tut.icon className={cn("w-4 h-4", MATERIAL_BADGE[tut.type].split(" ")[1])} />
-                    </div>
-                    <div className="flex items-center gap-1.5">
-                      <Badge variant="outline" className={cn("text-[10px] px-1.5 py-0", tut.status === "published" ? "bg-emerald-500/10 text-emerald-600 border-emerald-500/20" : "bg-slate-500/10 text-slate-500 border-slate-500/20")}>
-                        {tut.status === "published" ? "Published" : "Draft"}
+          {/* Course list */}
+          <div className="space-y-4">
+            {courses.map(course => (
+              <div key={course.id} className="bg-card rounded-lg border border-border shadow-sm overflow-hidden">
+                {/* Course header */}
+                <button className="w-full text-left px-6 py-5 flex items-center gap-4 hover:bg-muted/30 transition-colors"
+                  onClick={() => setExpandedCourseId(expandedCourseId === course.id ? null : course.id)}>
+                  <div className={cn("p-2.5 rounded-lg border border-border shrink-0", course.status === "published" ? "bg-emerald-500/10" : "bg-slate-500/10")}>
+                    <BookOpen className={cn("w-5 h-5", course.status === "published" ? "text-emerald-600" : "text-slate-500")} />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 mb-0.5">
+                      <h3 className="text-sm font-bold text-foreground">{course.title}</h3>
+                      <Badge variant="outline" className={cn("text-[10px]", course.status === "published" ? "bg-emerald-500/10 text-emerald-600 border-emerald-500/20" : "bg-slate-500/10 text-slate-500 border-slate-500/20")}>
+                        {course.status}
                       </Badge>
                     </div>
-                  </div>
-
-                  <h3 className="text-sm font-semibold text-foreground mb-1 line-clamp-2 leading-snug">{tut.title}</h3>
-                  <p className="text-[11px] text-muted-foreground line-clamp-2 mb-3">{tut.description}</p>
-
-                  <div className="flex items-center gap-2 mb-3">
-                    <Badge variant="outline" className={cn("text-[10px] px-1.5 py-0", MATERIAL_BADGE[tut.type])}>{tut.type}</Badge>
-                    <span className="text-[11px] text-muted-foreground">{tut.duration}</span>
-                  </div>
-
-                  {/* Completion bar */}
-                  {tut.status === "published" && (
-                    <div className="flex items-center gap-2 mb-3">
-                      <div className="flex-1 h-1 bg-muted rounded-full overflow-hidden">
-                        <div className="h-full bg-emerald-500 rounded-full" style={{ width: `${tut.completionPercent}%` }} />
-                      </div>
-                      <span className="text-[10px] font-semibold text-muted-foreground">{tut.completionPercent}%</span>
+                    <p className="text-xs text-muted-foreground line-clamp-1">{course.description}</p>
+                    <div className="flex items-center gap-4 mt-2 text-[11px] text-muted-foreground">
+                      <span>{course.modules.length} modules</span>
+                      <span>{course.modules.reduce((s, m) => s + m.lessons.length, 0)} lessons</span>
+                      {course.status === "published" && (<>
+                        <span>{course.enrolledCount} enrolled</span>
+                        <span>{course.completionRate}% completion</span>
+                      </>)}
                     </div>
-                  )}
-
-                  {/* Actions */}
-                  <div className="flex gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <Button variant="outline" size="sm" className="flex-1 h-7 text-[11px] gap-1" onClick={() => openEditTutorial(tut)}>
-                      <Edit3 className="w-3 h-3" /> Edit
-                    </Button>
-                    <Button variant="outline" size="sm" className="h-7 w-7 p-0" onClick={() => toast.info("Preview: " + tut.title)}>
-                      <Eye className="w-3 h-3" />
-                    </Button>
-                    <Button variant="outline" size="sm" className="h-7 w-7 p-0 text-rose-500 hover:text-rose-600"
-                      onClick={() => { setTutorials(prev => prev.filter(t => t.id !== tut.id)); toast.success("Tutorial deleted"); }}>
-                      <Trash2 className="w-3 h-3" />
-                    </Button>
                   </div>
-                </div>
-              </motion.div>
-            ))}
+                  <ChevronDown className={cn("w-5 h-5 text-muted-foreground transition-transform shrink-0", expandedCourseId === course.id && "rotate-180")} />
+                </button>
 
-            {filteredTutorials.length === 0 && (
-              <div className="col-span-full py-16 text-center">
-                <Layers className="w-10 h-10 text-muted-foreground/30 mx-auto mb-3" />
-                <p className="text-sm text-muted-foreground">No tutorials found</p>
-                <Button size="sm" variant="outline" className="mt-3 text-xs gap-1" onClick={openNewTutorial}>
-                  <Plus className="w-3 h-3" /> Create your first tutorial
-                </Button>
+                {/* Expanded: Module list */}
+                <AnimatePresence>
+                  {expandedCourseId === course.id && (
+                    <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }}
+                      className="border-t border-border overflow-hidden">
+                      <div className="px-6 py-3 bg-muted/20 flex items-center justify-between">
+                        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-widest">Modules</p>
+                        <Button variant="outline" size="sm" className="h-7 text-xs gap-1" onClick={() => openModuleEditor(course.id)}>
+                          <Plus className="w-3 h-3" /> Add Module
+                        </Button>
+                      </div>
+                      <div className="divide-y divide-border">
+                        {course.modules.map((mod, mi) => (
+                          <div key={mod.id} className="px-6 py-3.5 flex items-center gap-4 hover:bg-muted/20 transition-colors group">
+                            <span className="text-xs font-bold text-muted-foreground bg-muted w-7 h-7 rounded flex items-center justify-center shrink-0">{mi + 1}</span>
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-2">
+                                <p className="text-sm font-medium text-foreground">{mod.title}</p>
+                                <Badge variant="outline" className={cn("text-[10px] px-1.5 py-0", MATERIAL_BADGE[mod.type])}>{mod.type}</Badge>
+                              </div>
+                              <p className="text-[11px] text-muted-foreground mt-0.5">{mod.lessons.length} lessons &middot; {mod.duration}</p>
+                            </div>
+                            <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                              <Button variant="ghost" size="sm" className="h-7 w-7 p-0" onClick={() => openModuleEditor(course.id, mod)}>
+                                <Edit3 className="w-3 h-3" />
+                              </Button>
+                              <Button variant="ghost" size="sm" className="h-7 w-7 p-0 text-rose-500"
+                                onClick={() => { setCourses(prev => prev.map(c => c.id === course.id ? { ...c, modules: c.modules.filter(m => m.id !== mod.id) } : c)); toast.success("Module removed"); }}>
+                                <Trash2 className="w-3 h-3" />
+                              </Button>
+                            </div>
+                          </div>
+                        ))}
+                        {course.modules.length === 0 && (
+                          <div className="px-6 py-8 text-center text-xs text-muted-foreground">
+                            No modules yet. Add your first module to start building this course.
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Course actions */}
+                      <div className="px-6 py-3 bg-muted/20 border-t border-border flex items-center justify-end gap-2">
+                        <Button variant="outline" size="sm" className="text-xs gap-1 text-rose-500 hover:text-rose-600"
+                          onClick={() => { setCourses(prev => prev.filter(c => c.id !== course.id)); toast.success("Course deleted"); }}>
+                          <Trash2 className="w-3 h-3" /> Delete Course
+                        </Button>
+                        {course.status === "draft" && (
+                          <Button size="sm" className="text-xs gap-1"
+                            onClick={() => { setCourses(prev => prev.map(c => c.id === course.id ? { ...c, status: "published" } : c)); toast.success("Course published!"); }}>
+                            <CheckCircle2 className="w-3 h-3" /> Publish
+                          </Button>
+                        )}
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
               </div>
-            )}
+            ))}
           </div>
         </div>
       )}
 
       {/* ================================================================ */}
-      {/* PRACTICE CHAT TAB (US32)                                         */}
+      {/* PRACTICE CHAT — Guided Flow (US32)                               */}
       {/* ================================================================ */}
       {activeTab === "practice_chat" && (
-        <div className="grid grid-cols-12 gap-4 h-[calc(100vh-340px)] min-h-[500px]">
-          {/* Left — Session List */}
-          <div className="col-span-3 bg-card rounded-lg border border-border shadow-sm overflow-hidden flex flex-col">
-            <div className="px-4 pt-4 pb-3 border-b border-border">
-              <h2 className="text-sm font-bold text-foreground">Sessions</h2>
-              <p className="text-[11px] text-muted-foreground mt-0.5">Practice conversations</p>
+        <div className="space-y-6">
+          {/* Step indicator */}
+          <div className="flex items-center justify-between">
+            <div>
+              <h2 className="text-lg font-bold text-foreground">Practice Chat</h2>
+              <p className="text-sm text-muted-foreground">Simulate conversations to evaluate trainee readiness</p>
             </div>
-
-            {/* Active sessions */}
-            <div className="flex-1 overflow-y-auto divide-y divide-border">
-              <div className="px-3 pt-3 pb-1">
-                <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest px-1">Active</p>
-              </div>
-              {PRACTICE_SESSIONS.filter(s => s.status === "active").map(session => (
-                <button key={session.id}
-                  className={cn("w-full text-left px-4 py-3 hover:bg-muted/50 transition-colors", activeSessionId === session.id && "bg-muted/70")}
-                  onClick={() => setActiveSessionId(session.id)}
-                >
-                  <div className="flex items-center gap-2">
-                    <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shrink-0" />
-                    <span className="text-sm font-semibold text-foreground truncate">{session.traineeName}</span>
-                  </div>
-                  <p className="text-[11px] text-muted-foreground mt-0.5 pl-4">{session.scenarioTitle} &middot; {session.duration}</p>
-                </button>
-              ))}
-
-              <div className="px-3 pt-3 pb-1">
-                <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest px-1">Completed</p>
-              </div>
-              {PRACTICE_SESSIONS.filter(s => s.status === "completed").map(session => (
-                <button key={session.id}
-                  className={cn("w-full text-left px-4 py-3 hover:bg-muted/50 transition-colors", activeSessionId === session.id && "bg-muted/70")}
-                  onClick={() => setActiveSessionId(session.id)}
-                >
-                  <div className="flex items-center gap-2">
-                    <CheckCircle2 className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
-                    <span className="text-sm font-medium text-foreground truncate">{session.traineeName}</span>
-                  </div>
-                  <div className="flex items-center gap-2 mt-0.5 pl-[22px]">
-                    <p className="text-[11px] text-muted-foreground">{session.scenarioTitle}</p>
-                    {session.score != null && (
-                      <Badge variant="outline" className="text-[10px] px-1.5 py-0 bg-amber-500/10 text-amber-600 border-amber-500/20">
-                        {session.score}/10
-                      </Badge>
-                    )}
-                  </div>
-                </button>
-              ))}
-
-              {/* Scenarios */}
-              <div className="px-3 pt-4 pb-1">
-                <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest px-1">Scenarios</p>
-              </div>
-              {SCENARIOS.map(sc => (
-                <div key={sc.id} className="px-4 py-2.5 hover:bg-muted/30 transition-colors">
-                  <div className="flex items-center justify-between">
-                    <p className="text-xs font-medium text-foreground">{sc.title}</p>
-                    <Badge variant="outline" className={cn("text-[9px] px-1 py-0", DIFFICULTY_BADGE[sc.difficulty])}>{sc.difficulty}</Badge>
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            {/* New Session Button */}
-            <div className="px-3 py-3 border-t border-border">
-              <Button size="sm" className="w-full text-xs gap-2" onClick={() => setShowNewSessionModal(true)}>
-                <Plus className="w-3.5 h-3.5" />
-                New Practice Session
+            {chatStep !== "select_trainee" && (
+              <Button variant="outline" size="sm" className="text-xs gap-1.5" onClick={startNewPractice}>
+                <Plus className="w-3.5 h-3.5" /> New Session
               </Button>
-            </div>
-          </div>
-
-          {/* Center — Chat Area */}
-          <div className="col-span-6 bg-card rounded-lg border border-border shadow-sm overflow-hidden flex flex-col">
-            {activeSession ? (
-              <>
-                {/* Chat header */}
-                <div className="px-5 py-3.5 border-b border-border flex items-center justify-between bg-muted/20">
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <h3 className="text-sm font-bold text-foreground">{activeSession.traineeName}</h3>
-                      <Badge variant="outline" className={cn("text-[10px] px-1.5 py-0",
-                        activeSession.status === "active" ? "bg-emerald-500/10 text-emerald-600 border-emerald-500/20" : "bg-slate-500/10 text-slate-500 border-slate-500/20"
-                      )}>
-                        {activeSession.status === "active" ? "Live" : "Completed"}
-                      </Badge>
-                    </div>
-                    <p className="text-[11px] text-muted-foreground mt-0.5">
-                      Scenario: {activeSession.scenarioTitle} &middot; Duration: {activeSession.duration}
-                    </p>
-                  </div>
-                  {activeSession.status === "active" && (
-                    <Button variant="outline" size="sm" className="text-xs gap-1 text-rose-500 hover:text-rose-600 border-rose-500/20"
-                      onClick={() => toast.success("Practice session ended. Score the trainee in the evaluation panel.")}>
-                      <AlertCircle className="w-3 h-3" /> End Session
-                    </Button>
-                  )}
-                </div>
-
-                {/* Messages */}
-                <div className="flex-1 overflow-y-auto px-5 py-4 space-y-4">
-                  {/* Scenario context banner */}
-                  {activeScenario && (
-                    <div className="bg-blue-500/5 border border-blue-500/20 rounded-lg p-3 mb-2">
-                      <p className="text-[11px] font-semibold text-blue-600 uppercase tracking-widest mb-1">Scenario: {activeScenario.title}</p>
-                      <p className="text-xs text-muted-foreground">{activeScenario.description}</p>
-                    </div>
-                  )}
-
-                  {sessionMessages.map(msg => (
-                    <div key={msg.id} className={cn("flex gap-3", msg.sender === "seeker" ? "justify-end" : "justify-start")}>
-                      {msg.sender === "trainee" && (
-                        <div className={cn("w-7 h-7 rounded-full flex items-center justify-center text-white text-[10px] font-bold shrink-0 mt-1", avatarColor(activeSession.traineeId))}>
-                          {getInitial(msg.senderName)}
-                        </div>
-                      )}
-                      <div className={cn("max-w-[70%] rounded-xl px-4 py-2.5",
-                        msg.sender === "seeker"
-                          ? "bg-primary text-primary-foreground rounded-br-sm"
-                          : "bg-muted rounded-bl-sm"
-                      )}>
-                        <p className={cn("text-[10px] font-semibold mb-0.5", msg.sender === "seeker" ? "text-primary-foreground/70" : "text-muted-foreground")}>
-                          {msg.senderName}
-                        </p>
-                        <p className="text-sm leading-relaxed">{msg.text}</p>
-                        <p className={cn("text-[10px] mt-1", msg.sender === "seeker" ? "text-primary-foreground/50" : "text-muted-foreground/70")}>{msg.timestamp}</p>
-                      </div>
-                      {msg.sender === "seeker" && (
-                        <div className="w-7 h-7 rounded-full bg-primary/10 flex items-center justify-center text-primary text-[10px] font-bold shrink-0 mt-1">
-                          T
-                        </div>
-                      )}
-                    </div>
-                  ))}
-                  <div ref={chatEndRef} />
-                </div>
-
-                {/* Chat input */}
-                {activeSession.status === "active" && (
-                  <div className="px-5 py-3.5 border-t border-border">
-                    <div className="flex items-center gap-3">
-                      <div className="flex-1 relative">
-                        <Input
-                          placeholder="Type as seeker to test trainee's response..."
-                          className="pr-10 h-10 text-sm"
-                          value={chatInput}
-                          onChange={e => setChatInput(e.target.value)}
-                          onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendMessage(); } }}
-                        />
-                      </div>
-                      <Button size="sm" className="h-10 px-4 gap-2" onClick={sendMessage} disabled={!chatInput.trim()}>
-                        <Send className="w-4 h-4" />
-                        Send
-                      </Button>
-                    </div>
-                    {activeScenario && (
-                      <div className="mt-2">
-                        <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-widest mb-1.5">Suggested prompts:</p>
-                        <div className="flex flex-wrap gap-1.5">
-                          {activeScenario.suggestedOpeners.slice(0, 3).map((opener, i) => (
-                            <button key={i} className="text-[11px] text-muted-foreground hover:text-foreground bg-muted hover:bg-muted/80 px-2.5 py-1 rounded-md transition-colors truncate max-w-[200px]"
-                              onClick={() => setChatInput(opener)}>
-                              {opener.slice(0, 50)}{opener.length > 50 ? "..." : ""}
-                            </button>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                )}
-              </>
-            ) : (
-              <div className="flex-1 flex items-center justify-center">
-                <div className="text-center">
-                  <MessageSquare className="w-12 h-12 text-muted-foreground/20 mx-auto mb-3" />
-                  <p className="text-sm font-medium text-muted-foreground">Select a session to view the conversation</p>
-                  <p className="text-xs text-muted-foreground mt-1">Or start a new practice session from the sidebar</p>
-                </div>
-              </div>
             )}
           </div>
 
-          {/* Right — Evaluation Panel */}
-          <div className="col-span-3 bg-card rounded-lg border border-border shadow-sm overflow-hidden flex flex-col">
-            <div className="px-4 pt-4 pb-3 border-b border-border">
-              <h2 className="text-sm font-bold text-foreground">Evaluation</h2>
-              <p className="text-[11px] text-muted-foreground mt-0.5">Score trainee performance</p>
-            </div>
-
-            {activeSession && activeScenario ? (
-              <div className="flex-1 overflow-y-auto p-4 space-y-4">
-                {/* Objectives checklist */}
-                <div>
-                  <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-2">Objectives</p>
-                  <div className="space-y-2">
-                    {activeScenario.objectives.map((obj, i) => {
-                      const key = `${activeSessionId}-obj-${i}`;
-                      const checked = evalChecks[activeSessionId!]?.[`obj-${i}`] ?? false;
-                      return (
-                        <button key={i}
-                          className="flex items-center gap-2.5 w-full text-left group"
-                          onClick={() => toggleEvalCheck(activeSessionId!, `obj-${i}`)}
-                        >
-                          <div className={cn(
-                            "w-4 h-4 rounded border flex items-center justify-center shrink-0 transition-colors",
-                            checked ? "bg-emerald-500 border-emerald-500 text-white" : "border-muted-foreground/30 group-hover:border-muted-foreground"
-                          )}>
-                            {checked && <CheckCircle2 className="w-3 h-3" />}
-                          </div>
-                          <span className={cn("text-xs", checked ? "text-foreground" : "text-muted-foreground")}>{obj}</span>
-                        </button>
-                      );
-                    })}
-                  </div>
+          {/* Steps progress bar */}
+          <div className="flex items-center gap-0 bg-card rounded-lg border border-border shadow-sm p-1">
+            {(["select_trainee", "select_scenario", "chatting", "evaluate"] as PracticeChatStep[]).map((step, i) => {
+              const labels = ["1. Select Trainee", "2. Choose Scenario", "3. Chat Session", "4. Evaluate"];
+              const stepOrder = ["select_trainee", "select_scenario", "chatting", "evaluate"];
+              const currentIdx = stepOrder.indexOf(chatStep);
+              const thisIdx = i;
+              const isActive = thisIdx === currentIdx;
+              const isDone = thisIdx < currentIdx;
+              return (
+                <div key={step} className={cn(
+                  "flex-1 text-center py-2.5 rounded-md text-xs font-semibold transition-all",
+                  isActive ? "bg-primary text-primary-foreground" :
+                  isDone ? "bg-emerald-500/10 text-emerald-600" :
+                  "text-muted-foreground"
+                )}>
+                  {isDone && <CheckCircle2 className="w-3 h-3 inline mr-1" />}
+                  {labels[i]}
                 </div>
+              );
+            })}
+          </div>
 
-                {/* Quick Scoring */}
-                <div>
-                  <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-2">Quick Score</p>
-                  <div className="grid grid-cols-5 gap-1.5">
-                    {[...Array(10)].map((_, i) => {
-                      const score = i + 1;
-                      const currentScore = evalChecks[activeSessionId!]?.["score"];
-                      const isSelected = currentScore === score;
-                      return (
-                        <button key={score}
-                          className={cn(
-                            "h-9 rounded-md text-xs font-bold border transition-all",
-                            isSelected
-                              ? "bg-primary text-primary-foreground border-primary"
-                              : "border-border text-muted-foreground hover:text-foreground hover:border-muted-foreground"
-                          )}
-                          onClick={() => setEvalChecks(prev => ({ ...prev, [activeSessionId!]: { ...(prev[activeSessionId!] ?? {}), score } }))}
-                        >
-                          {score}
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-
-                {/* Feedback Notes */}
-                <div>
-                  <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-2">Feedback Notes</p>
-                  <Textarea
-                    placeholder="Write feedback for the trainee..."
-                    className="text-xs min-h-[100px] resize-none"
-                    value={evalNotes[activeSessionId!] ?? ""}
-                    onChange={e => setEvalNotes(prev => ({ ...prev, [activeSessionId!]: e.target.value }))}
-                  />
-                </div>
-
-                {/* Save button */}
-                <Button size="sm" className="w-full text-xs gap-2"
-                  onClick={() => toast.success(`Evaluation saved for ${activeSession.traineeName}`)}>
-                  <Save className="w-3.5 h-3.5" />
-                  Save Evaluation
+          {/* Step 1: Select Trainee */}
+          {chatStep === "select_trainee" && (
+            <div className="bg-card rounded-lg border border-border shadow-sm p-6">
+              <h3 className="text-sm font-bold text-foreground mb-1">Who are you practicing with?</h3>
+              <p className="text-xs text-muted-foreground mb-4">Select a trainee to start a practice conversation</p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                {TRAINEES.filter(t => t.status !== "Certified").map(t => (
+                  <button key={t.id}
+                    className={cn("text-left p-4 rounded-lg border transition-all", pcTraineeId === t.id ? "border-primary bg-primary/5 ring-1 ring-primary/30" : "border-border hover:border-muted-foreground/40")}
+                    onClick={() => setPcTraineeId(t.id)}>
+                    <div className="flex items-center gap-3 mb-2">
+                      <div className={cn("w-9 h-9 rounded-full flex items-center justify-center text-white text-xs font-bold", avatarColor(t.id))}>
+                        {getInitial(t.name)}
+                      </div>
+                      <div>
+                        <p className="text-sm font-semibold text-foreground">{t.name}</p>
+                        <Badge variant="outline" className={cn("text-[10px]", STATUS_BADGE[t.status])}>{t.status}</Badge>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div className="flex-1 h-1.5 bg-muted rounded-full overflow-hidden">
+                        <div className="h-full bg-blue-500 rounded-full" style={{ width: `${t.progress}%` }} />
+                      </div>
+                      <span className="text-[10px] text-muted-foreground">{t.progress}%</span>
+                    </div>
+                  </button>
+                ))}
+              </div>
+              <div className="mt-5 flex justify-end">
+                <Button size="sm" disabled={!pcTraineeId} onClick={() => setChatStep("select_scenario")}>
+                  Continue <ChevronRight className="w-4 h-4 ml-1" />
                 </Button>
               </div>
-            ) : (
-              <div className="flex-1 flex items-center justify-center p-4">
-                <div className="text-center">
-                  <Star className="w-8 h-8 text-muted-foreground/20 mx-auto mb-2" />
-                  <p className="text-xs text-muted-foreground">Select a session to evaluate</p>
+            </div>
+          )}
+
+          {/* Step 2: Select Scenario */}
+          {chatStep === "select_scenario" && (
+            <div className="bg-card rounded-lg border border-border shadow-sm p-6">
+              <h3 className="text-sm font-bold text-foreground mb-1">Choose a scenario</h3>
+              <p className="text-xs text-muted-foreground mb-4">You'll play the seeker role. {pcTrainee?.name} will respond as a volunteer.</p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {SCENARIOS.map(sc => (
+                  <button key={sc.id}
+                    className={cn("text-left p-4 rounded-lg border transition-all", pcScenarioId === sc.id ? "border-primary bg-primary/5 ring-1 ring-primary/30" : "border-border hover:border-muted-foreground/40")}
+                    onClick={() => setPcScenarioId(sc.id)}>
+                    <div className="flex items-center justify-between mb-2">
+                      <h4 className="text-sm font-semibold text-foreground">{sc.title}</h4>
+                      <Badge variant="outline" className={cn("text-[10px]", DIFFICULTY_BADGE[sc.difficulty])}>{sc.difficulty}</Badge>
+                    </div>
+                    <p className="text-xs text-muted-foreground mb-3">{sc.description}</p>
+                    <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-widest">Objectives:</p>
+                    <ul className="mt-1 space-y-0.5">
+                      {sc.objectives.map((obj, i) => (
+                        <li key={i} className="text-[11px] text-muted-foreground flex items-center gap-1.5">
+                          <Circle className="w-2 h-2 shrink-0" /> {obj}
+                        </li>
+                      ))}
+                    </ul>
+                  </button>
+                ))}
+              </div>
+              <div className="mt-5 flex justify-between">
+                <Button variant="ghost" size="sm" onClick={() => setChatStep("select_trainee")}>
+                  <ChevronLeft className="w-4 h-4 mr-1" /> Back
+                </Button>
+                <Button size="sm" disabled={!pcScenarioId} onClick={() => { setPcMessages([]); setChatStep("chatting"); }}>
+                  Start Chat <ChevronRight className="w-4 h-4 ml-1" />
+                </Button>
+              </div>
+            </div>
+          )}
+
+          {/* Step 3: Chat */}
+          {chatStep === "chatting" && pcTrainee && pcScenario && (
+            <div className="bg-card rounded-lg border border-border shadow-sm overflow-hidden flex flex-col" style={{ height: "calc(100vh - 350px)", minHeight: 400 }}>
+              {/* Chat header */}
+              <div className="px-5 py-3 border-b border-border flex items-center justify-between bg-muted/20 shrink-0">
+                <div className="flex items-center gap-3">
+                  <div className={cn("w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold", avatarColor(pcTrainee.id))}>
+                    {getInitial(pcTrainee.name)}
+                  </div>
+                  <div>
+                    <p className="text-sm font-bold text-foreground">{pcTrainee.name}</p>
+                    <p className="text-[11px] text-muted-foreground">Scenario: {pcScenario.title}</p>
+                  </div>
+                </div>
+                <Button variant="outline" size="sm" className="text-xs gap-1" onClick={() => setChatStep("evaluate")}>
+                  End &amp; Evaluate <ChevronRight className="w-3 h-3" />
+                </Button>
+              </div>
+
+              {/* Scenario banner */}
+              <div className="px-5 py-2.5 bg-blue-500/5 border-b border-blue-500/20 shrink-0">
+                <p className="text-[11px] text-blue-600"><span className="font-semibold">Your role:</span> You are a seeker. Type messages to test how {pcTrainee.name} responds.</p>
+              </div>
+
+              {/* Messages */}
+              <div className="flex-1 overflow-y-auto px-5 py-4 space-y-4">
+                {pcMessages.length === 0 && (
+                  <div className="text-center py-8">
+                    <MessageSquare className="w-8 h-8 text-muted-foreground/20 mx-auto mb-2" />
+                    <p className="text-xs text-muted-foreground">Start the conversation by typing a message as the seeker.</p>
+                    <div className="mt-3 flex flex-wrap justify-center gap-2">
+                      {pcScenario.suggestedOpeners.map((opener, i) => (
+                        <button key={i} className="text-[11px] text-muted-foreground hover:text-foreground bg-muted hover:bg-muted/80 px-3 py-1.5 rounded-lg transition-colors max-w-[220px] text-left"
+                          onClick={() => setChatInput(opener)}>
+                          "{opener.slice(0, 60)}{opener.length > 60 ? "..." : ""}"
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                {pcMessages.map(msg => (
+                  <div key={msg.id} className={cn("flex gap-3", msg.sender === "seeker" ? "justify-end" : "justify-start")}>
+                    {msg.sender === "trainee" && (
+                      <div className={cn("w-7 h-7 rounded-full flex items-center justify-center text-white text-[10px] font-bold shrink-0 mt-1", avatarColor(pcTrainee.id))}>
+                        {getInitial(msg.senderName)}
+                      </div>
+                    )}
+                    <div className={cn("max-w-[70%] rounded-xl px-4 py-2.5",
+                      msg.sender === "seeker" ? "bg-primary text-primary-foreground rounded-br-sm" : "bg-muted rounded-bl-sm"
+                    )}>
+                      <p className={cn("text-[10px] font-semibold mb-0.5", msg.sender === "seeker" ? "text-primary-foreground/70" : "text-muted-foreground")}>{msg.senderName}</p>
+                      <p className="text-sm leading-relaxed">{msg.text}</p>
+                      <p className={cn("text-[10px] mt-1", msg.sender === "seeker" ? "text-primary-foreground/50" : "text-muted-foreground/70")}>{msg.timestamp}</p>
+                    </div>
+                    {msg.sender === "seeker" && (
+                      <div className="w-7 h-7 rounded-full bg-primary/10 flex items-center justify-center text-primary text-[10px] font-bold shrink-0 mt-1">T</div>
+                    )}
+                  </div>
+                ))}
+                <div ref={chatEndRef} />
+              </div>
+
+              {/* Input */}
+              <div className="px-5 py-3.5 border-t border-border shrink-0">
+                <div className="flex items-center gap-3">
+                  <Input placeholder="Type as the seeker..." className="flex-1 h-10 text-sm" value={chatInput}
+                    onChange={e => setChatInput(e.target.value)}
+                    onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendChatMessage(); } }} />
+                  <Button size="sm" className="h-10 px-4 gap-2" onClick={sendChatMessage} disabled={!chatInput.trim()}>
+                    <Send className="w-4 h-4" /> Send
+                  </Button>
                 </div>
               </div>
-            )}
-          </div>
+            </div>
+          )}
+
+          {/* Step 4: Evaluate */}
+          {chatStep === "evaluate" && pcTrainee && pcScenario && (
+            <div className="bg-card rounded-lg border border-border shadow-sm p-6">
+              <div className="flex items-center gap-3 mb-5">
+                <div className={cn("w-10 h-10 rounded-full flex items-center justify-center text-white text-sm font-bold", avatarColor(pcTrainee.id))}>
+                  {getInitial(pcTrainee.name)}
+                </div>
+                <div>
+                  <h3 className="text-sm font-bold text-foreground">Evaluate: {pcTrainee.name}</h3>
+                  <p className="text-xs text-muted-foreground">Scenario: {pcScenario.title} &middot; {pcMessages.length} messages exchanged</p>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                {/* Objectives checklist */}
+                <div>
+                  <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest mb-3">Objectives Met</p>
+                  <div className="space-y-2.5">
+                    {pcScenario.objectives.map((obj, i) => {
+                      const key = `obj-${i}`;
+                      const checked = evalChecks[key] ?? false;
+                      return (
+                        <button key={i} className="flex items-center gap-3 w-full text-left group" onClick={() => setEvalChecks(prev => ({ ...prev, [key]: !prev[key] }))}>
+                          <div className={cn("w-5 h-5 rounded border-2 flex items-center justify-center shrink-0 transition-colors",
+                            checked ? "bg-emerald-500 border-emerald-500 text-white" : "border-muted-foreground/30 group-hover:border-muted-foreground"
+                          )}>
+                            {checked && <CheckCircle2 className="w-3.5 h-3.5" />}
+                          </div>
+                          <span className={cn("text-sm", checked ? "text-foreground" : "text-muted-foreground")}>{obj}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Score + Notes */}
+                <div className="space-y-4">
+                  <div>
+                    <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest mb-3">Score (1–10)</p>
+                    <div className="grid grid-cols-5 gap-2">
+                      {[...Array(10)].map((_, i) => {
+                        const score = i + 1;
+                        return (
+                          <button key={score} className={cn("h-10 rounded-md text-sm font-bold border transition-all",
+                            evalScore === score ? "bg-primary text-primary-foreground border-primary" : "border-border text-muted-foreground hover:text-foreground hover:border-muted-foreground"
+                          )} onClick={() => setEvalScore(score)}>
+                            {score}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  <div>
+                    <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest mb-2">Feedback</p>
+                    <Textarea className="text-sm min-h-[100px]" placeholder="Write feedback for the trainee..."
+                      value={evalNotes} onChange={e => setEvalNotes(e.target.value)} />
+                  </div>
+                </div>
+              </div>
+
+              <div className="mt-6 flex items-center justify-between border-t border-border pt-4">
+                <Button variant="ghost" size="sm" className="text-xs" onClick={() => setChatStep("chatting")}>
+                  <ChevronLeft className="w-4 h-4 mr-1" /> Back to Chat
+                </Button>
+                <Button size="sm" className="gap-2" onClick={() => {
+                  toast.success(`Evaluation saved for ${pcTrainee.name}: ${evalScore ?? "–"}/10`);
+                  startNewPractice();
+                }}>
+                  <Save className="w-4 h-4" /> Submit Evaluation
+                </Button>
+              </div>
+            </div>
+          )}
         </div>
       )}
 
       {/* ================================================================ */}
-      {/* Tutorial Editor Drawer (US31)                                    */}
+      {/* Module Editor Drawer (Content Studio)                            */}
       {/* ================================================================ */}
       <AnimatePresence>
-        {isEditorOpen && (
+        {isModuleEditorOpen && (
           <>
-            {/* Overlay */}
-            <motion.div
-              initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-              className="fixed inset-0 bg-black/50 z-40"
-              onClick={() => setIsEditorOpen(false)}
-            />
-            {/* Drawer */}
-            <motion.div
-              initial={{ x: "100%" }} animate={{ x: 0 }} exit={{ x: "100%" }}
-              transition={{ type: "spring", damping: 28, stiffness: 300 }}
-              className="fixed right-0 top-0 h-full w-full max-w-2xl bg-background border-l border-border shadow-2xl z-50 flex flex-col"
-            >
-              {/* Editor Header */}
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 bg-black/50 z-40" onClick={() => setIsModuleEditorOpen(false)} />
+            <motion.div initial={{ x: "100%" }} animate={{ x: 0 }} exit={{ x: "100%" }} transition={{ type: "spring", damping: 28, stiffness: 300 }}
+              className="fixed right-0 top-0 h-full w-full max-w-xl bg-background border-l border-border shadow-2xl z-50 flex flex-col">
               <div className="px-6 py-4 border-b border-border flex items-center justify-between shrink-0">
-                <div>
-                  <h2 className="text-base font-bold text-foreground">
-                    {editingId ? "Edit Tutorial" : "Create Tutorial"}
-                  </h2>
-                  <p className="text-xs text-muted-foreground mt-0.5">Build training content for your volunteers</p>
-                </div>
-                <Button variant="ghost" size="sm" className="h-8 w-8 p-0" onClick={() => setIsEditorOpen(false)}>
-                  <X className="w-4 h-4" />
-                </Button>
+                <h2 className="text-base font-bold text-foreground">{editingModuleId ? "Edit Module" : "Add Module"}</h2>
+                <Button variant="ghost" size="sm" className="h-8 w-8 p-0" onClick={() => setIsModuleEditorOpen(false)}><X className="w-4 h-4" /></Button>
               </div>
-
-              {/* Editor Body */}
-              <div className="flex-1 overflow-y-auto px-6 py-5 space-y-6">
-                {/* Basic Info */}
-                <div className="space-y-4">
+              <div className="flex-1 overflow-y-auto px-6 py-5 space-y-5">
+                <div>
+                  <Label className="text-xs font-semibold">Module Title</Label>
+                  <Input className="mt-1.5" placeholder="e.g., Gospel Conversation Fundamentals" value={edModTitle} onChange={e => setEdModTitle(e.target.value)} />
+                </div>
+                <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <Label className="text-xs font-semibold">Title</Label>
-                    <Input className="mt-1.5" placeholder="e.g., Advanced Gospel Conversation Techniques" value={editorTitle} onChange={e => setEditorTitle(e.target.value)} />
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <Label className="text-xs font-semibold">Type</Label>
-                      <div className="flex gap-1 mt-1.5 p-0.5 bg-muted rounded-md border border-border">
-                        {(["Module", "Video", "Quiz", "Practice"] as MaterialType[]).map(t => (
-                          <button key={t} onClick={() => setEditorType(t)}
-                            className={cn("flex-1 px-2 py-1.5 text-xs font-medium rounded-sm transition-colors",
-                              editorType === t ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
-                            )}>
-                            {t}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                    <div>
-                      <Label className="text-xs font-semibold">Duration</Label>
-                      <Input className="mt-1.5" placeholder="e.g., 25 min" value={editorDuration} onChange={e => setEditorDuration(e.target.value)} />
+                    <Label className="text-xs font-semibold">Type</Label>
+                    <div className="flex gap-1 mt-1.5 p-0.5 bg-muted rounded-md border border-border">
+                      {(["Module", "Video", "Quiz", "Practice"] as MaterialType[]).map(t => (
+                        <button key={t} onClick={() => setEdModType(t)}
+                          className={cn("flex-1 px-2 py-1.5 text-xs font-medium rounded-sm transition-colors", edModType === t ? "bg-background shadow-sm text-foreground" : "text-muted-foreground")}>
+                          {t}
+                        </button>
+                      ))}
                     </div>
                   </div>
-
                   <div>
-                    <Label className="text-xs font-semibold">Description</Label>
-                    <Textarea className="mt-1.5 text-sm min-h-[80px]" placeholder="Brief description of this tutorial..."
-                      value={editorDescription} onChange={e => setEditorDescription(e.target.value)} />
+                    <Label className="text-xs font-semibold">Duration</Label>
+                    <Input className="mt-1.5" placeholder="e.g., 25 min" value={edModDuration} onChange={e => setEdModDuration(e.target.value)} />
                   </div>
                 </div>
 
-                {/* Steps Editor */}
-                {(editorType === "Module" || editorType === "Practice" || editorType === "Video") && (
-                  <div>
-                    <div className="flex items-center justify-between mb-3">
-                      <Label className="text-xs font-semibold">Steps ({editorSteps.length})</Label>
-                      <Button variant="outline" size="sm" className="text-xs gap-1 h-7" onClick={addStep}>
-                        <Plus className="w-3 h-3" /> Add Step
-                      </Button>
-                    </div>
-                    <div className="space-y-3">
-                      {editorSteps.map((step, i) => (
-                        <div key={step.id} className="bg-muted/30 rounded-lg border border-border p-3">
-                          <div className="flex items-center gap-2 mb-2">
-                            <span className="text-[10px] font-bold text-muted-foreground bg-muted px-1.5 py-0.5 rounded">Step {i + 1}</span>
-                            <Input className="flex-1 h-7 text-xs" placeholder="Step title"
-                              value={step.title} onChange={e => setEditorSteps(prev => prev.map(s => s.id === step.id ? { ...s, title: e.target.value } : s))} />
-                            <Button variant="ghost" size="sm" className="h-7 w-7 p-0 text-rose-500" onClick={() => removeStep(step.id)}>
-                              <Trash2 className="w-3 h-3" />
-                            </Button>
-                          </div>
-                          <Textarea className="text-xs min-h-[60px]" placeholder="Step content..."
-                            value={step.content} onChange={e => setEditorSteps(prev => prev.map(s => s.id === step.id ? { ...s, content: e.target.value } : s))} />
-                        </div>
-                      ))}
-                      {editorSteps.length === 0 && (
-                        <div className="text-center py-6 text-xs text-muted-foreground bg-muted/20 rounded-lg border border-dashed border-border">
-                          No steps yet. Click "Add Step" to begin.
-                        </div>
-                      )}
-                    </div>
+                {/* Lessons */}
+                <div>
+                  <div className="flex items-center justify-between mb-2">
+                    <Label className="text-xs font-semibold">Lessons ({edModLessons.length})</Label>
+                    <Button variant="outline" size="sm" className="text-xs gap-1 h-7"
+                      onClick={() => setEdModLessons(prev => [...prev, { id: `les-${Date.now()}`, title: "", content: "", type: "text" }])}>
+                      <Plus className="w-3 h-3" /> Add Lesson
+                    </Button>
                   </div>
-                )}
-
-                {/* Quiz Question Builder */}
-                {editorType === "Quiz" && (
-                  <div>
-                    <div className="flex items-center justify-between mb-3">
-                      <Label className="text-xs font-semibold">Questions ({editorQuestions.length})</Label>
-                      <Button variant="outline" size="sm" className="text-xs gap-1 h-7" onClick={addQuestion}>
-                        <Plus className="w-3 h-3" /> Add Question
-                      </Button>
-                    </div>
-                    <div className="space-y-4">
-                      {editorQuestions.map((q, qi) => (
-                        <div key={q.id} className="bg-muted/30 rounded-lg border border-border p-3">
-                          <div className="flex items-center gap-2 mb-2">
-                            <span className="text-[10px] font-bold text-muted-foreground bg-muted px-1.5 py-0.5 rounded">Q{qi + 1}</span>
-                            <Input className="flex-1 h-7 text-xs" placeholder="Question text"
-                              value={q.question} onChange={e => setEditorQuestions(prev => prev.map(x => x.id === q.id ? { ...x, question: e.target.value } : x))} />
-                            <Button variant="ghost" size="sm" className="h-7 w-7 p-0 text-rose-500" onClick={() => removeQuestion(q.id)}>
-                              <Trash2 className="w-3 h-3" />
-                            </Button>
-                          </div>
-                          <div className="space-y-1.5 ml-1">
-                            {q.options.map((opt, oi) => (
-                              <div key={oi} className="flex items-center gap-2">
-                                <button
-                                  className={cn("w-4 h-4 rounded-full border-2 shrink-0 transition-colors",
-                                    q.correctIndex === oi ? "border-emerald-500 bg-emerald-500" : "border-muted-foreground/30 hover:border-muted-foreground"
-                                  )}
-                                  onClick={() => setEditorQuestions(prev => prev.map(x => x.id === q.id ? { ...x, correctIndex: oi } : x))}
-                                />
-                                <Input className="h-7 text-xs flex-1" placeholder={`Option ${oi + 1}`}
-                                  value={opt}
-                                  onChange={e => setEditorQuestions(prev => prev.map(x => x.id === q.id ? {
-                                    ...x, options: x.options.map((o, k) => k === oi ? e.target.value : o)
-                                  } : x))} />
-                              </div>
+                  <div className="space-y-3">
+                    {edModLessons.map((les, i) => (
+                      <div key={les.id} className="bg-muted/30 rounded-lg border border-border p-3">
+                        <div className="flex items-center gap-2 mb-2">
+                          <span className="text-[10px] font-bold text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{i + 1}</span>
+                          <Input className="flex-1 h-7 text-xs" placeholder="Lesson title" value={les.title}
+                            onChange={e => setEdModLessons(prev => prev.map(l => l.id === les.id ? { ...l, title: e.target.value } : l))} />
+                          <div className="flex gap-0.5 p-0.5 bg-muted rounded border border-border">
+                            {(["text", "video", "quiz"] as const).map(lt => (
+                              <button key={lt} className={cn("px-1.5 py-0.5 text-[10px] rounded-sm", les.type === lt ? "bg-background shadow-sm text-foreground" : "text-muted-foreground")}
+                                onClick={() => setEdModLessons(prev => prev.map(l => l.id === les.id ? { ...l, type: lt } : l))}>
+                                {lt}
+                              </button>
                             ))}
                           </div>
+                          <Button variant="ghost" size="sm" className="h-7 w-7 p-0 text-rose-500"
+                            onClick={() => setEdModLessons(prev => prev.filter(l => l.id !== les.id))}>
+                            <Trash2 className="w-3 h-3" />
+                          </Button>
                         </div>
-                      ))}
-                      {editorQuestions.length === 0 && (
-                        <div className="text-center py-6 text-xs text-muted-foreground bg-muted/20 rounded-lg border border-dashed border-border">
-                          No questions yet. Click "Add Question" to begin building the quiz.
-                        </div>
-                      )}
-                    </div>
+                        <Textarea className="text-xs min-h-[50px]" placeholder="Lesson content..." value={les.content}
+                          onChange={e => setEdModLessons(prev => prev.map(l => l.id === les.id ? { ...l, content: e.target.value } : l))} />
+                      </div>
+                    ))}
                   </div>
-                )}
-              </div>
-
-              {/* Editor Footer */}
-              <div className="px-6 py-4 border-t border-border flex items-center justify-between shrink-0 bg-muted/20">
-                <Button variant="ghost" size="sm" className="text-xs" onClick={() => setIsEditorOpen(false)}>Cancel</Button>
-                <div className="flex gap-2">
-                  <Button variant="outline" size="sm" className="text-xs gap-1" onClick={() => saveTutorial("draft")}>
-                    <Save className="w-3 h-3" /> Save Draft
-                  </Button>
-                  <Button size="sm" className="text-xs gap-1" onClick={() => saveTutorial("published")}>
-                    <CheckCircle2 className="w-3 h-3" /> Publish
-                  </Button>
                 </div>
+              </div>
+              <div className="px-6 py-4 border-t border-border flex justify-end gap-2 shrink-0 bg-muted/20">
+                <Button variant="ghost" size="sm" className="text-xs" onClick={() => setIsModuleEditorOpen(false)}>Cancel</Button>
+                <Button size="sm" className="text-xs gap-1" onClick={saveModule}><Save className="w-3 h-3" /> Save Module</Button>
               </div>
             </motion.div>
           </>
         )}
       </AnimatePresence>
 
-      {/* ================================================================ */}
-      {/* New Session Modal (US32)                                         */}
-      {/* ================================================================ */}
+      {/* New Course Modal */}
       <AnimatePresence>
-        {showNewSessionModal && (
+        {isNewCourseOpen && (
           <>
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-              className="fixed inset-0 bg-black/50 z-40" onClick={() => setShowNewSessionModal(false)} />
-            <motion.div
-              initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }}
-              className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-background rounded-lg border border-border shadow-2xl z-50 w-full max-w-md p-6"
-            >
-              <h3 className="text-base font-bold text-foreground mb-1">New Practice Session</h3>
-              <p className="text-xs text-muted-foreground mb-5">Pair a trainee with a scenario to start practicing</p>
-
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 bg-black/50 z-40" onClick={() => setIsNewCourseOpen(false)} />
+            <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }}
+              className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-background rounded-lg border border-border shadow-2xl z-50 w-full max-w-md p-6">
+              <h3 className="text-base font-bold text-foreground mb-4">Create New Course</h3>
               <div className="space-y-4">
                 <div>
-                  <Label className="text-xs font-semibold">Trainee</Label>
-                  <div className="mt-1.5 space-y-1">
-                    {TRAINEES.filter(t => t.status !== "Certified").map(t => (
-                      <button key={t.id}
-                        className={cn("w-full text-left px-3 py-2 rounded-md text-xs font-medium transition-colors",
-                          newSessionTrainee === t.id ? "bg-primary/10 text-primary border border-primary/30" : "hover:bg-muted border border-transparent"
-                        )}
-                        onClick={() => setNewSessionTrainee(t.id)}
-                      >
-                        {t.name} <span className="text-muted-foreground">({t.status})</span>
-                      </button>
-                    ))}
-                  </div>
+                  <Label className="text-xs font-semibold">Course Title</Label>
+                  <Input className="mt-1.5" placeholder="e.g., Advanced Counseling Techniques" value={newCourseTitle} onChange={e => setNewCourseTitle(e.target.value)} />
                 </div>
-
                 <div>
-                  <Label className="text-xs font-semibold">Scenario</Label>
-                  <div className="mt-1.5 space-y-1">
-                    {SCENARIOS.map(sc => (
-                      <button key={sc.id}
-                        className={cn("w-full text-left px-3 py-2 rounded-md text-xs transition-colors",
-                          newSessionScenario === sc.id ? "bg-primary/10 text-primary border border-primary/30" : "hover:bg-muted border border-transparent"
-                        )}
-                        onClick={() => setNewSessionScenario(sc.id)}
-                      >
-                        <span className="font-medium">{sc.title}</span>
-                        <Badge variant="outline" className={cn("ml-2 text-[9px] px-1 py-0", DIFFICULTY_BADGE[sc.difficulty])}>{sc.difficulty}</Badge>
-                      </button>
-                    ))}
-                  </div>
+                  <Label className="text-xs font-semibold">Description</Label>
+                  <Textarea className="mt-1.5 text-sm" placeholder="What will trainees learn?" value={newCourseDesc} onChange={e => setNewCourseDesc(e.target.value)} />
                 </div>
               </div>
-
-              <div className="flex justify-end gap-2 mt-6">
-                <Button variant="ghost" size="sm" className="text-xs" onClick={() => setShowNewSessionModal(false)}>Cancel</Button>
-                <Button size="sm" className="text-xs gap-1"
-                  disabled={!newSessionTrainee || !newSessionScenario}
+              <div className="flex justify-end gap-2 mt-5">
+                <Button variant="ghost" size="sm" className="text-xs" onClick={() => setIsNewCourseOpen(false)}>Cancel</Button>
+                <Button size="sm" className="text-xs gap-1" disabled={!newCourseTitle.trim()}
                   onClick={() => {
-                    const trainee = TRAINEES.find(t => t.id === newSessionTrainee);
-                    const scenario = SCENARIOS.find(s => s.id === newSessionScenario);
-                    if (trainee && scenario) {
-                      toast.success(`Practice session started: ${trainee.name} → ${scenario.title}`);
-                      setShowNewSessionModal(false);
-                      setNewSessionTrainee("");
-                      setNewSessionScenario("");
-                    }
-                  }}
-                >
-                  <Play className="w-3 h-3" /> Start Session
+                    setCourses(prev => [...prev, { id: `course-${Date.now()}`, title: newCourseTitle, description: newCourseDesc, status: "draft", modules: [], enrolledCount: 0, completionRate: 0, createdAt: new Date().toISOString().split("T")[0] }]);
+                    setIsNewCourseOpen(false);
+                    toast.success("Course created as draft");
+                  }}>
+                  <Plus className="w-3 h-3" /> Create Course
                 </Button>
               </div>
             </motion.div>
