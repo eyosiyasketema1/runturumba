@@ -11,6 +11,7 @@ import { motion } from "motion/react";
 import { toast } from "sonner";
 
 import { cn, type Tenant, type User as UserType, type Plan, type OrgStatus, PLAN_LIMITS } from "./types";
+import { RolesPermissionsSection } from "./roles-permissions";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "./ui/card";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
@@ -32,6 +33,7 @@ const settingsNav = [
   { id: "api", label: "API & Integrations", icon: Key, description: "API keys & developer tools" },
   { id: "ai", label: "AI Configuration", icon: Sparkles, description: "Business rules, API keys & sharing" },
   { id: "terminology", label: "Terminology", icon: Globe, description: "Customize labels & terms" },
+  { id: "roles", label: "Roles & Permissions", icon: Shield, description: "Manage access levels" },
 ];
 
 // --- Section Header ---
@@ -985,7 +987,7 @@ const RulesPoliciesTab = () => {
   });
   const [userRules, setUserRules] = useState({
     maxUsersPerOrg: 25, requireAdmin: true, requireApprovalForInvites: false,
-    allowedRoles: ["admin", "agent", "viewer"] as string[],
+    allowedRoles: ["executive", "global_ops", "coordinator", "reviewer", "trainer", "volunteer"] as string[],
   });
   const [dataRules, setDataRules] = useState({
     retentionDays: 365, allowExport: true, allowBulkDelete: false,
@@ -1765,6 +1767,7 @@ export const SettingsView = ({
             {activeSection === "api" && <ApiSection />}
             {activeSection === "ai" && <AISection />}
             {activeSection === "terminology" && <TerminologySection />}
+            {activeSection === "roles" && <RolesPermissionsSection />}
           </div>
         </div>
       </Card>
