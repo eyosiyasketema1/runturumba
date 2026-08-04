@@ -711,7 +711,7 @@ function CreateGroupModal({ isOpen, onClose, onCreateGroup, availableMentors }: 
               className={cn(
                 'flex-1 text-xs font-semibold py-2 px-3 rounded-md transition-colors',
                 activeTab === 'individual'
-                  ? 'bg-background text-foreground shadow-sm'
+                  ? 'bg-background text-foreground'
                   : 'text-muted-foreground hover:text-foreground'
               )}
             >
@@ -726,7 +726,7 @@ function CreateGroupModal({ isOpen, onClose, onCreateGroup, availableMentors }: 
               className={cn(
                 'flex-1 text-xs font-semibold py-2 px-3 rounded-md transition-colors',
                 activeTab === 'groups'
-                  ? 'bg-background text-foreground shadow-sm'
+                  ? 'bg-background text-foreground'
                   : 'text-muted-foreground hover:text-foreground'
               )}
             >
@@ -969,7 +969,7 @@ function MemberActionMenu({
   ];
 
   return (
-    <div ref={ref} className="absolute right-0 top-full mt-1 w-52 bg-background border border-border rounded-xl shadow-xl z-[70]">
+    <div ref={ref} className="absolute right-0 top-full mt-1 w-52 bg-background border border-border rounded-xl z-[70]">
       <div className="py-1.5">
         {items.map((item) => {
           const Icon = item.icon;
@@ -1332,7 +1332,7 @@ function EmojiReactionPicker({
     <div
       ref={ref}
       className={cn(
-        'absolute bottom-full mb-2 bg-background border border-border rounded-xl shadow-xl p-2 z-[70] whitespace-nowrap',
+        'absolute bottom-full mb-2 bg-background border border-border rounded-xl p-2 z-[70] whitespace-nowrap',
         isSender ? 'right-0' : 'left-0'
       )}
     >
@@ -1399,7 +1399,7 @@ function MessageContextMenu({
     <div
       ref={ref}
       className={cn(
-        'absolute top-full mt-1 w-48 bg-background border border-border rounded-xl shadow-xl z-[70]',
+        'absolute top-full mt-1 w-48 bg-background border border-border rounded-xl z-[70]',
         isSender ? 'right-0' : 'left-0'
       )}
     >
@@ -1468,7 +1468,7 @@ function ForwardModal({
 
   return (
     <div className="fixed inset-0 z-[80] flex items-center justify-center bg-black/40">
-      <div ref={ref} className="w-full max-w-md bg-background border border-border rounded-xl shadow-2xl overflow-hidden">
+      <div ref={ref} className="w-full max-w-md bg-background border border-border rounded-xl overflow-hidden">
         <div className="flex items-center justify-between px-5 py-4 border-b border-border">
           <div>
             <h3 className="text-base font-bold">Forward Message{messages.length > 1 ? 's' : ''}</h3>
@@ -1602,7 +1602,7 @@ function PollResultsModal({ poll, onClose }: { poll: Poll; onClose: () => void }
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.95, y: 20 }}
           onClick={(e) => e.stopPropagation()}
-          className="w-full max-w-md bg-background border border-border shadow-2xl overflow-hidden"
+          className="w-full max-w-md bg-background border border-border overflow-hidden"
         >
           {/* Header */}
           <div className="px-6 py-4 border-b border-border bg-muted/30">
@@ -2370,7 +2370,7 @@ export function GroupConversationView() {
                     <div className="relative shrink-0">
                       <div
                         className={cn(
-                          'w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold shadow-sm border',
+                          'w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold border',
                           isSelected
                             ? 'bg-primary text-primary-foreground border-primary'
                             : 'bg-muted text-muted-foreground border-border'
@@ -2688,7 +2688,7 @@ export function GroupConversationView() {
                               {/* Message Bubble */}
                               <div
                                 className={cn(
-                                  'px-4 py-3 rounded-2xl break-words shadow-sm',
+                                  'px-4 py-3 rounded-2xl break-words',
                                   isAnnouncement
                                     ? 'bg-amber-50 border border-amber-200 text-foreground'
                                     : msg.isPoll

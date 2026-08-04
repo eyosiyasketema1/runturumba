@@ -187,7 +187,7 @@ export function AllActivityView({
             animate={{ x: 0 }}
             exit={{ x: 40 }}
             transition={{ duration: 0.2, ease: "easeOut" }}
-            className="w-full max-w-3xl bg-background border-l border-border shadow-2xl flex flex-col h-full"
+            className="w-full max-w-3xl bg-background border-l border-border flex flex-col h-full"
             onClick={(e) => e.stopPropagation()}
             role="dialog"
             aria-label="All activity"

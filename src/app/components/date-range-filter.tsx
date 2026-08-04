@@ -78,7 +78,7 @@ export function DateRangeFilter({ dateRange, onDateRangeChange, className }: Dat
             type="button"
             className={cn(
               "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md border text-xs font-medium transition-colors",
-              "h-8 px-3 shadow-sm",
+              "h-8 px-3",
               "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950",
               hasRange
                 ? "border-blue-400/50 bg-blue-500/20 text-white hover:bg-blue-500/30"

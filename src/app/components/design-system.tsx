@@ -209,8 +209,8 @@ export const LAYOUT = {
   tableRow: "border-b border-border hover:bg-muted/30 transition-colors",
 
   // Card base
-  card: "bg-card rounded-lg border border-border shadow-sm",
-  cardHover: "bg-card rounded-lg border border-border shadow-sm hover:shadow-md hover:border-primary/30 transition-all cursor-pointer",
+  card: "bg-card rounded-sm border border-border",
+  cardHover: "bg-card rounded-sm border border-border hover:border-primary/30 transition-all cursor-pointer",
 } as const;
 
 // ============================================================================
@@ -478,7 +478,7 @@ export const ModalShell = ({
           role="dialog"
           aria-modal="true"
           className={cn(
-            "relative w-full bg-card rounded-lg border border-border shadow-xl overflow-hidden flex flex-col max-h-[90vh]",
+            "relative w-full bg-card rounded-sm border border-border overflow-hidden flex flex-col max-h-[90vh]",
             MODAL_SIZES[size]
           )}
         >
@@ -605,7 +605,7 @@ export const TabBar = ({
           className={cn(
             "flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all",
             isActive
-              ? "bg-primary text-primary-foreground shadow-sm"
+              ? "bg-primary text-primary-foreground"
               : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
           )}
         >

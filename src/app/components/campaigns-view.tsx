@@ -82,7 +82,7 @@ const QuestionCard = ({ question, index, onUpdate, onDelete, isActive, onSelect,
       onDrop={onDrop}
       className={cn(
         "border rounded-xl bg-card transition-all",
-        isActive ? "border-primary shadow-md ring-1 ring-primary/20" : "border-border hover:border-primary/30 cursor-pointer",
+        isActive ? "border-primary ring-1 ring-primary/20" : "border-border hover:border-primary/30 cursor-pointer",
         isDragOver && "border-primary/50 bg-primary/5 border-dashed"
       )}
       onClick={() => !isActive && onSelect()}
@@ -306,7 +306,7 @@ const LivePreview = ({ campaign }: { campaign: Campaign }) => {
     <div className="w-[320px] shrink-0 flex flex-col items-center">
       <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">Live Preview</p>
       {/* Phone frame */}
-      <div className="w-[300px] h-[580px] rounded-[2rem] border-4 border-gray-800 bg-white shadow-2xl overflow-hidden flex flex-col relative">
+      <div className="w-[300px] h-[580px] rounded-[2rem] border-4 border-gray-800 bg-white overflow-hidden flex flex-col relative">
         {/* Status bar */}
         <div className="h-7 bg-gray-800 flex items-center justify-center">
           <div className="w-16 h-1.5 bg-gray-600 rounded-full" />
@@ -478,7 +478,7 @@ const ShareDialog = ({ campaign, isOpen, onClose }: { campaign: Campaign; isOpen
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50" onClick={onClose}>
-      <div className="bg-background border border-border rounded-2xl shadow-2xl w-full max-w-md mx-4" onClick={(e) => e.stopPropagation()}>
+      <div className="bg-background border border-border rounded-2xl w-full max-w-md mx-4" onClick={(e) => e.stopPropagation()}>
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-border">
           <div>
@@ -807,7 +807,7 @@ const CampaignBuilder = ({ campaign, onBack, onSave }: {
                       {draft.settings.branding.logoUrl ? (
                         <div className="relative w-16 h-16 rounded-xl border border-border overflow-hidden bg-muted/30 shrink-0">
                           <img src={draft.settings.branding.logoUrl} alt="Logo" className="w-full h-full object-contain p-1" />
-                          <button onClick={() => updateBranding({ logoUrl: "" })} className="absolute -top-1 -right-1 p-1 rounded-full bg-destructive text-white shadow-sm after:absolute after:content-[''] after:-inset-2"><X className="w-3 h-3" /></button>
+                          <button onClick={() => updateBranding({ logoUrl: "" })} className="absolute -top-1 -right-1 p-1 rounded-full bg-destructive text-white after:absolute after:content-[''] after:-inset-2"><X className="w-3 h-3" /></button>
                         </div>
                       ) : (
                         <div

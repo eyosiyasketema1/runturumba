@@ -520,7 +520,7 @@ export const TrainerDashboard = ({
       {/* ================================================================ */}
       {activeTab === "overview" && (<>
         {/* Hero Header */}
-        <header className="relative overflow-hidden rounded-sm bg-slate-950 text-white p-8 shadow-[0_24px_60px_-28px_rgba(15,23,42,0.55)]">
+        <header className="relative overflow-hidden rounded-sm bg-slate-950 text-white p-8">
           <div className="absolute -top-24 -right-20 w-80 h-80 rounded-full bg-gradient-to-br from-blue-500/40 to-violet-500/10 blur-3xl pointer-events-none" />
           <div className="absolute -bottom-32 -left-20 w-96 h-96 rounded-full bg-gradient-to-tr from-emerald-500/20 to-blue-500/10 blur-3xl pointer-events-none" />
           <div className="absolute inset-0 opacity-[0.06] pointer-events-none" style={{ backgroundImage: "linear-gradient(to right, #fff 1px, transparent 1px), linear-gradient(to bottom, #fff 1px, transparent 1px)", backgroundSize: "64px 64px" }} />
@@ -554,7 +554,7 @@ export const TrainerDashboard = ({
             { label: "Avg Certification Time", value: `${avgCertDays}d`, icon: Timer, color: "text-amber-600", bg: "bg-amber-500/10" },
           ].map((kpi, i) => (
             <motion.div key={kpi.label} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3, delay: i * 0.06 }}
-              className="bg-card p-5 rounded-lg border border-border shadow-sm group hover:border-primary/30 transition-all">
+              className="bg-card p-5 rounded-lg border border-border group hover:border-primary/30 transition-all">
               <div className="flex items-center justify-between mb-3">
                 <div className={cn("p-2 rounded-md border border-border group-hover:border-primary/20 transition-all", kpi.bg)}>
                   <kpi.icon className={cn("w-4 h-4 transition-all", kpi.color)} />
@@ -569,7 +569,7 @@ export const TrainerDashboard = ({
         {/* Pipeline + Activity */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
           <div className="lg:col-span-7">
-            <div className="bg-card rounded-lg border border-border shadow-sm p-6">
+            <div className="bg-card rounded-lg border border-border p-6">
               <h2 className="text-sm font-bold text-foreground mb-1">Training Pipeline</h2>
               <p className="text-xs text-muted-foreground mb-5">Volunteer progression through onboarding stages</p>
               <div className="flex items-center gap-2">
@@ -586,7 +586,7 @@ export const TrainerDashboard = ({
             </div>
           </div>
           <div className="lg:col-span-5">
-            <div className="bg-card rounded-lg border border-border shadow-sm overflow-hidden">
+            <div className="bg-card rounded-lg border border-border overflow-hidden">
               <div className="px-6 pt-5 pb-4 border-b border-border">
                 <h2 className="text-sm font-bold text-foreground">Recent Activity</h2>
               </div>
@@ -631,7 +631,7 @@ export const TrainerDashboard = ({
               {(["all", "In Training", "Practice Phase", "Ready for Review", "Certified"] as const).map(f => (
                 <button key={f} onClick={() => setTraineeStatusFilter(f)}
                   className={cn("px-3 py-1.5 text-xs font-medium rounded-sm transition-colors whitespace-nowrap",
-                    traineeStatusFilter === f ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
+                    traineeStatusFilter === f ? "bg-background text-foreground" : "text-muted-foreground hover:text-foreground"
                   )}>
                   {f === "all" ? "All" : f}
                 </button>
@@ -640,7 +640,7 @@ export const TrainerDashboard = ({
           </div>
 
           {/* Table */}
-          <div className="bg-card rounded-lg border border-border shadow-sm overflow-hidden">
+          <div className="bg-card rounded-lg border border-border overflow-hidden">
             <div className="overflow-x-auto">
               <table className="w-full">
                 <thead>
@@ -732,7 +732,7 @@ export const TrainerDashboard = ({
           </Button>
 
           {/* Profile Header */}
-          <div className="bg-card rounded-lg border border-border shadow-sm p-6">
+          <div className="bg-card rounded-lg border border-border p-6">
             <div className="flex items-start gap-5">
               <div className={cn("w-16 h-16 rounded-full flex items-center justify-center text-white text-xl font-bold shrink-0", avatarColor(selectedTrainee.id))}>
                 {getInitial(selectedTrainee.name)}
@@ -765,7 +765,7 @@ export const TrainerDashboard = ({
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             {/* Onboarding Checklist */}
-            <div className="lg:col-span-2 bg-card rounded-lg border border-border shadow-sm overflow-hidden">
+            <div className="lg:col-span-2 bg-card rounded-lg border border-border overflow-hidden">
               <div className="px-6 pt-5 pb-4 border-b border-border">
                 <h3 className="text-sm font-bold text-foreground">Onboarding Checklist</h3>
                 <p className="text-xs text-muted-foreground mt-0.5">Training milestones and completion status</p>
@@ -793,7 +793,7 @@ export const TrainerDashboard = ({
 
             {/* Sidebar: Notes + Quick Actions */}
             <div className="space-y-4">
-              <div className="bg-card rounded-lg border border-border shadow-sm p-5">
+              <div className="bg-card rounded-lg border border-border p-5">
                 <h3 className="text-sm font-bold text-foreground mb-3">Trainer Notes</h3>
                 <Textarea className="text-sm min-h-[120px]" placeholder="Add notes about this trainee..."
                   defaultValue={selectedTrainee.notes} />
@@ -802,7 +802,7 @@ export const TrainerDashboard = ({
                 </Button>
               </div>
 
-              <div className="bg-card rounded-lg border border-border shadow-sm p-5">
+              <div className="bg-card rounded-lg border border-border p-5">
                 <h3 className="text-sm font-bold text-foreground mb-3">Quick Actions</h3>
                 <div className="space-y-2">
                   <Button variant="outline" size="sm" className="w-full text-xs gap-2 justify-start" onClick={() => { setActiveTab("practice_chat"); startNewPractice(); setPcTraineeId(selectedTrainee.id); setChatStep("select_scenario"); }}>
@@ -819,7 +819,7 @@ export const TrainerDashboard = ({
                 </div>
               </div>
 
-              <div className="bg-card rounded-lg border border-border shadow-sm p-5">
+              <div className="bg-card rounded-lg border border-border p-5">
                 <h3 className="text-sm font-bold text-foreground mb-3">Training Info</h3>
                 <div className="space-y-2 text-xs">
                   <div className="flex justify-between"><span className="text-muted-foreground">Days in Training</span><span className="font-semibold">{selectedTrainee.daysInTraining}</span></div>
@@ -854,7 +854,7 @@ export const TrainerDashboard = ({
               const lessonCount = course.modules.reduce((s, m) => s + m.lessons.length, 0);
               return (
                 <motion.div key={course.id} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
-                  className="bg-card rounded-xl border border-border shadow-sm hover:shadow-md hover:border-primary/20 transition-all cursor-pointer group"
+                  className="bg-card rounded-xl border border-border hover:border-primary/20 transition-all cursor-pointer group"
                   onClick={() => { setStudioCourseId(course.id); setStudioLessonPath(null); setStudioExpandedMods(course.modules.map(m => m.id)); }}>
                   <div className="p-6">
                     <div className="flex items-start justify-between mb-3">
@@ -1258,7 +1258,7 @@ export const TrainerDashboard = ({
                           <button className={cn("w-9 h-5 rounded-full transition-colors relative",
                               studioLesson.randomizeQuestions ? "bg-primary" : "bg-muted-foreground/30")}
                             onClick={() => updateLesson(studioLessonPath.moduleId, studioLessonPath.lessonId, { randomizeQuestions: !studioLesson.randomizeQuestions })}>
-                            <div className={cn("w-4 h-4 rounded-full bg-white shadow-sm absolute top-0.5 transition-transform",
+                            <div className={cn("w-4 h-4 rounded-full bg-white absolute top-0.5 transition-transform",
                               studioLesson.randomizeQuestions ? "translate-x-4" : "translate-x-0.5")} />
                           </button>
                         </div>
@@ -1267,7 +1267,7 @@ export const TrainerDashboard = ({
                           <button className={cn("w-9 h-5 rounded-full transition-colors relative",
                               studioLesson.showCorrectAnswers ? "bg-primary" : "bg-muted-foreground/30")}
                             onClick={() => updateLesson(studioLessonPath.moduleId, studioLessonPath.lessonId, { showCorrectAnswers: !studioLesson.showCorrectAnswers })}>
-                            <div className={cn("w-4 h-4 rounded-full bg-white shadow-sm absolute top-0.5 transition-transform",
+                            <div className={cn("w-4 h-4 rounded-full bg-white absolute top-0.5 transition-transform",
                               studioLesson.showCorrectAnswers ? "translate-x-4" : "translate-x-0.5")} />
                           </button>
                         </div>
@@ -1430,7 +1430,7 @@ export const TrainerDashboard = ({
                         <button className={cn("w-9 h-5 rounded-full transition-colors relative",
                             studioLesson.isRequired ? "bg-primary" : "bg-muted-foreground/30")}
                           onClick={() => updateLesson(studioLessonPath.moduleId, studioLessonPath.lessonId, { isRequired: !studioLesson.isRequired })}>
-                          <div className={cn("w-4 h-4 rounded-full bg-white shadow-sm absolute top-0.5 transition-transform",
+                          <div className={cn("w-4 h-4 rounded-full bg-white absolute top-0.5 transition-transform",
                             studioLesson.isRequired ? "translate-x-4" : "translate-x-0.5")} />
                         </button>
                       </div>
@@ -1553,7 +1553,7 @@ export const TrainerDashboard = ({
           </div>
 
           {/* Steps progress bar */}
-          <div className="flex items-center gap-0 bg-card rounded-lg border border-border shadow-sm p-1">
+          <div className="flex items-center gap-0 bg-card rounded-lg border border-border p-1">
             {(["select_trainee", "select_scenario", "chatting", "evaluate"] as PracticeChatStep[]).map((step, i) => {
               const labels = ["1. Select Trainee", "2. Choose Scenario", "3. Chat Session", "4. Evaluate"];
               const stepOrder = ["select_trainee", "select_scenario", "chatting", "evaluate"];
@@ -1577,7 +1577,7 @@ export const TrainerDashboard = ({
 
           {/* Step 1: Select Trainee */}
           {chatStep === "select_trainee" && (
-            <div className="bg-card rounded-lg border border-border shadow-sm p-6">
+            <div className="bg-card rounded-lg border border-border p-6">
               <h3 className="text-sm font-bold text-foreground mb-1">Who are you practicing with?</h3>
               <p className="text-xs text-muted-foreground mb-4">Select a trainee to start a practice conversation</p>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
@@ -1613,7 +1613,7 @@ export const TrainerDashboard = ({
 
           {/* Step 2: Select Scenario */}
           {chatStep === "select_scenario" && (
-            <div className="bg-card rounded-lg border border-border shadow-sm p-6">
+            <div className="bg-card rounded-lg border border-border p-6">
               <h3 className="text-sm font-bold text-foreground mb-1">Choose a scenario</h3>
               <p className="text-xs text-muted-foreground mb-4">You'll play the seeker role. {pcTrainee?.name} will respond as a volunteer.</p>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -1650,7 +1650,7 @@ export const TrainerDashboard = ({
 
           {/* Step 3: Chat */}
           {chatStep === "chatting" && pcTrainee && pcScenario && (
-            <div className="bg-card rounded-lg border border-border shadow-sm overflow-hidden flex flex-col" style={{ height: "calc(100vh - 350px)", minHeight: 400 }}>
+            <div className="bg-card rounded-lg border border-border overflow-hidden flex flex-col" style={{ height: "calc(100vh - 350px)", minHeight: 400 }}>
               {/* Chat header */}
               <div className="px-5 py-3 border-b border-border flex items-center justify-between bg-muted/20 shrink-0">
                 <div className="flex items-center gap-3">
@@ -1726,7 +1726,7 @@ export const TrainerDashboard = ({
 
           {/* Step 4: Evaluate */}
           {chatStep === "evaluate" && pcTrainee && pcScenario && (
-            <div className="bg-card rounded-lg border border-border shadow-sm p-6">
+            <div className="bg-card rounded-lg border border-border p-6">
               <div className="flex items-center gap-3 mb-5">
                 <div className={cn("w-10 h-10 rounded-full flex items-center justify-center text-white text-sm font-bold", avatarColor(pcTrainee.id))}>
                   {getInitial(pcTrainee.name)}
@@ -1809,7 +1809,7 @@ export const TrainerDashboard = ({
           <>
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 bg-black/50 backdrop-blur-sm z-40" onClick={() => setIsSettingsOpen(false)} />
             <motion.div initial={{ x: "100%" }} animate={{ x: 0 }} exit={{ x: "100%" }} transition={{ type: "spring", damping: 28, stiffness: 300 }}
-              className="fixed top-0 right-0 h-full w-full max-w-md bg-background border-l border-border shadow-2xl z-50 flex flex-col">
+              className="fixed top-0 right-0 h-full w-full max-w-md bg-background border-l border-border z-50 flex flex-col">
               {/* Drawer header */}
               <div className="px-6 py-5 border-b border-border flex items-center justify-between shrink-0">
                 <div>
@@ -1864,7 +1864,7 @@ export const TrainerDashboard = ({
                     <p className="text-xs text-muted-foreground mt-0.5">Award a certificate upon completion</p>
                   </div>
                   <button className="w-9 h-5 rounded-full bg-primary relative">
-                    <div className="w-4 h-4 rounded-full bg-white shadow-sm absolute top-0.5 translate-x-4" />
+                    <div className="w-4 h-4 rounded-full bg-white absolute top-0.5 translate-x-4" />
                   </button>
                 </div>
 
@@ -1909,7 +1909,7 @@ export const TrainerDashboard = ({
           <>
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 bg-black/50 backdrop-blur-sm z-40" onClick={() => setIsNewCourseOpen(false)} />
             <motion.div initial={{ opacity: 0, scale: 0.95, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 20 }} transition={{ type: "spring", damping: 25, stiffness: 350 }}
-              className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-background rounded-xl border border-border shadow-2xl z-50 w-full max-w-lg">
+              className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-background rounded-xl border border-border z-50 w-full max-w-lg">
               <div className="px-8 pt-8 pb-0">
                 <h3 className="text-xl font-bold text-foreground">Create New Course</h3>
                 <p className="text-sm text-muted-foreground mt-1">Set up a new training course. You can add modules and lessons after creating it.</p>

@@ -85,7 +85,7 @@ export function ScheduledTab({
 
         {scheduledMessages.length === 0 && scheduledBroadcasts.length === 0 ? (
           <div className="py-24 text-center border-2 border-dashed border-border rounded-lg bg-muted/20 space-y-6">
-            <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mx-auto border border-border shadow-sm">
+            <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mx-auto border border-border">
               <Clock className="w-8 h-8 text-muted-foreground opacity-40" />
             </div>
             <div className="space-y-2">
@@ -94,7 +94,7 @@ export function ScheduledTab({
             </div>
             <button
               onClick={onNewMessage}
-              className="inline-flex items-center gap-2 px-6 py-2 bg-primary text-primary-foreground rounded-md text-sm font-bold hover:bg-primary/90 transition-all shadow-sm"
+              className="inline-flex items-center gap-2 px-6 py-2 bg-primary text-primary-foreground rounded-md text-sm font-bold hover:bg-primary/90 transition-all"
             >
               <Plus className="w-4 h-4" />
               Schedule Message
@@ -110,7 +110,7 @@ export function ScheduledTab({
                     Individual Messages ({scheduledMessages.length})
                   </h3>
                 </div>
-                <div className="bg-card rounded-lg border border-border shadow-sm overflow-hidden">
+                <div className="bg-card rounded-lg border border-border overflow-hidden">
                   <table className="w-full text-left">
                     <thead>
                       <tr className="bg-muted/50 border-b border-border">
@@ -183,7 +183,7 @@ export function ScheduledTab({
                   <Megaphone className="w-3.5 h-3.5" />
                   Scheduled Broadcasts ({scheduledBroadcasts.length})
                 </h3>
-                <div className="bg-card rounded-lg border border-border shadow-sm overflow-hidden">
+                <div className="bg-card rounded-lg border border-border overflow-hidden">
                   <table className="w-full text-left">
                     <thead>
                       <tr className="bg-muted/50 border-b border-border">

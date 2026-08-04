@@ -224,7 +224,7 @@ function DraggableRuleRow({
       style={{ opacity: isDragging ? 0.4 : 1 }}
       className={cn(
         "group bg-background transition-all duration-200",
-        isDragging && "shadow-lg"
+        isDragging && ""
       )}
     >
       <div className="flex items-start gap-3 p-4">
@@ -534,7 +534,7 @@ function EndpointFormModal({
                   className={cn(
                     "px-3 py-1 text-xs font-semibold transition-all",
                     form.brandColorMode === mode
-                      ? "bg-background text-foreground shadow-sm border border-border"
+                      ? "bg-background text-foreground border border-border"
                       : "text-muted-foreground hover:text-foreground"
                   )}
                 >
@@ -1139,7 +1139,7 @@ function EndpointFormModal({
               >
                 {/* Chat window */}
                 <div
-                  className="overflow-hidden shadow-xl border border-black/10 bg-white"
+                  className="overflow-hidden border border-black/10 bg-white"
                   style={{ borderRadius: form.cornerRadius, width: Math.round(form.widgetWidth / 2), height: Math.round(form.widgetHeight / 2.5) }}
                 >
                   {/* Header */}
@@ -1257,7 +1257,7 @@ function EndpointFormModal({
 
                 {/* Launcher pill */}
                 <div
-                  className="flex items-center gap-1.5 px-3 py-1.5 shadow-lg text-white text-xs font-semibold whitespace-nowrap"
+                  className="flex items-center gap-1.5 px-3 py-1.5 text-white text-xs font-semibold whitespace-nowrap"
                   style={{ ...getButtonStyle(form), borderRadius: Math.max(form.cornerRadius, 4) * 2 }}
                 >
                   <MessageSquare className="w-3 h-3" />
@@ -1442,7 +1442,7 @@ function RuleFormModal({
               <ChevronDown className="w-4 h-4 text-muted-foreground" />
             </button>
             {sourceDropdownOpen && (
-              <div className="absolute top-full left-0 right-0 z-50 bg-background border border-border shadow-lg mt-1 max-h-52 overflow-y-auto">
+              <div className="absolute top-full left-0 right-0 z-50 bg-background border border-border mt-1 max-h-52 overflow-y-auto">
                 <div className="p-1">
                   <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest px-2 py-1">Channels</p>
                   {CHANNEL_SOURCE_OPTIONS.map(opt => (
@@ -1806,7 +1806,7 @@ function WidgetPreviewOverlay({
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: 16, scale: 0.96 }}
               transition={{ type: "spring", stiffness: 380, damping: 28 }}
-              className="overflow-hidden shadow-2xl border border-black/10 bg-white flex flex-col"
+              className="overflow-hidden border border-black/10 bg-white flex flex-col"
               style={{ borderRadius: cr, width: ww, height: wh }}
             >
               {/* Header */}
@@ -1940,7 +1940,7 @@ function WidgetPreviewOverlay({
                           animate={{ opacity: 1, y: 0 }}
                           exit={{ opacity: 0, y: 6 }}
                           transition={{ duration: 0.12 }}
-                          className="mb-2 p-2 bg-background border border-border shadow-lg grid grid-cols-8 gap-0.5"
+                          className="mb-2 p-2 bg-background border border-border grid grid-cols-8 gap-0.5"
                           style={{ borderRadius: Math.round(cr * 0.5) }}
                         >
                           {EMOJIS.map(emoji => (
@@ -2018,7 +2018,7 @@ function WidgetPreviewOverlay({
           whileHover={{ scale: 1.04 }}
           whileTap={{ scale: 0.96 }}
           onClick={() => setChatOpen(v => !v)}
-          className="flex items-center gap-2 px-5 py-3 text-sm font-semibold text-white shadow-xl whitespace-nowrap"
+          className="flex items-center gap-2 px-5 py-3 text-sm font-semibold text-white whitespace-nowrap"
           style={{ ...getButtonStyle(ep), borderRadius: Math.max(cr, 4) * 2 }}
         >
           <AnimatePresence mode="wait" initial={false}>
@@ -2230,7 +2230,7 @@ export const ChatEndpointsView = ({
             key={stat.label}
             onClick={stat.onClick}
             className={cn(
-              "cursor-pointer border bg-background p-5 transition-all duration-150 hover:shadow-sm",
+              "cursor-pointer border bg-background p-5 transition-all duration-150",
               stat.active ? "border-blue-500 ring-1 ring-blue-500" : "border-border"
             )}
           >

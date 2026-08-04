@@ -598,7 +598,7 @@ export const AutomationView = ({
               className={cn(
                 "flex items-center gap-2 px-4 h-10 text-sm font-semibold rounded-full transition-all",
                 isActive
-                  ? "bg-primary text-primary-foreground shadow-sm"
+                  ? "bg-primary text-primary-foreground"
                   : "text-muted-foreground hover:text-foreground"
               )}
             >
@@ -1303,7 +1303,7 @@ const TemplateCard = ({ template, onUse, onPreview }: {
   const TplIcon = template.icon;
 
   return (
-    <div className="group border border-border rounded-xl bg-card hover:border-primary/30 hover:shadow-md transition-all p-5 flex flex-col">
+    <div className="group border border-border rounded-xl bg-card hover:border-primary/30 transition-all p-5 flex flex-col">
       <div className="flex items-start gap-3 mb-3">
         <div className={cn("w-10 h-10 rounded-lg flex items-center justify-center shrink-0", template.iconTint)}>
           <TplIcon className="w-5 h-5" />

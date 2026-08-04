@@ -50,7 +50,7 @@ export const ContactDetailModal = ({
         initial={{ opacity: 0, scale: 0.98, y: 10 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
         exit={{ opacity: 0, scale: 0.98, y: 10 }}
-        className="relative bg-background rounded-lg shadow-xl border border-border w-full max-w-2xl overflow-hidden flex flex-col max-h-[90vh]"
+        className="relative bg-background rounded-lg border border-border w-full max-w-2xl overflow-hidden flex flex-col max-h-[90vh]"
       >
         {/* Header Section */}
         <div className="p-8 border-b border-border bg-muted/20 relative">
@@ -59,7 +59,7 @@ export const ContactDetailModal = ({
           </button>
           
           <div className="flex flex-col md:flex-row md:items-center gap-6">
-            <div className="w-20 h-20 rounded-2xl bg-primary text-primary-foreground flex items-center justify-center text-3xl font-bold shadow-lg shadow-primary/20">
+            <div className="w-20 h-20 rounded-2xl bg-primary text-primary-foreground flex items-center justify-center text-3xl font-bold shadow-primary/20">
               {contact.name.charAt(0)}
             </div>
             <div className="space-y-3 flex-1">
@@ -79,10 +79,10 @@ export const ContactDetailModal = ({
                 </div>
               </div>
               <div className="flex items-center gap-2">
-                <button onClick={() => { onMessage(contact.id); onClose(); }} className="px-4 py-1.5 bg-primary text-primary-foreground rounded-md text-xs font-bold hover:bg-primary/90 transition-all shadow-sm flex items-center gap-2">
+                <button onClick={() => { onMessage(contact.id); onClose(); }} className="px-4 py-1.5 bg-primary text-primary-foreground rounded-md text-xs font-bold hover:bg-primary/90 transition-all flex items-center gap-2">
                   <Send className="w-3.5 h-3.5" /> Direct Message
                 </button>
-                <button onClick={() => { onEdit(contact); onClose(); }} className="px-4 py-1.5 bg-background border border-input rounded-md text-xs font-bold hover:bg-muted transition-all shadow-sm flex items-center gap-2">
+                <button onClick={() => { onEdit(contact); onClose(); }} className="px-4 py-1.5 bg-background border border-input rounded-md text-xs font-bold hover:bg-muted transition-all flex items-center gap-2">
                   <Edit2 className="w-3.5 h-3.5" /> Edit Profile
                 </button>
               </div>
@@ -139,7 +139,7 @@ export const ContactDetailModal = ({
             </div>
             <div className="space-y-2">
               {contactNotes.map(note => (
-                <div key={note.id} className="p-4 bg-card border border-border rounded-lg shadow-sm group relative">
+                <div key={note.id} className="p-4 bg-card border border-border rounded-lg group relative">
                   <p className="text-sm text-foreground leading-relaxed pr-8">{note.content}</p>
                   <div className="mt-3 flex items-center justify-between">
                     <span className="text-xs font-bold text-muted-foreground uppercase opacity-60">{new Date(note.createdAt).toLocaleDateString()}</span>

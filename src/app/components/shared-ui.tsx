@@ -97,7 +97,7 @@ export const Modal = ({ isOpen, onClose, title, children, size = "md" }: { isOpe
         exit={{ opacity: 0, scale: 0.98, y: 10 }}
         transition={{ duration: 0.2, ease: "easeOut" }}
         className={cn(
-          "relative bg-background w-full rounded-lg shadow-xl border border-border overflow-hidden flex flex-col max-h-[90vh] outline-none",
+          "relative bg-background w-full rounded-lg border border-border overflow-hidden flex flex-col max-h-[90vh] outline-none",
           sizeClasses[size] || sizeClasses.md
         )}
       >
@@ -141,7 +141,7 @@ export const RoleBadge = ({ role }: { role: Role }) => {
 // --- StatCard ---
 
 export const StatCard = ({ label, value, icon: Icon, trend }: any) => (
-  <div className="bg-card p-6 rounded-lg border border-border shadow-sm">
+  <div className="bg-card p-6 rounded-lg border border-border">
     <div className="flex items-center justify-between mb-3">
       <div className="p-2 bg-muted rounded-md">
         <Icon className="w-4 h-4 text-muted-foreground" />
@@ -183,7 +183,7 @@ export const PortSelector = ({ value, onChange, size = "default" }: { value: Mes
                   ? "px-3 py-1.5 rounded-sm text-xs"
                   : "flex-1 px-3 py-2 rounded-md text-xs",
                 isActive
-                  ? "bg-background text-foreground shadow-sm border border-border"
+                  ? "bg-background text-foreground border border-border"
                   : "text-muted-foreground hover:text-foreground"
               )}
               title={port.label}
@@ -212,7 +212,7 @@ export const DropdownPortSelector = ({ value, onChange, label = "Select Channel"
         type="button"
         onClick={() => setIsOpen(!isOpen)}
         className={cn(
-          "w-full flex items-center justify-between px-3 py-2 bg-background border border-input rounded-md text-sm ring-offset-background transition-all hover:bg-muted/50 focus:ring-1 focus:ring-ring shadow-sm",
+          "w-full flex items-center justify-between px-3 py-2 bg-background border border-input rounded-md text-sm ring-offset-background transition-all hover:bg-muted/50 focus:ring-1 focus:ring-ring",
           isOpen && "ring-1 ring-ring border-ring"
         )}
       >
@@ -237,7 +237,7 @@ export const DropdownPortSelector = ({ value, onChange, label = "Select Channel"
               initial={{ opacity: 0, y: 5, scale: 0.98 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: 5, scale: 0.98 }}
-              className="absolute top-full left-0 right-0 mt-2 bg-popover border border-border rounded-md shadow-lg overflow-hidden z-50 p-1"
+              className="absolute top-full left-0 right-0 mt-2 bg-popover border border-border rounded-md overflow-hidden z-50 p-1"
             >
               {MESSAGE_PORTS.map(port => {
                 const isActive = value === port.id;
@@ -255,7 +255,7 @@ export const DropdownPortSelector = ({ value, onChange, label = "Select Channel"
                     )}
                   >
                     <div className="flex items-center gap-3">
-                      <div className={cn("p-1.5 rounded-md shadow-sm border border-border/10", port.bgColor, port.color)}>
+                      <div className={cn("p-1.5 rounded-md border border-border/10", port.bgColor, port.color)}>
                         <port.icon className="w-3.5 h-3.5" />
                       </div>
                       <div className="flex flex-col">
@@ -282,7 +282,7 @@ export const PortBadge = ({ port }: { port: MessagePort }) => {
   const portInfo = MESSAGE_PORTS.find(p => p.id === port);
   if (!portInfo) return null;
   return (
-    <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-xs font-bold border border-border bg-muted/50 text-foreground shadow-sm">
+    <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-xs font-bold border border-border bg-muted/50 text-foreground">
       <portInfo.icon className="w-3.5 h-3.5 opacity-60" />
       {portInfo.label}
     </span>
@@ -306,8 +306,8 @@ export const FrequencySelector = ({ value, onChange }: { value: ScheduleFrequenc
           className={cn(
             "px-3 py-1.5 rounded-md text-xs font-bold uppercase tracking-wider transition-all border",
             value === freq.id
-              ? "bg-primary text-primary-foreground border-primary shadow-sm"
-              : "bg-background text-muted-foreground border-border hover:bg-muted hover:text-foreground shadow-sm"
+              ? "bg-primary text-primary-foreground border-primary"
+              : "bg-background text-muted-foreground border-border hover:bg-muted hover:text-foreground"
           )}
           title={freq.description}
         >
@@ -336,7 +336,7 @@ export const SubscriptionUsageBanner = ({ usage, limit, onUpgrade }: { usage: nu
       : { bg: "bg-primary/5", border: "border-primary/20", text: "text-primary", sub: "text-primary/80", icon: Info, iconColor: "text-primary", btn: "bg-primary text-primary-foreground hover:bg-primary/90" };
 
   return (
-    <div className={cn("p-4 rounded-lg border flex flex-col md:flex-row items-center justify-between gap-4 mb-6 shadow-sm", styles.bg, styles.border)}>
+    <div className={cn("p-4 rounded-lg border flex flex-col md:flex-row items-center justify-between gap-4 mb-6", styles.bg, styles.border)}>
       <div className="flex items-center gap-3">
         <styles.icon className={cn("w-5 h-5 shrink-0", styles.iconColor)} />
         <div className="space-y-0.5">
@@ -350,7 +350,7 @@ export const SubscriptionUsageBanner = ({ usage, limit, onUpgrade }: { usage: nu
       </div>
       <button
         onClick={onUpgrade}
-        className={cn("px-4 py-2 text-xs font-bold uppercase tracking-wider rounded-md transition-colors shadow-sm whitespace-nowrap", styles.btn)}
+        className={cn("px-4 py-2 text-xs font-bold uppercase tracking-wider rounded-md transition-colors whitespace-nowrap", styles.btn)}
       >
         Upgrade Plan
       </button>
@@ -367,7 +367,7 @@ export const EmptyStateView = ({ onCreateOrg }: { onCreateOrg: () => void }) => 
       animate={{ opacity: 1, scale: 1 }}
       className="max-w-md w-full"
     >
-      <div className="w-16 h-16 bg-muted rounded-2xl flex items-center justify-center mx-auto mb-6 border border-border shadow-sm">
+      <div className="w-16 h-16 bg-muted rounded-2xl flex items-center justify-center mx-auto mb-6 border border-border">
         <Building2 className="w-8 h-8 text-primary" />
       </div>
       <h1 className="text-2xl font-bold tracking-tight text-foreground mb-2">Welcome to Turumba</h1>
@@ -376,7 +376,7 @@ export const EmptyStateView = ({ onCreateOrg }: { onCreateOrg: () => void }) => 
       </p>
       <button
         onClick={onCreateOrg}
-        className="w-full py-2.5 bg-primary text-primary-foreground rounded-md text-sm font-bold hover:bg-primary/90 transition-all shadow-sm flex items-center justify-center group"
+        className="w-full py-2.5 bg-primary text-primary-foreground rounded-md text-sm font-bold hover:bg-primary/90 transition-all flex items-center justify-center group"
       >
         <Plus className="w-4 h-4 mr-2 group-hover:rotate-90 transition-transform duration-300" />
         Create Organization
@@ -476,7 +476,7 @@ export const NotificationDropdown = ({
         initial={{ opacity: 0, y: 10, scale: 0.98 }}
         animate={{ opacity: 1, y: 0, scale: 1 }}
         exit={{ opacity: 0, y: 10, scale: 0.98 }}
-        className="absolute top-full right-0 mt-2 w-80 bg-popover rounded-lg shadow-xl border border-border overflow-hidden z-50 flex flex-col"
+        className="absolute top-full right-0 mt-2 w-80 bg-popover rounded-lg border border-border overflow-hidden z-50 flex flex-col"
       >
         <div className="px-4 py-3 border-b border-border flex items-center justify-between bg-muted/30">
           <div className="flex items-center gap-2">

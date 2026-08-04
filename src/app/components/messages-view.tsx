@@ -240,7 +240,7 @@ export const MessagesView = ({
               className={cn(
                 "inline-flex items-center gap-2 px-4 h-8 text-xs font-semibold rounded-sm transition-all whitespace-nowrap",
                 activeTab === tab.id
-                  ? "bg-background text-foreground shadow-sm border border-border"
+                  ? "bg-background text-foreground border border-border"
                   : "text-muted-foreground hover:text-foreground"
               )}
             >

@@ -115,7 +115,7 @@ export const NewBroadcastFlow: React.FC<NewBroadcastFlowProps> = ({
           return (
             <div key={step.id} className="relative z-10 flex flex-col items-center gap-2 bg-background px-4">
               <div className={cn(
-                "w-10 h-10 rounded-full flex items-center justify-center transition-all duration-300 border shadow-sm",
+                "w-10 h-10 rounded-full flex items-center justify-center transition-all duration-300 border",
                 isActive ? "bg-primary text-primary-foreground border-primary scale-110 ring-4 ring-primary/10" : 
                 isCompleted ? "bg-primary text-primary-foreground border-primary" : 
                 "bg-muted text-muted-foreground border-border"
@@ -168,7 +168,7 @@ export const NewBroadcastFlow: React.FC<NewBroadcastFlowProps> = ({
                     className={cn(
                       "w-full flex items-center justify-between p-4 rounded-xl border transition-all text-left group",
                       selectedGroupIds.includes(group.id) 
-                        ? "bg-primary/5 border-primary shadow-sm" 
+                        ? "bg-primary/5 border-primary" 
                         : "bg-card border-border hover:border-primary/30"
                     )}
                   >
@@ -280,7 +280,7 @@ export const NewBroadcastFlow: React.FC<NewBroadcastFlowProps> = ({
                     <button
                       key={tmpl.id}
                       onClick={() => setMessageContent(tmpl.content)}
-                      className="shrink-0 px-3 py-1.5 bg-background border border-border rounded-md text-xs font-bold hover:bg-primary/10 hover:border-primary/30 transition-all shadow-sm whitespace-nowrap"
+                      className="shrink-0 px-3 py-1.5 bg-background border border-border rounded-md text-xs font-bold hover:bg-primary/10 hover:border-primary/30 transition-all whitespace-nowrap"
                     >
                       {tmpl.label}
                     </button>
@@ -345,7 +345,7 @@ export const NewBroadcastFlow: React.FC<NewBroadcastFlowProps> = ({
                         onClick={() => setIsScheduled(false)}
                         className={cn(
                           "p-4 rounded-lg border-2 text-left transition-all",
-                          !isScheduled ? "border-primary bg-primary/5 shadow-sm" : "border-border hover:border-primary/30"
+                          !isScheduled ? "border-primary bg-primary/5" : "border-border hover:border-primary/30"
                         )}
                       >
                         <Send className={cn("w-5 h-5 mb-2", !isScheduled ? "text-primary" : "text-muted-foreground")} />
@@ -356,7 +356,7 @@ export const NewBroadcastFlow: React.FC<NewBroadcastFlowProps> = ({
                         onClick={() => setIsScheduled(true)}
                         className={cn(
                           "p-4 rounded-lg border-2 text-left transition-all",
-                          isScheduled ? "border-primary bg-primary/5 shadow-sm" : "border-border hover:border-primary/30"
+                          isScheduled ? "border-primary bg-primary/5" : "border-border hover:border-primary/30"
                         )}
                       >
                         <Clock className={cn("w-5 h-5 mb-2", isScheduled ? "text-primary" : "text-muted-foreground")} />
@@ -417,7 +417,7 @@ export const NewBroadcastFlow: React.FC<NewBroadcastFlowProps> = ({
             onClick={handleNext}
             disabled={!canProceed()}
             className={cn(
-              "flex items-center gap-2 px-8 py-2.5 rounded-md text-sm font-bold transition-all shadow-md disabled:opacity-50",
+              "flex items-center gap-2 px-8 py-2.5 rounded-md text-sm font-bold transition-all disabled:opacity-50",
               currentStep === "review" ? "bg-primary text-primary-foreground hover:bg-primary/90" : "bg-primary text-primary-foreground hover:bg-primary/90"
             )}
           >

@@ -376,9 +376,9 @@ const ExecStatusIcon = ({ status }: { status: NodeExecStatus }) => {
 
 const execBorderColor = (status: NodeExecStatus) => {
   switch (status) {
-    case "running": return "border-blue-400 shadow-blue-500/20 shadow-lg ring-2 ring-blue-400/30";
+    case "running": return "border-blue-400 shadow-blue-500/20 ring-2 ring-blue-400/30";
     case "success": return "border-emerald-400 shadow-emerald-500/10";
-    case "error": return "border-red-400 shadow-red-500/20 shadow-lg ring-2 ring-red-400/30";
+    case "error": return "border-red-400 shadow-red-500/20 ring-2 ring-red-400/30";
     case "skipped": return "border-gray-300 opacity-60";
     case "waiting": return "border-amber-400";
     default: return "";
@@ -402,9 +402,9 @@ const AutomationNodeComponent = ({ data, selected }: NodeProps) => {
       <Handle type="target" position={Position.Left} className="!w-2.5 !h-2.5 !bg-muted-foreground/40 !border-2 !border-background !-left-1.5" />
 
       <div className={cn(
-        "rounded-xl border-2 transition-all duration-300 bg-card hover:shadow-lg hover:shadow-primary/5",
+        "rounded-xl border-2 transition-all duration-300 bg-card hover:shadow-primary/5",
         isExecMode && execStatus !== "idle" ? execBorderColor(execStatus)
-          : selected ? `border-primary shadow-lg shadow-primary/10 ring-2 ${colors.ring}` : "border-border hover:border-primary/40",
+          : selected ? `border-primary shadow-primary/10 ring-2 ${colors.ring}` : "border-border hover:border-primary/40",
         execStatus === "running" && "animate-pulse"
       )}>
         <div className={cn("h-1 rounded-t-[10px]", colors.bar)} />
@@ -804,7 +804,7 @@ const NodeConfigModal = ({ node, onSave, onCancel, onDelete, isJourney }: {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center pointer-events-none animate-in fade-in duration-200">
-      <div className="bg-card border border-border rounded-2xl shadow-2xl w-full max-w-md mx-4 animate-in zoom-in-95 duration-300 pointer-events-auto">
+      <div className="bg-card border border-border rounded-2xl w-full max-w-md mx-4 animate-in zoom-in-95 duration-300 pointer-events-auto">
         <div className="p-5 border-b border-border">
           <div className="flex items-center gap-3">
             <div className={cn("w-10 h-10 rounded-xl flex items-center justify-center", node.iconBg)}>
@@ -1493,7 +1493,7 @@ export const AutomationCanvas = ({ automation, onBack, onSave, onUpdate }: {
                 className="bg-background"
               >
                 <Background variant={BackgroundVariant.Dots} gap={24} size={1} color="hsl(var(--muted-foreground) / 0.15)" />
-                <Controls showInteractive={false} className="!bg-card !border-border !shadow-sm !rounded-lg [&>button]:!bg-card [&>button]:!border-border [&>button]:!text-muted-foreground [&>button:hover]:!bg-muted" />
+                <Controls showInteractive={false} className="!bg-card !border-border !!rounded-lg [&>button]:!bg-card [&>button]:!border-border [&>button]:!text-muted-foreground [&>button:hover]:!bg-muted" />
                 <MiniMap
                   nodeColor={(n) => {
                     const flowNode = n.data?.flowNode as FlowNode | undefined;
@@ -1509,12 +1509,12 @@ export const AutomationCanvas = ({ automation, onBack, onSave, onUpdate }: {
                     }
                   }}
                   maskColor="hsl(var(--background) / 0.7)"
-                  className="!bg-card !border-border !shadow-sm !rounded-lg"
+                  className="!bg-card !border-border !!rounded-lg"
                 />
                 {/* Journey empty state overlay */}
                 {automation.mode === "journey" && automation.nodes.length === 0 && (
                   <Panel position="top-center">
-                    <div className="bg-card border border-border rounded-xl px-6 py-3 shadow-sm flex items-center gap-3">
+                    <div className="bg-card border border-border rounded-xl px-6 py-3 flex items-center gap-3">
                       <Route className="w-5 h-5 text-purple-500" />
                       <div>
                         <p className="text-sm font-semibold text-foreground">Journey Builder</p>
@@ -1537,7 +1537,7 @@ export const AutomationCanvas = ({ automation, onBack, onSave, onUpdate }: {
             {/* FAB for adding nodes */}
             {automation.nodes.length > 0 && !isNodePickerOpen && !selectedNode && (
               <div className="absolute bottom-6 right-6 z-10">
-                <button onClick={() => handleOpenPicker()} className="w-12 h-12 rounded-full bg-primary text-primary-foreground shadow-lg hover:shadow-xl hover:scale-105 transition-all flex items-center justify-center">
+                <button onClick={() => handleOpenPicker()} className="w-12 h-12 rounded-full bg-primary text-primary-foreground hover:scale-105 transition-all flex items-center justify-center">
                   <Plus className="w-5 h-5" />
                 </button>
               </div>
@@ -1605,7 +1605,7 @@ const NewAutomationModal = ({ isOpen, onClose, onCreate, folders }: {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm animate-in fade-in duration-200" onClick={onClose}>
-      <div className="bg-card border border-border rounded-2xl shadow-2xl w-full max-w-lg mx-4 animate-in zoom-in-95 duration-300" onClick={e => e.stopPropagation()}>
+      <div className="bg-card border border-border rounded-2xl w-full max-w-lg mx-4 animate-in zoom-in-95 duration-300" onClick={e => e.stopPropagation()}>
         <div className="p-6 border-b border-border">
           <h2 className="text-lg font-bold text-foreground">Create New Automation</h2>
           <p className="text-sm text-muted-foreground mt-1">Choose a type and folder to get started</p>
@@ -1931,7 +1931,7 @@ export const AutomationV2View = () => {
                 const ModeIcon = mInfo.icon;
                 const folderObj = a.folderId ? folders.find(f => f.id === a.folderId) : null;
                 return (
-                  <div key={a.id} className="bg-card border border-border rounded-xl px-5 py-4 hover:border-primary/30 hover:shadow-sm transition-all group cursor-pointer"
+                  <div key={a.id} className="bg-card border border-border rounded-xl px-5 py-4 hover:border-primary/30 transition-all group cursor-pointer"
                     onClick={() => setEditingAutomation(a)}>
                     <div className="flex items-center gap-4">
                       <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0 bg-muted">
@@ -2008,7 +2008,7 @@ export const AutomationV2View = () => {
       {movingAutomationId && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm animate-in fade-in duration-200"
           onClick={() => setMovingAutomationId(null)}>
-          <div className="bg-card border border-border rounded-2xl shadow-2xl w-full max-w-sm mx-4 animate-in zoom-in-95 duration-300" onClick={e => e.stopPropagation()}>
+          <div className="bg-card border border-border rounded-2xl w-full max-w-sm mx-4 animate-in zoom-in-95 duration-300" onClick={e => e.stopPropagation()}>
             <div className="p-5 border-b border-border">
               <h3 className="text-base font-bold text-foreground">Move to Folder</h3>
               <p className="text-xs text-muted-foreground mt-1">Select a destination folder</p>

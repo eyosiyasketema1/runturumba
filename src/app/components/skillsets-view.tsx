@@ -387,7 +387,7 @@ function SkillSetsList({
               transition={{ duration: 0.2, delay: idx * 0.04 }}
             >
               <Card className={cn(
-                "flex flex-col h-full border-l-4 transition-all hover:shadow-md",
+                "flex flex-col h-full border-l-4 transition-all",
                 skillSet.accentColor,
                 !skillSet.enabled && skillSet.type === 'custom' && "opacity-60"
               )}>

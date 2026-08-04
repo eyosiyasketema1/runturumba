@@ -72,7 +72,7 @@ function FlowNode({ data, selected }: NodeProps) {
   return (
     <div
       className={cn(
-        "w-[320px] bg-white rounded-xl shadow-md overflow-hidden border-2 transition-all",
+        "w-[320px] bg-white rounded-xl overflow-hidden border-2 transition-all",
         selected ? "border-primary ring-2 ring-primary/20" : cfg.border
       )}
     >
@@ -956,7 +956,7 @@ function TemplateGalleryModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm animate-in fade-in duration-200">
-      <div className="bg-background rounded-xl shadow-2xl border border-border w-[90vw] max-w-[960px] h-[80vh] max-h-[700px] flex flex-col overflow-hidden">
+      <div className="bg-background rounded-xl border border-border w-[90vw] max-w-[960px] h-[80vh] max-h-[700px] flex flex-col overflow-hidden">
         {/* Header */}
         <div className="flex items-center justify-between gap-4 px-6 py-4 border-b border-border shrink-0">
           <div>
@@ -1021,12 +1021,12 @@ function TemplateGalleryModal({
                     key={tpl.id}
                     onClick={() => onSelect(tpl)}
                     className={cn(
-                      "text-left p-4 rounded-xl border-2 transition-all hover:shadow-md hover:scale-[1.01] group",
+                      "text-left p-4 rounded-xl border-2 transition-all hover:scale-[1.01] group",
                       tpl.tint
                     )}
                   >
                     <div className="flex items-start gap-3">
-                      <div className="w-9 h-9 rounded-lg bg-white/60 flex items-center justify-center shrink-0 shadow-sm">
+                      <div className="w-9 h-9 rounded-lg bg-white/60 flex items-center justify-center shrink-0">
                         <TplIcon className="w-4.5 h-4.5 opacity-80" />
                       </div>
                       <div className="min-w-0 flex-1">

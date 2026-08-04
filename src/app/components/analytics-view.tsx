@@ -95,14 +95,14 @@ export const AnalyticsView = ({
   if (!hasAnalytics) {
     return (
       <div className="flex flex-col items-center justify-center h-[calc(100vh-12rem)] text-center p-8 animate-in fade-in zoom-in-95 duration-500">
-        <div className="w-20 h-20 bg-muted rounded-2xl flex items-center justify-center mb-6 border border-border shadow-sm">
+        <div className="w-20 h-20 bg-muted rounded-2xl flex items-center justify-center mb-6 border border-border">
           <BarChart3 className="w-10 h-10 text-muted-foreground opacity-40" />
         </div>
         <h2 className="text-2xl font-bold tracking-tight text-foreground">Advanced Analytics</h2>
         <p className="text-muted-foreground text-sm max-w-[320px] mt-2">
           Unlock detailed performance metrics and delivery insights by upgrading your plan.
         </p>
-        <button className="mt-8 px-6 py-2.5 bg-primary text-primary-foreground rounded-md text-sm font-bold shadow-md hover:bg-primary/90 transition-all">
+        <button className="mt-8 px-6 py-2.5 bg-primary text-primary-foreground rounded-md text-sm font-bold hover:bg-primary/90 transition-all">
           View Plans & Pricing
         </button>
         <div className="mt-6 flex items-center gap-2 px-3 py-1 bg-amber-500/10 border border-amber-500/20 rounded-full">
@@ -121,7 +121,7 @@ export const AnalyticsView = ({
           <p className="text-muted-foreground text-sm">Measure the effectiveness of your active broadcasts.</p>
         </div>
         <div className="flex items-center gap-3">
-          <button className="inline-flex items-center gap-2 px-4 py-2 bg-background border border-input rounded-md text-sm font-bold hover:bg-muted transition-all shadow-sm">
+          <button className="inline-flex items-center gap-2 px-4 py-2 bg-background border border-input rounded-md text-sm font-bold hover:bg-muted transition-all">
             <Download className="w-4 h-4" />
             Export Data
           </button>
@@ -140,7 +140,7 @@ export const AnalyticsView = ({
           { label: "Engagement", value: `${responseRate}%`, icon: TrendingUp, trend: "-0.4%", color: "amber" },
           { label: "Failures", value: totalFailed, icon: AlertCircle, trend: "-5.0%", color: "rose" }
         ].map((kpi, i) => (
-          <div key={i} className="bg-card p-6 rounded-lg border border-border shadow-sm group hover:border-primary/30 transition-all">
+          <div key={i} className="bg-card p-6 rounded-lg border border-border group hover:border-primary/30 transition-all">
             <div className="flex items-center justify-between mb-4">
               <div className="p-2.5 bg-muted rounded-md border border-border group-hover:bg-primary/5 transition-all">
                 <kpi.icon className="w-4 h-4 text-muted-foreground group-hover:text-primary transition-all" />
@@ -160,7 +160,7 @@ export const AnalyticsView = ({
 
       {/* Charts Section */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-2 bg-card p-6 rounded-lg border border-border shadow-sm">
+        <div className="lg:col-span-2 bg-card p-6 rounded-lg border border-border">
           <div className="flex items-center justify-between mb-8">
             <div>
               <h3 className="text-lg font-bold tracking-tight text-foreground">Performance Over Time</h3>
@@ -199,7 +199,7 @@ export const AnalyticsView = ({
           </div>
         </div>
 
-        <div className="bg-card p-6 rounded-lg border border-border shadow-sm flex flex-col">
+        <div className="bg-card p-6 rounded-lg border border-border flex flex-col">
           <div className="mb-6">
             <h3 className="text-lg font-bold tracking-tight text-foreground">Delivery Breakdown</h3>
             <p className="text-xs text-muted-foreground">Distribution by message status</p>
@@ -221,7 +221,7 @@ export const AnalyticsView = ({
               {deliveryData.map((entry) => (
                 <div key={entry.name} className="flex items-center justify-between p-2 rounded-md hover:bg-muted/50 transition-colors">
                   <div className="flex items-center gap-2">
-                    <div className="w-2.5 h-2.5 rounded-full shadow-sm" style={{ backgroundColor: entry.color }} />
+                    <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: entry.color }} />
                     <span className="text-xs font-semibold text-muted-foreground">{entry.name}</span>
                   </div>
                   <span className="text-xs font-bold text-foreground">{entry.value}</span>
@@ -233,7 +233,7 @@ export const AnalyticsView = ({
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="bg-card p-6 rounded-lg border border-border shadow-sm">
+        <div className="bg-card p-6 rounded-lg border border-border">
           <h3 className="text-lg font-bold tracking-tight text-foreground mb-1">Most Engaged Contacts</h3>
           <p className="text-xs text-muted-foreground mb-8">Contacts with the highest volume of interactions</p>
           <div className="space-y-6">
@@ -276,7 +276,7 @@ export const AnalyticsView = ({
           </div>
         </div>
 
-        <div className="bg-card p-6 rounded-lg border border-border shadow-sm">
+        <div className="bg-card p-6 rounded-lg border border-border">
           <div className="flex items-center justify-between mb-6">
             <div>
               <h3 className="text-lg font-bold tracking-tight text-foreground">Broadcast Reach</h3>

@@ -380,7 +380,7 @@ const WelcomeStep = ({ onGetStarted, onSkip }: { onGetStarted: () => void; onSki
         transition={{ delay: 0.1, duration: 0.5 }}
         className="max-w-lg w-full text-center"
       >
-        <div className="w-16 h-16 bg-primary flex items-center justify-center mx-auto mb-8 shadow-lg">
+        <div className="w-16 h-16 bg-primary flex items-center justify-center mx-auto mb-8">
           <Globe className="w-8 h-8 text-primary-foreground" />
         </div>
         <h1 className="text-4xl font-bold tracking-tight text-foreground mb-4">
@@ -442,7 +442,7 @@ const WelcomeStep = ({ onGetStarted, onSkip }: { onGetStarted: () => void; onSki
             initial={{ opacity: 0, x: 30 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ delay: 0.4 + i * 0.1, duration: 0.4 }}
-            className="flex items-center gap-3 bg-background/80 backdrop-blur-sm border border-border p-3.5 shadow-sm"
+            className="flex items-center gap-3 bg-background/80 backdrop-blur-sm border border-border p-3.5"
           >
             <div className={cn("w-2 h-2 rounded-full shrink-0", item.color)} />
             <div className="flex-1">
@@ -639,7 +639,7 @@ const ChannelSelectStep = ({ selectedChannels, onToggle }: {
             className={cn(
               "flex items-center gap-4 p-5 border text-left transition-all group relative",
               isSelected
-                ? "border-primary bg-primary/5 shadow-sm"
+                ? "border-primary bg-primary/5"
                 : "border-border hover:border-primary/30 hover:bg-muted/20"
             )}
           >
@@ -742,7 +742,7 @@ const ChannelConfigStep = ({ selectedChannels, configs, onUpdateConfig, activeId
                 onClick={() => setActiveIdx(i)}
                 className={cn(
                   "flex items-center gap-2 px-3 py-2 text-xs font-semibold transition-all whitespace-nowrap shrink-0",
-                  isActive ? "bg-background text-foreground shadow-sm border border-border" : "text-muted-foreground hover:text-foreground"
+                  isActive ? "bg-background text-foreground border border-border" : "text-muted-foreground hover:text-foreground"
                 )}
               >
                 {info && <info.icon className="w-3.5 h-3.5" />}
@@ -1041,7 +1041,7 @@ const ReadyStep = ({ data, onFinish }: { data: OnboardingData; onFinish: () => v
           initial={{ scale: 0 }}
           animate={{ scale: 1 }}
           transition={{ delay: 0.2, type: "spring", stiffness: 200 }}
-          className="w-20 h-20 bg-primary flex items-center justify-center mx-auto mb-8 shadow-lg"
+          className="w-20 h-20 bg-primary flex items-center justify-center mx-auto mb-8"
         >
           <Rocket className="w-10 h-10 text-primary-foreground" />
         </motion.div>

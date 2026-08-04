@@ -838,7 +838,7 @@ export const CoordinatorDashboard = ({
   return (
     <div className="space-y-6 p-6 lg:p-8 animate-in fade-in duration-500 bg-gradient-to-br from-slate-50 via-background to-blue-50/30 min-h-full">
       {/* Hero Header */}
-      <header className="relative overflow-hidden rounded-sm bg-slate-950 text-white p-8 shadow-[0_24px_60px_-28px_rgba(15,23,42,0.55)]">
+      <header className="relative overflow-hidden rounded-sm bg-slate-950 text-white p-8">
         <div className="absolute -top-24 -right-20 w-80 h-80 rounded-full bg-gradient-to-br from-blue-500/40 to-violet-500/10 blur-3xl pointer-events-none" />
         <div className="absolute -bottom-32 -left-20 w-96 h-96 rounded-full bg-gradient-to-tr from-emerald-500/20 to-blue-500/10 blur-3xl pointer-events-none" />
         <div
@@ -920,7 +920,7 @@ export const CoordinatorDashboard = ({
                 initial={{ opacity: 0, y: 12 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.3, delay: i * 0.06, ease: "easeOut" }}
-                className="bg-card p-5 rounded-lg border border-border shadow-sm group hover:border-primary/30 transition-all"
+                className="bg-card p-5 rounded-lg border border-border group hover:border-primary/30 transition-all"
               >
                 <div className="flex items-center justify-between mb-3">
                   <div className={cn("p-2 rounded-md border border-border group-hover:border-primary/20 transition-all", kpi.bg)}>
@@ -939,7 +939,7 @@ export const CoordinatorDashboard = ({
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
             {/* Team Roster (col-span-5) */}
             <div className="lg:col-span-5">
-              <div className="bg-card rounded-lg border border-border shadow-sm overflow-hidden">
+              <div className="bg-card rounded-lg border border-border overflow-hidden">
                 <div className="px-6 pt-5 pb-4 border-b border-border">
                   <div className="flex items-center justify-between">
                     <div>
@@ -1002,7 +1002,7 @@ export const CoordinatorDashboard = ({
 
             {/* Escalation Queue (col-span-7) */}
             <div className="lg:col-span-7">
-              <div className="bg-card rounded-lg border border-border shadow-sm overflow-visible">
+              <div className="bg-card rounded-lg border border-border overflow-visible">
                 <div className="px-6 pt-5 pb-4 border-b border-border">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
@@ -1038,7 +1038,7 @@ export const CoordinatorDashboard = ({
                             className={cn(
                               "flex items-center gap-1 px-2.5 py-1 rounded-sm text-xs font-semibold transition-all",
                               escFilter === f
-                                ? "bg-background text-foreground shadow-sm border border-border"
+                                ? "bg-background text-foreground border border-border"
                                 : "text-muted-foreground hover:text-foreground"
                             )}
                           >
@@ -1128,7 +1128,7 @@ export const CoordinatorDashboard = ({
                                           animate={{ opacity: 1, y: 0, scale: 1 }}
                                           exit={{ opacity: 0, y: -4, scale: 0.95 }}
                                           transition={{ duration: 0.12 }}
-                                          className="absolute right-0 top-full mt-2 w-64 bg-popover border border-border rounded-lg shadow-xl z-50 overflow-hidden"
+                                          className="absolute right-0 top-full mt-2 w-64 bg-popover border border-border rounded-lg z-50 overflow-hidden"
                                         >
                                           <div className="px-3 py-2 border-b border-border bg-muted/30">
                                             <p className="text-xs font-bold text-foreground">Reassign to</p>
@@ -1195,7 +1195,7 @@ export const CoordinatorDashboard = ({
           </div>
 
           {/* Team Performance */}
-          <div className="bg-card rounded-lg border border-border shadow-sm overflow-hidden">
+          <div className="bg-card rounded-lg border border-border overflow-hidden">
             <div className="px-6 pt-5 pb-4 border-b border-border">
               <div className="flex items-center justify-between">
                 <div>
@@ -1312,7 +1312,7 @@ export const CoordinatorDashboard = ({
 
           {/* Articles list */}
           {filteredArticles.length === 0 ? (
-            <div className="bg-card rounded-lg border border-border shadow-sm py-16 text-center">
+            <div className="bg-card rounded-lg border border-border py-16 text-center">
               <FileText className="w-10 h-10 text-muted-foreground/30 mx-auto mb-3" />
               <p className="text-sm font-medium text-muted-foreground">
                 {articles.length === 0 ? "No articles yet" : "No articles match your search"}
@@ -1329,7 +1329,7 @@ export const CoordinatorDashboard = ({
                   initial={{ opacity: 0, y: 8 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.2, delay: i * 0.04 }}
-                  className="bg-card rounded-lg border border-border shadow-sm p-5 hover:border-primary/30 transition-all"
+                  className="bg-card rounded-lg border border-border p-5 hover:border-primary/30 transition-all"
                 >
                   <div className="flex items-start justify-between gap-4">
                     <div className="flex-1 min-w-0">
@@ -1379,7 +1379,7 @@ export const CoordinatorDashboard = ({
           </div>
 
           {sortedPosts.length === 0 ? (
-            <div className="bg-card rounded-lg border border-border shadow-sm py-16 text-center">
+            <div className="bg-card rounded-lg border border-border py-16 text-center">
               <Newspaper className="w-10 h-10 text-muted-foreground/30 mx-auto mb-3" />
               <p className="text-sm font-medium text-muted-foreground">No posts yet</p>
               <p className="text-xs text-muted-foreground mt-1">Create your first newsfeed post.</p>
@@ -1393,7 +1393,7 @@ export const CoordinatorDashboard = ({
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.2, delay: i * 0.04 }}
                   className={cn(
-                    "bg-card rounded-lg border shadow-sm p-5 transition-all",
+                    "bg-card rounded-lg border p-5 transition-all",
                     post.pinned ? "border-amber-500/30 bg-amber-500/5" : "border-border"
                   )}
                 >
@@ -1469,7 +1469,7 @@ export const CoordinatorDashboard = ({
                   className={cn(
                     "flex items-center gap-1 px-3 py-1.5 rounded-sm text-xs font-semibold transition-all",
                     socialFilter === f
-                      ? "bg-background text-foreground shadow-sm border border-border"
+                      ? "bg-background text-foreground border border-border"
                       : "text-muted-foreground hover:text-foreground"
                   )}
                 >
@@ -1487,7 +1487,7 @@ export const CoordinatorDashboard = ({
 
           {/* Comments list */}
           {filteredComments.length === 0 ? (
-            <div className="bg-card rounded-lg border border-border shadow-sm py-16 text-center">
+            <div className="bg-card rounded-lg border border-border py-16 text-center">
               <MessageCircle className="w-10 h-10 text-muted-foreground/30 mx-auto mb-3" />
               <p className="text-sm font-medium text-muted-foreground">No comments found</p>
               <p className="text-xs text-muted-foreground mt-1">No social media comments match your filter.</p>
@@ -1503,7 +1503,7 @@ export const CoordinatorDashboard = ({
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.2, delay: i * 0.04 }}
                     className={cn(
-                      "bg-card rounded-lg border shadow-sm p-5 transition-all",
+                      "bg-card rounded-lg border p-5 transition-all",
                       comment.hidden ? "border-border opacity-60" : "border-border hover:border-primary/30"
                     )}
                   >
@@ -1624,7 +1624,7 @@ export const CoordinatorDashboard = ({
               animate={{ x: 0 }}
               exit={{ x: "100%" }}
               transition={{ type: "spring", damping: 28, stiffness: 300 }}
-              className="fixed top-0 right-0 h-full w-full max-w-4xl bg-background border-l border-border shadow-2xl z-50 flex flex-col"
+              className="fixed top-0 right-0 h-full w-full max-w-4xl bg-background border-l border-border z-50 flex flex-col"
             >
               {/* Header */}
               <div className="flex items-center justify-between px-6 py-5 border-b border-border bg-card">
@@ -1653,7 +1653,7 @@ export const CoordinatorDashboard = ({
                       className={cn(
                         "w-full flex items-center gap-2.5 px-4 py-2.5 text-left text-xs font-medium transition-colors",
                         settingsTab === tab.id
-                          ? "bg-background text-foreground border-r-2 border-primary shadow-sm"
+                          ? "bg-background text-foreground border-r-2 border-primary"
                           : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
                       )}
                     >
@@ -1715,7 +1715,7 @@ export const CoordinatorDashboard = ({
                                   className={cn(
                                     "p-3 rounded-lg border text-left transition-all",
                                     settings.assignmentMode === mode.id
-                                      ? "border-primary bg-primary/5 shadow-sm"
+                                      ? "border-primary bg-primary/5"
                                       : "border-border hover:border-primary/30"
                                   )}
                                 >
@@ -2149,7 +2149,7 @@ export const CoordinatorDashboard = ({
               onClick={() => setArticleModal(null)}
             >
               <div
-                className="bg-background rounded-lg border border-border shadow-2xl w-full max-w-lg"
+                className="bg-background rounded-lg border border-border w-full max-w-lg"
                 onClick={e => e.stopPropagation()}
               >
                 <div className="px-6 py-4 border-b border-border flex items-center justify-between">
@@ -2228,7 +2228,7 @@ export const CoordinatorDashboard = ({
               onClick={() => setPostModal(null)}
             >
               <div
-                className="bg-background rounded-lg border border-border shadow-2xl w-full max-w-lg"
+                className="bg-background rounded-lg border border-border w-full max-w-lg"
                 onClick={e => e.stopPropagation()}
               >
                 <div className="px-6 py-4 border-b border-border flex items-center justify-between">

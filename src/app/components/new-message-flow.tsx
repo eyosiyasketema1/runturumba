@@ -58,7 +58,7 @@ const DropdownPortSelector = ({ value, onChange, label }: { value: string, onCha
         value={value}
         onChange={(e) => onChange(e.target.value)}
         aria-label={label}
-        className="w-full px-3 py-2 bg-background border border-input rounded-md text-sm ring-offset-background focus:ring-1 focus:ring-ring outline-none transition-all shadow-sm"
+        className="w-full px-3 py-2 bg-background border border-input rounded-md text-sm ring-offset-background focus:ring-1 focus:ring-ring outline-none transition-all"
       >
         {ports.map(p => <option key={p} value={p}>{p}</option>)}
       </select>
@@ -78,7 +78,7 @@ const FrequencySelector = ({ value, onChange }: { value: string, onChange: (v: s
             onClick={() => onChange(opt)}
             className={cn(
               "flex-1 py-1.5 text-xs font-bold uppercase tracking-wider rounded-sm transition-all",
-              value === opt ? "bg-background text-foreground shadow-sm border border-border" : "text-muted-foreground hover:text-foreground"
+              value === opt ? "bg-background text-foreground border border-border" : "text-muted-foreground hover:text-foreground"
             )}
           >
             {opt}
@@ -162,8 +162,8 @@ export const NewMessageFlow: React.FC<NewMessageFlowProps> = ({
             <div key={step.id} className="relative z-10 flex flex-col items-center gap-2">
               <div className={cn(
                 "w-10 h-10 rounded-full flex items-center justify-center transition-all duration-200 border bg-background",
-                isActive ? "border-primary bg-primary text-primary-foreground shadow-sm ring-4 ring-primary/10" : 
-                isCompleted ? "border-primary bg-primary text-primary-foreground shadow-sm" : 
+                isActive ? "border-primary bg-primary text-primary-foreground ring-4 ring-primary/10" : 
+                isCompleted ? "border-primary bg-primary text-primary-foreground" : 
                 "border-input text-muted-foreground"
               )}>
                 {isCompleted ? <Check className="w-5 h-5" /> : <Icon className="w-4 h-4" />}
@@ -201,7 +201,7 @@ export const NewMessageFlow: React.FC<NewMessageFlowProps> = ({
                     onChange={(e) => setSearchQuery(e.target.value)}
                     placeholder={`Search ${viewMode === "contacts" ? "contacts" : "groups"}...`}
                     aria-label="Search contacts and groups"
-                    className="w-full pl-9 pr-4 py-2.5 bg-background border border-input rounded-md text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 transition-all shadow-sm"
+                    className="w-full pl-9 pr-4 py-2.5 bg-background border border-input rounded-md text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 transition-all"
                   />
                 </div>
 
@@ -211,7 +211,7 @@ export const NewMessageFlow: React.FC<NewMessageFlowProps> = ({
                       onClick={() => setViewMode("contacts")}
                       className={cn(
                         "px-5 py-1.5 rounded-md text-xs font-bold transition-all",
-                        viewMode === "contacts" ? "bg-background text-foreground shadow-sm border border-border" : "text-muted-foreground hover:text-foreground"
+                        viewMode === "contacts" ? "bg-background text-foreground border border-border" : "text-muted-foreground hover:text-foreground"
                       )}
                     >
                       Contacts
@@ -220,7 +220,7 @@ export const NewMessageFlow: React.FC<NewMessageFlowProps> = ({
                       onClick={() => setViewMode("groups")}
                       className={cn(
                         "px-5 py-1.5 rounded-md text-xs font-bold transition-all",
-                        viewMode === "groups" ? "bg-background text-foreground shadow-sm border border-border" : "text-muted-foreground hover:text-foreground"
+                        viewMode === "groups" ? "bg-background text-foreground border border-border" : "text-muted-foreground hover:text-foreground"
                       )}
                     >
                       Groups
@@ -249,7 +249,7 @@ export const NewMessageFlow: React.FC<NewMessageFlowProps> = ({
 
               <div className="flex-1 overflow-y-auto pr-2 custom-scrollbar">
                 {totalRecipientsCount > 1 && (
-                  <div className="mb-6 bg-muted/30 p-4 rounded-lg border border-border shadow-sm">
+                  <div className="mb-6 bg-muted/30 p-4 rounded-lg border border-border">
                     <div className="flex items-center justify-between">
                       <div className="space-y-0.5">
                         <p className="text-sm font-bold text-foreground flex items-center gap-2">
@@ -263,7 +263,7 @@ export const NewMessageFlow: React.FC<NewMessageFlowProps> = ({
                           onClick={() => setSendType("broadcast")}
                           className={cn(
                             "px-3 py-1.5 text-xs font-bold uppercase tracking-wider rounded-sm transition-all",
-                            sendType === "broadcast" ? "bg-background text-foreground shadow-sm border border-border" : "text-muted-foreground"
+                            sendType === "broadcast" ? "bg-background text-foreground border border-border" : "text-muted-foreground"
                           )}
                         >
                           Group
@@ -272,7 +272,7 @@ export const NewMessageFlow: React.FC<NewMessageFlowProps> = ({
                           onClick={() => setSendType("individual")}
                           className={cn(
                             "px-3 py-1.5 text-xs font-bold uppercase tracking-wider rounded-sm transition-all",
-                            sendType === "individual" ? "bg-background text-foreground shadow-sm border border-border" : "text-muted-foreground"
+                            sendType === "individual" ? "bg-background text-foreground border border-border" : "text-muted-foreground"
                           )}
                         >
                           Individual
@@ -283,7 +283,7 @@ export const NewMessageFlow: React.FC<NewMessageFlowProps> = ({
                 )}
 
                 {selectedContactIds.length > 0 || selectedGroupIds.length > 0 ? (
-                  <div className="mb-6 p-4 bg-background rounded-lg border border-border shadow-sm">
+                  <div className="mb-6 p-4 bg-background rounded-lg border border-border">
                     <div className="w-full flex items-center justify-between mb-4">
                       <span className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Selection ({totalRecipientsCount})</span>
                       <div className="flex items-center gap-3">
@@ -331,13 +331,13 @@ export const NewMessageFlow: React.FC<NewMessageFlowProps> = ({
                                 }
                               }}
                               disabled={!newGroupName.trim()}
-                              className="px-4 py-2 bg-primary text-primary-foreground text-xs font-bold rounded-md disabled:opacity-50 hover:bg-primary/90 transition-all shadow-sm"
+                              className="px-4 py-2 bg-primary text-primary-foreground text-xs font-bold rounded-md disabled:opacity-50 hover:bg-primary/90 transition-all"
                             >
                               Save
                             </button>
                             <button 
                               onClick={() => setIsNamingGroup(false)}
-                              className="px-4 py-2 bg-background text-foreground text-xs font-bold rounded-md border border-border hover:bg-muted transition-all shadow-sm"
+                              className="px-4 py-2 bg-background text-foreground text-xs font-bold rounded-md border border-border hover:bg-muted transition-all"
                             >
                               Cancel
                             </button>
@@ -350,7 +350,7 @@ export const NewMessageFlow: React.FC<NewMessageFlowProps> = ({
                       {selectedGroupIds.map(gid => {
                         const g = groups.find(group => group.id === gid);
                         return (
-                          <div key={gid} className="flex items-center gap-1.5 px-2.5 py-1.5 bg-primary text-primary-foreground rounded-md text-xs font-bold shadow-sm">
+                          <div key={gid} className="flex items-center gap-1.5 px-2.5 py-1.5 bg-primary text-primary-foreground rounded-md text-xs font-bold">
                             <Layers className="w-3.5 h-3.5 opacity-80" />
                             {g?.name}
                             <button onClick={() => toggleGroup(gid)} className="relative hover:text-primary-foreground/70 ml-1 after:absolute after:content-[''] after:-inset-2"><X className="w-3.5 h-3.5" /></button>
@@ -360,7 +360,7 @@ export const NewMessageFlow: React.FC<NewMessageFlowProps> = ({
                       {selectedContactIds.map(cid => {
                         const c = contacts.find(contact => contact.id === cid);
                         return (
-                          <div key={cid} className="flex items-center gap-1.5 px-2.5 py-1.5 bg-muted text-foreground border border-border rounded-md text-xs font-bold shadow-sm">
+                          <div key={cid} className="flex items-center gap-1.5 px-2.5 py-1.5 bg-muted text-foreground border border-border rounded-md text-xs font-bold">
                             <User className="w-3.5 h-3.5 text-muted-foreground" />
                             {c?.name}
                             <button onClick={() => toggleContact(cid)} className="relative hover:text-destructive ml-1 after:absolute after:content-[''] after:-inset-2"><X className="w-3.5 h-3.5" /></button>
@@ -380,7 +380,7 @@ export const NewMessageFlow: React.FC<NewMessageFlowProps> = ({
                         className={cn(
                           "w-full flex items-center justify-between p-3 rounded-md border transition-all text-left group",
                           selectedContactIds.includes(contact.id) 
-                            ? "bg-muted/50 border-primary/50 shadow-sm" 
+                            ? "bg-muted/50 border-primary/50" 
                             : "bg-background border-transparent hover:bg-muted/30 hover:border-border"
                         )}
                       >
@@ -401,7 +401,7 @@ export const NewMessageFlow: React.FC<NewMessageFlowProps> = ({
                         <div className={cn(
                           "w-5 h-5 rounded-sm border transition-all flex items-center justify-center",
                           selectedContactIds.includes(contact.id) 
-                            ? "bg-primary border-primary text-primary-foreground shadow-sm" 
+                            ? "bg-primary border-primary text-primary-foreground" 
                             : "border-input bg-background"
                         )}>
                           {selectedContactIds.includes(contact.id) && <Check className="w-3.5 h-3.5" />}
@@ -416,7 +416,7 @@ export const NewMessageFlow: React.FC<NewMessageFlowProps> = ({
                         className={cn(
                           "w-full flex items-center justify-between p-4 rounded-md border transition-all text-left group",
                           selectedGroupIds.includes(group.id) 
-                            ? "bg-muted/50 border-primary/50 shadow-sm" 
+                            ? "bg-muted/50 border-primary/50" 
                             : "bg-background border-transparent hover:bg-muted/30 hover:border-border"
                         )}
                       >
@@ -437,7 +437,7 @@ export const NewMessageFlow: React.FC<NewMessageFlowProps> = ({
                         <div className={cn(
                           "w-5 h-5 rounded-sm border transition-all flex items-center justify-center",
                           selectedGroupIds.includes(group.id) 
-                            ? "bg-primary border-primary text-primary-foreground shadow-sm" 
+                            ? "bg-primary border-primary text-primary-foreground" 
                             : "border-input bg-background"
                         )}>
                           {selectedGroupIds.includes(group.id) && <Check className="w-3.5 h-3.5" />}
@@ -486,7 +486,7 @@ export const NewMessageFlow: React.FC<NewMessageFlowProps> = ({
                           onChange={(e) => setBroadcastName(e.target.value)}
                           placeholder="e.g. VIP Newsletter Q1"
                           aria-label="Broadcast title"
-                          className="w-full px-4 py-2 bg-background border border-input rounded-md text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 transition-all shadow-sm"
+                          className="w-full px-4 py-2 bg-background border border-input rounded-md text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 transition-all"
                         />
                       </div>
                     )}
@@ -499,7 +499,7 @@ export const NewMessageFlow: React.FC<NewMessageFlowProps> = ({
                         <button
                           key={tmpl.id}
                           onClick={() => setMessageContent(tmpl.content)}
-                          className="shrink-0 px-3 py-1.5 bg-background border border-border rounded-md text-xs font-bold hover:bg-muted hover:text-foreground transition-all shadow-sm"
+                          className="shrink-0 px-3 py-1.5 bg-background border border-border rounded-md text-xs font-bold hover:bg-muted hover:text-foreground transition-all"
                         >
                           {tmpl.name}
                         </button>
@@ -522,7 +522,7 @@ export const NewMessageFlow: React.FC<NewMessageFlowProps> = ({
                       onChange={(e) => setMessageContent(e.target.value)}
                       placeholder="Type your message here..."
                       aria-label="Message content"
-                      className="flex-1 w-full p-4 bg-background border border-input rounded-md text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 transition-all resize-none shadow-sm"
+                      className="flex-1 w-full p-4 bg-background border border-input rounded-md text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 transition-all resize-none"
                     />
                     <div className="absolute bottom-4 right-4 flex gap-4 text-xs font-bold text-muted-foreground pointer-events-none">
                       <span>{messageContent.length} chars</span>
@@ -557,13 +557,13 @@ export const NewMessageFlow: React.FC<NewMessageFlowProps> = ({
                       className={cn(
                         "relative flex flex-col items-start p-6 rounded-xl border-2 transition-all text-left group",
                         !isScheduled 
-                          ? "bg-primary/5 border-primary shadow-md ring-4 ring-primary/5" 
+                          ? "bg-primary/5 border-primary ring-4 ring-primary/5" 
                           : "bg-background border-border hover:border-primary/30 hover:bg-muted/30"
                       )}
                     >
                       <div className={cn(
                         "w-10 h-10 rounded-lg flex items-center justify-center mb-4 transition-all",
-                        !isScheduled ? "bg-primary text-primary-foreground shadow-sm" : "bg-muted text-muted-foreground"
+                        !isScheduled ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"
                       )}>
                         <Send className="w-5 h-5" />
                       </div>
@@ -573,7 +573,7 @@ export const NewMessageFlow: React.FC<NewMessageFlowProps> = ({
                       </div>
                       {!isScheduled && (
                         <div className="absolute top-4 right-4">
-                          <div className="w-5 h-5 bg-primary rounded-full flex items-center justify-center shadow-sm">
+                          <div className="w-5 h-5 bg-primary rounded-full flex items-center justify-center">
                             <Check className="w-3 h-3 text-primary-foreground" />
                           </div>
                         </div>
@@ -585,13 +585,13 @@ export const NewMessageFlow: React.FC<NewMessageFlowProps> = ({
                       className={cn(
                         "relative flex flex-col items-start p-6 rounded-xl border-2 transition-all text-left group",
                         isScheduled 
-                          ? "bg-primary/5 border-primary shadow-md ring-4 ring-primary/5" 
+                          ? "bg-primary/5 border-primary ring-4 ring-primary/5" 
                           : "bg-background border-border hover:border-primary/30 hover:bg-muted/30"
                       )}
                     >
                       <div className={cn(
                         "w-10 h-10 rounded-lg flex items-center justify-center mb-4 transition-all",
-                        isScheduled ? "bg-primary text-primary-foreground shadow-sm" : "bg-muted text-muted-foreground"
+                        isScheduled ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"
                       )}>
                         <Clock className="w-5 h-5" />
                       </div>
@@ -601,7 +601,7 @@ export const NewMessageFlow: React.FC<NewMessageFlowProps> = ({
                       </div>
                       {isScheduled && (
                         <div className="absolute top-4 right-4">
-                          <div className="w-5 h-5 bg-primary rounded-full flex items-center justify-center shadow-sm">
+                          <div className="w-5 h-5 bg-primary rounded-full flex items-center justify-center">
                             <Check className="w-3 h-3 text-primary-foreground" />
                           </div>
                         </div>
@@ -628,7 +628,7 @@ export const NewMessageFlow: React.FC<NewMessageFlowProps> = ({
                               value={scheduledAt}
                               onChange={(e) => setScheduledAt(e.target.value)}
                               aria-label="Schedule date and time"
-                              className="w-full px-4 py-2.5 bg-background border border-input rounded-md text-sm outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all shadow-sm"
+                              className="w-full px-4 py-2.5 bg-background border border-input rounded-md text-sm outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
                             />
                           </div>
                           <FrequencySelector 
@@ -646,7 +646,7 @@ export const NewMessageFlow: React.FC<NewMessageFlowProps> = ({
                 </AnimatePresence>
 
                 {/* Summary Card */}
-                <div className="bg-card border border-border rounded-xl shadow-sm overflow-hidden">
+                <div className="bg-card border border-border rounded-xl overflow-hidden">
                   <div className="px-6 py-4 border-b border-border bg-muted/20">
                     <h4 className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Broadcast Summary</h4>
                   </div>
@@ -732,7 +732,7 @@ export const NewMessageFlow: React.FC<NewMessageFlowProps> = ({
               (currentStep === "compose" && !messageContent.trim()) ||
               (currentStep === "schedule" && isScheduled && !scheduledAt)
             }
-            className="inline-flex items-center gap-2 px-8 py-2.5 rounded-md bg-primary text-primary-foreground text-sm font-bold shadow-sm hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+            className="inline-flex items-center gap-2 px-8 py-2.5 rounded-md bg-primary text-primary-foreground text-sm font-bold hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
           >
             {currentStep === "schedule" ? (isScheduled ? "Schedule Broadcast" : "Send Broadcast") : "Continue"}
             {currentStep !== "schedule" && <ChevronRight className="w-4 h-4" />}

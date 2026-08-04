@@ -223,7 +223,7 @@ function ChannelPreview({
               onClick={() => setChannel(c.id)}
               className={cn(
                 "flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-semibold rounded transition-all",
-                isActive ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
+                isActive ? "bg-background text-foreground" : "text-muted-foreground hover:text-foreground"
               )}
             >
               <Icon className="w-3 h-3" />
@@ -261,7 +261,7 @@ function ChatBubble({
   const bubbleColor = channel === "whatsapp" ? "bg-emerald-50 border-emerald-100" : "bg-background border-border";
   return (
     <div className="space-y-2">
-      <div className={cn("rounded-2xl rounded-tl-sm border p-3 max-w-[85%] shadow-sm", bubbleColor)}>
+      <div className={cn("rounded-2xl rounded-tl-sm border p-3 max-w-[85%]", bubbleColor)}>
         <p className="text-sm text-foreground whitespace-pre-wrap leading-relaxed">{text}</p>
       </div>
       {replies.length > 0 && (
@@ -286,7 +286,7 @@ function SmsBubble({ text }: { text: string }) {
   const segments = Math.max(1, Math.ceil(text.length / 160));
   return (
     <div className="space-y-2">
-      <div className="rounded-2xl rounded-tl-sm bg-background border border-border p-3 max-w-[85%] shadow-sm">
+      <div className="rounded-2xl rounded-tl-sm bg-background border border-border p-3 max-w-[85%]">
         <p className="text-sm text-foreground whitespace-pre-wrap leading-relaxed">{text}</p>
       </div>
       <p className="text-xs text-muted-foreground pl-1">
@@ -298,7 +298,7 @@ function SmsBubble({ text }: { text: string }) {
 
 function WebCard({ text, replies }: { text: string; replies: string[] }) {
   return (
-    <div className="bg-background rounded-xl border border-border p-4 shadow-sm">
+    <div className="bg-background rounded-xl border border-border p-4">
       <p className="text-sm text-foreground whitespace-pre-wrap leading-relaxed">{text}</p>
       {replies.length > 0 && (
         <div className="flex flex-wrap gap-2 mt-3 pt-3 border-t border-border">
@@ -722,7 +722,7 @@ export function SequenceBuilder({
                       <div
                         className={cn(
                           "relative bg-card border rounded-xl transition-all group",
-                          isSelected ? "border-primary ring-1 ring-primary shadow-sm" : "border-border hover:border-foreground/20"
+                          isSelected ? "border-primary ring-1 ring-primary" : "border-border hover:border-foreground/20"
                         )}
                       >
                         {/* Delete button — top right */}

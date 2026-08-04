@@ -75,7 +75,7 @@ export function GamificationAdminView({ accountId }: { accountId: string }) {
               onClick={() => setTab(id)}
               className={cn(
                 "flex items-center gap-2 px-4 py-1.5 text-sm font-semibold rounded-full transition-all",
-                active ? "bg-primary text-primary-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
+                active ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"
               )}
             >
               <Icon className="w-3.5 h-3.5" />
@@ -1174,7 +1174,7 @@ function AnalyticsTab({ accountId }: { accountId: string }) {
                     if (!active || !payload || payload.length === 0) return null;
                     const p: any = payload[0].payload;
                     return (
-                      <div className="rounded-md border border-border bg-card px-3 py-2 shadow-sm text-xs">
+                      <div className="rounded-md border border-border bg-card px-3 py-2 text-xs">
                         <div className="font-bold text-foreground">{p.actor}</div>
                         <div className="text-muted-foreground mt-1 space-y-0.5">
                           <div>Engagement: <span className="text-foreground font-semibold">{p.x}</span></div>

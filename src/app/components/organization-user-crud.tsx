@@ -148,7 +148,7 @@ export const TeamManagement = ({
             onClick={() => setActiveTab("members")}
             className={cn(
               "px-4 py-2 text-xs font-semibold transition-all flex items-center gap-2",
-              activeTab === "members" ? "bg-background text-foreground shadow-sm border border-border" : "text-muted-foreground hover:text-foreground"
+              activeTab === "members" ? "bg-background text-foreground border border-border" : "text-muted-foreground hover:text-foreground"
             )}
           >
             <UsersIcon className="w-3.5 h-3.5" />
@@ -162,7 +162,7 @@ export const TeamManagement = ({
             onClick={() => setActiveTab("audit")}
             className={cn(
               "px-4 py-2 text-xs font-semibold transition-all flex items-center gap-2",
-              activeTab === "audit" ? "bg-background text-foreground shadow-sm border border-border" : "text-muted-foreground hover:text-foreground"
+              activeTab === "audit" ? "bg-background text-foreground border border-border" : "text-muted-foreground hover:text-foreground"
             )}
           >
             <FileText className="w-3.5 h-3.5" />
@@ -228,7 +228,7 @@ export const TeamManagement = ({
                         <tr key={user.id} className="hover:bg-muted/30 transition-colors group">
                           <td className="px-6 py-4">
                             <div className="flex items-center gap-3">
-                              <div className="w-10 h-10 rounded-full bg-muted border border-border flex items-center justify-center overflow-hidden shrink-0 shadow-sm">
+                              <div className="w-10 h-10 rounded-full bg-muted border border-border flex items-center justify-center overflow-hidden shrink-0">
                                 {user.avatar ? (
                                   <img src={user.avatar} alt={user.name} className="w-full h-full object-cover" />
                                 ) : (
@@ -330,7 +330,7 @@ const FilterBtn = ({ active, onClick, children }: { active: boolean; onClick: ()
     onClick={onClick}
     className={cn(
       "px-2.5 py-1.5 text-xs font-semibold transition-all whitespace-nowrap",
-      active ? "bg-background text-foreground shadow-sm border border-border" : "text-muted-foreground hover:text-foreground"
+      active ? "bg-background text-foreground border border-border" : "text-muted-foreground hover:text-foreground"
     )}
   >
     {children}
@@ -500,7 +500,7 @@ const GroupFormModal = ({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-200">
-      <Card className="w-full max-w-md shadow-2xl overflow-hidden border-border/50">
+      <Card className="w-full max-w-md overflow-hidden border-border/50">
         <div className="p-5 border-b border-border flex items-center justify-between bg-muted/30">
           <h3 className="font-bold text-lg text-foreground">{group ? "Edit Group" : "Create Group"}</h3>
           <Button variant="ghost" size="icon" onClick={onClose} className="rounded-full">
@@ -711,7 +711,7 @@ const AddUserForm = ({ onAdd, onCancel }: { onAdd: (data: Partial<UserType>) => 
               className={cn(
                 "py-2 text-xs font-bold uppercase tracking-widest transition-all",
                 formData.role === role
-                  ? "bg-background text-primary shadow-sm border border-border"
+                  ? "bg-background text-primary border border-border"
                   : "text-muted-foreground hover:text-foreground"
               )}
             >
@@ -783,7 +783,7 @@ const EditUserForm = ({ user, onUpdate, onCancel }: {
               className={cn(
                 "py-2 text-xs font-bold uppercase tracking-widest transition-all",
                 formData.role === role
-                  ? "bg-background text-primary shadow-sm border border-border"
+                  ? "bg-background text-primary border border-border"
                   : "text-muted-foreground hover:text-foreground"
               )}
             >

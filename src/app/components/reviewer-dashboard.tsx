@@ -393,7 +393,7 @@ export const ReviewerDashboard = ({
   return (
     <div className="space-y-6 p-6 lg:p-8 animate-in fade-in duration-500 bg-gradient-to-br from-slate-50 via-background to-blue-50/30 min-h-full">
       {/* Hero Header */}
-      <header className="relative overflow-hidden rounded-sm bg-slate-950 text-white p-8 shadow-[0_24px_60px_-28px_rgba(15,23,42,0.55)]">
+      <header className="relative overflow-hidden rounded-sm bg-slate-950 text-white p-8">
         <div className="absolute -top-24 -right-20 w-80 h-80 rounded-full bg-gradient-to-br from-blue-500/40 to-violet-500/10 blur-3xl pointer-events-none" />
         <div className="absolute -bottom-32 -left-20 w-96 h-96 rounded-full bg-gradient-to-tr from-emerald-500/20 to-blue-500/10 blur-3xl pointer-events-none" />
         <div
@@ -487,7 +487,7 @@ export const ReviewerDashboard = ({
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.3, delay: i * 0.06, ease: "easeOut" }}
-            className="bg-card p-5 rounded-lg border border-border shadow-sm group hover:border-primary/30 transition-all"
+            className="bg-card p-5 rounded-lg border border-border group hover:border-primary/30 transition-all"
           >
             <div className="flex items-center justify-between mb-3">
               <div
@@ -515,7 +515,7 @@ export const ReviewerDashboard = ({
       <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
         {/* Left Panel (60%) — Review Queue */}
         <div className="lg:col-span-3">
-          <div className="bg-card rounded-lg border border-border shadow-sm overflow-hidden">
+          <div className="bg-card rounded-lg border border-border overflow-hidden">
             {/* Header + Tabs */}
             <div className="px-6 pt-5 pb-4 border-b border-border">
               <div className="flex items-center justify-between mb-4">
@@ -536,7 +536,7 @@ export const ReviewerDashboard = ({
                     className={cn(
                       "flex items-center gap-1.5 px-3 py-1.5 rounded-sm text-xs font-semibold transition-all",
                       activeTab === tab
-                        ? "bg-background text-foreground shadow-sm border border-border"
+                        ? "bg-background text-foreground border border-border"
                         : "text-muted-foreground hover:text-foreground"
                     )}
                   >
@@ -718,7 +718,7 @@ export const ReviewerDashboard = ({
 
         {/* Right Panel (40%) — Review Detail */}
         <div className="lg:col-span-2">
-          <div className="bg-card rounded-lg border border-border shadow-sm overflow-hidden sticky top-6">
+          <div className="bg-card rounded-lg border border-border overflow-hidden sticky top-6">
             {!selectedReview ? (
               /* Empty state */
               <div className="py-20 text-center px-6">
@@ -954,7 +954,7 @@ export const ReviewerDashboard = ({
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.3, delay: i * 0.05 }}
-            className="bg-card p-4 rounded-lg border border-border shadow-sm"
+            className="bg-card p-4 rounded-lg border border-border"
           >
             <div className="flex items-center gap-2 mb-2">
               <div className={cn("p-1.5 rounded-md", stat.bg)}>
@@ -976,7 +976,7 @@ export const ReviewerDashboard = ({
       </div>
 
       {/* Bottom Section — Volunteer Coaching Summary */}
-      <div className="bg-card rounded-lg border border-border shadow-sm overflow-hidden">
+      <div className="bg-card rounded-lg border border-border overflow-hidden">
         <div className="px-6 pt-5 pb-4 border-b border-border">
           <div className="flex items-center justify-between">
             <div>
@@ -1101,7 +1101,7 @@ export const ReviewerDashboard = ({
 
       {/* ============ VOLUNTEER LOAD TAB ============ */}
       {pageTab === "volunteer_load" && (
-        <div className="bg-card rounded-lg border border-border shadow-sm overflow-hidden">
+        <div className="bg-card rounded-lg border border-border overflow-hidden">
           <div className="px-6 pt-5 pb-4 border-b border-border">
             <div className="flex items-center justify-between">
               <div>

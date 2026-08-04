@@ -93,7 +93,7 @@ export function TemplatesTab({
           </div>
           <button
             onClick={openCreate}
-            className="inline-flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-md text-sm font-bold shadow-sm hover:bg-primary/90 transition-all uppercase tracking-widest"
+            className="inline-flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-md text-sm font-bold hover:bg-primary/90 transition-all uppercase tracking-widest"
           >
             <Plus className="w-4 h-4" />
             New Template
@@ -106,7 +106,7 @@ export function TemplatesTab({
             onClick={() => setTemplateCategory("all")}
             className={cn(
               "px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider transition-all border",
-              templateCategory === "all" ? "bg-primary text-primary-foreground border-primary shadow-md" : "bg-muted text-muted-foreground border-border hover:border-primary/30"
+              templateCategory === "all" ? "bg-primary text-primary-foreground border-primary" : "bg-muted text-muted-foreground border-border hover:border-primary/30"
             )}
           >
             All Categories ({templates.length})
@@ -120,7 +120,7 @@ export function TemplatesTab({
                 onClick={() => setTemplateCategory(cat)}
                 className={cn(
                   "px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider transition-all border",
-                  templateCategory === cat ? "bg-primary text-primary-foreground border-primary shadow-md" : "bg-muted text-muted-foreground border-border hover:border-primary/30"
+                  templateCategory === cat ? "bg-primary text-primary-foreground border-primary" : "bg-muted text-muted-foreground border-border hover:border-primary/30"
                 )}
               >
                 {cat} ({count})
@@ -146,7 +146,7 @@ export function TemplatesTab({
               const preview = resolveTemplate(tmpl.content);
               const placeholders = tmpl.content.match(/\{[A-Z_]+\}/g) || [];
               return (
-                <div key={tmpl.id} className="flex flex-col bg-card border border-border rounded-lg shadow-sm group hover:border-primary/30 transition-all overflow-hidden">
+                <div key={tmpl.id} className="flex flex-col bg-card border border-border rounded-lg group hover:border-primary/30 transition-all overflow-hidden">
                   <div className="p-5 flex-1 space-y-4">
                     <div className="flex items-start justify-between gap-2">
                       <div className="space-y-1">
@@ -198,7 +198,7 @@ export function TemplatesTab({
         {isModalOpen && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setIsModalOpen(false)} aria-hidden="true" className="absolute inset-0 bg-black/60 backdrop-blur-[2px]" />
-            <motion.div initial={{ opacity: 0, scale: 0.98, y: 10 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.98, y: 10 }} className="relative bg-background rounded-lg shadow-xl border border-border w-full max-w-xl overflow-hidden flex flex-col max-h-[90vh]">
+            <motion.div initial={{ opacity: 0, scale: 0.98, y: 10 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.98, y: 10 }} className="relative bg-background rounded-lg border border-border w-full max-w-xl overflow-hidden flex flex-col max-h-[90vh]">
               <div className="px-6 py-4 border-b border-border flex items-center justify-between">
                 <h2 className="text-lg font-bold tracking-tight text-foreground">{editingTmpl ? "Edit Template" : "New Template"}</h2>
                 <button onClick={() => setIsModalOpen(false)} className="min-w-[44px] min-h-[44px] flex items-center justify-center text-muted-foreground hover:text-foreground rounded-md transition-colors"><X className="w-4 h-4" /></button>
@@ -235,7 +235,7 @@ export function TemplatesTab({
 
                 <div className="flex gap-3 pt-4">
                   <button type="button" onClick={() => setIsModalOpen(false)} className="flex-1 px-4 py-2 bg-background border border-input text-foreground text-xs font-bold uppercase tracking-widest rounded-md hover:bg-muted transition-all">Cancel</button>
-                  <button type="button" onClick={handleSave} disabled={!form.name.trim() || !form.content.trim()} className="flex-1 px-4 py-2 bg-primary text-primary-foreground text-xs font-bold uppercase tracking-widest rounded-md hover:bg-primary/90 transition-all shadow-md disabled:opacity-50">Save Template</button>
+                  <button type="button" onClick={handleSave} disabled={!form.name.trim() || !form.content.trim()} className="flex-1 px-4 py-2 bg-primary text-primary-foreground text-xs font-bold uppercase tracking-widest rounded-md hover:bg-primary/90 transition-all disabled:opacity-50">Save Template</button>
                 </div>
               </div>
             </motion.div>

@@ -130,7 +130,7 @@ function DraggableRuleRow({
       style={{ opacity: isDragging ? 0.4 : 1 }}
       className={cn(
         "group bg-background hover:bg-muted/20 transition-all duration-200",
-        isDragging && "shadow-lg ring-1 ring-primary/20"
+        isDragging && "ring-1 ring-primary/20"
       )}
     >
       {/* Match header: grip(w-4) · #(w-6) · name/sources(flex-1) · audience(w-32) · mode(w-24) · status(w-20) · actions(w-16) */}
@@ -347,7 +347,7 @@ function RuleFormModal({
               <ChevronDown className="w-4 h-4 text-muted-foreground" />
             </button>
             {sourceOpen && (
-              <div className="absolute top-full left-0 right-0 z-[70] bg-background border border-border shadow-lg mt-1 max-h-52 overflow-y-auto">
+              <div className="absolute top-full left-0 right-0 z-[70] bg-background border border-border mt-1 max-h-52 overflow-y-auto">
                 <div className="p-1">
                   <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest px-2 py-1">Channels</p>
                   {CHANNEL_SOURCE_OPTIONS.map(opt => (

@@ -533,7 +533,7 @@ const FilterButton = ({ active, onClick, children }: { active: boolean; onClick:
     onClick={onClick}
     className={cn(
       "px-2.5 py-1.5 text-xs font-semibold transition-all flex items-center gap-1.5 whitespace-nowrap shrink-0",
-      active ? "bg-background text-foreground shadow-sm border border-border" : "text-muted-foreground hover:text-foreground"
+      active ? "bg-background text-foreground border border-border" : "text-muted-foreground hover:text-foreground"
     )}
   >
     {children}
@@ -591,7 +591,7 @@ const ChannelRow = ({ channel, onToggle, onDetail, onEdit, onDelete, onDuplicate
       transition={{ duration: 0.2 }}
     >
       <Card
-        className={cn("transition-all hover:shadow-md cursor-pointer group", !channel.enabled && "opacity-60")}
+        className={cn("transition-all cursor-pointer group", !channel.enabled && "opacity-60")}
         onClick={onDetail}
       >
         <CardContent className="p-5">
@@ -655,7 +655,7 @@ const ChannelRow = ({ channel, onToggle, onDetail, onEdit, onDelete, onDuplicate
                       animate={{ opacity: 1, scale: 1, y: 0 }}
                       exit={{ opacity: 0, scale: 0.95, y: -4 }}
                       transition={{ duration: 0.12 }}
-                      className="absolute right-0 top-full mt-1 w-48 bg-popover border border-border shadow-lg z-50"
+                      className="absolute right-0 top-full mt-1 w-48 bg-popover border border-border z-50"
                     >
                       <div className="py-1">
                         <MenuButton icon={Eye} label="View Details" onClick={() => { setMenuOpen(false); onDetail(); }} />
@@ -1130,7 +1130,7 @@ const ChannelDetailDrawer = ({ isOpen, onClose, channel, onToggle, onEdit, onDel
               onClick={() => setTab(t.id)}
               className={cn(
                 "flex items-center gap-1.5 px-3 py-2 text-xs font-semibold transition-all flex-1 justify-center",
-                tab === t.id ? "bg-background text-foreground shadow-sm border border-border" : "text-muted-foreground hover:text-foreground"
+                tab === t.id ? "bg-background text-foreground border border-border" : "text-muted-foreground hover:text-foreground"
               )}
             >
               <t.icon className="w-3.5 h-3.5" />

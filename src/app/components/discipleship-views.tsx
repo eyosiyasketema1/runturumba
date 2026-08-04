@@ -199,7 +199,7 @@ export function DiscipleshipDashboardView({ onNavigate, stats, gamificationStats
   return (
     <div className="p-6 space-y-5 bg-gradient-to-br from-slate-50 via-background to-violet-50/40 min-h-full">
       {/* ---------- HERO ---------- */}
-      <section className="relative overflow-hidden rounded-sm bg-slate-950 text-white p-8 shadow-[0_24px_60px_-28px_rgba(15,23,42,0.55)]">
+      <section className="relative overflow-hidden rounded-sm bg-slate-950 text-white p-8">
         {/* Decorative gradient blobs */}
         <div className="absolute -top-24 -right-20 w-80 h-80 rounded-full bg-gradient-to-br from-blue-500/40 to-violet-500/10 blur-3xl pointer-events-none" />
         <div className="absolute -bottom-32 -left-20 w-96 h-96 rounded-full bg-gradient-to-tr from-pink-500/30 to-violet-500/5 blur-3xl pointer-events-none" />
@@ -236,7 +236,7 @@ export function DiscipleshipDashboardView({ onNavigate, stats, gamificationStats
               />
             </div>
             <Button
-              className="bg-white text-slate-900 hover:bg-slate-100 shadow-lg"
+              className="bg-white text-slate-900 hover:bg-slate-100"
               onClick={() => onNavigate?.("seekers")}
             >
               <Plus className="w-3.5 h-3.5" /> New Seeker Intake
@@ -300,7 +300,7 @@ export function DiscipleshipDashboardView({ onNavigate, stats, gamificationStats
       {/* ---------- GAMIFICATION OVERVIEW ---------- */}
       {gamificationStats && (
         <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          <div className="rounded-sm bg-card border border-border p-4 shadow-sm">
+          <div className="rounded-sm bg-card border border-border p-4">
             <div className="flex items-center gap-2 mb-2">
               <div className="w-8 h-8 rounded-lg bg-amber-100 flex items-center justify-center">
                 <Star className="w-4 h-4 text-amber-600" />
@@ -309,7 +309,7 @@ export function DiscipleshipDashboardView({ onNavigate, stats, gamificationStats
             </div>
             <p className="text-2xl font-bold text-foreground">{gamificationStats.total_xp_awarded.toLocaleString()}</p>
           </div>
-          <div className="rounded-sm bg-card border border-border p-4 shadow-sm">
+          <div className="rounded-sm bg-card border border-border p-4">
             <div className="flex items-center gap-2 mb-2">
               <div className="w-8 h-8 rounded-lg bg-orange-100 flex items-center justify-center">
                 <Flame className="w-4 h-4 text-orange-600" />
@@ -318,7 +318,7 @@ export function DiscipleshipDashboardView({ onNavigate, stats, gamificationStats
             </div>
             <p className="text-2xl font-bold text-foreground">{gamificationStats.avg_streak} <span className="text-sm font-medium text-muted-foreground">days</span></p>
           </div>
-          <div className="rounded-sm bg-card border border-border p-4 shadow-sm">
+          <div className="rounded-sm bg-card border border-border p-4">
             <div className="flex items-center gap-2 mb-2">
               <div className="w-8 h-8 rounded-lg bg-purple-100 flex items-center justify-center">
                 <Crown className="w-4 h-4 text-purple-600" />
@@ -327,7 +327,7 @@ export function DiscipleshipDashboardView({ onNavigate, stats, gamificationStats
             </div>
             <p className="text-2xl font-bold text-foreground">{(gamificationStats.tier_distribution.gold || 0) + (gamificationStats.tier_distribution.platinum || 0)}</p>
           </div>
-          <div className="rounded-sm bg-card border border-border p-4 shadow-sm">
+          <div className="rounded-sm bg-card border border-border p-4">
             <div className="flex items-center gap-2 mb-2">
               <div className="w-8 h-8 rounded-lg bg-blue-100 flex items-center justify-center">
                 <Users className="w-4 h-4 text-blue-600" />
@@ -342,7 +342,7 @@ export function DiscipleshipDashboardView({ onNavigate, stats, gamificationStats
       {/* ---------- CHARTS ROW ---------- */}
       <section className="grid grid-cols-1 lg:grid-cols-[2fr,1fr] gap-4">
         {/* Line / area chart — engagement trend */}
-        <div className="relative rounded-sm bg-card border border-border shadow-[0_12px_36px_-22px_rgba(15,23,42,0.25)] overflow-hidden">
+        <div className="relative rounded-sm bg-card border border-border overflow-hidden">
           <div className="absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r from-blue-500 via-violet-500 to-pink-500" />
           <div className="p-5 pb-2 flex items-start justify-between flex-wrap gap-3">
             <div>
@@ -388,7 +388,7 @@ export function DiscipleshipDashboardView({ onNavigate, stats, gamificationStats
         </div>
 
         {/* Donut chart — journey type */}
-        <div className="relative rounded-sm bg-card border border-border shadow-[0_12px_36px_-22px_rgba(15,23,42,0.25)] overflow-hidden">
+        <div className="relative rounded-sm bg-card border border-border overflow-hidden">
           <div className="absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r from-violet-500 to-amber-500" />
           <div className="p-5 pb-2">
             <p className="text-xs font-semibold text-muted-foreground uppercase tracking-[0.14em]">Journey mix</p>
@@ -467,7 +467,7 @@ export function DiscipleshipDashboardView({ onNavigate, stats, gamificationStats
 
       {/* ---------- RECENT ACTIVITY + PLATFORM MIX ---------- */}
       <section className="grid grid-cols-1 lg:grid-cols-[2fr,1fr] gap-4">
-        <div className="relative rounded-sm bg-card border border-border shadow-[0_12px_36px_-22px_rgba(15,23,42,0.25)] overflow-hidden">
+        <div className="relative rounded-sm bg-card border border-border overflow-hidden">
           <div className="absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r from-emerald-500 via-blue-500 to-violet-500" />
           <div className="p-5 pb-3 flex items-center justify-between">
             <div>
@@ -502,7 +502,7 @@ export function DiscipleshipDashboardView({ onNavigate, stats, gamificationStats
           </ol>
         </div>
 
-        <div className="relative rounded-sm bg-card border border-border shadow-[0_12px_36px_-22px_rgba(15,23,42,0.25)] overflow-hidden">
+        <div className="relative rounded-sm bg-card border border-border overflow-hidden">
           <div className="absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r from-sky-500 via-emerald-500 to-pink-500" />
           <div className="p-5 pb-3">
             <p className="text-xs font-semibold text-muted-foreground uppercase tracking-[0.14em]">Where they come from</p>
@@ -592,14 +592,14 @@ function HeroStat({
   const { line, area } = buildPath(sparkData, svgW, svgH);
 
   return (
-    <div className="relative rounded-sm bg-white border border-slate-200 overflow-hidden shadow-[0_8px_30px_-18px_rgba(15,23,42,0.25)] hover:shadow-[0_18px_40px_-18px_rgba(15,23,42,0.35)] transition-all group">
+    <div className="relative rounded-sm bg-white border border-slate-200 overflow-hidden transition-all group">
       {/* ~2px color accent gradient strip at top */}
       <div className="absolute top-0 left-0 right-0 h-[1.75px]" style={{ background: `linear-gradient(to right, ${accentFrom}, ${accentTo})` }} />
 
       <div className="relative p-[17.5px] flex flex-col gap-[10.5px]">
         <div className="flex items-start justify-between">
           <span className="text-xs font-semibold text-slate-500 uppercase tracking-[0.12em] leading-[14px]">{label}</span>
-          <span className="w-7 h-7 rounded-sm flex items-center justify-center text-white shadow-md" style={{ backgroundColor: iconColor }}>
+          <span className="w-7 h-7 rounded-sm flex items-center justify-center text-white" style={{ backgroundColor: iconColor }}>
             <Icon className="w-3.5 h-3.5" />
           </span>
         </div>
@@ -649,12 +649,12 @@ function QuickActionTile({
   return (
     <button
       onClick={onClick}
-      className="group relative rounded-sm bg-card border border-border p-4 text-left shadow-[0_8px_24px_-18px_rgba(15,23,42,0.25)] hover:shadow-[0_18px_40px_-18px_rgba(15,23,42,0.4)] hover:-translate-y-0.5 transition-all overflow-hidden"
+      className="group relative rounded-sm bg-card border border-border p-4 text-left hover:-translate-y-0.5 transition-all overflow-hidden"
     >
       {/* gradient backdrop that only shows on hover */}
       <div className={cn("absolute inset-0 bg-gradient-to-br opacity-0 group-hover:opacity-[0.04] transition-opacity", gradient)} />
       <div className="relative">
-        <span className={cn("inline-flex w-10 h-10 rounded-sm items-center justify-center text-white mb-3 shadow-md bg-gradient-to-br", gradient)}>
+        <span className={cn("inline-flex w-10 h-10 rounded-sm items-center justify-center text-white mb-3 bg-gradient-to-br", gradient)}>
           <Icon className="w-4 h-4" />
         </span>
         <p className="text-base font-bold text-foreground tracking-tight">{title}</p>
@@ -686,7 +686,7 @@ function QuickAction({
       className={cn(
         "w-full flex items-center gap-2.5 px-3 py-2.5 text-sm font-medium rounded-md transition-all",
         primary
-          ? "bg-primary text-primary-foreground hover:bg-primary/90 shadow-sm"
+          ? "bg-primary text-primary-foreground hover:bg-primary/90"
           : "bg-card border border-border text-foreground hover:bg-muted/50"
       )}
     >
@@ -1835,7 +1835,7 @@ function NewSeekerIntakeModal({
                     onClick={() => update("language", k)}
                     className={cn(
                       "px-3 py-1.5 text-xs font-semibold rounded transition-all",
-                      draft.language === k ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
+                      draft.language === k ? "bg-background text-foreground" : "text-muted-foreground hover:text-foreground"
                     )}
                   >{label}</button>
                 ))}
@@ -1947,7 +1947,7 @@ function NewSeekerIntakeModal({
                     onClick={() => update("mentorGender", k)}
                     className={cn(
                       "px-3 py-1.5 text-xs font-semibold rounded transition-all",
-                      draft.mentorGender === k ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
+                      draft.mentorGender === k ? "bg-background text-foreground" : "text-muted-foreground hover:text-foreground"
                     )}
                   >{label}</button>
                 ))}
@@ -2867,7 +2867,7 @@ export function MentorsView({
                 const members = mentors.filter(m => g.memberIds.includes(m.id));
                 return (
                   <button key={g.id} onClick={() => openManageGroup(g)}
-                    className="bg-card border border-border rounded-lg p-4 text-left hover:border-foreground/15 hover:shadow-sm transition-all group"
+                    className="bg-card border border-border rounded-lg p-4 text-left hover:border-foreground/15 transition-all group"
                   >
                     <div className="flex items-start gap-3 mb-2">
                       <div className="w-10 h-10 rounded-lg flex items-center justify-center shrink-0 bg-muted text-muted-foreground group-hover:bg-primary/10 group-hover:text-primary transition-colors">
@@ -4157,7 +4157,7 @@ function MentorFormModal({
                       onClick={() => setGender(g)}
                       className={cn(
                         "px-3 py-1.5 text-xs font-semibold rounded transition-all capitalize",
-                        gender === g ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
+                        gender === g ? "bg-background text-foreground" : "text-muted-foreground hover:text-foreground"
                       )}
                     >{g}</button>
                   ))}
@@ -6244,7 +6244,7 @@ function ContentDetailView({
                 onClick={() => setChannel(k)}
                 className={cn(
                   "flex-1 px-2.5 py-1.5 text-xs font-semibold rounded transition-all",
-                  channel === k ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
+                  channel === k ? "bg-background text-foreground" : "text-muted-foreground hover:text-foreground"
                 )}
               >{label}</button>
             ))}
@@ -6343,7 +6343,7 @@ function ContentFormModal({
                   onClick={() => setDifficulty(d)}
                   className={cn(
                     "flex-1 px-2 py-1.5 text-xs font-semibold rounded transition-all",
-                    difficulty === d ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
+                    difficulty === d ? "bg-background text-foreground" : "text-muted-foreground hover:text-foreground"
                   )}
                 >{d}</button>
               ))}
@@ -6509,7 +6509,7 @@ function AiGenerateModal({
                     onClick={() => setDifficulty(d)}
                     className={cn(
                       "flex-1 px-2 py-1.5 text-xs font-semibold rounded transition-all",
-                      difficulty === d ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
+                      difficulty === d ? "bg-background text-foreground" : "text-muted-foreground hover:text-foreground"
                     )}
                   >{d}</button>
                 ))}
@@ -7336,7 +7336,7 @@ export function ReportingView() {
                 onClick={() => setDim(k)}
                 className={cn(
                   "px-3 py-1.5 text-xs font-semibold rounded transition-all",
-                  dim === k ? "bg-primary text-primary-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
+                  dim === k ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"
                 )}
               >{label}</button>
             ))}
@@ -8129,7 +8129,7 @@ export function MainDashboardView({ onNavigate, stats }: {
   return (
     <div className="p-6 space-y-5 bg-gradient-to-br from-slate-50 via-background to-blue-50/40 min-h-full">
       {/* Hero */}
-      <section className="relative overflow-hidden rounded-sm bg-slate-950 text-white p-8 shadow-[0_24px_60px_-28px_rgba(15,23,42,0.55)]">
+      <section className="relative overflow-hidden rounded-sm bg-slate-950 text-white p-8">
         <div className="absolute -top-24 -right-20 w-80 h-80 rounded-full bg-gradient-to-br from-blue-500/40 to-emerald-500/10 blur-3xl pointer-events-none" />
         <div className="absolute -bottom-32 -left-20 w-96 h-96 rounded-full bg-gradient-to-tr from-violet-500/30 to-blue-500/5 blur-3xl pointer-events-none" />
         <div
@@ -8212,7 +8212,7 @@ export function MainDashboardView({ onNavigate, stats }: {
             <button
               key={i}
               onClick={() => onNavigate?.(t.action)}
-              className="relative overflow-hidden rounded-sm border border-slate-200 bg-white p-4 text-left transition-all group hover:border-slate-300 hover:-translate-y-0.5 hover:shadow-[0_16px_36px_-22px_rgba(15,23,42,0.35)]"
+              className="relative overflow-hidden rounded-sm border border-slate-200 bg-white p-4 text-left transition-all group hover:border-slate-300 hover:-translate-y-0.5"
             >
               <div className="flex items-start justify-between gap-2">
                 <span className={cn(
@@ -8233,7 +8233,7 @@ export function MainDashboardView({ onNavigate, stats }: {
 
       {/* Weekly trend */}
       <section>
-        <div className="relative rounded-sm bg-card border border-border shadow-[0_12px_36px_-22px_rgba(15,23,42,0.25)] overflow-hidden">
+        <div className="relative rounded-sm bg-card border border-border overflow-hidden">
           <div className="absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r from-blue-500 via-emerald-500 to-violet-500" />
           <div className="p-5 pb-2 flex items-start justify-between flex-wrap gap-3">
             <div>
@@ -8288,7 +8288,7 @@ export function MainDashboardView({ onNavigate, stats }: {
       {/* Activity + Channel health */}
       <section className="grid grid-cols-1 lg:grid-cols-[2fr,1fr] gap-4">
         {/* Activity */}
-        <div className="relative rounded-sm bg-card border border-border shadow-[0_12px_36px_-22px_rgba(15,23,42,0.25)] overflow-hidden">
+        <div className="relative rounded-sm bg-card border border-border overflow-hidden">
           <div className="absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r from-emerald-500 via-blue-500 to-violet-500" />
           <div className="p-5 pb-3 flex items-center justify-between">
             <div>
@@ -8323,7 +8323,7 @@ export function MainDashboardView({ onNavigate, stats }: {
         </div>
 
         {/* Channel health */}
-        <div className="relative rounded-sm bg-card border border-border shadow-[0_12px_36px_-22px_rgba(15,23,42,0.25)] overflow-hidden">
+        <div className="relative rounded-sm bg-card border border-border overflow-hidden">
           <div className="absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r from-emerald-500 to-rose-500" />
           <div className="p-5">
             <p className="text-xs font-semibold text-muted-foreground uppercase tracking-[0.14em]">System health</p>
@@ -8395,7 +8395,7 @@ export function VitalDashboardView({ onNavigate, stats }: {
   return (
     <div className="p-6 space-y-5 bg-gradient-to-br from-slate-50 via-background to-emerald-50/30 min-h-full">
       {/* Hero */}
-      <section className="relative overflow-hidden rounded-sm bg-slate-950 text-white p-8 shadow-[0_24px_60px_-28px_rgba(15,23,42,0.55)]">
+      <section className="relative overflow-hidden rounded-sm bg-slate-950 text-white p-8">
         <div className="absolute -top-24 -right-20 w-80 h-80 rounded-full bg-gradient-to-br from-emerald-500/40 to-blue-500/10 blur-3xl pointer-events-none" />
         <div className="absolute -bottom-32 -left-20 w-96 h-96 rounded-full bg-gradient-to-tr from-pink-500/30 to-amber-500/5 blur-3xl pointer-events-none" />
         <div
@@ -8427,7 +8427,7 @@ export function VitalDashboardView({ onNavigate, stats }: {
                 { value: "30d",     label: "Last 30 days" },
               ]}
             />
-            <Button className="bg-white text-slate-900 hover:bg-slate-100 shadow-lg" onClick={() => onNavigate?.("vital_analytics")}>
+            <Button className="bg-white text-slate-900 hover:bg-slate-100" onClick={() => onNavigate?.("vital_analytics")}>
               <Activity className="w-3.5 h-3.5" /> Open Analytics
             </Button>
           </div>
@@ -8437,7 +8437,7 @@ export function VitalDashboardView({ onNavigate, stats }: {
       {/* 5-stage pulse — at-a-glance funnel */}
       <section className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
         {VITAL_DASH_STAGES.map(s => (
-          <div key={s.letter} className="relative rounded-sm bg-card border border-border overflow-visible shadow-[0_8px_30px_-18px_rgba(15,23,42,0.25)]">
+          <div key={s.letter} className="relative rounded-sm bg-card border border-border overflow-visible">
             <div className={cn("absolute top-0 left-0 right-0 h-0.5 rounded-t-sm", s.color)} />
 
             {/* Help affordance — low opacity question mark with hover tooltip */}
@@ -8453,7 +8453,7 @@ export function VitalDashboardView({ onNavigate, stats }: {
               {/* Tooltip */}
               <div
                 role="tooltip"
-                className="pointer-events-none absolute right-0 top-full mt-2 w-[240px] rounded-sm border border-border bg-slate-950 text-white p-3 shadow-[0_16px_40px_-18px_rgba(15,23,42,0.6)] opacity-0 -translate-y-1 group-hover/tip:opacity-100 group-hover/tip:translate-y-0 group-focus-within/tip:opacity-100 group-focus-within/tip:translate-y-0 transition-all duration-150 z-30"
+                className="pointer-events-none absolute right-0 top-full mt-2 w-[240px] rounded-sm border border-border bg-slate-950 text-white p-3 opacity-0 -translate-y-1 group-hover/tip:opacity-100 group-hover/tip:translate-y-0 group-focus-within/tip:opacity-100 group-focus-within/tip:translate-y-0 transition-all duration-150 z-30"
               >
                 <div className="flex items-center gap-1.5 mb-1.5">
                   <span className={cn("w-5 h-5 rounded-sm flex items-center justify-center font-bold text-xs text-white", s.color)}>{s.letter}</span>
@@ -8484,7 +8484,7 @@ export function VitalDashboardView({ onNavigate, stats }: {
 
       {/* Conversion bridge + multi-line trend */}
       <section className="grid grid-cols-1 lg:grid-cols-[1fr,2fr] gap-4">
-        <div className="relative rounded-sm bg-card border border-border shadow-[0_12px_36px_-22px_rgba(15,23,42,0.25)] overflow-hidden">
+        <div className="relative rounded-sm bg-card border border-border overflow-hidden">
           <div className="absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r from-blue-500 via-violet-500 to-emerald-500" />
           <div className="p-5">
             <p className="text-xs font-semibold text-muted-foreground uppercase tracking-[0.14em]">Conversion bridge</p>
@@ -8507,7 +8507,7 @@ export function VitalDashboardView({ onNavigate, stats }: {
           </div>
         </div>
 
-        <div className="relative rounded-sm bg-card border border-border shadow-[0_12px_36px_-22px_rgba(15,23,42,0.25)] overflow-hidden">
+        <div className="relative rounded-sm bg-card border border-border overflow-hidden">
           <div className="absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r from-blue-500 via-pink-500 to-emerald-500" />
           <div className="p-5 pb-2 flex items-start justify-between flex-wrap gap-3">
             <div>
@@ -8553,7 +8553,7 @@ export function VitalDashboardView({ onNavigate, stats }: {
 
       {/* Insights + biggest win */}
       <section className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-        <div className="relative rounded-sm bg-gradient-to-br from-emerald-500 to-teal-600 text-white p-5 shadow-[0_12px_36px_-22px_rgba(16,185,129,0.45)] overflow-hidden">
+        <div className="relative rounded-sm bg-gradient-to-br from-emerald-500 to-teal-600 text-white p-5 overflow-hidden">
           <div className="absolute -bottom-12 -right-12 w-40 h-40 rounded-full bg-white/10 blur-2xl" />
           <p className="relative text-xs font-semibold uppercase tracking-[0.14em] opacity-90">Biggest win this week</p>
           <h3 className="relative text-2xl font-bold mt-2 leading-tight">+22 new Loyal disciples</h3>
@@ -8563,7 +8563,7 @@ export function VitalDashboardView({ onNavigate, stats }: {
           </Button>
         </div>
 
-        <div className="lg:col-span-2 relative rounded-sm bg-card border border-border shadow-[0_12px_36px_-22px_rgba(15,23,42,0.25)] overflow-hidden">
+        <div className="lg:col-span-2 relative rounded-sm bg-card border border-border overflow-hidden">
           <div className="absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r from-violet-500 to-blue-500" />
           <div className="p-5">
             <div className="flex items-center gap-2 mb-3">
@@ -8585,7 +8585,7 @@ export function VitalDashboardView({ onNavigate, stats }: {
 
       {/* Cohort breakdown — quick reference */}
       <section className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div className="relative rounded-sm bg-card border border-border shadow-[0_12px_36px_-22px_rgba(15,23,42,0.25)] overflow-hidden">
+        <div className="relative rounded-sm bg-card border border-border overflow-hidden">
           <div className="absolute top-0 left-0 right-0 h-0.5 bg-blue-500" />
           <div className="p-5">
             <p className="text-xs font-semibold text-muted-foreground uppercase tracking-[0.14em]">Top platform</p>
@@ -8593,7 +8593,7 @@ export function VitalDashboardView({ onNavigate, stats }: {
             <p className="text-sm text-muted-foreground">4,230 of 12,450 touchpoints (34%)</p>
           </div>
         </div>
-        <div className="relative rounded-sm bg-card border border-border shadow-[0_12px_36px_-22px_rgba(15,23,42,0.25)] overflow-hidden">
+        <div className="relative rounded-sm bg-card border border-border overflow-hidden">
           <div className="absolute top-0 left-0 right-0 h-0.5 bg-violet-500" />
           <div className="p-5">
             <p className="text-xs font-semibold text-muted-foreground uppercase tracking-[0.14em]">Top language</p>
@@ -8601,7 +8601,7 @@ export function VitalDashboardView({ onNavigate, stats }: {
             <p className="text-sm text-muted-foreground">42% of Loyal — Ethiopia 68%</p>
           </div>
         </div>
-        <div className="relative rounded-sm bg-card border border-border shadow-[0_12px_36px_-22px_rgba(15,23,42,0.25)] overflow-hidden">
+        <div className="relative rounded-sm bg-card border border-border overflow-hidden">
           <div className="absolute top-0 left-0 right-0 h-0.5 bg-pink-500" />
           <div className="p-5">
             <p className="text-xs font-semibold text-muted-foreground uppercase tracking-[0.14em]">Avg journey time</p>

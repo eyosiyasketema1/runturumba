@@ -328,7 +328,7 @@ function ApprovalDrawer({
         animate={{ x: 0 }}
         exit={{ x: "100%" }}
         transition={{ type: "spring", damping: 28, stiffness: 300 }}
-        className="fixed right-0 top-0 bottom-0 w-full max-w-lg bg-background border-l border-border shadow-2xl z-50 flex flex-col"
+        className="fixed right-0 top-0 bottom-0 w-full max-w-lg bg-background border-l border-border z-50 flex flex-col"
       >
         {/* Header */}
         <div className="px-6 py-4 border-b border-border flex items-center justify-between shrink-0">
@@ -503,7 +503,7 @@ function ApprovalDrawer({
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.95 }}
-              className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-md bg-background border border-border rounded-lg shadow-2xl z-[70] p-6"
+              className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-md bg-background border border-border rounded-lg z-[70] p-6"
             >
               <h3 className="text-base font-bold text-foreground mb-1">Confirm Approval</h3>
               <p className="text-sm text-muted-foreground mb-4">{item.description}</p>
@@ -537,7 +537,7 @@ function ApprovalDrawer({
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.95 }}
-              className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-md bg-background border border-border rounded-lg shadow-2xl z-[70] p-6"
+              className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-md bg-background border border-border rounded-lg z-[70] p-6"
             >
               <h3 className="text-base font-bold text-foreground mb-1">Reject Request</h3>
               <p className="text-sm text-muted-foreground mb-4">{item.description}</p>
@@ -623,7 +623,7 @@ function InvestigationDrawer({
         animate={{ x: 0 }}
         exit={{ x: "100%" }}
         transition={{ type: "spring", damping: 28, stiffness: 300 }}
-        className="fixed right-0 top-0 bottom-0 w-full max-w-xl bg-background border-l border-border shadow-2xl z-50 flex flex-col"
+        className="fixed right-0 top-0 bottom-0 w-full max-w-xl bg-background border-l border-border z-50 flex flex-col"
       >
         {/* Header */}
         <div className="px-6 py-4 border-b border-border flex items-center justify-between shrink-0">
@@ -770,7 +770,7 @@ function InvestigationDrawer({
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.95 }}
-              className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-md bg-background border border-border rounded-lg shadow-2xl z-[70] p-6"
+              className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-md bg-background border border-border rounded-lg z-[70] p-6"
             >
               <h3 className="text-base font-bold text-foreground mb-4">Resolve Compliance Issue</h3>
               <div className="space-y-3">
@@ -857,7 +857,7 @@ function RegionDrawer({ region, onClose }: { region: RegionData; onClose: () => 
         animate={{ x: 0 }}
         exit={{ x: "100%" }}
         transition={{ type: "spring", damping: 28, stiffness: 300 }}
-        className="fixed right-0 top-0 bottom-0 w-full max-w-lg bg-background border-l border-border shadow-2xl z-50 flex flex-col"
+        className="fixed right-0 top-0 bottom-0 w-full max-w-lg bg-background border-l border-border z-50 flex flex-col"
       >
         {/* Header */}
         <div className="px-6 py-4 border-b border-border flex items-center justify-between shrink-0">
@@ -1308,7 +1308,7 @@ export const GlobalOpsDashboard = ({
       {/* ================================================================ */}
       {/* Hero Header                                                      */}
       {/* ================================================================ */}
-      <header className="relative overflow-hidden rounded-sm bg-slate-950 text-white p-8 shadow-[0_24px_60px_-28px_rgba(15,23,42,0.55)]">
+      <header className="relative overflow-hidden rounded-sm bg-slate-950 text-white p-8">
         <div className="absolute -top-24 -right-20 w-80 h-80 rounded-full bg-gradient-to-br from-primary/40 to-violet-500/10 blur-3xl pointer-events-none" />
         <div className="absolute -bottom-32 -left-20 w-96 h-96 rounded-full bg-gradient-to-tr from-emerald-500/20 to-primary/10 blur-3xl pointer-events-none" />
         <div
@@ -1389,7 +1389,7 @@ export const GlobalOpsDashboard = ({
                 initial={{ opacity: 0, y: 12 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.3, delay: i * 0.06, ease: "easeOut" }}
-                className="bg-card p-5 rounded-lg border border-border shadow-sm group hover:border-primary/30 transition-all"
+                className="bg-card p-5 rounded-lg border border-border group hover:border-primary/30 transition-all"
               >
                 <div className="flex items-center justify-between mb-3">
                   <div className={cn("p-2 rounded-md border border-border group-hover:border-primary/20 transition-all", kpi.bg)}>
@@ -1408,7 +1408,7 @@ export const GlobalOpsDashboard = ({
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
             {/* Left Panel -- Region Overview (col-span-4) */}
             <div className="lg:col-span-4">
-              <div className="bg-card rounded-lg border border-border shadow-sm overflow-hidden">
+              <div className="bg-card rounded-lg border border-border overflow-hidden">
                 <div className="px-6 pt-5 pb-4 border-b border-border">
                   <div className="flex items-center justify-between">
                     <div>
@@ -1457,7 +1457,7 @@ export const GlobalOpsDashboard = ({
 
             {/* Center Panel -- Compliance & Audit (col-span-5) */}
             <div className="lg:col-span-5">
-              <div className="bg-card rounded-lg border border-border shadow-sm overflow-hidden">
+              <div className="bg-card rounded-lg border border-border overflow-hidden">
                 <div className="px-6 pt-5 pb-4 border-b border-border">
                   <div className="flex items-center justify-between mb-3">
                     <div>
@@ -1477,7 +1477,7 @@ export const GlobalOpsDashboard = ({
                         className={cn(
                           "flex-1 text-xs font-semibold py-1.5 px-3 rounded-md transition-all",
                           complianceTab === tab.key
-                            ? "bg-background text-foreground shadow-sm"
+                            ? "bg-background text-foreground"
                             : "text-muted-foreground hover:text-foreground"
                         )}
                       >
@@ -1634,7 +1634,7 @@ export const GlobalOpsDashboard = ({
                                   onClick={() => { setAuditTimeFilter(f); setAuditPage(1); }}
                                   className={cn(
                                     "text-[10px] font-semibold px-2 py-1 rounded transition-all",
-                                    auditTimeFilter === f ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
+                                    auditTimeFilter === f ? "bg-background text-foreground" : "text-muted-foreground hover:text-foreground"
                                   )}
                                 >
                                   {f === "all" ? "All Time" : f === "today" ? "Today" : "This Week"}
@@ -1725,7 +1725,7 @@ export const GlobalOpsDashboard = ({
 
             {/* Right Panel -- Pending Approvals (col-span-3) */}
             <div className="lg:col-span-3">
-              <div className="bg-card rounded-lg border border-border shadow-sm overflow-hidden">
+              <div className="bg-card rounded-lg border border-border overflow-hidden">
                 <div className="px-6 pt-5 pb-4 border-b border-border">
                   <div className="flex items-center justify-between">
                     <div>
@@ -1830,7 +1830,7 @@ export const GlobalOpsDashboard = ({
                       initial={{ opacity: 0, y: 12 }}
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ duration: 0.3, delay: 0.3 + i * 0.06, ease: "easeOut" }}
-                      className="bg-card p-5 rounded-lg border border-border shadow-sm"
+                      className="bg-card p-5 rounded-lg border border-border"
                     >
                       <div className="flex items-center justify-between mb-3">
                         <div className={cn("p-2 rounded-md border border-border", statusBg[card.status])}>
@@ -1875,7 +1875,7 @@ export const GlobalOpsDashboard = ({
                     transition={{ duration: 0.2, delay: i * 0.04 }}
                     onClick={() => { setSelectedAssignRegion(region.name); }}
                     className={cn(
-                      "bg-card rounded-lg border shadow-sm p-4 cursor-pointer transition-all hover:border-primary/30",
+                      "bg-card rounded-lg border p-4 cursor-pointer transition-all hover:border-primary/30",
                       selectedAssignRegion === region.name ? "border-primary ring-1 ring-primary/20" : "border-border",
                       region.status === "Critical" && "border-rose-500/30 bg-rose-500/5",
                       region.status === "Warning" && "border-amber-500/30 bg-amber-500/5",
@@ -1942,7 +1942,7 @@ export const GlobalOpsDashboard = ({
           </div>
 
           {/* Volunteer Assignment Table */}
-          <div className="bg-card rounded-lg border border-border shadow-sm overflow-hidden">
+          <div className="bg-card rounded-lg border border-border overflow-hidden">
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
@@ -2051,7 +2051,7 @@ export const GlobalOpsDashboard = ({
                   initial={{ opacity: 0, scale: 0.95 }}
                   animate={{ opacity: 1, scale: 1 }}
                   exit={{ opacity: 0, scale: 0.95 }}
-                  className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-md bg-background border border-border rounded-lg shadow-2xl z-50 p-6"
+                  className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-md bg-background border border-border rounded-lg z-50 p-6"
                 >
                   <h3 className="text-base font-bold text-foreground mb-1">Reassign Volunteer</h3>
                   <p className="text-sm text-muted-foreground mb-4">
@@ -2109,7 +2109,7 @@ export const GlobalOpsDashboard = ({
                   initial={{ opacity: 0, scale: 0.95 }}
                   animate={{ opacity: 1, scale: 1 }}
                   exit={{ opacity: 0, scale: 0.95 }}
-                  className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-md bg-background border border-border rounded-lg shadow-2xl z-50 p-6"
+                  className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-md bg-background border border-border rounded-lg z-50 p-6"
                 >
                   <h3 className="text-base font-bold text-foreground mb-1">Bulk Transfer</h3>
                   <p className="text-sm text-muted-foreground mb-4">
@@ -2189,7 +2189,7 @@ export const GlobalOpsDashboard = ({
                 initial={{ opacity: 0, y: 12 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.2, delay: i * 0.04 }}
-                className="bg-card p-4 rounded-lg border border-border shadow-sm"
+                className="bg-card p-4 rounded-lg border border-border"
               >
                 <div className="flex items-center gap-3">
                   <div className={cn("p-2 rounded-md border border-border", stat.bg)}>
@@ -2213,7 +2213,7 @@ export const GlobalOpsDashboard = ({
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.2, delay: i * 0.03 }}
                 className={cn(
-                  "bg-card rounded-lg border border-border shadow-sm p-5 transition-all",
+                  "bg-card rounded-lg border border-border p-5 transition-all",
                   !rule.enabled && "opacity-60"
                 )}
               >
@@ -2272,7 +2272,7 @@ export const GlobalOpsDashboard = ({
                   initial={{ opacity: 0, scale: 0.95 }}
                   animate={{ opacity: 1, scale: 1 }}
                   exit={{ opacity: 0, scale: 0.95 }}
-                  className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-lg bg-background border border-border rounded-lg shadow-2xl z-50 p-6 max-h-[85vh] overflow-y-auto"
+                  className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-lg bg-background border border-border rounded-lg z-50 p-6 max-h-[85vh] overflow-y-auto"
                 >
                   <h3 className="text-base font-bold text-foreground mb-4">{editingRule ? "Edit Rule" : "Create Rule"}</h3>
                   <div className="space-y-4">
@@ -2386,7 +2386,7 @@ export const GlobalOpsDashboard = ({
                             className={cn(
                               "flex-1 text-xs font-semibold py-1.5 px-3 rounded-md transition-all capitalize",
                               ruleForm.priority === p
-                                ? "bg-background text-foreground shadow-sm"
+                                ? "bg-background text-foreground"
                                 : "text-muted-foreground hover:text-foreground"
                             )}
                           >
@@ -2443,7 +2443,7 @@ export const GlobalOpsDashboard = ({
                 initial={{ opacity: 0, y: 12 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.3, delay: i * 0.06 }}
-                className="bg-card p-5 rounded-lg border border-border shadow-sm"
+                className="bg-card p-5 rounded-lg border border-border"
               >
                 <div className="flex items-center gap-3 mb-2">
                   <div className={cn("p-2 rounded-md border border-border", kpi.bg)}>
@@ -2472,7 +2472,7 @@ export const GlobalOpsDashboard = ({
                 className={cn(
                   "flex-1 text-xs font-semibold py-2 px-3 rounded-md transition-all",
                   privacyTab === tab.key
-                    ? "bg-background text-foreground shadow-sm"
+                    ? "bg-background text-foreground"
                     : "text-muted-foreground hover:text-foreground"
                 )}
               >
@@ -2484,7 +2484,7 @@ export const GlobalOpsDashboard = ({
           {/* Requests Sub-tab */}
           {privacyTab === "requests" && (
             <motion.div initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.15 }}>
-              <div className="bg-card rounded-lg border border-border shadow-sm overflow-hidden">
+              <div className="bg-card rounded-lg border border-border overflow-hidden">
                 <div className="px-6 pt-5 pb-4 border-b border-border flex items-center justify-between">
                   <div>
                     <h3 className="text-sm font-bold text-foreground">Data Subject Requests</h3>
@@ -2570,7 +2570,7 @@ export const GlobalOpsDashboard = ({
                     initial={{ opacity: 0, y: 12 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.2, delay: i * 0.04 }}
-                    className="bg-card rounded-lg border border-border shadow-sm p-5"
+                    className="bg-card rounded-lg border border-border p-5"
                   >
                     <h4 className="text-sm font-bold text-foreground mb-1">{stat.category}</h4>
                     <p className="text-xs text-muted-foreground mb-3">{stat.consented.toLocaleString()} / {stat.total.toLocaleString()} users</p>
@@ -2594,7 +2594,7 @@ export const GlobalOpsDashboard = ({
           {/* PII Scanner Sub-tab */}
           {privacyTab === "scanner" && (
             <motion.div initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.15 }} className="space-y-4">
-              <div className="bg-card rounded-lg border border-border shadow-sm p-5">
+              <div className="bg-card rounded-lg border border-border p-5">
                 <div className="flex items-center justify-between mb-4">
                   <div>
                     <h3 className="text-sm font-bold text-foreground">PII Scanner Status</h3>
@@ -2622,7 +2622,7 @@ export const GlobalOpsDashboard = ({
                     initial={{ opacity: 0, y: 12 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.2, delay: i * 0.04 }}
-                    className="bg-card rounded-lg border border-border shadow-sm p-5"
+                    className="bg-card rounded-lg border border-border p-5"
                   >
                     <div className="flex items-center gap-3 mb-3">
                       <div className={cn("p-2 rounded-md border border-border", finding.bg)}>
@@ -2650,7 +2650,7 @@ export const GlobalOpsDashboard = ({
           {/* Breach Log Sub-tab */}
           {privacyTab === "breach" && (
             <motion.div initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.15 }}>
-              <div className="bg-card rounded-lg border border-border shadow-sm overflow-hidden">
+              <div className="bg-card rounded-lg border border-border overflow-hidden">
                 <div className="px-6 pt-5 pb-4 border-b border-border">
                   <h3 className="text-sm font-bold text-foreground">Breach / Incident Log</h3>
                   <p className="text-xs text-muted-foreground mt-0.5">Security incidents and data breach records</p>
@@ -2706,7 +2706,7 @@ export const GlobalOpsDashboard = ({
           )}
 
           {/* Regulatory Compliance Checklist */}
-          <div className="bg-card rounded-lg border border-border shadow-sm p-5">
+          <div className="bg-card rounded-lg border border-border p-5">
             <h3 className="text-sm font-bold text-foreground mb-4">Regulatory Compliance Checklist</h3>
             <div className="space-y-3">
               {[

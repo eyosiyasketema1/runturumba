@@ -1720,7 +1720,7 @@ export const SettingsView = ({
                     className={cn(
                       "w-full flex items-center gap-3 px-3 py-2.5 rounded-md text-sm font-medium transition-all text-left group relative",
                       isActive
-                        ? "bg-background text-foreground shadow-sm border border-border"
+                        ? "bg-background text-foreground border border-border"
                         : "text-muted-foreground hover:text-foreground hover:bg-background/60"
                     )}
                   >
@@ -2080,7 +2080,7 @@ const ApiSection = () => {
           ══════════════════════════════════════════════════════════ */}
       {isCreateOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 animate-in fade-in duration-200">
-          <div className="bg-card border border-border rounded-xl shadow-xl w-full max-w-lg mx-4 max-h-[90vh] overflow-y-auto animate-in zoom-in-95 duration-200">
+          <div className="bg-card border border-border rounded-xl w-full max-w-lg mx-4 max-h-[90vh] overflow-y-auto animate-in zoom-in-95 duration-200">
             {justCreatedKey ? (
               /* ── Success State: Show generated key ── */
               <div className="p-6 space-y-5">
@@ -2211,7 +2211,7 @@ const ApiSection = () => {
           ══════════════════════════════════════════════════════════ */}
       {deleteKeyId && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 animate-in fade-in duration-200">
-          <div className="bg-card border border-border rounded-xl shadow-xl w-full max-w-sm mx-4 p-6 space-y-4 animate-in zoom-in-95 duration-200">
+          <div className="bg-card border border-border rounded-xl w-full max-w-sm mx-4 p-6 space-y-4 animate-in zoom-in-95 duration-200">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-full bg-red-50 flex items-center justify-center shrink-0">
                 <Trash2 className="w-5 h-5 text-red-600" />
@@ -2532,7 +2532,7 @@ const AISection = () => {
                         <button
                           key={p.id}
                           onClick={() => { setNewKeyProvider(p.id); setAddStep("key"); }}
-                          className="flex flex-col items-center gap-2 p-4 rounded-lg border border-border bg-background text-center transition-all hover:border-foreground/30 hover:shadow-sm"
+                          className="flex flex-col items-center gap-2 p-4 rounded-lg border border-border bg-background text-center transition-all hover:border-foreground/30"
                         >
                           <span className="flex items-center justify-center">{p.icon}</span>
                           <span className="text-sm font-bold text-foreground">{p.name}</span>

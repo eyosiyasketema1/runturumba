@@ -238,7 +238,7 @@ export const ContactsView = ({
       {filteredContacts.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-24">
           {/* Dark gradient card */}
-          <div className="relative w-[260px] h-[170px] rounded-sm overflow-hidden shadow-[0_24px_60px_-28px_rgba(15,23,42,0.45)]">
+          <div className="relative w-[260px] h-[170px] rounded-sm overflow-hidden">
             <div className="absolute inset-0 bg-gradient-to-br from-slate-900 via-slate-800 to-teal-800" />
             <div
               className="absolute inset-0 opacity-[0.18] pointer-events-none"
@@ -255,7 +255,7 @@ export const ContactsView = ({
               }}
             />
             <div className="relative z-10 flex flex-col items-center justify-center h-full gap-3">
-              <div className="w-10 h-10 bg-white rounded-sm flex items-center justify-center shadow-md">
+              <div className="w-10 h-10 bg-white rounded-sm flex items-center justify-center">
                 <IdCard className="w-4 h-4 text-blue-600" />
               </div>
               <p className="text-sm font-semibold text-white">No contacts yet</p>
@@ -419,7 +419,7 @@ export const ContactsView = ({
                                   animate={{ opacity: 1, scale: 1, y: 0 }}
                                   exit={{ opacity: 0, scale: 0.95, y: -4 }}
                                   transition={{ duration: 0.12 }}
-                                  className="absolute right-0 top-full mt-1 bg-popover border border-border rounded-sm shadow-lg z-50 py-1 w-44"
+                                  className="absolute right-0 top-full mt-1 bg-popover border border-border rounded-sm z-50 py-1 w-44"
                                 >
                                   <button
                                     onClick={() => { onMessage(contact.id); setOpenMenuId(null); }}
