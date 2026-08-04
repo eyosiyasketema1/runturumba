@@ -1,7 +1,8 @@
 import React, { useEffect, useMemo, useState } from "react";
 import {
   Plus, Lock, MoreVertical, ChevronDown, ArrowLeft, Info, AlertTriangle,
-  Trash2, Copy, Eye, Pencil, UserPlus, Users, X, Shield,
+  Trash2, Copy, Eye, Pencil, UserPlus, Users, X, Shield, Layers,
+  ShieldAlert, Zap,
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { toast } from "sonner";
@@ -20,24 +21,31 @@ import { Avatar, AvatarFallback } from "./ui/avatar";
 // Types
 // ============================================================================
 
-type Scope = "own" | "group" | "all";
-
-interface ConversationPermValue {
-  enabled: boolean;
-  scope: Scope;
+interface PermissionState {
+  conversationHandling: Record<string, boolean>;
+  moderationLifecycle: Record<string, boolean>;
+  modalitiesSensitive: Record<string, boolean>;
+  contentAutomation: Record<string, boolean>;
+  coachingOps: Record<string, boolean>;
+  administration: Record<string, boolean>;
+  viewDataScope: Record<string, boolean>;
+  featureToggles: Record<string, boolean>;
 }
 
-interface PermissionState {
-  groupA: Record<string, boolean>;
-  groupB: Record<string, boolean>;
-  groupC: Record<string, boolean>;
-  groupD: Record<string, ConversationPermValue>;
+type PermGroupKey = keyof PermissionState;
+
+interface UserTypeRecord {
+  id: string;
+  name: string;
+  label: string;
+  description: string;
 }
 
 interface RoleRecord {
   id: string;
   name: string;
   description: string;
+  userTypeId: string;
   isSystem: boolean;
   memberCount: number;
   permissions: PermissionState;
@@ -54,71 +62,104 @@ type Screen = "list" | "builder" | "view";
 type BuilderMode = "create" | "edit";
 
 // ============================================================================
-// Permission catalog definitions
+// Permission catalog — derived from Turumba Roles & Permissions Brainstorm
 // ============================================================================
 
-const GROUP_A_PERMS: { id: string; label: string }[] = [
-  { id: "view_team_members", label: "View team members" },
-  { id: "invite_members", label: "Invite new members" },
-  { id: "remove_members", label: "Remove members" },
-  { id: "assign_roles", label: "Assign roles to members" },
-  { id: "view_org_settings", label: "View organization settings" },
-  { id: "edit_org_settings", label: "Edit organization settings" },
-  { id: "manage_billing", label: "Manage billing" },
-  { id: "view_audit_log", label: "View audit log" },
-  { id: "export_audit_log", label: "Export audit log" },
-  { id: "manage_integrations", label: "Manage integrations" },
-  { id: "manage_api_keys", label: "Manage API keys" },
-  { id: "manage_child_orgs", label: "Manage child organizations" },
-  { id: "view_analytics", label: "View analytics & reports" },
+const CONVERSATION_HANDLING_PERMS: { id: string; label: string }[] = [
+  { id: "chat.view_queue", label: "View chat queue" },
+  { id: "chat.claim", label: "Claim a chat" },
+  { id: "chat.reply", label: "Reply to chats" },
+  { id: "chat.preview_toggle", label: "Toggle chat preview" },
+  { id: "chat.return_to_queue", label: "Return chat to queue" },
+  { id: "chat.merge", label: "Merge conversations" },
+  { id: "chat.edit_sent", label: "Edit sent messages" },
+  { id: "chat.mark_test", label: "Mark as test conversation" },
 ];
 
-const GROUP_B_PERMS: { id: string; label: string }[] = [
-  { id: "view_training_materials", label: "View training materials" },
-  { id: "create_training_materials", label: "Create training materials" },
-  { id: "edit_training_materials", label: "Edit training materials" },
-  { id: "delete_training_materials", label: "Delete training materials" },
-  { id: "view_practice_sessions", label: "View practice sessions" },
-  { id: "create_practice_sessions", label: "Create practice sessions" },
-  { id: "review_practice_sessions", label: "Review practice sessions" },
-  { id: "manage_training_programs", label: "Manage training programs" },
-  { id: "view_trainee_progress", label: "View trainee progress" },
+const MODERATION_LIFECYCLE_PERMS: { id: string; label: string }[] = [
+  { id: "chat.transfer", label: "Transfer conversations" },
+  { id: "chat.escalate", label: "Escalate conversations" },
+  { id: "chat.mark_spam", label: "Mark as spam" },
+  { id: "chat.block_seeker", label: "Block a seeker" },
+  { id: "chat.alert_admin", label: "Alert admin" },
+  { id: "chat.emergency_alert", label: "Emergency alert" },
+  { id: "chat.log_church_connection", label: "Log church connection" },
+  { id: "chat.report_bug", label: "Report a bug" },
 ];
 
-const GROUP_C_PERMS: { id: string; label: string }[] = [
-  { id: "view_channels", label: "View channels" },
-  { id: "create_channels", label: "Create channels" },
-  { id: "edit_channels", label: "Edit channels" },
-  { id: "delete_channels", label: "Delete channels" },
-  { id: "send_messages", label: "Send messages" },
-  { id: "send_broadcasts", label: "Send broadcasts" },
-  { id: "manage_message_templates", label: "Manage message templates" },
-  { id: "view_broadcast_history", label: "View broadcast history" },
-  { id: "manage_automations", label: "Manage automations" },
-  { id: "view_automation_logs", label: "View automation logs" },
-  { id: "manage_contact_lists", label: "Manage contact lists" },
+const MODALITIES_SENSITIVE_PERMS: { id: string; label: string }[] = [
+  { id: "msg.send_audio_video", label: "Send audio/video messages" },
+  { id: "video.respond_asl", label: "Respond via ASL video" },
+  { id: "msg.view_recorded_video", label: "View recorded video" },
 ];
 
-const GROUP_D_PERMS: { id: string; label: string }[] = [
-  { id: "read_conversations", label: "Read conversations" },
-  { id: "reply_conversations", label: "Reply to conversations" },
-  { id: "reassign_conversations", label: "Reassign conversations" },
-  { id: "close_conversations", label: "Close/resolve conversations" },
-  { id: "delete_conversation_messages", label: "Delete conversation messages" },
-  { id: "export_conversations", label: "Export conversations" },
+const CONTENT_AUTOMATION_PERMS: { id: string; label: string }[] = [
+  { id: "template.create", label: "Create message templates" },
+  { id: "kb.author", label: "Author knowledge base" },
+  { id: "newsfeed.publish", label: "Publish to newsfeed" },
+  { id: "rules.author", label: "Author IF/THEN rules" },
+  { id: "keywords.manage", label: "Manage keywords" },
+  { id: "social.moderate_crud", label: "Moderate social content" },
+  { id: "autoresponse.configure", label: "Configure auto-responses" },
 ];
 
-const PERMISSION_GROUP_META = [
-  { key: "groupA" as const, title: "People & Account", perms: GROUP_A_PERMS },
-  { key: "groupB" as const, title: "Mentoring", perms: GROUP_B_PERMS },
-  { key: "groupC" as const, title: "Messaging & Channels", perms: GROUP_C_PERMS },
-  { key: "groupD" as const, title: "Conversations", perms: GROUP_D_PERMS },
+const COACHING_OPS_PERMS: { id: string; label: string }[] = [
+  { id: "feedback.write", label: "Write feedback notes" },
+  { id: "team.view_load", label: "View team load" },
+  { id: "team.drill_chats", label: "Drill into team chats" },
+  { id: "review.queue_manage", label: "Manage review queue" },
+  { id: "users.assign_region_topic", label: "Assign users to region/topic" },
+  { id: "features.toggle_team", label: "Toggle team features" },
+  { id: "platform.connect", label: "Connect platforms" },
+  { id: "campaign.link_ads", label: "Link ad campaigns" },
+  { id: "campaign.merge_drip", label: "Merge drip campaigns" },
 ];
 
-const SCOPE_OPTIONS: { value: Scope; label: string }[] = [
-  { value: "own", label: "Own" },
-  { value: "group", label: "Group" },
-  { value: "all", label: "All" },
+const ADMINISTRATION_PERMS: { id: string; label: string }[] = [
+  { id: "roles.define", label: "Define & edit roles" },
+  { id: "roles.assign_user", label: "Assign roles to users" },
+  { id: "usertype.manage", label: "Manage user types" },
+  { id: "policy.configure", label: "Configure policies" },
+];
+
+const VIEW_DATA_PERMS: { id: string; label: string }[] = [
+  { id: "view.own_chats", label: "View own chats" },
+  { id: "view.team_chats", label: "View team chats" },
+  { id: "view.language_chats", label: "View language chats" },
+  { id: "view.region_chats", label: "View region chats" },
+  { id: "view.all_chats", label: "View all chats" },
+  { id: "view.seeker_pii", label: "View seeker PII" },
+  { id: "view.feedback_notes", label: "View feedback notes" },
+  { id: "view.analytics_team", label: "View team analytics" },
+  { id: "view.analytics_global", label: "View global analytics" },
+  { id: "audit.read", label: "Read audit log" },
+  { id: "export.reports", label: "Export reports" },
+];
+
+const FEATURE_TOGGLE_PERMS: { id: string; label: string }[] = [
+  { id: "toggle.block", label: "Block" },
+  { id: "toggle.audio_video", label: "Audio / Video" },
+  { id: "toggle.transfer", label: "Transfer" },
+  { id: "toggle.spam", label: "Spam" },
+  { id: "toggle.alerts", label: "Alerts" },
+  { id: "toggle.merge", label: "Merge" },
+];
+
+const PERMISSION_GROUP_META: {
+  key: PermGroupKey;
+  title: string;
+  category: string;
+  sensitive?: boolean;
+  perms: { id: string; label: string }[];
+}[] = [
+  { key: "conversationHandling", title: "Conversation Handling", category: "Action", perms: CONVERSATION_HANDLING_PERMS },
+  { key: "moderationLifecycle", title: "Moderation & Lifecycle", category: "Action", perms: MODERATION_LIFECYCLE_PERMS },
+  { key: "modalitiesSensitive", title: "Modalities — Sensitive", category: "Action", sensitive: true, perms: MODALITIES_SENSITIVE_PERMS },
+  { key: "contentAutomation", title: "Content & Automation", category: "Action", perms: CONTENT_AUTOMATION_PERMS },
+  { key: "coachingOps", title: "Coaching & Ops", category: "Action", perms: COACHING_OPS_PERMS },
+  { key: "administration", title: "Administration", category: "Action", perms: ADMINISTRATION_PERMS },
+  { key: "viewDataScope", title: "View / Data Scope", category: "View", perms: VIEW_DATA_PERMS },
+  { key: "featureToggles", title: "Feature Toggles", category: "Feature", perms: FEATURE_TOGGLE_PERMS },
 ];
 
 // ============================================================================
@@ -127,58 +168,55 @@ const SCOPE_OPTIONS: { value: Scope; label: string }[] = [
 
 function emptyPermissions(): PermissionState {
   return {
-    groupA: Object.fromEntries(GROUP_A_PERMS.map((p) => [p.id, false])),
-    groupB: Object.fromEntries(GROUP_B_PERMS.map((p) => [p.id, false])),
-    groupC: Object.fromEntries(GROUP_C_PERMS.map((p) => [p.id, false])),
-    groupD: Object.fromEntries(
-      GROUP_D_PERMS.map((p) => [p.id, { enabled: false, scope: "own" as Scope }])
-    ),
+    conversationHandling: Object.fromEntries(CONVERSATION_HANDLING_PERMS.map((p) => [p.id, false])),
+    moderationLifecycle: Object.fromEntries(MODERATION_LIFECYCLE_PERMS.map((p) => [p.id, false])),
+    modalitiesSensitive: Object.fromEntries(MODALITIES_SENSITIVE_PERMS.map((p) => [p.id, false])),
+    contentAutomation: Object.fromEntries(CONTENT_AUTOMATION_PERMS.map((p) => [p.id, false])),
+    coachingOps: Object.fromEntries(COACHING_OPS_PERMS.map((p) => [p.id, false])),
+    administration: Object.fromEntries(ADMINISTRATION_PERMS.map((p) => [p.id, false])),
+    viewDataScope: Object.fromEntries(VIEW_DATA_PERMS.map((p) => [p.id, false])),
+    featureToggles: Object.fromEntries(FEATURE_TOGGLE_PERMS.map((p) => [p.id, false])),
   };
 }
 
-function setKeys(perms: PermissionState, changes: {
-  groupA?: string[];
-  groupB?: string[];
-  groupC?: string[];
-  groupD?: { ids: string[]; scope: Scope };
-}): PermissionState {
+function setKeys(perms: PermissionState, changes: Partial<Record<PermGroupKey, string[]>>): PermissionState {
   const next = clonePermissions(perms);
-  changes.groupA?.forEach((id) => (next.groupA[id] = true));
-  changes.groupB?.forEach((id) => (next.groupB[id] = true));
-  changes.groupC?.forEach((id) => (next.groupC[id] = true));
-  changes.groupD?.ids.forEach((id) => (next.groupD[id] = { enabled: true, scope: changes.groupD!.scope }));
+  for (const key of Object.keys(changes) as PermGroupKey[]) {
+    changes[key]?.forEach((id) => {
+      if (id in next[key]) next[key][id] = true;
+    });
+  }
   return next;
 }
 
 function clonePermissions(p: PermissionState): PermissionState {
   return {
-    groupA: { ...p.groupA },
-    groupB: { ...p.groupB },
-    groupC: { ...p.groupC },
-    groupD: Object.fromEntries(Object.entries(p.groupD).map(([k, v]) => [k, { ...v }])),
+    conversationHandling: { ...p.conversationHandling },
+    moderationLifecycle: { ...p.moderationLifecycle },
+    modalitiesSensitive: { ...p.modalitiesSensitive },
+    contentAutomation: { ...p.contentAutomation },
+    coachingOps: { ...p.coachingOps },
+    administration: { ...p.administration },
+    viewDataScope: { ...p.viewDataScope },
+    featureToggles: { ...p.featureToggles },
   };
 }
 
-function allOnPermissions(scope: Scope): PermissionState {
+function allOnPermissions(): PermissionState {
   const base = emptyPermissions();
-  return setKeys(base, {
-    groupA: GROUP_A_PERMS.map((p) => p.id),
-    groupB: GROUP_B_PERMS.map((p) => p.id),
-    groupC: GROUP_C_PERMS.map((p) => p.id),
-    groupD: { ids: GROUP_D_PERMS.map((p) => p.id), scope },
-  });
+  const all: Partial<Record<PermGroupKey, string[]>> = {};
+  for (const group of PERMISSION_GROUP_META) {
+    all[group.key] = group.perms.map((p) => p.id);
+  }
+  return setKeys(base, all);
 }
 
 function countGroup(obj: Record<string, boolean>): number {
   return Object.values(obj).filter(Boolean).length;
 }
 
-function countGroupD(obj: Record<string, ConversationPermValue>): number {
-  return Object.values(obj).filter((v) => v.enabled).length;
-}
-
 function totalEnabled(p: PermissionState): number {
-  return countGroup(p.groupA) + countGroup(p.groupB) + countGroup(p.groupC) + countGroupD(p.groupD);
+  return PERMISSION_GROUP_META.reduce((sum, g) => sum + countGroup(p[g.key]), 0);
 }
 
 function getInitials(name: string): string {
@@ -191,105 +229,359 @@ function generateId(prefix: string): string {
 }
 
 // ============================================================================
-// System role defaults
+// User Types — the broadest category of a person in the system
 // ============================================================================
 
-const OWNER_PERMISSIONS = allOnPermissions("all");
+const USER_TYPES: UserTypeRecord[] = [
+  {
+    id: "ut-volunteer",
+    name: "Volunteer",
+    label: "front line",
+    description: "Chat associates who handle live seeker conversations",
+  },
+  {
+    id: "ut-volunteer-mgr",
+    name: "Volunteer Manager",
+    label: "coaching",
+    description: "Team leads and coaches who oversee volunteer performance",
+  },
+  {
+    id: "ut-language-mgr",
+    name: "Language Ministry Manager",
+    label: "language lead",
+    description: "Content, rules, and feature access scoped to one language",
+  },
+  {
+    id: "ut-social-media-mgr",
+    name: "Social Media Manager",
+    label: "campaigns",
+    description: "Campaign managers and community moderators across platforms",
+  },
+  {
+    id: "ut-executive",
+    name: "Executive",
+    label: "leadership",
+    description: "Read-only executive dashboards, reporting, and campaign oversight",
+  },
+  {
+    id: "ut-global-ops",
+    name: "Global Ops Manager",
+    label: "governance",
+    description: "Define roles & permissions, assign users, platform admin, audit",
+  },
+  {
+    id: "ut-trainer",
+    name: "Trainer",
+    label: "enablement",
+    description: "Create practice chats, track trainee progress, author training KB",
+  },
+];
 
-const ADMIN_PERMISSIONS = (() => {
-  const p = allOnPermissions("all");
-  p.groupA["manage_billing"] = false;
-  p.groupA["manage_child_orgs"] = false;
-  return p;
-})();
+// ============================================================================
+// Example role permission presets
+// ============================================================================
 
-const MENTOR_COACH_PERMISSIONS = setKeys(emptyPermissions(), {
-  groupA: ["view_team_members", "view_org_settings", "view_audit_log", "view_analytics"],
-  groupB: GROUP_B_PERMS.map((p) => p.id),
-  groupC: ["view_channels", "send_messages", "view_broadcast_history", "manage_contact_lists"],
-  groupD: { ids: GROUP_D_PERMS.map((p) => p.id), scope: "group" },
+const STANDARD_VOLUNTEER_PERMS = setKeys(emptyPermissions(), {
+  conversationHandling: ["chat.view_queue", "chat.claim", "chat.reply", "chat.return_to_queue"],
+  viewDataScope: ["view.own_chats"],
 });
 
-const MENTOR_PERMISSIONS = setKeys(emptyPermissions(), {
-  groupA: ["view_team_members", "view_org_settings"],
-  groupB: ["view_training_materials", "view_practice_sessions"],
-  groupC: ["view_channels", "send_messages"],
-  groupD: { ids: ["read_conversations", "reply_conversations", "close_conversations"], scope: "own" },
+const SENIOR_VOLUNTEER_PERMS = setKeys(emptyPermissions(), {
+  conversationHandling: ["chat.view_queue", "chat.claim", "chat.reply", "chat.return_to_queue", "chat.merge", "chat.edit_sent"],
+  moderationLifecycle: ["chat.transfer", "chat.escalate", "chat.report_bug"],
+  viewDataScope: ["view.own_chats", "view.team_chats"],
 });
 
-const SENIOR_MENTOR_PERMISSIONS = setKeys(emptyPermissions(), {
-  groupA: ["view_team_members", "view_org_settings"],
-  groupB: ["view_training_materials", "view_practice_sessions", "review_practice_sessions", "view_trainee_progress"],
-  groupC: ["view_channels", "send_messages", "view_broadcast_history"],
-  groupD: { ids: ["read_conversations", "reply_conversations", "reassign_conversations", "close_conversations"], scope: "group" },
+const ASL_VOLUNTEER_PERMS = setKeys(emptyPermissions(), {
+  conversationHandling: ["chat.view_queue", "chat.claim", "chat.reply", "chat.return_to_queue"],
+  modalitiesSensitive: ["video.respond_asl", "msg.view_recorded_video"],
+  viewDataScope: ["view.own_chats"],
 });
 
-const CONTENT_MANAGER_PERMISSIONS = setKeys(emptyPermissions(), {
-  groupA: ["view_team_members", "view_org_settings"],
-  groupB: ["view_training_materials", "create_training_materials", "edit_training_materials", "delete_training_materials", "manage_training_programs"],
-  groupC: ["view_channels", "manage_message_templates", "view_broadcast_history"],
+const TEAM_LEAD_PERMS = setKeys(emptyPermissions(), {
+  conversationHandling: ["chat.view_queue"],
+  coachingOps: ["feedback.write", "team.view_load", "team.drill_chats", "review.queue_manage"],
+  viewDataScope: ["view.team_chats", "view.feedback_notes", "view.analytics_team"],
 });
+
+const LANGUAGE_LEAD_PERMS = setKeys(emptyPermissions(), {
+  contentAutomation: ["template.create", "kb.author", "newsfeed.publish", "rules.author", "keywords.manage", "social.moderate_crud", "autoresponse.configure"],
+  coachingOps: ["features.toggle_team", "feedback.write"],
+  viewDataScope: ["view.language_chats", "view.feedback_notes", "view.analytics_team"],
+  featureToggles: ["toggle.block", "toggle.audio_video", "toggle.transfer", "toggle.spam", "toggle.alerts", "toggle.merge"],
+});
+
+const CAMPAIGN_MANAGER_PERMS = setKeys(emptyPermissions(), {
+  contentAutomation: ["social.moderate_crud"],
+  coachingOps: ["campaign.link_ads", "campaign.merge_drip"],
+  viewDataScope: ["view.analytics_team"],
+});
+
+const IE_EXECUTIVE_PERMS = setKeys(emptyPermissions(), {
+  viewDataScope: ["view.all_chats", "view.analytics_global", "view.analytics_team", "audit.read", "export.reports"],
+});
+
+const GLOBAL_OPS_PERMS = setKeys(emptyPermissions(), {
+  administration: ["roles.define", "roles.assign_user", "usertype.manage", "policy.configure"],
+  coachingOps: ["users.assign_region_topic", "features.toggle_team", "platform.connect"],
+  viewDataScope: ["view.all_chats", "view.analytics_global", "view.analytics_team", "view.feedback_notes", "audit.read", "export.reports"],
+  featureToggles: ["toggle.block", "toggle.audio_video", "toggle.transfer", "toggle.spam", "toggle.alerts", "toggle.merge"],
+});
+
+const COMPLIANCE_OFFICER_PERMS = setKeys(emptyPermissions(), {
+  viewDataScope: ["view.all_chats", "view.analytics_global", "audit.read", "export.reports"],
+});
+
+const LEAD_TRAINER_PERMS = setKeys(emptyPermissions(), {
+  conversationHandling: ["chat.mark_test"],
+  contentAutomation: ["template.create", "kb.author"],
+  viewDataScope: ["view.team_chats", "view.feedback_notes", "view.analytics_team"],
+});
+
+const ASSISTANT_TRAINER_PERMS = setKeys(emptyPermissions(), {
+  conversationHandling: ["chat.mark_test"],
+  viewDataScope: ["view.team_chats", "view.feedback_notes"],
+});
+
+const CRISIS_TRAINED_PERMS = setKeys(emptyPermissions(), {
+  conversationHandling: ["chat.view_queue", "chat.claim", "chat.reply", "chat.return_to_queue"],
+  moderationLifecycle: ["chat.emergency_alert", "chat.escalate", "chat.alert_admin"],
+  viewDataScope: ["view.own_chats"],
+});
+
+const TRAINEE_PERMS = setKeys(emptyPermissions(), {
+  conversationHandling: ["chat.view_queue", "chat.claim", "chat.reply", "chat.mark_test"],
+  viewDataScope: ["view.own_chats"],
+});
+
+const SENIOR_COACH_PERMS = setKeys(emptyPermissions(), {
+  conversationHandling: ["chat.view_queue"],
+  coachingOps: ["feedback.write", "team.view_load", "team.drill_chats", "review.queue_manage", "users.assign_region_topic"],
+  viewDataScope: ["view.team_chats", "view.region_chats", "view.feedback_notes", "view.analytics_team"],
+});
+
+const CONTENT_EDITOR_PERMS = setKeys(emptyPermissions(), {
+  contentAutomation: ["template.create", "kb.author", "newsfeed.publish", "keywords.manage"],
+  viewDataScope: ["view.language_chats", "view.feedback_notes"],
+});
+
+const COMMUNITY_MODERATOR_PERMS = setKeys(emptyPermissions(), {
+  contentAutomation: ["social.moderate_crud"],
+  viewDataScope: ["view.analytics_team"],
+});
+
+const BOARD_VIEWER_PERMS = setKeys(emptyPermissions(), {
+  viewDataScope: ["view.all_chats", "view.analytics_global", "export.reports"],
+});
+
+const PLATFORM_ADMIN_PERMS = setKeys(emptyPermissions(), {
+  administration: ["roles.define", "roles.assign_user", "policy.configure"],
+  coachingOps: ["platform.connect", "features.toggle_team"],
+  viewDataScope: ["view.all_chats", "view.analytics_global", "view.analytics_team", "audit.read", "export.reports"],
+  featureToggles: ["toggle.block", "toggle.audio_video", "toggle.transfer", "toggle.spam", "toggle.alerts", "toggle.merge"],
+});
+
+// ============================================================================
+// Initial data
+// ============================================================================
 
 const INITIAL_ROLES: RoleRecord[] = [
+  // ── Volunteer (front line) ─────────────────────────────────────────────
   {
-    id: "role-owner",
-    name: "Owner",
-    description: "Full platform access with billing and ownership controls",
+    id: "role-std-volunteer",
+    name: "Standard Volunteer",
+    description: "Claim chat, reply, use templates & scripture library — the baseline volunteer role",
+    userTypeId: "ut-volunteer",
     isSystem: true,
-    memberCount: 1,
-    permissions: OWNER_PERMISSIONS,
+    memberCount: 24,
+    permissions: STANDARD_VOLUNTEER_PERMS,
   },
   {
-    id: "role-admin",
-    name: "Admin",
-    description: "Complete operational access without billing controls",
-    isSystem: true,
-    memberCount: 2,
-    permissions: ADMIN_PERMISSIONS,
-  },
-  {
-    id: "role-mentor-coach",
-    name: "Mentor Coach",
-    description: "Oversee mentors, review conversations, manage training",
-    isSystem: true,
-    memberCount: 5,
-    permissions: MENTOR_COACH_PERMISSIONS,
-  },
-  {
-    id: "role-mentor",
-    name: "Mentor",
-    description: "Handle conversations, follow guidelines, participate in training",
-    isSystem: true,
-    memberCount: 12,
-    permissions: MENTOR_PERMISSIONS,
-  },
-  {
-    id: "role-senior-mentor",
-    name: "Senior Mentor",
-    description: "Experienced mentors with expanded conversation access",
+    id: "role-sr-volunteer",
+    name: "Senior Volunteer",
+    description: "Expanded access — transfer, merge, escalate conversations",
+    userTypeId: "ut-volunteer",
     isSystem: false,
-    memberCount: 4,
-    permissions: SENIOR_MENTOR_PERMISSIONS,
+    memberCount: 8,
+    permissions: SENIOR_VOLUNTEER_PERMS,
   },
   {
-    id: "role-content-manager",
-    name: "Content Manager",
-    description: "Manage training materials and conversation templates",
+    id: "role-asl-volunteer",
+    name: "ASL Volunteer",
+    description: "Respond via ASL video with recorded-video access (sensitive)",
+    userTypeId: "ut-volunteer",
     isSystem: false,
     memberCount: 3,
-    permissions: CONTENT_MANAGER_PERMISSIONS,
+    permissions: ASL_VOLUNTEER_PERMS,
+  },
+  {
+    id: "role-crisis-trained",
+    name: "Crisis-Trained",
+    description: "Emergency alert access for crisis-level conversations",
+    userTypeId: "ut-volunteer",
+    isSystem: false,
+    memberCount: 5,
+    permissions: CRISIS_TRAINED_PERMS,
+  },
+  {
+    id: "role-trainee",
+    name: "Trainee",
+    description: "Practice-only — test chats only, excluded from live stats",
+    userTypeId: "ut-volunteer",
+    isSystem: false,
+    memberCount: 6,
+    permissions: TRAINEE_PERMS,
+  },
+
+  // ── Volunteer Manager (coaching) ───────────────────────────────────────
+  {
+    id: "role-team-lead",
+    name: "Team Lead",
+    description: "View team load, drill into chats, write feedback, manage review queue",
+    userTypeId: "ut-volunteer-mgr",
+    isSystem: true,
+    memberCount: 4,
+    permissions: TEAM_LEAD_PERMS,
+  },
+  {
+    id: "role-senior-coach",
+    name: "Senior Coach",
+    description: "Regional scope — assign users to region/topic, broader view access",
+    userTypeId: "ut-volunteer-mgr",
+    isSystem: false,
+    memberCount: 2,
+    permissions: SENIOR_COACH_PERMS,
+  },
+
+  // ── Language Ministry Manager (language lead) ──────────────────────────
+  {
+    id: "role-language-lead",
+    name: "Language Lead",
+    description: "Full content & rules authoring scoped to one language, team feature toggles",
+    userTypeId: "ut-language-mgr",
+    isSystem: true,
+    memberCount: 6,
+    permissions: LANGUAGE_LEAD_PERMS,
+  },
+  {
+    id: "role-content-editor",
+    name: "Content Editor",
+    description: "Create templates, author KB & newsfeed, manage keywords — no rules authoring",
+    userTypeId: "ut-language-mgr",
+    isSystem: false,
+    memberCount: 3,
+    permissions: CONTENT_EDITOR_PERMS,
+  },
+
+  // ── Social Media Manager (campaigns) ───────────────────────────────────
+  {
+    id: "role-campaign-mgr",
+    name: "Campaign Manager",
+    description: "Link ads, manage drip campaigns, moderate social content",
+    userTypeId: "ut-social-media-mgr",
+    isSystem: true,
+    memberCount: 2,
+    permissions: CAMPAIGN_MANAGER_PERMS,
+  },
+  {
+    id: "role-community-mod",
+    name: "Community Moderator",
+    description: "Moderate social content only — comment CRUD, no campaign access",
+    userTypeId: "ut-social-media-mgr",
+    isSystem: false,
+    memberCount: 4,
+    permissions: COMMUNITY_MODERATOR_PERMS,
+  },
+
+  // ── Executive (leadership) ─────────────────────────────────────────────
+  {
+    id: "role-ie-executive",
+    name: "IE Executive",
+    description: "Executive dashboard, cross-platform & campaign reporting, export to Excel",
+    userTypeId: "ut-executive",
+    isSystem: true,
+    memberCount: 2,
+    permissions: IE_EXECUTIVE_PERMS,
+  },
+  {
+    id: "role-board-viewer",
+    name: "Board Viewer",
+    description: "Read-only — view dashboards and export reports, no write access",
+    userTypeId: "ut-executive",
+    isSystem: false,
+    memberCount: 3,
+    permissions: BOARD_VIEWER_PERMS,
+  },
+
+  // ── Global Ops Manager (governance) ────────────────────────────────────
+  {
+    id: "role-global-ops",
+    name: "Global Ops",
+    description: "Define roles & permissions, assign users to region/topic, full platform admin",
+    userTypeId: "ut-global-ops",
+    isSystem: true,
+    memberCount: 2,
+    permissions: GLOBAL_OPS_PERMS,
+  },
+  {
+    id: "role-compliance",
+    name: "Compliance Officer",
+    description: "Audit + retention review only — no role editing, view and export",
+    userTypeId: "ut-global-ops",
+    isSystem: false,
+    memberCount: 1,
+    permissions: COMPLIANCE_OFFICER_PERMS,
+  },
+  {
+    id: "role-platform-admin",
+    name: "Platform Admin",
+    description: "Connect platforms, toggle features, define roles — operational admin without user type management",
+    userTypeId: "ut-global-ops",
+    isSystem: false,
+    memberCount: 1,
+    permissions: PLATFORM_ADMIN_PERMS,
+  },
+
+  // ── Trainer (enablement) ───────────────────────────────────────────────
+  {
+    id: "role-lead-trainer",
+    name: "Lead Trainer",
+    description: "Create practice chats, author training KB, view trainee stats, sign off promotions",
+    userTypeId: "ut-trainer",
+    isSystem: true,
+    memberCount: 3,
+    permissions: LEAD_TRAINER_PERMS,
+  },
+  {
+    id: "role-asst-trainer",
+    name: "Assistant Trainer",
+    description: "Mark test conversations, view team feedback — no KB authoring",
+    userTypeId: "ut-trainer",
+    isSystem: false,
+    memberCount: 2,
+    permissions: ASSISTANT_TRAINER_PERMS,
   },
 ];
 
 const INITIAL_MEMBERS: Member[] = [
-  { id: "mem-1", name: "Eyosias Ketema", email: "eyosias@turumba.org", roleId: "role-owner" },
-  { id: "mem-2", name: "Samson Usmael", email: "samson@turumba.org", roleId: "role-admin" },
-  { id: "mem-3", name: "Abebe Bekele", email: "abebe@turumba.org", roleId: "role-admin" },
-  { id: "mem-4", name: "Sara Tadesse", email: "sara@turumba.org", roleId: "role-mentor-coach" },
-  { id: "mem-5", name: "Daniel Hailu", email: "daniel@turumba.org", roleId: "role-mentor-coach" },
-  { id: "mem-6", name: "Hanna Girma", email: "hanna@turumba.org", roleId: "role-mentor" },
-  { id: "mem-7", name: "Yonas Tesfaye", email: "yonas@turumba.org", roleId: "role-mentor" },
-  { id: "mem-8", name: "Meron Alemu", email: "meron@turumba.org", roleId: "role-mentor" },
+  { id: "mem-1", name: "Eyosias Ketema", email: "eyosias@turumba.org", roleId: "role-global-ops" },
+  { id: "mem-2", name: "Samson Usmael", email: "samson@turumba.org", roleId: "role-global-ops" },
+  { id: "mem-3", name: "Sara Tadesse", email: "sara@turumba.org", roleId: "role-team-lead" },
+  { id: "mem-4", name: "Daniel Hailu", email: "daniel@turumba.org", roleId: "role-language-lead" },
+  { id: "mem-5", name: "Hanna Girma", email: "hanna@turumba.org", roleId: "role-sr-volunteer" },
+  { id: "mem-6", name: "Yonas Tesfaye", email: "yonas@turumba.org", roleId: "role-std-volunteer" },
+  { id: "mem-7", name: "Meron Alemu", email: "meron@turumba.org", roleId: "role-std-volunteer" },
+  { id: "mem-8", name: "Abebe Bekele", email: "abebe@turumba.org", roleId: "role-lead-trainer" },
+  { id: "mem-9", name: "Tigist Worku", email: "tigist@turumba.org", roleId: "role-ie-executive" },
+  { id: "mem-10", name: "Dawit Mengistu", email: "dawit@turumba.org", roleId: "role-compliance" },
+  { id: "mem-11", name: "Kidist Fikre", email: "kidist@turumba.org", roleId: "role-asl-volunteer" },
+  { id: "mem-12", name: "Bereket Tadesse", email: "bereket@turumba.org", roleId: "role-crisis-trained" },
+  { id: "mem-13", name: "Rahel Gizaw", email: "rahel@turumba.org", roleId: "role-campaign-mgr" },
+  { id: "mem-14", name: "Solomon Desta", email: "solomon@turumba.org", roleId: "role-senior-coach" },
+  { id: "mem-15", name: "Aster Negash", email: "aster@turumba.org", roleId: "role-content-editor" },
+  { id: "mem-16", name: "Naomi Berhane", email: "naomi@turumba.org", roleId: "role-trainee" },
+  { id: "mem-17", name: "Henok Tadesse", email: "henok@turumba.org", roleId: "role-platform-admin" },
+  { id: "mem-18", name: "Mercy Alem", email: "mercy@turumba.org", roleId: "role-community-mod" },
 ];
 
 // ============================================================================
@@ -318,7 +610,7 @@ function ModalShell({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       <div
-        className="absolute inset-0 bg-black/40"
+        className="absolute inset-0 bg-black/50"
         onClick={onClose}
         aria-hidden="true"
       />
@@ -329,55 +621,14 @@ function ModalShell({
         initial={{ opacity: 0, y: 12, scale: 0.98 }}
         animate={{ opacity: 1, y: 0, scale: 1 }}
         exit={{ opacity: 0, y: 12, scale: 0.98 }}
-        transition={{ duration: 0.18 }}
+        transition={{ damping: 28, stiffness: 300 }}
         className={cn(
-          "relative z-10 w-full bg-card border rounded-xl shadow-xl max-h-[85vh] overflow-y-auto",
+          "relative z-10 w-full bg-card rounded-sm border border-border overflow-hidden flex flex-col max-h-[90vh]",
           maxWidth
         )}
       >
         {children}
       </motion.div>
-    </div>
-  );
-}
-
-function ScopeSelector({
-  value,
-  onChange,
-  disabled,
-}: {
-  value: Scope;
-  onChange: (scope: Scope) => void;
-  disabled?: boolean;
-}) {
-  return (
-    <div
-      role="radiogroup"
-      aria-label="Permission scope"
-      className={cn(
-        "inline-flex items-center rounded-full border bg-muted p-0.5 gap-0.5",
-        disabled && "opacity-50"
-      )}
-    >
-      {SCOPE_OPTIONS.map((opt) => (
-        <button
-          key={opt.value}
-          type="button"
-          role="radio"
-          aria-checked={value === opt.value}
-          disabled={disabled}
-          onClick={() => onChange(opt.value)}
-          className={cn(
-            "px-3 py-1 text-xs font-medium rounded-full transition-colors min-h-[28px]",
-            value === opt.value
-              ? "bg-primary text-primary-foreground shadow-sm"
-              : "text-muted-foreground hover:text-foreground",
-            disabled && "cursor-not-allowed"
-          )}
-        >
-          {opt.label}
-        </button>
-      ))}
     </div>
   );
 }
@@ -405,36 +656,10 @@ function PermissionToggleRow({
   );
 }
 
-function ConversationPermissionRow({
-  label,
-  value,
-  onToggle,
-  onScopeChange,
-  disabled,
-  id,
-}: {
-  label: string;
-  value: ConversationPermValue;
-  onToggle: (v: boolean) => void;
-  onScopeChange: (scope: Scope) => void;
-  disabled?: boolean;
-  id: string;
-}) {
-  return (
-    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 py-2.5">
-      <Label htmlFor={id} className="text-sm font-normal text-foreground cursor-pointer">
-        {label}
-      </Label>
-      <div className="flex items-center gap-3">
-        <ScopeSelector value={value.scope} onChange={onScopeChange} disabled={disabled || !value.enabled} />
-        <Switch id={id} checked={value.enabled} onCheckedChange={onToggle} disabled={disabled} aria-label={label} />
-      </div>
-    </div>
-  );
-}
-
+// Role card for the list view
 function RoleCard({
   role,
+  userType,
   onView,
   onEdit,
   onDuplicate,
@@ -444,6 +669,7 @@ function RoleCard({
   onToggleMenu,
 }: {
   role: RoleRecord;
+  userType?: UserTypeRecord;
   onView: () => void;
   onEdit: () => void;
   onDuplicate: () => void;
@@ -452,16 +678,16 @@ function RoleCard({
   menuOpen: boolean;
   onToggleMenu: () => void;
 }) {
+  const enabled = totalEnabled(role.permissions);
   return (
     <Card
       className={cn(
-        "transition-colors",
-        role.isSystem ? "hover:border-border" : "hover:border-primary/40 cursor-pointer"
+        "transition-all cursor-pointer bg-card rounded-sm border border-border",
+        role.isSystem ? "hover:border-border" : "hover:border-primary/30"
       )}
-      onClick={role.isSystem ? onView : undefined}
     >
       <CardContent className="p-4 flex items-center justify-between gap-4">
-        <div className="flex items-start gap-3 min-w-0">
+        <div className="flex items-start gap-3 min-w-0" onClick={onView}>
           <div
             className={cn(
               "mt-0.5 flex size-9 shrink-0 items-center justify-center rounded-lg",
@@ -473,12 +699,15 @@ function RoleCard({
           <div className="min-w-0">
             <div className="flex items-center gap-2 flex-wrap">
               <p className="font-bold text-foreground">{role.name}</p>
-              <Badge variant={role.isSystem ? "outline" : "secondary"}>
+              <Badge variant={role.isSystem ? "outline" : "secondary"} className="text-xs">
                 {role.isSystem ? "System" : "Custom"}
               </Badge>
-              <Badge variant="outline" className="gap-1">
+              <Badge variant="outline" className="gap-1 text-xs">
                 <Users className="w-3 h-3" />
-                {role.memberCount} {role.memberCount === 1 ? "member" : "members"}
+                {role.memberCount}
+              </Badge>
+              <Badge variant="outline" className="text-xs">
+                {enabled} perm{enabled !== 1 ? "s" : ""}
               </Badge>
             </div>
             <p className="text-sm text-muted-foreground mt-1">{role.description}</p>
@@ -518,7 +747,7 @@ function RoleCard({
                   <div className="fixed inset-0 z-10" onClick={onToggleMenu} aria-hidden="true" />
                   <div
                     role="menu"
-                    className="absolute right-0 top-full mt-1 w-44 bg-card border rounded-md shadow-lg z-20 py-1"
+                    className="absolute right-0 top-full mt-1 w-44 bg-card border rounded-sm z-20 py-1"
                   >
                     <button
                       role="menuitem"
@@ -574,15 +803,13 @@ export const RolesPermissionsSection = () => {
 
   const [formName, setFormName] = useState("");
   const [formDescription, setFormDescription] = useState("");
+  const [formUserTypeId, setFormUserTypeId] = useState<string>(USER_TYPES[0].id);
   const [formPermissions, setFormPermissions] = useState<PermissionState>(emptyPermissions());
   const [formErrors, setFormErrors] = useState<{ name?: string; permissions?: string }>({});
 
-  const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>({
-    groupA: true,
-    groupB: true,
-    groupC: true,
-    groupD: true,
-  });
+  const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>(() =>
+    Object.fromEntries(PERMISSION_GROUP_META.map((g) => [g.key, true]))
+  );
 
   const [openMenuRoleId, setOpenMenuRoleId] = useState<string | null>(null);
 
@@ -592,10 +819,24 @@ export const RolesPermissionsSection = () => {
 
   const [deleteRoleId, setDeleteRoleId] = useState<string | null>(null);
 
-  const systemRoles = useMemo(() => roles.filter((r) => r.isSystem), [roles]);
-  const customRoles = useMemo(() => roles.filter((r) => !r.isSystem), [roles]);
+  // Derived
   const activeRole = useMemo(() => roles.find((r) => r.id === activeRoleId) ?? null, [roles, activeRoleId]);
   const deleteRole = useMemo(() => roles.find((r) => r.id === deleteRoleId) ?? null, [roles, deleteRoleId]);
+
+  // Group roles by user type for the list view — system roles first
+  const rolesByUserType = useMemo(() => {
+    const map = new Map<string, RoleRecord[]>();
+    for (const ut of USER_TYPES) map.set(ut.id, []);
+    for (const role of roles) {
+      const arr = map.get(role.userTypeId);
+      if (arr) arr.push(role);
+    }
+    // Sort: system roles first, then custom
+    for (const [key, arr] of map) {
+      arr.sort((a, b) => (a.isSystem === b.isSystem ? 0 : a.isSystem ? -1 : 1));
+    }
+    return map;
+  }, [roles]);
 
   function isNameTaken(name: string, excludeId?: string | null): boolean {
     const normalized = name.trim().toLowerCase();
@@ -606,33 +847,21 @@ export const RolesPermissionsSection = () => {
     setExpandedGroups((prev) => ({ ...prev, [key]: !prev[key] }));
   }
 
-  function toggleSimplePermission(group: "groupA" | "groupB" | "groupC", id: string, value: boolean) {
+  function togglePermission(group: PermGroupKey, id: string, value: boolean) {
     setFormPermissions((prev) => ({ ...prev, [group]: { ...prev[group], [id]: value } }));
-  }
-
-  function toggleConversationPermission(id: string, enabled: boolean) {
-    setFormPermissions((prev) => ({
-      ...prev,
-      groupD: { ...prev.groupD, [id]: { ...prev.groupD[id], enabled } },
-    }));
-  }
-
-  function setConversationScope(id: string, scope: Scope) {
-    setFormPermissions((prev) => ({
-      ...prev,
-      groupD: { ...prev.groupD, [id]: { ...prev.groupD[id], scope } },
-    }));
   }
 
   function resetBuilderState() {
     setFormName("");
     setFormDescription("");
+    setFormUserTypeId(USER_TYPES[0].id);
     setFormPermissions(emptyPermissions());
     setFormErrors({});
   }
 
-  function openCreate() {
+  function openCreate(userTypeId?: string) {
     resetBuilderState();
+    if (userTypeId) setFormUserTypeId(userTypeId);
     setBuilderMode("create");
     setActiveRoleId(null);
     setScreen("builder");
@@ -641,6 +870,7 @@ export const RolesPermissionsSection = () => {
   function openEdit(role: RoleRecord) {
     setFormName(role.name);
     setFormDescription(role.description);
+    setFormUserTypeId(role.userTypeId);
     setFormPermissions(clonePermissions(role.permissions));
     setFormErrors({});
     setBuilderMode("edit");
@@ -651,6 +881,7 @@ export const RolesPermissionsSection = () => {
   function openView(role: RoleRecord) {
     setFormName(role.name);
     setFormDescription(role.description);
+    setFormUserTypeId(role.userTypeId);
     setFormPermissions(clonePermissions(role.permissions));
     setActiveRoleId(role.id);
     setScreen("view");
@@ -668,6 +899,7 @@ export const RolesPermissionsSection = () => {
       id: generateId("role"),
       name: finalName,
       description: role.description,
+      userTypeId: role.userTypeId,
       isSystem: false,
       memberCount: 0,
       permissions: clonePermissions(role.permissions),
@@ -706,6 +938,7 @@ export const RolesPermissionsSection = () => {
         id: generateId("role"),
         name: trimmedName,
         description: trimmedDescription,
+        userTypeId: formUserTypeId,
         isSystem: false,
         memberCount: 0,
         permissions: formPermissions,
@@ -716,7 +949,7 @@ export const RolesPermissionsSection = () => {
       setRoles((prev) =>
         prev.map((r) =>
           r.id === activeRoleId
-            ? { ...r, name: trimmedName, description: trimmedDescription, permissions: formPermissions }
+            ? { ...r, name: trimmedName, description: trimmedDescription, userTypeId: formUserTypeId, permissions: formPermissions }
             : r
         )
       );
@@ -752,11 +985,14 @@ export const RolesPermissionsSection = () => {
     setDeleteRoleId(null);
   }
 
-  const isReadOnly = screen === "view";
+  const isReadOnly = screen === "view" || (activeRole?.isSystem === true);
+
+  // ──────────────────── Render ────────────────────
 
   return (
     <div className="p-6 lg:p-10">
       <AnimatePresence mode="wait">
+        {/* ═══════════════════ LIST SCREEN ═══════════════════ */}
         {screen === "list" && (
           <motion.div
             key="list"
@@ -766,67 +1002,101 @@ export const RolesPermissionsSection = () => {
             transition={{ duration: 0.2 }}
             className="space-y-8"
           >
+            {/* Header */}
             <header className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
               <div>
                 <h2 className="text-2xl font-bold tracking-tight text-foreground">Roles & Permissions</h2>
                 <p className="text-muted-foreground text-sm mt-1">
-                  Manage access levels and permissions for your organization
+                  Hierarchical, delegated access control — User Type → Role → Permissions
                 </p>
               </div>
-              <Button onClick={openCreate}>
+              <Button onClick={() => openCreate()}>
                 <Plus className="w-4 h-4 mr-2" />
-                Create Custom Role
+                Create Role
               </Button>
             </header>
 
-            <div className="space-y-3">
-              <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground">System Roles</p>
-              <div className="space-y-3">
-                {systemRoles.map((role) => (
-                  <RoleCard
-                    key={role.id}
-                    role={role}
-                    onView={() => openView(role)}
-                    onEdit={() => openEdit(role)}
-                    onDuplicate={() => handleDuplicate(role)}
-                    onDelete={() => setDeleteRoleId(role.id)}
-                    onAssign={() => openAssign(role)}
-                    menuOpen={openMenuRoleId === role.id}
-                    onToggleMenu={() => setOpenMenuRoleId((prev) => (prev === role.id ? null : role.id))}
-                  />
-                ))}
+            {/* Three governing rules banner */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+              <div className="flex items-start gap-3 rounded-sm border border-border bg-card p-4">
+                <Lock className="w-4 h-4 text-muted-foreground mt-0.5 shrink-0" />
+                <div>
+                  <p className="text-xs font-bold text-foreground">No privilege escalation</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">You can only grant permissions you hold</p>
+                </div>
+              </div>
+              <div className="flex items-start gap-3 rounded-sm border border-border bg-card p-4">
+                <Layers className="w-4 h-4 text-muted-foreground mt-0.5 shrink-0" />
+                <div>
+                  <p className="text-xs font-bold text-foreground">Scope narrows down</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">Delegated scope can equal or narrow, never widen</p>
+                </div>
+              </div>
+              <div className="flex items-start gap-3 rounded-sm border border-border bg-card p-4">
+                <Eye className="w-4 h-4 text-muted-foreground mt-0.5 shrink-0" />
+                <div>
+                  <p className="text-xs font-bold text-foreground">Everything is audited</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">Every grant, revoke, and assignment is logged</p>
+                </div>
               </div>
             </div>
 
-            <div className="space-y-3">
-              <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Custom Roles</p>
-              {customRoles.length === 0 ? (
-                <Card>
-                  <CardContent className="p-8 text-center text-muted-foreground text-sm">
-                    No custom roles yet. Create one to tailor permissions for your organization.
-                  </CardContent>
-                </Card>
-              ) : (
-                <div className="space-y-3">
-                  {customRoles.map((role) => (
-                    <RoleCard
-                      key={role.id}
-                      role={role}
-                      onView={() => openView(role)}
-                      onEdit={() => openEdit(role)}
-                      onDuplicate={() => handleDuplicate(role)}
-                      onDelete={() => setDeleteRoleId(role.id)}
-                      onAssign={() => openAssign(role)}
-                      menuOpen={openMenuRoleId === role.id}
-                      onToggleMenu={() => setOpenMenuRoleId((prev) => (prev === role.id ? null : role.id))}
-                    />
-                  ))}
+            {/* Roles grouped by User Type */}
+            {USER_TYPES.map((ut) => {
+              const utRoles = rolesByUserType.get(ut.id) ?? [];
+              return (
+                <div key={ut.id} className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground">
+                        {ut.name}
+                      </p>
+                      <Badge variant="outline" className="text-[10px] font-normal">
+                        {ut.label}
+                      </Badge>
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="text-xs h-7"
+                      onClick={() => openCreate(ut.id)}
+                    >
+                      <Plus className="w-3 h-3 mr-1" />
+                      Add Role
+                    </Button>
+                  </div>
+
+                  {utRoles.length === 0 ? (
+                    <Card className="bg-card rounded-sm border border-border">
+                      <CardContent className="p-6 text-center text-muted-foreground text-sm">
+                        No roles defined for {ut.name} yet.
+                      </CardContent>
+                    </Card>
+                  ) : (
+                    <div className="space-y-2">
+                      {utRoles.map((role) => (
+                        <RoleCard
+                          key={role.id}
+                          role={role}
+                          userType={ut}
+                          onView={() => openView(role)}
+                          onEdit={() => openEdit(role)}
+                          onDuplicate={() => handleDuplicate(role)}
+                          onDelete={() => setDeleteRoleId(role.id)}
+                          onAssign={() => openAssign(role)}
+                          menuOpen={openMenuRoleId === role.id}
+                          onToggleMenu={() => setOpenMenuRoleId((prev) => (prev === role.id ? null : role.id))}
+                        />
+                      ))}
+                    </div>
+                  )}
                 </div>
-              )}
-            </div>
+              );
+            })}
           </motion.div>
         )}
 
+        {/* ═══════════════════ BUILDER / VIEW SCREEN ═══════════════════ */}
         {(screen === "builder" || screen === "view") && (
           <motion.div
             key="builder"
@@ -844,23 +1114,56 @@ export const RolesPermissionsSection = () => {
                 {screen === "view"
                   ? `View Role: ${activeRole?.name ?? ""}`
                   : builderMode === "create"
-                  ? "Create Custom Role"
+                  ? "Create Role"
                   : `Edit Role: ${activeRole?.name ?? ""}`}
               </h2>
+              {activeRole?.isSystem && (
+                <Badge variant="outline" className="text-xs gap-1">
+                  <Lock className="w-3 h-3" /> System
+                </Badge>
+              )}
             </div>
 
             {screen === "view" && activeRole?.isSystem && (
-              <div className="flex items-start gap-3 rounded-lg border border-blue-200 bg-blue-50 p-4 text-sm text-blue-900">
+              <div className="flex items-start gap-3 rounded-sm border border-blue-200 bg-blue-50 p-4 text-sm text-blue-900">
                 <Info className="w-4 h-4 mt-0.5 shrink-0" />
-                <p>System roles cannot be edited. You can duplicate this role to create a custom version.</p>
+                <p>System roles cannot be edited. Duplicate this role to create a custom version with different permissions.</p>
               </div>
             )}
 
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-              {/* Left column */}
+              {/* Left column — metadata */}
               <div className="lg:col-span-4 space-y-6">
-                <Card>
+                <Card className="bg-card rounded-sm border border-border">
                   <CardContent className="p-4 space-y-4">
+                    {/* User Type selector */}
+                    <div className="space-y-1.5">
+                      <Label htmlFor="role-user-type">User Type</Label>
+                      <select
+                        id="role-user-type"
+                        value={formUserTypeId}
+                        disabled={isReadOnly}
+                        onChange={(e) => setFormUserTypeId(e.target.value)}
+                        className={cn(
+                          "w-full rounded-sm border border-border bg-background px-3 py-2 text-sm",
+                          "focus:outline-none focus:ring-2 focus:ring-ring",
+                          isReadOnly && "opacity-60 cursor-not-allowed"
+                        )}
+                      >
+                        {USER_TYPES.map((ut) => (
+                          <option key={ut.id} value={ut.id}>
+                            {ut.name} — {ut.label}
+                          </option>
+                        ))}
+                      </select>
+                      <p className="text-xs text-muted-foreground">
+                        {USER_TYPES.find((ut) => ut.id === formUserTypeId)?.description}
+                      </p>
+                    </div>
+
+                    <Separator />
+
+                    {/* Role name */}
                     <div className="space-y-1.5">
                       <Label htmlFor="role-name">Role Name</Label>
                       <Input
@@ -868,7 +1171,7 @@ export const RolesPermissionsSection = () => {
                         value={formName}
                         maxLength={50}
                         disabled={isReadOnly}
-                        placeholder="e.g. Senior Mentor"
+                        placeholder="e.g. Senior Volunteer"
                         onChange={(e) => setFormName(e.target.value)}
                         aria-invalid={!!formErrors.name}
                       />
@@ -882,8 +1185,9 @@ export const RolesPermissionsSection = () => {
                       </div>
                     </div>
 
+                    {/* Role description */}
                     <div className="space-y-1.5">
-                      <Label htmlFor="role-description">Role Description</Label>
+                      <Label htmlFor="role-description">Description</Label>
                       <Textarea
                         id="role-description"
                         value={formDescription}
@@ -898,20 +1202,21 @@ export const RolesPermissionsSection = () => {
                   </CardContent>
                 </Card>
 
-                <Card>
+                {/* Permission summary */}
+                <Card className="bg-card rounded-sm border border-border">
                   <CardContent className="p-4 space-y-3">
                     <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground">
                       Permission Summary
                     </p>
                     <div className="space-y-2">
                       {PERMISSION_GROUP_META.map((group) => {
-                        const count =
-                          group.key === "groupD"
-                            ? countGroupD(formPermissions.groupD)
-                            : countGroup(formPermissions[group.key]);
+                        const count = countGroup(formPermissions[group.key]);
                         return (
                           <div key={group.key} className="flex items-center justify-between text-sm">
-                            <span className="text-foreground">{group.title}</span>
+                            <span className="text-foreground flex items-center gap-1.5">
+                              {group.sensitive && <ShieldAlert className="w-3 h-3 text-amber-500" />}
+                              {group.title}
+                            </span>
                             <Badge variant="outline">
                               {count}/{group.perms.length}
                             </Badge>
@@ -931,7 +1236,7 @@ export const RolesPermissionsSection = () => {
                 </Card>
               </div>
 
-              {/* Right column */}
+              {/* Right column — permission catalog */}
               <div className="lg:col-span-8 space-y-4">
                 <h3 className="text-sm font-bold uppercase tracking-widest text-muted-foreground">
                   Permission Catalog
@@ -939,12 +1244,9 @@ export const RolesPermissionsSection = () => {
 
                 {PERMISSION_GROUP_META.map((group) => {
                   const expanded = expandedGroups[group.key];
-                  const count =
-                    group.key === "groupD"
-                      ? countGroupD(formPermissions.groupD)
-                      : countGroup(formPermissions[group.key]);
+                  const count = countGroup(formPermissions[group.key]);
                   return (
-                    <Card key={group.key} className="overflow-hidden">
+                    <Card key={group.key} className="overflow-hidden bg-card rounded-sm border border-border">
                       <button
                         type="button"
                         onClick={() => toggleExpand(group.key)}
@@ -952,7 +1254,12 @@ export const RolesPermissionsSection = () => {
                         className="w-full flex items-center justify-between gap-3 p-4 text-left hover:bg-accent/50 transition-colors"
                       >
                         <div className="flex items-center gap-2">
+                          {group.sensitive && <ShieldAlert className="w-4 h-4 text-amber-500" />}
+                          {group.category === "Feature" && <Zap className="w-4 h-4 text-muted-foreground" />}
                           <span className="font-semibold text-foreground">{group.title}</span>
+                          <Badge variant="outline" className="text-xs">
+                            {group.category}
+                          </Badge>
                           <Badge variant="outline">
                             {count}/{group.perms.length}
                           </Badge>
@@ -970,29 +1277,29 @@ export const RolesPermissionsSection = () => {
                             transition={{ duration: 0.2 }}
                             className="overflow-hidden"
                           >
+                            {group.sensitive && (
+                              <div className="mx-4 mb-2 flex items-start gap-2 rounded-sm border border-amber-200 bg-amber-50 p-3 text-xs text-amber-800">
+                                <ShieldAlert className="w-3.5 h-3.5 mt-0.5 shrink-0" />
+                                <p>Sensitive permissions — may require justification and a second approver before granting.</p>
+                              </div>
+                            )}
+                            {group.category === "Feature" && (
+                              <div className="mx-4 mb-2 flex items-start gap-2 rounded-sm border border-blue-200 bg-blue-50 p-3 text-xs text-blue-800">
+                                <Zap className="w-3.5 h-3.5 mt-0.5 shrink-0" />
+                                <p>Feature toggles are manager-flipped per team. A toggle off at team level hides the feature even if the role grants it.</p>
+                              </div>
+                            )}
                             <div className="px-4 pb-2 divide-y divide-border border-t">
-                              {group.key === "groupD"
-                                ? GROUP_D_PERMS.map((perm) => (
-                                    <ConversationPermissionRow
-                                      key={perm.id}
-                                      id={`perm-${perm.id}`}
-                                      label={perm.label}
-                                      value={formPermissions.groupD[perm.id]}
-                                      disabled={isReadOnly}
-                                      onToggle={(v) => toggleConversationPermission(perm.id, v)}
-                                      onScopeChange={(scope) => setConversationScope(perm.id, scope)}
-                                    />
-                                  ))
-                                : group.perms.map((perm) => (
-                                    <PermissionToggleRow
-                                      key={perm.id}
-                                      id={`perm-${perm.id}`}
-                                      label={perm.label}
-                                      checked={formPermissions[group.key][perm.id]}
-                                      disabled={isReadOnly}
-                                      onChange={(v) => toggleSimplePermission(group.key, perm.id, v)}
-                                    />
-                                  ))}
+                              {group.perms.map((perm) => (
+                                <PermissionToggleRow
+                                  key={perm.id}
+                                  id={`perm-${perm.id}`}
+                                  label={perm.label}
+                                  checked={formPermissions[group.key][perm.id]}
+                                  disabled={isReadOnly}
+                                  onChange={(v) => togglePermission(group.key, perm.id, v)}
+                                />
+                              ))}
                             </div>
                           </motion.div>
                         )}
@@ -1003,6 +1310,7 @@ export const RolesPermissionsSection = () => {
               </div>
             </div>
 
+            {/* Bottom action bar */}
             <div className="flex items-center justify-end gap-3 pt-2">
               {screen === "view" ? (
                 activeRole?.isSystem ? (
@@ -1011,10 +1319,16 @@ export const RolesPermissionsSection = () => {
                     Duplicate to Customize
                   </Button>
                 ) : (
-                  <Button onClick={() => activeRole && openEdit(activeRole)}>
-                    <Pencil className="w-4 h-4 mr-2" />
-                    Edit Role
-                  </Button>
+                  <>
+                    <Button variant="outline" onClick={() => activeRole && handleDuplicate(activeRole)}>
+                      <Copy className="w-4 h-4 mr-2" />
+                      Duplicate
+                    </Button>
+                    <Button onClick={() => activeRole && openEdit(activeRole)}>
+                      <Pencil className="w-4 h-4 mr-2" />
+                      Edit Role
+                    </Button>
+                  </>
                 )
               ) : (
                 <>
@@ -1029,7 +1343,7 @@ export const RolesPermissionsSection = () => {
         )}
       </AnimatePresence>
 
-      {/* S4 — Assign Role Modal */}
+      {/* ═══════════════════ ASSIGN ROLE MODAL ═══════════════════ */}
       <AnimatePresence>
         {isAssignOpen && (
           <ModalShell onClose={() => setIsAssignOpen(false)} labelledBy="assign-role-title" maxWidth="max-w-xl">
@@ -1045,7 +1359,7 @@ export const RolesPermissionsSection = () => {
             <div className="p-5 space-y-4">
               {assignContextRoleId && (
                 <p className="text-sm text-muted-foreground">
-                  Assigning access for role{" "}
+                  Assigning members to{" "}
                   <span className="font-semibold text-foreground">
                     {roles.find((r) => r.id === assignContextRoleId)?.name}
                   </span>
@@ -1054,7 +1368,7 @@ export const RolesPermissionsSection = () => {
               <div className="space-y-4 max-h-[50vh] overflow-y-auto pr-1">
                 {members.map((member) => (
                   <div key={member.id} className="flex flex-col sm:flex-row sm:items-center gap-3 pb-4 border-b last:border-b-0">
-                    <div className="flex items-center gap-3 min-w-0 sm:w-56 shrink-0">
+                    <div className="flex items-center gap-3 min-w-0 sm:w-48 shrink-0">
                       <Avatar className="size-9">
                         <AvatarFallback className="text-xs font-semibold">
                           {getInitials(member.name)}
@@ -1065,14 +1379,14 @@ export const RolesPermissionsSection = () => {
                         <p className="text-xs text-muted-foreground truncate">{member.email}</p>
                       </div>
                     </div>
-                    <div className="flex flex-wrap gap-2" role="radiogroup" aria-label={`Role for ${member.name}`}>
+                    <div className="flex flex-wrap gap-1.5" role="radiogroup" aria-label={`Role for ${member.name}`}>
                       {roles.map((role) => {
                         const checked = assignSelections[member.id] === role.id;
                         return (
                           <label
                             key={role.id}
                             className={cn(
-                              "flex items-center gap-1.5 px-2.5 py-1 rounded-full border text-xs cursor-pointer transition-colors",
+                              "flex items-center gap-1 px-2 py-1 rounded-sm border text-xs cursor-pointer transition-colors",
                               checked
                                 ? "bg-primary text-primary-foreground border-primary"
                                 : "bg-background text-foreground hover:bg-accent"
@@ -1107,7 +1421,7 @@ export const RolesPermissionsSection = () => {
         )}
       </AnimatePresence>
 
-      {/* S5 — Delete Role Modal */}
+      {/* ═══════════════════ DELETE ROLE MODAL ═══════════════════ */}
       <AnimatePresence>
         {deleteRole && (
           <ModalShell onClose={() => setDeleteRoleId(null)} labelledBy="delete-role-title" maxWidth="max-w-md">
@@ -1127,11 +1441,10 @@ export const RolesPermissionsSection = () => {
               </p>
 
               {deleteRole.memberCount > 0 && (
-                <div className="flex items-start gap-3 rounded-lg border border-destructive/30 bg-destructive/10 p-3 text-sm text-destructive">
+                <div className="flex items-start gap-3 rounded-sm border border-destructive/30 bg-destructive/10 p-3 text-sm text-destructive">
                   <AlertTriangle className="w-4 h-4 mt-0.5 shrink-0" />
                   <p>
-                    This role has {deleteRole.memberCount} members assigned. You must reassign them before
-                    deleting.
+                    This role has {deleteRole.memberCount} member{deleteRole.memberCount !== 1 ? "s" : ""} assigned. Reassign them before deleting.
                   </p>
                 </div>
               )}
