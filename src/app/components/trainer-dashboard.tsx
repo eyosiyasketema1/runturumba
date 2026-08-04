@@ -23,6 +23,7 @@ import { Textarea } from "./ui/textarea";
 import { Label } from "./ui/label";
 import { DateRangeFilter } from "./date-range-filter";
 import type { DateRange } from "react-day-picker";
+import { LAYOUT, SPACING, MOTION, MUTED_SCALE, BACKDROP } from "./design-system";
 
 // ═══════════════════════════════════════════════════════════════════════════
 // TYPES
@@ -520,8 +521,8 @@ export const TrainerDashboard = ({
       {activeTab === "overview" && (<>
         {/* Hero Header */}
         <header className="relative overflow-hidden rounded-sm bg-slate-950 text-white p-8 shadow-[0_24px_60px_-28px_rgba(15,23,42,0.55)]">
-          <div className="absolute -top-24 -right-20 w-80 h-80 rounded-full bg-gradient-to-br from-violet-500/40 to-blue-500/10 blur-3xl pointer-events-none" />
-          <div className="absolute -bottom-32 -left-20 w-96 h-96 rounded-full bg-gradient-to-tr from-emerald-500/20 to-violet-500/10 blur-3xl pointer-events-none" />
+          <div className="absolute -top-24 -right-20 w-80 h-80 rounded-full bg-gradient-to-br from-blue-500/40 to-violet-500/10 blur-3xl pointer-events-none" />
+          <div className="absolute -bottom-32 -left-20 w-96 h-96 rounded-full bg-gradient-to-tr from-emerald-500/20 to-blue-500/10 blur-3xl pointer-events-none" />
           <div className="absolute inset-0 opacity-[0.06] pointer-events-none" style={{ backgroundImage: "linear-gradient(to right, #fff 1px, transparent 1px), linear-gradient(to bottom, #fff 1px, transparent 1px)", backgroundSize: "64px 64px" }} />
           <div className="relative flex flex-col md:flex-row md:items-end justify-between gap-4">
             <div>
@@ -530,7 +531,7 @@ export const TrainerDashboard = ({
                 <span className="text-xs font-semibold text-emerald-300 uppercase tracking-[0.18em]">Trainer &middot; Volunteer Development</span>
               </div>
               <h1 className="text-4xl lg:text-5xl font-bold tracking-tight leading-[1.05]">
-                {greeting}, <span className="text-violet-300">{firstName}</span>.
+                {greeting}, <span className="text-blue-300">{firstName}</span>.
               </h1>
               <p className="text-base text-slate-300 mt-3 max-w-2xl leading-relaxed">
                 <span className="font-semibold text-white">{activeTrainees} trainees in progress</span>
@@ -554,8 +555,10 @@ export const TrainerDashboard = ({
           ].map((kpi, i) => (
             <motion.div key={kpi.label} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3, delay: i * 0.06 }}
               className="bg-card p-5 rounded-lg border border-border shadow-sm group hover:border-primary/30 transition-all">
-              <div className={cn("p-2 rounded-md border border-border mb-3 w-fit", kpi.bg)}>
-                <kpi.icon className={cn("w-4 h-4", kpi.color)} />
+              <div className="flex items-center justify-between mb-3">
+                <div className={cn("p-2 rounded-md border border-border group-hover:border-primary/20 transition-all", kpi.bg)}>
+                  <kpi.icon className={cn("w-4 h-4 transition-all", kpi.color)} />
+                </div>
               </div>
               <p className="text-xs font-semibold text-muted-foreground uppercase tracking-widest">{kpi.label}</p>
               <p className="text-2xl font-bold tracking-tight text-foreground mt-0.5">{kpi.value}</p>
@@ -641,13 +644,13 @@ export const TrainerDashboard = ({
             <div className="overflow-x-auto">
               <table className="w-full">
                 <thead>
-                  <tr className="border-b border-border bg-muted/30">
-                    <th className="text-left text-[11px] font-semibold text-muted-foreground uppercase tracking-widest px-5 py-3">Trainee</th>
-                    <th className="text-left text-[11px] font-semibold text-muted-foreground uppercase tracking-widest px-5 py-3">Status</th>
-                    <th className="text-left text-[11px] font-semibold text-muted-foreground uppercase tracking-widest px-5 py-3">Progress</th>
-                    <th className="text-left text-[11px] font-semibold text-muted-foreground uppercase tracking-widest px-5 py-3">Current Step</th>
-                    <th className="text-left text-[11px] font-semibold text-muted-foreground uppercase tracking-widest px-5 py-3">Days</th>
-                    <th className="text-left text-[11px] font-semibold text-muted-foreground uppercase tracking-widest px-5 py-3">Enrolled</th>
+                  <tr className="border-b border-border bg-muted/50">
+                    <th className="text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider px-4 py-3">Trainee</th>
+                    <th className="text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider px-4 py-3">Status</th>
+                    <th className="text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider px-4 py-3">Progress</th>
+                    <th className="text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider px-4 py-3">Current Step</th>
+                    <th className="text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider px-4 py-3">Days</th>
+                    <th className="text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider px-4 py-3">Enrolled</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border">
@@ -655,7 +658,7 @@ export const TrainerDashboard = ({
                     const nextStep = CHECKLIST_STEPS.find(s => !trainee.checklistCompleted.includes(s.step));
                     return (
                       <tr key={trainee.id} className="hover:bg-muted/30 transition-colors cursor-pointer" onClick={() => setSelectedTraineeId(trainee.id)}>
-                        <td className="px-5 py-3.5">
+                        <td className="px-4 py-3">
                           <div className="flex items-center gap-3">
                             <div className={cn("w-8 h-8 rounded-full flex items-center justify-center text-white text-[11px] font-bold shrink-0", avatarColor(trainee.id))}>
                               {getInitial(trainee.name)}
@@ -666,10 +669,10 @@ export const TrainerDashboard = ({
                             </div>
                           </div>
                         </td>
-                        <td className="px-5 py-3.5">
+                        <td className="px-4 py-3">
                           <Badge variant="outline" className={cn("text-[10px] px-2 py-0.5", STATUS_BADGE[trainee.status])}>{trainee.status}</Badge>
                         </td>
-                        <td className="px-5 py-3.5">
+                        <td className="px-4 py-3">
                           <div className="flex items-center gap-2 w-28">
                             <div className="flex-1 h-1.5 bg-muted rounded-full overflow-hidden">
                               <div className={cn("h-full rounded-full", trainee.progress >= 100 ? "bg-emerald-500" : trainee.progress >= 60 ? "bg-blue-500" : "bg-amber-500")}
@@ -678,13 +681,13 @@ export const TrainerDashboard = ({
                             <span className="text-[11px] font-semibold text-muted-foreground w-8 text-right">{trainee.progress}%</span>
                           </div>
                         </td>
-                        <td className="px-5 py-3.5">
+                        <td className="px-4 py-3">
                           <p className="text-xs text-foreground">{nextStep ? nextStep.title : "Completed"}</p>
                         </td>
-                        <td className="px-5 py-3.5">
+                        <td className="px-4 py-3">
                           <span className="text-xs text-muted-foreground">{trainee.daysInTraining}d</span>
                         </td>
-                        <td className="px-5 py-3.5">
+                        <td className="px-4 py-3">
                           <span className="text-xs text-muted-foreground">{trainee.enrolledDate}</span>
                         </td>
                       </tr>
@@ -1804,8 +1807,8 @@ export const TrainerDashboard = ({
       <AnimatePresence>
         {isSettingsOpen && studioCourse && (
           <>
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 bg-black/40 backdrop-blur-sm z-40" onClick={() => setIsSettingsOpen(false)} />
-            <motion.div initial={{ x: "100%" }} animate={{ x: 0 }} exit={{ x: "100%" }} transition={{ type: "spring", damping: 30, stiffness: 300 }}
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 bg-black/50 backdrop-blur-sm z-40" onClick={() => setIsSettingsOpen(false)} />
+            <motion.div initial={{ x: "100%" }} animate={{ x: 0 }} exit={{ x: "100%" }} transition={{ type: "spring", damping: 28, stiffness: 300 }}
               className="fixed top-0 right-0 h-full w-full max-w-md bg-background border-l border-border shadow-2xl z-50 flex flex-col">
               {/* Drawer header */}
               <div className="px-6 py-5 border-b border-border flex items-center justify-between shrink-0">
@@ -1904,7 +1907,7 @@ export const TrainerDashboard = ({
       <AnimatePresence>
         {isNewCourseOpen && (
           <>
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40" onClick={() => setIsNewCourseOpen(false)} />
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 bg-black/50 backdrop-blur-sm z-40" onClick={() => setIsNewCourseOpen(false)} />
             <motion.div initial={{ opacity: 0, scale: 0.95, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 20 }} transition={{ type: "spring", damping: 25, stiffness: 350 }}
               className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-background rounded-xl border border-border shadow-2xl z-50 w-full max-w-lg">
               <div className="px-8 pt-8 pb-0">

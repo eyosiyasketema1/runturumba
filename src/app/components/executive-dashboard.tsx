@@ -28,6 +28,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from ".
 import { Switch } from "./ui/switch";
 import { Checkbox } from "./ui/checkbox";
 import { Progress } from "./ui/progress";
+import { TabBar, LAYOUT, SPACING, MOTION, MUTED_SCALE } from "./design-system";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -496,30 +497,12 @@ export const ExecutiveDashboard = ({
       </header>
 
       {/* Tab Navigation */}
-      <div className="bg-muted/30 p-1 rounded-xl flex items-center gap-2" role="tablist" aria-label="Executive dashboard tabs">
-        {TABS.map((tab) => {
-          const TabIcon = tab.icon;
-          const isActive = activeTab === tab.id;
-          return (
-            <button
-              key={tab.id}
-              role="tab"
-              aria-selected={isActive}
-              aria-controls={`tabpanel-${tab.id}`}
-              onClick={() => setActiveTab(tab.id)}
-              className={cn(
-                "flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all",
-                isActive
-                  ? "bg-primary text-primary-foreground shadow-sm"
-                  : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
-              )}
-            >
-              <TabIcon className="w-4 h-4" />
-              {tab.label}
-            </button>
-          );
-        })}
-      </div>
+      <TabBar
+        tabs={TABS.map(t => ({ id: t.id, label: t.label, icon: t.icon }))}
+        active={activeTab}
+        onChange={(id) => setActiveTab(id as ExecutiveTab)}
+        ariaLabel="Executive dashboard tabs"
+      />
 
       {/* ================================================================ */}
       {/* OVERVIEW TAB                                                      */}
@@ -626,8 +609,8 @@ export const ExecutiveDashboard = ({
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="border-b border-border bg-muted/30">
-                    <th className="text-left px-6 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Team</th>
+                  <tr className="bg-muted/50 border-b border-border">
+                    <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Team</th>
                     <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Coordinator</th>
                     <th className="text-center px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Volunteers</th>
                     <th className="text-center px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Active Convos</th>
@@ -651,17 +634,17 @@ export const ExecutiveDashboard = ({
                           statusStyle.bg
                         )}
                       >
-                        <td className="px-6 py-3.5">
+                        <td className="px-4 py-3">
                           <div className="flex items-center gap-2">
                             <Globe className="w-3.5 h-3.5 text-muted-foreground" />
                             <span className="font-semibold text-foreground">{team.name}</span>
                           </div>
                         </td>
-                        <td className="px-4 py-3.5 text-muted-foreground">{team.coordinator}</td>
-                        <td className="px-4 py-3.5 text-center font-medium text-foreground">{team.volunteers}</td>
-                        <td className="px-4 py-3.5 text-center font-bold text-foreground">{team.activeConvos}</td>
-                        <td className="px-4 py-3.5 text-center text-muted-foreground">{team.avgResponseTime}</td>
-                        <td className="px-4 py-3.5 text-center">
+                        <td className="px-4 py-3 text-muted-foreground">{team.coordinator}</td>
+                        <td className="px-4 py-3 text-center font-medium text-foreground">{team.volunteers}</td>
+                        <td className="px-4 py-3 text-center font-bold text-foreground">{team.activeConvos}</td>
+                        <td className="px-4 py-3 text-center text-muted-foreground">{team.avgResponseTime}</td>
+                        <td className="px-4 py-3 text-center">
                           <span className={cn(
                             "font-medium",
                             team.resolutionRate >= 85 ? "text-emerald-600" :
@@ -670,8 +653,8 @@ export const ExecutiveDashboard = ({
                             {team.resolutionRate}%
                           </span>
                         </td>
-                        <td className="px-4 py-3.5 text-center font-medium text-violet-600">{team.decisions}</td>
-                        <td className="px-4 py-3.5 text-center">
+                        <td className="px-4 py-3 text-center font-medium text-violet-600">{team.decisions}</td>
+                        <td className="px-4 py-3 text-center">
                           <div className="flex items-center justify-center gap-1.5">
                             <span className={cn("w-2 h-2 rounded-full", statusStyle.dot)} />
                             <span className={cn("text-xs font-medium", statusStyle.text)}>
@@ -1161,7 +1144,7 @@ export const ExecutiveDashboard = ({
                       <div className="overflow-x-auto">
                         <table className="w-full text-sm">
                           <thead>
-                            <tr className="border-b border-border bg-muted/30">
+                            <tr className="bg-muted/50 border-b border-border">
                               {selectedFields.map((f) => (
                                 <th key={f} className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider whitespace-nowrap">
                                   {getFieldLabel(f)}
@@ -1173,7 +1156,7 @@ export const ExecutiveDashboard = ({
                             {previewRows.map((row, ri) => (
                               <tr key={ri} className="hover:bg-muted/30 transition-colors">
                                 {selectedFields.map((f) => (
-                                  <td key={f} className="px-4 py-2.5 text-foreground whitespace-nowrap">
+                                  <td key={f} className="px-4 py-3 text-foreground whitespace-nowrap">
                                     {row[f] || "-"}
                                   </td>
                                 ))}
@@ -1182,7 +1165,7 @@ export const ExecutiveDashboard = ({
                             {reportAggregation !== "none" && (
                               <tr className="bg-muted/40 font-semibold border-t-2 border-border">
                                 {selectedFields.map((f, fi) => (
-                                  <td key={f} className="px-4 py-2.5 text-foreground whitespace-nowrap">
+                                  <td key={f} className="px-4 py-3 text-foreground whitespace-nowrap">
                                     {fi === 0 ? (
                                       <span className="text-xs uppercase tracking-wider text-muted-foreground">
                                         {reportAggregation}
@@ -1413,8 +1396,8 @@ export const ExecutiveDashboard = ({
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="border-b border-border bg-muted/30">
-                    <th className="text-left px-6 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Channel</th>
+                  <tr className="bg-muted/50 border-b border-border">
+                    <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Channel</th>
                     <th className="text-center px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Sign-ups</th>
                     <th className="text-center px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Conversions</th>
                     <th className="text-center px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Conv. Rate</th>
@@ -1436,26 +1419,26 @@ export const ExecutiveDashboard = ({
                         transition={{ duration: 0.2, delay: 0.45 + i * 0.04, ease: "easeOut" }}
                         className="hover:bg-muted/30 transition-colors"
                       >
-                        <td className="px-6 py-3.5">
+                        <td className="px-4 py-3">
                           <div className="flex items-center gap-2">
                             <span className={cn("w-2.5 h-2.5 rounded-full shrink-0", ch.color)} />
                             <span className="font-medium text-foreground">{ch.name}</span>
                           </div>
                         </td>
-                        <td className="px-4 py-3.5 text-center font-medium text-foreground">{ch.signups}</td>
-                        <td className="px-4 py-3.5 text-center font-medium text-foreground">{ch.conversions}</td>
-                        <td className="px-4 py-3.5 text-center text-muted-foreground">{convRate}%</td>
-                        <td className="px-4 py-3.5 text-center text-muted-foreground">
+                        <td className="px-4 py-3 text-center font-medium text-foreground">{ch.signups}</td>
+                        <td className="px-4 py-3 text-center font-medium text-foreground">{ch.conversions}</td>
+                        <td className="px-4 py-3 text-center text-muted-foreground">{convRate}%</td>
+                        <td className="px-4 py-3 text-center text-muted-foreground">
                           {ch.cost > 0 ? `$${ch.cost.toLocaleString()}` : "Free"}
                         </td>
-                        <td className="px-4 py-3.5 text-center">
+                        <td className="px-4 py-3 text-center">
                           {ch.roi > 0 ? (
                             <span className="font-semibold text-emerald-600">{ch.roi}%</span>
                           ) : (
                             <span className="text-muted-foreground">N/A</span>
                           )}
                         </td>
-                        <td className="px-4 py-3.5 text-center">
+                        <td className="px-4 py-3 text-center">
                           <div className={cn("flex items-center justify-center gap-1 text-xs font-medium", trendPct >= 0 ? "text-emerald-600" : "text-rose-600")}>
                             {trendPct >= 0 ? <ArrowUpRight className="w-3 h-3" /> : <ArrowDownRight className="w-3 h-3" />}
                             {Math.abs(trendPct)}%
@@ -1466,15 +1449,15 @@ export const ExecutiveDashboard = ({
                   })}
                   {/* Totals Row */}
                   <tr className="bg-muted/40 font-semibold border-t-2 border-border">
-                    <td className="px-6 py-3.5 text-foreground">Total</td>
-                    <td className="px-4 py-3.5 text-center text-foreground">{campaignTotals.totalSignups.toLocaleString()}</td>
-                    <td className="px-4 py-3.5 text-center text-foreground">{campaignTotals.totalConversions}</td>
-                    <td className="px-4 py-3.5 text-center text-foreground">
+                    <td className="px-4 py-3 text-foreground">Total</td>
+                    <td className="px-4 py-3 text-center text-foreground">{campaignTotals.totalSignups.toLocaleString()}</td>
+                    <td className="px-4 py-3 text-center text-foreground">{campaignTotals.totalConversions}</td>
+                    <td className="px-4 py-3 text-center text-foreground">
                       {((campaignTotals.totalConversions / campaignTotals.totalSignups) * 100).toFixed(1)}%
                     </td>
-                    <td className="px-4 py-3.5 text-center text-foreground">${campaignTotals.totalCost.toLocaleString()}</td>
-                    <td className="px-4 py-3.5 text-center text-foreground">-</td>
-                    <td className="px-4 py-3.5 text-center text-foreground">-</td>
+                    <td className="px-4 py-3 text-center text-foreground">${campaignTotals.totalCost.toLocaleString()}</td>
+                    <td className="px-4 py-3 text-center text-foreground">-</td>
+                    <td className="px-4 py-3 text-center text-foreground">-</td>
                   </tr>
                 </tbody>
               </table>

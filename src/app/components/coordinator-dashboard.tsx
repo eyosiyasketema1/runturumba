@@ -21,6 +21,7 @@ import { Label } from "./ui/label";
 import { Textarea } from "./ui/textarea";
 import { DateRangeFilter } from "./date-range-filter";
 import type { DateRange } from "react-day-picker";
+import { TabBar, LAYOUT, SPACING, MOTION, MUTED_SCALE, BACKDROP } from "./design-system";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -893,23 +894,12 @@ export const CoordinatorDashboard = ({
       </header>
 
       {/* Tab Bar */}
-      <div className="flex gap-1 p-1 bg-muted rounded-lg border border-border">
-        {TABS.map(tab => (
-          <button
-            key={tab.id}
-            onClick={() => setActiveTab(tab.id)}
-            className={cn(
-              "flex items-center gap-2 px-4 py-2 rounded-md text-sm font-semibold transition-all",
-              activeTab === tab.id
-                ? "bg-background text-foreground shadow-sm border border-border"
-                : "text-muted-foreground hover:text-foreground hover:bg-background/50"
-            )}
-          >
-            <tab.icon className="w-4 h-4" />
-            {tab.label}
-          </button>
-        ))}
-      </div>
+      <TabBar
+        tabs={TABS.map(t => ({ id: t.id, label: t.label, icon: t.icon }))}
+        active={activeTab}
+        onChange={(id) => setActiveTab(id as DashboardTab)}
+        ariaLabel="Coordinator dashboard tabs"
+      />
 
       {/* ================================================================= */}
       {/* OVERVIEW TAB                                                      */}
@@ -1223,12 +1213,12 @@ export const CoordinatorDashboard = ({
             <div className="overflow-x-auto">
               <table className="w-full text-left">
                 <thead>
-                  <tr className="border-b border-border">
-                    <th className="px-6 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-widest">Name</th>
-                    <th className="px-6 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-widest text-right">Conversations</th>
-                    <th className="px-6 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-widest text-right">Avg Response</th>
-                    <th className="px-6 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-widest text-right">Resolution Rate</th>
-                    <th className="px-6 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-widest text-right">Flagged</th>
+                  <tr className="border-b border-border bg-muted/50">
+                    <th className="px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Name</th>
+                    <th className="px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider text-right">Conversations</th>
+                    <th className="px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider text-right">Avg Response</th>
+                    <th className="px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider text-right">Resolution Rate</th>
+                    <th className="px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider text-right">Flagged</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border">
@@ -1243,7 +1233,7 @@ export const CoordinatorDashboard = ({
                         transition={{ duration: 0.2, delay: i * 0.04 }}
                         className={cn("hover:bg-muted/30 transition-colors", isTopPerformer && "bg-amber-500/5")}
                       >
-                        <td className="px-6 py-3.5">
+                        <td className="px-4 py-3">
                           <div className="flex items-center gap-3">
                             {member?.user.avatar ? (
                               <img src={member.user.avatar} alt={perf.name} className="w-8 h-8 rounded-full object-cover shrink-0" />
@@ -1263,18 +1253,18 @@ export const CoordinatorDashboard = ({
                             </div>
                           </div>
                         </td>
-                        <td className="px-6 py-3.5 text-right">
+                        <td className="px-4 py-3 text-right">
                           <span className="text-sm font-semibold text-foreground">{perf.conversationsHandled}</span>
                         </td>
-                        <td className="px-6 py-3.5 text-right">
+                        <td className="px-4 py-3 text-right">
                           <span className="text-sm text-muted-foreground">{perf.avgResponseTime}</span>
                         </td>
-                        <td className="px-6 py-3.5 text-right">
+                        <td className="px-4 py-3 text-right">
                           <span className={cn("text-sm font-semibold", perf.resolutionRate >= 90 ? "text-emerald-600" : perf.resolutionRate >= 75 ? "text-foreground" : "text-amber-600")}>
                             {perf.resolutionRate}%
                           </span>
                         </td>
-                        <td className="px-6 py-3.5 text-right">
+                        <td className="px-4 py-3 text-right">
                           <span className={cn("text-sm", perf.flaggedCount > 3 ? "text-rose-600 font-semibold" : "text-muted-foreground")}>
                             {perf.flaggedCount}
                           </span>
@@ -1626,7 +1616,7 @@ export const CoordinatorDashboard = ({
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="fixed inset-0 bg-black/40 z-40"
+              className="fixed inset-0 bg-black/50 z-40"
               onClick={() => setIsSettingsOpen(false)}
             />
             <motion.div
@@ -1642,7 +1632,7 @@ export const CoordinatorDashboard = ({
                   <h2 className="text-lg font-bold text-foreground">Team Settings</h2>
                   <p className="text-xs text-muted-foreground mt-0.5">Configure your {settings.language} team</p>
                 </div>
-                <Button variant="outline" size="sm" className="h-8 w-8 p-0" onClick={() => setIsSettingsOpen(false)}>
+                <Button variant="ghost" size="sm" className="h-8 w-8 p-0" onClick={() => setIsSettingsOpen(false)}>
                   <X className="w-4 h-4" />
                 </Button>
               </div>
@@ -2147,7 +2137,7 @@ export const CoordinatorDashboard = ({
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="fixed inset-0 bg-black/40 z-40"
+              className="fixed inset-0 bg-black/50 z-40"
               onClick={() => setArticleModal(null)}
             />
             <motion.div
@@ -2166,7 +2156,7 @@ export const CoordinatorDashboard = ({
                   <h3 className="text-sm font-bold text-foreground">
                     {articleModal.mode === "create" ? "Create Article" : "Edit Article"}
                   </h3>
-                  <Button variant="outline" size="sm" className="h-7 w-7 p-0" onClick={() => setArticleModal(null)}>
+                  <Button variant="ghost" size="sm" className="h-7 w-7 p-0" onClick={() => setArticleModal(null)}>
                     <X className="w-3.5 h-3.5" />
                   </Button>
                 </div>
@@ -2226,7 +2216,7 @@ export const CoordinatorDashboard = ({
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="fixed inset-0 bg-black/40 z-40"
+              className="fixed inset-0 bg-black/50 z-40"
               onClick={() => setPostModal(null)}
             />
             <motion.div
@@ -2245,7 +2235,7 @@ export const CoordinatorDashboard = ({
                   <h3 className="text-sm font-bold text-foreground">
                     {postModal.mode === "create" ? "Create Post" : "Edit Post"}
                   </h3>
-                  <Button variant="outline" size="sm" className="h-7 w-7 p-0" onClick={() => setPostModal(null)}>
+                  <Button variant="ghost" size="sm" className="h-7 w-7 p-0" onClick={() => setPostModal(null)}>
                     <X className="w-3.5 h-3.5" />
                   </Button>
                 </div>

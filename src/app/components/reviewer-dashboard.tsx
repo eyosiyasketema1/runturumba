@@ -17,6 +17,7 @@ import { Badge } from "./ui/badge";
 import { Textarea } from "./ui/textarea";
 import { DateRangeFilter } from "./date-range-filter";
 import type { DateRange } from "react-day-picker";
+import { TabBar, LAYOUT, SPACING, MOTION, MUTED_SCALE } from "./design-system";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -135,6 +136,13 @@ const VOLUNTEER_NAMES = [
 const REVIEW_TABS = ["Pending", "In Review", "Completed"] as const;
 type ReviewTab = (typeof REVIEW_TABS)[number];
 
+type ReviewerPageTab = "overview" | "volunteer_load";
+
+const REVIEWER_TABS: { id: ReviewerPageTab; label: string }[] = [
+  { id: "overview", label: "Overview" },
+  { id: "volunteer_load", label: "Volunteer Load" },
+];
+
 const TAB_TO_STATUS: Record<ReviewTab, ReviewStatus> = {
   "Pending": "pending",
   "In Review": "in_review",
@@ -152,7 +160,7 @@ export const ReviewerDashboard = ({
   currentUser,
   onOpenConversation,
 }: ReviewerDashboardProps) => {
-  const [pageTab, setPageTab] = useState<"overview" | "volunteer_load">("overview");
+  const [pageTab, setPageTab] = useState<ReviewerPageTab>("overview");
   const [activeTab, setActiveTab] = useState<ReviewTab>("Pending");
   const [dateRange, setDateRange] = useState<DateRange | undefined>(undefined);
   const [selectedReviewId, setSelectedReviewId] = useState<string | null>(null);
@@ -432,25 +440,12 @@ export const ReviewerDashboard = ({
       </header>
 
       {/* Page-level tabs */}
-      <div className="flex gap-1.5 p-1 bg-muted rounded-md border border-border w-fit">
-        {([
-          { id: "overview" as const, label: "Overview" },
-          { id: "volunteer_load" as const, label: "Volunteer Load" },
-        ]).map(tab => (
-          <button
-            key={tab.id}
-            onClick={() => setPageTab(tab.id)}
-            className={cn(
-              "px-4 py-2 rounded-sm text-xs font-semibold transition-all",
-              pageTab === tab.id
-                ? "bg-background text-foreground shadow-sm border border-border"
-                : "text-muted-foreground hover:text-foreground"
-            )}
-          >
-            {tab.label}
-          </button>
-        ))}
-      </div>
+      <TabBar
+        tabs={REVIEWER_TABS}
+        active={pageTab}
+        onChange={(id) => setPageTab(id as ReviewerPageTab)}
+        ariaLabel="Reviewer dashboard tabs"
+      />
 
       {/* ============ OVERVIEW TAB ============ */}
       {pageTab === "overview" && (<>
@@ -1000,23 +995,23 @@ export const ReviewerDashboard = ({
         <div className="overflow-x-auto">
           <table className="w-full text-left">
             <thead>
-              <tr className="border-b border-border">
-                <th className="px-6 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-widest">
+              <tr className="border-b border-border bg-muted/50">
+                <th className="px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
                   Name
                 </th>
-                <th className="px-6 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-widest text-right">
+                <th className="px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider text-right">
                   Reviewed
                 </th>
-                <th className="px-6 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-widest text-right">
+                <th className="px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider text-right">
                   Approved
                 </th>
-                <th className="px-6 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-widest text-right">
+                <th className="px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider text-right">
                   Returned
                 </th>
-                <th className="px-6 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-widest text-right">
+                <th className="px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider text-right">
                   Escalated
                 </th>
-                <th className="px-6 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-widest text-right">
+                <th className="px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider text-right">
                   Approval Rate
                 </th>
               </tr>
@@ -1035,7 +1030,7 @@ export const ReviewerDashboard = ({
                     transition={{ duration: 0.2, delay: i * 0.04 }}
                     className="hover:bg-muted/30 transition-colors"
                   >
-                    <td className="px-6 py-3.5">
+                    <td className="px-4 py-3">
                       <div className="flex items-center gap-3">
                         <div
                           className={cn(
@@ -1050,27 +1045,27 @@ export const ReviewerDashboard = ({
                         </span>
                       </div>
                     </td>
-                    <td className="px-6 py-3.5 text-right">
+                    <td className="px-4 py-3 text-right">
                       <span className="text-sm font-semibold text-foreground">
                         {vol.conversationsReviewed}
                       </span>
                     </td>
-                    <td className="px-6 py-3.5 text-right">
+                    <td className="px-4 py-3 text-right">
                       <span className="text-sm font-semibold text-emerald-600">
                         {vol.approved}
                       </span>
                     </td>
-                    <td className="px-6 py-3.5 text-right">
+                    <td className="px-4 py-3 text-right">
                       <span className="text-sm font-semibold text-amber-600">
                         {vol.returned}
                       </span>
                     </td>
-                    <td className="px-6 py-3.5 text-right">
+                    <td className="px-4 py-3 text-right">
                       <span className="text-sm font-semibold text-rose-600">
                         {vol.escalated}
                       </span>
                     </td>
-                    <td className="px-6 py-3.5 text-right">
+                    <td className="px-4 py-3 text-right">
                       <span
                         className={cn(
                           "text-sm font-semibold",
@@ -1125,13 +1120,13 @@ export const ReviewerDashboard = ({
           <div className="overflow-x-auto">
             <table className="w-full text-left">
               <thead>
-                <tr className="border-b border-border">
-                  <th className="px-6 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-widest">Volunteer</th>
-                  <th className="px-6 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-widest text-center">Status</th>
-                  <th className="px-6 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-widest text-right">Open Threads</th>
-                  <th className="px-6 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-widest text-right">Un-responded</th>
-                  <th className="px-6 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-widest text-right">Avg Response</th>
-                  <th className="px-6 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-widest text-center">Capacity</th>
+                <tr className="border-b border-border bg-muted/50">
+                  <th className="px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Volunteer</th>
+                  <th className="px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider text-center">Status</th>
+                  <th className="px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider text-right">Open Threads</th>
+                  <th className="px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider text-right">Un-responded</th>
+                  <th className="px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider text-right">Avg Response</th>
+                  <th className="px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider text-center">Capacity</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">
@@ -1149,7 +1144,7 @@ export const ReviewerDashboard = ({
                       className="hover:bg-muted/30 transition-colors"
                     >
                       {/* Name */}
-                      <td className="px-6 py-3.5">
+                      <td className="px-4 py-3">
                         <div className="flex items-center gap-3">
                           <div className="relative">
                             <div className={cn("w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold shrink-0", avatarColor(vol.userId))}>
@@ -1161,27 +1156,27 @@ export const ReviewerDashboard = ({
                         </div>
                       </td>
                       {/* Status */}
-                      <td className="px-6 py-3.5 text-center">
+                      <td className="px-4 py-3 text-center">
                         <Badge variant="outline" className={cn("text-[10px] px-2 py-0.5", vol.online ? "text-emerald-600 border-emerald-500/30 bg-emerald-500/10" : "text-muted-foreground border-border bg-muted/50")}>
                           {vol.online ? "Online" : "Offline"}
                         </Badge>
                       </td>
                       {/* Open Threads */}
-                      <td className="px-6 py-3.5 text-right">
+                      <td className="px-4 py-3 text-right">
                         <span className="text-sm font-semibold text-foreground">{vol.openThreads}</span>
                       </td>
                       {/* Un-responded */}
-                      <td className="px-6 py-3.5 text-right">
+                      <td className="px-4 py-3 text-right">
                         <span className={cn("text-sm font-semibold", vol.unresponded > 0 ? "text-rose-600" : "text-emerald-600")}>
                           {vol.unresponded}
                         </span>
                       </td>
                       {/* Avg Response */}
-                      <td className="px-6 py-3.5 text-right">
+                      <td className="px-4 py-3 text-right">
                         <span className="text-sm font-semibold text-foreground">{vol.avgResponseMin}m</span>
                       </td>
                       {/* Capacity */}
-                      <td className="px-6 py-3.5">
+                      <td className="px-4 py-3">
                         <div className="flex items-center gap-3 justify-center">
                           <div className="w-24 h-2 bg-muted rounded-full overflow-hidden">
                             <div className={cn("h-full rounded-full transition-all", capacityColor)} style={{ width: `${Math.min(capacityPct, 100)}%` }} />

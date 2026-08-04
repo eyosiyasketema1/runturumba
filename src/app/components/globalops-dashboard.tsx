@@ -30,6 +30,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from ".
 import { Switch } from "./ui/switch";
 import { Checkbox } from "./ui/checkbox";
 import { Progress } from "./ui/progress";
+import { TabBar, LAYOUT, SPACING, MOTION, MUTED_SCALE, BACKDROP } from "./design-system";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -146,7 +147,7 @@ function seededRandom(seed: string) {
 const SEVERITY_STYLES: Record<ComplianceSeverity, string> = {
   Critical: "bg-rose-500/10 text-rose-600 border-rose-500/20",
   Warning: "bg-amber-500/10 text-amber-600 border-amber-500/20",
-  Info: "bg-blue-500/10 text-blue-600 border-blue-500/20",
+  Info: "bg-primary/10 text-primary border-primary/20",
 };
 
 const STATUS_DOT_COLORS: Record<RegionData["status"], string> = {
@@ -156,7 +157,7 @@ const STATUS_DOT_COLORS: Record<RegionData["status"], string> = {
 };
 
 const APPROVAL_TYPE_STYLES: Record<ApprovalType, string> = {
-  "New Volunteer": "bg-blue-500/10 text-blue-600 border-blue-500/20",
+  "New Volunteer": "bg-primary/10 text-primary border-primary/20",
   "Policy Change": "bg-violet-500/10 text-violet-600 border-violet-500/20",
   "Region Request": "bg-emerald-500/10 text-emerald-600 border-emerald-500/20",
   "Role Change": "bg-amber-500/10 text-amber-600 border-amber-500/20",
@@ -313,14 +314,20 @@ function ApprovalDrawer({
   return (
     <>
       {/* Backdrop */}
-      <div className="fixed inset-0 bg-black/40 z-40" onClick={onClose} />
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        className="fixed inset-0 bg-black/50 z-40"
+        onClick={onClose}
+      />
 
       {/* Drawer */}
       <motion.div
         initial={{ x: "100%" }}
         animate={{ x: 0 }}
         exit={{ x: "100%" }}
-        transition={{ type: "spring", damping: 30, stiffness: 300 }}
+        transition={{ type: "spring", damping: 28, stiffness: 300 }}
         className="fixed right-0 top-0 bottom-0 w-full max-w-lg bg-background border-l border-border shadow-2xl z-50 flex flex-col"
       >
         {/* Header */}
@@ -367,7 +374,7 @@ function ApprovalDrawer({
                     <p className="text-[10px] text-muted-foreground uppercase">Languages</p>
                     <div className="flex gap-1.5 mt-1">
                       {item.details.languages.map(l => (
-                        <span key={l} className="text-xs px-2 py-0.5 rounded-full bg-blue-500/10 text-blue-600 border border-blue-500/20">{l}</span>
+                        <span key={l} className="text-xs px-2 py-0.5 rounded-full bg-primary/10 text-primary border border-primary/20">{l}</span>
                       ))}
                     </div>
                   </div>
@@ -453,7 +460,7 @@ function ApprovalDrawer({
                   </div>
                   <div>
                     <p className="text-[10px] text-muted-foreground uppercase">New Role</p>
-                    <p className="text-sm font-semibold text-blue-600">{item.details.newRole}</p>
+                    <p className="text-sm font-semibold text-primary">{item.details.newRole}</p>
                   </div>
                 </div>
               </div>
@@ -604,12 +611,18 @@ function InvestigationDrawer({
 
   return (
     <>
-      <div className="fixed inset-0 bg-black/40 z-40" onClick={onClose} />
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        className="fixed inset-0 bg-black/50 z-40"
+        onClick={onClose}
+      />
       <motion.div
         initial={{ x: "100%" }}
         animate={{ x: 0 }}
         exit={{ x: "100%" }}
-        transition={{ type: "spring", damping: 30, stiffness: 300 }}
+        transition={{ type: "spring", damping: 28, stiffness: 300 }}
         className="fixed right-0 top-0 bottom-0 w-full max-w-xl bg-background border-l border-border shadow-2xl z-50 flex flex-col"
       >
         {/* Header */}
@@ -654,7 +667,7 @@ function InvestigationDrawer({
                 <span>Policy rule triggered: <strong className="text-foreground">{issue.description}</strong></span>
               </div>
               <div className="flex items-start gap-2">
-                <MapPin className="w-3.5 h-3.5 text-blue-500 mt-0.5 shrink-0" />
+                <MapPin className="w-3.5 h-3.5 text-primary mt-0.5 shrink-0" />
                 <span>Affected team: <strong className="text-foreground">{issue.team}</strong></span>
               </div>
               <div className="flex items-start gap-2">
@@ -671,7 +684,7 @@ function InvestigationDrawer({
               value={notes}
               onChange={e => setNotes(e.target.value)}
               placeholder="Document your findings here..."
-              className="w-full h-28 text-sm rounded-md border border-border bg-background px-3 py-2 resize-none focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500"
+              className="w-full h-28 text-sm rounded-md border border-border bg-background px-3 py-2 resize-none focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
             />
           </div>
 
@@ -686,7 +699,7 @@ function InvestigationDrawer({
                     <div className={cn(
                       "w-[15px] h-[15px] rounded-full border-2 shrink-0 z-10",
                       i === issue.timeline!.length - 1
-                        ? "bg-blue-500 border-blue-500"
+                        ? "bg-primary border-primary"
                         : "bg-background border-border"
                     )} />
                     <div className="flex-1 min-w-0">
@@ -832,12 +845,18 @@ function RegionDrawer({ region, onClose }: { region: RegionData; onClose: () => 
 
   return (
     <>
-      <div className="fixed inset-0 bg-black/40 z-40" onClick={onClose} />
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        className="fixed inset-0 bg-black/50 z-40"
+        onClick={onClose}
+      />
       <motion.div
         initial={{ x: "100%" }}
         animate={{ x: 0 }}
         exit={{ x: "100%" }}
-        transition={{ type: "spring", damping: 30, stiffness: 300 }}
+        transition={{ type: "spring", damping: 28, stiffness: 300 }}
         className="fixed right-0 top-0 bottom-0 w-full max-w-lg bg-background border-l border-border shadow-2xl z-50 flex flex-col"
       >
         {/* Header */}
@@ -864,7 +883,7 @@ function RegionDrawer({ region, onClose }: { region: RegionData; onClose: () => 
           <div className="grid grid-cols-2 gap-3">
             {[
               { label: "Compliance Score", value: `${region.complianceScore || 0}%`, color: (region.complianceScore || 0) >= 90 ? "text-emerald-600" : "text-amber-600" },
-              { label: "Avg Response Time", value: region.avgResponseTime || "N/A", color: "text-blue-600" },
+              { label: "Avg Response Time", value: region.avgResponseTime || "N/A", color: "text-primary" },
               { label: "Active Conversations", value: `${region.activeConversations || 0}`, color: "text-violet-600" },
               { label: "Last Activity", value: formatTimeAgo(region.lastActivity), color: "text-muted-foreground" },
             ].map(kpi => (
@@ -881,7 +900,7 @@ function RegionDrawer({ region, onClose }: { region: RegionData; onClose: () => 
               <h4 className="text-xs font-bold text-foreground uppercase tracking-wider mb-2">Languages</h4>
               <div className="flex gap-1.5 flex-wrap">
                 {region.topLanguages.map(l => (
-                  <span key={l} className="text-xs px-2.5 py-1 rounded-full bg-blue-500/10 text-blue-600 border border-blue-500/20">{l}</span>
+                  <span key={l} className="text-xs px-2.5 py-1 rounded-full bg-primary/10 text-primary border border-primary/20">{l}</span>
                 ))}
               </div>
             </div>
@@ -915,7 +934,7 @@ function RegionDrawer({ region, onClose }: { region: RegionData; onClose: () => 
                 <div key={i} className="flex items-start gap-3 relative py-2.5">
                   <div className={cn(
                     "w-[15px] h-[15px] rounded-full border-2 shrink-0 z-10",
-                    i === 0 ? "bg-blue-500 border-blue-500" : "bg-background border-border"
+                    i === 0 ? "bg-primary border-primary" : "bg-background border-border"
                   )} />
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium text-foreground">{entry.action}</p>
@@ -1258,7 +1277,7 @@ export const GlobalOpsDashboard = ({
     expire: "bg-rose-500/10 text-rose-600 border-rose-500/20",
     archive: "bg-amber-500/10 text-amber-600 border-amber-500/20",
     escalate: "bg-violet-500/10 text-violet-600 border-violet-500/20",
-    notify: "bg-blue-500/10 text-blue-600 border-blue-500/20",
+    notify: "bg-primary/10 text-primary border-primary/20",
   };
 
   const PRIORITY_BADGE_STYLES: Record<string, string> = {
@@ -1290,8 +1309,8 @@ export const GlobalOpsDashboard = ({
       {/* Hero Header                                                      */}
       {/* ================================================================ */}
       <header className="relative overflow-hidden rounded-sm bg-slate-950 text-white p-8 shadow-[0_24px_60px_-28px_rgba(15,23,42,0.55)]">
-        <div className="absolute -top-24 -right-20 w-80 h-80 rounded-full bg-gradient-to-br from-blue-500/40 to-violet-500/10 blur-3xl pointer-events-none" />
-        <div className="absolute -bottom-32 -left-20 w-96 h-96 rounded-full bg-gradient-to-tr from-emerald-500/20 to-blue-500/10 blur-3xl pointer-events-none" />
+        <div className="absolute -top-24 -right-20 w-80 h-80 rounded-full bg-gradient-to-br from-primary/40 to-violet-500/10 blur-3xl pointer-events-none" />
+        <div className="absolute -bottom-32 -left-20 w-96 h-96 rounded-full bg-gradient-to-tr from-emerald-500/20 to-primary/10 blur-3xl pointer-events-none" />
         <div
           className="absolute inset-0 opacity-[0.06] pointer-events-none"
           style={{
@@ -1344,23 +1363,12 @@ export const GlobalOpsDashboard = ({
       {/* ================================================================ */}
       {/* Tab Navigation                                                   */}
       {/* ================================================================ */}
-      <div className="bg-muted/30 p-1 rounded-xl flex gap-1">
-        {GLOBAL_OPS_TABS.map(tab => (
-          <button
-            key={tab.key}
-            onClick={() => setActiveTab(tab.key)}
-            className={cn(
-              "flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold transition-all flex-1 justify-center",
-              activeTab === tab.key
-                ? "bg-primary text-primary-foreground shadow-sm"
-                : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
-            )}
-          >
-            <tab.icon className="w-4 h-4" />
-            <span className="hidden sm:inline">{tab.label}</span>
-          </button>
-        ))}
-      </div>
+      <TabBar
+        tabs={GLOBAL_OPS_TABS.map(t => ({ id: t.key, label: t.label, icon: t.icon }))}
+        active={activeTab}
+        onChange={(id) => setActiveTab(id as GlobalOpsTab)}
+        ariaLabel="Global Ops dashboard tabs"
+      />
 
       {/* ================================================================ */}
       {/* OVERVIEW TAB                                                     */}
@@ -1370,7 +1378,7 @@ export const GlobalOpsDashboard = ({
           {/* KPI Stats Row */}
           <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
             {[
-              { label: "Active Regions", value: activeRegions, icon: Globe, color: "text-blue-600", bg: "bg-blue-500/10" },
+              { label: "Active Regions", value: activeRegions, icon: Globe, color: "text-primary", bg: "bg-primary/10" },
               { label: "Compliance Score", value: `${complianceScore}%`, icon: ShieldCheck, color: "text-emerald-600", bg: "bg-emerald-500/10" },
               { label: "Pending Approvals", value: pendingApprovalCount, icon: ClipboardCheck, color: "text-amber-600", bg: "bg-amber-500/10" },
               { label: "Open Incidents", value: openIncidents, icon: AlertTriangle, color: "text-rose-600", bg: "bg-rose-500/10" },
@@ -1407,7 +1415,7 @@ export const GlobalOpsDashboard = ({
                       <h2 className="text-sm font-bold text-foreground">Region Overview</h2>
                       <p className="text-xs text-muted-foreground mt-0.5">{INITIAL_REGIONS.length} operational regions</p>
                     </div>
-                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-blue-500/10 text-blue-600 border border-blue-500/20">
+                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-primary/10 text-primary border border-primary/20">
                       {INITIAL_REGIONS.filter(r => r.status === "Active").length} active
                     </span>
                   </div>
@@ -1614,7 +1622,7 @@ export const GlobalOpsDashboard = ({
                               value={auditSearch}
                               onChange={e => { setAuditSearch(e.target.value); setAuditPage(1); }}
                               placeholder="Search audit log..."
-                              className="w-full h-8 text-xs rounded-md border border-border bg-background pl-8 pr-3 focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500"
+                              className="w-full h-8 text-xs rounded-md border border-border bg-background pl-8 pr-3 focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
                             />
                           </div>
                           {/* Quick filters */}
@@ -1636,7 +1644,7 @@ export const GlobalOpsDashboard = ({
                             <select
                               value={auditCategoryFilter}
                               onChange={e => { setAuditCategoryFilter(e.target.value); setAuditPage(1); }}
-                              className="h-7 text-[10px] font-semibold rounded-md border border-border bg-background px-2 focus:outline-none focus:ring-1 focus:ring-blue-500/30"
+                              className="h-7 text-[10px] font-semibold rounded-md border border-border bg-background px-2 focus:outline-none focus:ring-1 focus:ring-primary/30"
                             >
                               <option value="all">All Categories</option>
                               {auditCategories.map(c => (
@@ -1646,7 +1654,7 @@ export const GlobalOpsDashboard = ({
                             {(auditSearch || auditTimeFilter !== "all" || auditCategoryFilter !== "all") && (
                               <button
                                 onClick={() => { setAuditSearch(""); setAuditTimeFilter("all"); setAuditCategoryFilter("all"); setAuditPage(1); }}
-                                className="text-[10px] font-semibold text-blue-600 hover:text-blue-700"
+                                className="text-[10px] font-semibold text-primary hover:text-primary/80"
                               >
                                 Clear filters
                               </button>
@@ -1905,7 +1913,7 @@ export const GlobalOpsDashboard = ({
                 value={assignmentSearch}
                 onChange={e => setAssignmentSearch(e.target.value)}
                 placeholder="Search volunteers..."
-                className="w-full h-9 text-sm rounded-md border border-border bg-background pl-8 pr-3 focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500"
+                className="w-full h-9 text-sm rounded-md border border-border bg-background pl-8 pr-3 focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
               />
             </div>
             <Select value={selectedAssignRegion} onValueChange={setSelectedAssignRegion}>
@@ -1938,7 +1946,7 @@ export const GlobalOpsDashboard = ({
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="border-b border-border bg-muted/30">
+                  <tr className="bg-muted/50 border-b border-border">
                     <th className="px-4 py-3 text-left w-10">
                       <Checkbox
                         checked={bulkSelectedVolunteers.length === filteredVolunteers.length && filteredVolunteers.length > 0}
@@ -1951,14 +1959,14 @@ export const GlobalOpsDashboard = ({
                         }}
                       />
                     </th>
-                    <th className="px-4 py-3 text-left text-xs font-bold text-muted-foreground uppercase tracking-wider">Name</th>
-                    <th className="px-4 py-3 text-left text-xs font-bold text-muted-foreground uppercase tracking-wider">Region</th>
-                    <th className="px-4 py-3 text-left text-xs font-bold text-muted-foreground uppercase tracking-wider">Team</th>
-                    <th className="px-4 py-3 text-left text-xs font-bold text-muted-foreground uppercase tracking-wider">Role</th>
-                    <th className="px-4 py-3 text-left text-xs font-bold text-muted-foreground uppercase tracking-wider">Status</th>
-                    <th className="px-4 py-3 text-left text-xs font-bold text-muted-foreground uppercase tracking-wider">Cases</th>
-                    <th className="px-4 py-3 text-left text-xs font-bold text-muted-foreground uppercase tracking-wider">Last Active</th>
-                    <th className="px-4 py-3 text-right text-xs font-bold text-muted-foreground uppercase tracking-wider">Actions</th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider">Name</th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider">Region</th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider">Team</th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider">Role</th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider">Status</th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider">Cases</th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider">Last Active</th>
+                    <th className="px-4 py-3 text-right text-xs font-semibold text-muted-foreground uppercase tracking-wider">Actions</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border">
@@ -1987,7 +1995,7 @@ export const GlobalOpsDashboard = ({
                       <td className="px-4 py-3 text-muted-foreground">{vol.team}</td>
                       <td className="px-4 py-3">
                         <Badge variant="outline" className={cn("text-[10px] px-1.5 py-0",
-                          vol.role === "Coordinator" ? "bg-blue-500/10 text-blue-600 border-blue-500/20" :
+                          vol.role === "Coordinator" ? "bg-primary/10 text-primary border-primary/20" :
                           vol.role === "Reviewer" ? "bg-violet-500/10 text-violet-600 border-violet-500/20" :
                           "bg-slate-500/10 text-slate-600 border-slate-500/20"
                         )}>
@@ -2038,7 +2046,7 @@ export const GlobalOpsDashboard = ({
           <AnimatePresence>
             {showReassignModal && reassignVolunteer && (
               <>
-                <div className="fixed inset-0 bg-black/40 z-40" onClick={() => setShowReassignModal(false)} />
+                <div className="fixed inset-0 bg-black/50 z-40" onClick={() => setShowReassignModal(false)} />
                 <motion.div
                   initial={{ opacity: 0, scale: 0.95 }}
                   animate={{ opacity: 1, scale: 1 }}
@@ -2069,7 +2077,7 @@ export const GlobalOpsDashboard = ({
                         value={reassignReason}
                         onChange={e => setReassignReason(e.target.value)}
                         placeholder="Provide reason for reassignment..."
-                        className="w-full h-20 text-sm rounded-md border border-border bg-background px-3 py-2 resize-none focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500"
+                        className="w-full h-20 text-sm rounded-md border border-border bg-background px-3 py-2 resize-none focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
                       />
                     </div>
                   </div>
@@ -2096,7 +2104,7 @@ export const GlobalOpsDashboard = ({
           <AnimatePresence>
             {showBulkTransfer && (
               <>
-                <div className="fixed inset-0 bg-black/40 z-40" onClick={() => setShowBulkTransfer(false)} />
+                <div className="fixed inset-0 bg-black/50 z-40" onClick={() => setShowBulkTransfer(false)} />
                 <motion.div
                   initial={{ opacity: 0, scale: 0.95 }}
                   animate={{ opacity: 1, scale: 1 }}
@@ -2127,7 +2135,7 @@ export const GlobalOpsDashboard = ({
                         value={bulkReason}
                         onChange={e => setBulkReason(e.target.value)}
                         placeholder="Provide reason for bulk transfer..."
-                        className="w-full h-20 text-sm rounded-md border border-border bg-background px-3 py-2 resize-none focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500"
+                        className="w-full h-20 text-sm rounded-md border border-border bg-background px-3 py-2 resize-none focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
                       />
                     </div>
                   </div>
@@ -2172,7 +2180,7 @@ export const GlobalOpsDashboard = ({
 
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             {[
-              { label: "Total Rules", value: chatRules.length, icon: FileText, color: "text-blue-600", bg: "bg-blue-500/10" },
+              { label: "Total Rules", value: chatRules.length, icon: FileText, color: "text-primary", bg: "bg-primary/10" },
               { label: "Active Rules", value: chatRules.filter(r => r.enabled).length, icon: CheckCircle2, color: "text-emerald-600", bg: "bg-emerald-500/10" },
               { label: "Total Triggers", value: chatRules.reduce((sum, r) => sum + r.triggerCount, 0), icon: Zap, color: "text-amber-600", bg: "bg-amber-500/10" },
             ].map((stat, i) => (
@@ -2225,7 +2233,7 @@ export const GlobalOpsDashboard = ({
                     </div>
                     <div className="flex items-center gap-1.5 flex-wrap mb-3">
                       {rule.conditions.map((cond, ci) => (
-                        <span key={ci} className="text-[10px] px-2 py-0.5 rounded-full bg-blue-500/10 text-blue-600 border border-blue-500/20">
+                        <span key={ci} className="text-[10px] px-2 py-0.5 rounded-full bg-primary/10 text-primary border border-primary/20">
                           {CONDITION_FIELD_LABELS[cond.field]} {OPERATOR_LABELS[cond.operator]} {cond.value}
                         </span>
                       ))}
@@ -2259,7 +2267,7 @@ export const GlobalOpsDashboard = ({
           <AnimatePresence>
             {showRuleModal && (
               <>
-                <div className="fixed inset-0 bg-black/40 z-40" onClick={() => { setShowRuleModal(false); setEditingRule(null); }} />
+                <div className="fixed inset-0 bg-black/50 z-40" onClick={() => { setShowRuleModal(false); setEditingRule(null); }} />
                 <motion.div
                   initial={{ opacity: 0, scale: 0.95 }}
                   animate={{ opacity: 1, scale: 1 }}
@@ -2274,7 +2282,7 @@ export const GlobalOpsDashboard = ({
                         value={ruleForm.name}
                         onChange={e => setRuleForm(prev => ({ ...prev, name: e.target.value }))}
                         placeholder="Enter rule name..."
-                        className="w-full h-9 text-sm rounded-md border border-border bg-background px-3 focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500"
+                        className="w-full h-9 text-sm rounded-md border border-border bg-background px-3 focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
                       />
                     </div>
 
@@ -2290,7 +2298,7 @@ export const GlobalOpsDashboard = ({
                                 newConds[ci] = { ...newConds[ci], field: e.target.value as ChatRuleCondition["field"] };
                                 setRuleForm(prev => ({ ...prev, conditions: newConds }));
                               }}
-                              className="h-8 text-xs rounded-md border border-border bg-background px-2 flex-1 focus:outline-none focus:ring-1 focus:ring-blue-500/30"
+                              className="h-8 text-xs rounded-md border border-border bg-background px-2 flex-1 focus:outline-none focus:ring-1 focus:ring-primary/30"
                             >
                               <option value="location">Location</option>
                               <option value="time_inactive">Time Inactive</option>
@@ -2306,7 +2314,7 @@ export const GlobalOpsDashboard = ({
                                 newConds[ci] = { ...newConds[ci], operator: e.target.value as ChatRuleCondition["operator"] };
                                 setRuleForm(prev => ({ ...prev, conditions: newConds }));
                               }}
-                              className="h-8 text-xs rounded-md border border-border bg-background px-2 w-[100px] focus:outline-none focus:ring-1 focus:ring-blue-500/30"
+                              className="h-8 text-xs rounded-md border border-border bg-background px-2 w-[100px] focus:outline-none focus:ring-1 focus:ring-primary/30"
                             >
                               <option value="equals">equals</option>
                               <option value="greater_than">greater than</option>
@@ -2322,7 +2330,7 @@ export const GlobalOpsDashboard = ({
                                 setRuleForm(prev => ({ ...prev, conditions: newConds }));
                               }}
                               placeholder="Value..."
-                              className="h-8 text-xs rounded-md border border-border bg-background px-2 flex-1 focus:outline-none focus:ring-1 focus:ring-blue-500/30"
+                              className="h-8 text-xs rounded-md border border-border bg-background px-2 flex-1 focus:outline-none focus:ring-1 focus:ring-primary/30"
                             />
                             {ruleForm.conditions.length > 1 && (
                               <Button
@@ -2341,7 +2349,7 @@ export const GlobalOpsDashboard = ({
                         ))}
                         <button
                           onClick={() => setRuleForm(prev => ({ ...prev, conditions: [...prev.conditions, { field: "location", operator: "equals", value: "" }] }))}
-                          className="text-xs font-semibold text-blue-600 hover:text-blue-700 flex items-center gap-1"
+                          className="text-xs font-semibold text-primary hover:text-primary/80 flex items-center gap-1"
                         >
                           <Plus className="w-3 h-3" /> Add Condition
                         </button>
@@ -2353,7 +2361,7 @@ export const GlobalOpsDashboard = ({
                       <select
                         value={ruleForm.action}
                         onChange={e => setRuleForm(prev => ({ ...prev, action: e.target.value as typeof prev.action }))}
-                        className="w-full h-9 text-sm rounded-md border border-border bg-background px-3 focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500 mb-2"
+                        className="w-full h-9 text-sm rounded-md border border-border bg-background px-3 focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary mb-2"
                       >
                         <option value="expire">Expire</option>
                         <option value="archive">Archive</option>
@@ -2364,7 +2372,7 @@ export const GlobalOpsDashboard = ({
                         value={ruleForm.actionValue}
                         onChange={e => setRuleForm(prev => ({ ...prev, actionValue: e.target.value }))}
                         placeholder="Describe the action..."
-                        className="w-full h-16 text-sm rounded-md border border-border bg-background px-3 py-2 resize-none focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500"
+                        className="w-full h-16 text-sm rounded-md border border-border bg-background px-3 py-2 resize-none focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
                       />
                     </div>
 
@@ -2426,7 +2434,7 @@ export const GlobalOpsDashboard = ({
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
             {[
               { label: "Pending Requests", value: DATA_REQUESTS.filter(r => r.status === "pending").length, icon: FileText, color: "text-amber-600", bg: "bg-amber-500/10" },
-              { label: "Avg Response Time", value: "3.2 days", icon: Clock, color: "text-blue-600", bg: "bg-blue-500/10" },
+              { label: "Avg Response Time", value: "3.2 days", icon: Clock, color: "text-primary", bg: "bg-primary/10" },
               { label: "Consent Rate", value: "97.6%", icon: UserCheck, color: "text-emerald-600", bg: "bg-emerald-500/10" },
               { label: "Compliance Score", value: "94%", icon: ShieldCheck, color: "text-violet-600", bg: "bg-violet-500/10" },
             ].map((kpi, i) => (
@@ -2490,14 +2498,14 @@ export const GlobalOpsDashboard = ({
                 <div className="overflow-x-auto">
                   <table className="w-full text-sm">
                     <thead>
-                      <tr className="border-b border-border bg-muted/30">
-                        <th className="px-4 py-3 text-left text-xs font-bold text-muted-foreground uppercase tracking-wider">Subject</th>
-                        <th className="px-4 py-3 text-left text-xs font-bold text-muted-foreground uppercase tracking-wider">Email</th>
-                        <th className="px-4 py-3 text-left text-xs font-bold text-muted-foreground uppercase tracking-wider">Type</th>
-                        <th className="px-4 py-3 text-left text-xs font-bold text-muted-foreground uppercase tracking-wider">Submitted</th>
-                        <th className="px-4 py-3 text-left text-xs font-bold text-muted-foreground uppercase tracking-wider">Region</th>
-                        <th className="px-4 py-3 text-left text-xs font-bold text-muted-foreground uppercase tracking-wider">Status</th>
-                        <th className="px-4 py-3 text-right text-xs font-bold text-muted-foreground uppercase tracking-wider">Actions</th>
+                      <tr className="bg-muted/50 border-b border-border">
+                        <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider">Subject</th>
+                        <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider">Email</th>
+                        <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider">Type</th>
+                        <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider">Submitted</th>
+                        <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider">Region</th>
+                        <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider">Status</th>
+                        <th className="px-4 py-3 text-right text-xs font-semibold text-muted-foreground uppercase tracking-wider">Actions</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-border">
@@ -2513,7 +2521,7 @@ export const GlobalOpsDashboard = ({
                           <td className="px-4 py-3 text-muted-foreground text-xs">{req.email}</td>
                           <td className="px-4 py-3">
                             <Badge variant="outline" className={cn("text-[10px] px-1.5 py-0",
-                              req.type === "Access" ? "bg-blue-500/10 text-blue-600 border-blue-500/20" :
+                              req.type === "Access" ? "bg-primary/10 text-primary border-primary/20" :
                               req.type === "Deletion" ? "bg-rose-500/10 text-rose-600 border-rose-500/20" :
                               "bg-violet-500/10 text-violet-600 border-violet-500/20"
                             )}>
@@ -2525,7 +2533,7 @@ export const GlobalOpsDashboard = ({
                           <td className="px-4 py-3">
                             <Badge variant="outline" className={cn("text-[10px] px-1.5 py-0",
                               req.status === "pending" ? "bg-amber-500/10 text-amber-600 border-amber-500/20" :
-                              req.status === "in_progress" ? "bg-blue-500/10 text-blue-600 border-blue-500/20" :
+                              req.status === "in_progress" ? "bg-primary/10 text-primary border-primary/20" :
                               "bg-emerald-500/10 text-emerald-600 border-emerald-500/20"
                             )}>
                               {req.status === "in_progress" ? "In Progress" : req.status.charAt(0).toUpperCase() + req.status.slice(1)}
@@ -2605,7 +2613,7 @@ export const GlobalOpsDashboard = ({
 
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 {[
-                  { type: "Email Addresses", count: "1,247 records", icon: Mail, color: "text-blue-600", bg: "bg-blue-500/10" },
+                  { type: "Email Addresses", count: "1,247 records", icon: Mail, color: "text-primary", bg: "bg-primary/10" },
                   { type: "Phone Numbers", count: "834 records", icon: Phone, color: "text-violet-600", bg: "bg-violet-500/10" },
                   { type: "Location Data", count: "2,103 records", icon: MapPinned, color: "text-amber-600", bg: "bg-amber-500/10" },
                 ].map((finding, i) => (
@@ -2650,13 +2658,13 @@ export const GlobalOpsDashboard = ({
                 <div className="overflow-x-auto">
                   <table className="w-full text-sm">
                     <thead>
-                      <tr className="border-b border-border bg-muted/30">
-                        <th className="px-4 py-3 text-left text-xs font-bold text-muted-foreground uppercase tracking-wider">Date</th>
-                        <th className="px-4 py-3 text-left text-xs font-bold text-muted-foreground uppercase tracking-wider">Type</th>
-                        <th className="px-4 py-3 text-left text-xs font-bold text-muted-foreground uppercase tracking-wider">Severity</th>
-                        <th className="px-4 py-3 text-left text-xs font-bold text-muted-foreground uppercase tracking-wider">Affected</th>
-                        <th className="px-4 py-3 text-left text-xs font-bold text-muted-foreground uppercase tracking-wider">Status</th>
-                        <th className="px-4 py-3 text-left text-xs font-bold text-muted-foreground uppercase tracking-wider">Resolution</th>
+                      <tr className="bg-muted/50 border-b border-border">
+                        <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider">Date</th>
+                        <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider">Type</th>
+                        <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider">Severity</th>
+                        <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider">Affected</th>
+                        <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider">Status</th>
+                        <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider">Resolution</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-border">

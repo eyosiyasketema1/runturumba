@@ -14,6 +14,7 @@ import { Button } from "./ui/button";
 import { Badge } from "./ui/badge";
 import { DateRangeFilter } from "./date-range-filter";
 import type { DateRange } from "react-day-picker";
+import { MUTED_SCALE, BACKDROP } from "./design-system";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -402,7 +403,7 @@ export const VolunteerDashboard = ({
               </div>
 
               {/* Tab Pills */}
-              <div className="flex gap-1.5 p-1 bg-muted rounded-md border border-border">
+              <div className="bg-muted/30 p-1 rounded-xl flex items-center gap-1">
                 {TAB_OPTIONS.map(tab => {
                   const count =
                     tab === "Active"
@@ -415,10 +416,10 @@ export const VolunteerDashboard = ({
                       key={tab}
                       onClick={() => setActiveTab(tab)}
                       className={cn(
-                        "flex items-center gap-1.5 px-3 py-1.5 rounded-sm text-xs font-semibold transition-all",
+                        "flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium transition-all",
                         activeTab === tab
-                          ? "bg-background text-foreground shadow-sm border border-border"
-                          : "text-muted-foreground hover:text-foreground"
+                          ? "bg-primary text-primary-foreground shadow-sm"
+                          : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
                       )}
                     >
                       {tab}
@@ -426,7 +427,7 @@ export const VolunteerDashboard = ({
                         className={cn(
                           "text-[10px] font-bold px-1.5 py-0.5 rounded-full min-w-[20px] text-center",
                           activeTab === tab
-                            ? "bg-primary/10 text-primary"
+                            ? "bg-primary-foreground/20 text-primary-foreground"
                             : "bg-muted-foreground/10 text-muted-foreground"
                         )}
                       >
@@ -718,7 +719,7 @@ export const VolunteerDashboard = ({
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm"
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm"
             onClick={() => setPracticeConfirmId(null)}
           >
             <motion.div

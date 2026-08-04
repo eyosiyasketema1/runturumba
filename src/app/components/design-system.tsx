@@ -579,12 +579,18 @@ export const TabBar = ({
   tabs,
   active,
   onChange,
+  ariaLabel,
 }: {
   tabs: { id: string; label: string; icon?: LucideIcon }[];
   active: string;
   onChange: (id: string) => void;
+  ariaLabel?: string;
 }) => (
-  <div className={cn("inline-flex items-center gap-1 p-1 rounded-lg", MUTED_SCALE.track)}>
+  <div
+    role="tablist"
+    aria-label={ariaLabel}
+    className="bg-muted/30 p-1 rounded-xl flex items-center gap-1"
+  >
     {tabs.map((tab) => {
       const isActive = tab.id === active;
       const Icon = tab.icon;
@@ -592,15 +598,18 @@ export const TabBar = ({
         <button
           key={tab.id}
           type="button"
+          role="tab"
+          aria-selected={isActive}
+          aria-controls={`tabpanel-${tab.id}`}
           onClick={() => onChange(tab.id)}
           className={cn(
-            "flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-colors",
+            "flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all",
             isActive
-              ? "bg-card text-foreground shadow-sm"
-              : "text-muted-foreground hover:text-foreground"
+              ? "bg-primary text-primary-foreground shadow-sm"
+              : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
           )}
         >
-          {Icon && <Icon className={ICON.sm} />}
+          {Icon && <Icon className={ICON.md} />}
           {tab.label}
         </button>
       );
