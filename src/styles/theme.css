@@ -21,7 +21,7 @@
   --border: #cbd5e1;
   --input: #94a3b8;
   --ring: #2563eb;
-  --radius: 0.125rem;
+  --radius: 0.5rem;
   --chart-1: #2563eb;
   --chart-2: #10b981;
   --chart-3: #f59e0b;
@@ -88,8 +88,8 @@
   --color-destructive-foreground: var(--destructive-foreground);
   --color-border: var(--border);
   --color-input: var(--input);
-  --color-input-background: var(--input-background);
-  --color-switch-background: var(--switch-background);
+  --color-input-background: var(--secondary);
+  --color-switch-background: var(--muted);
   --color-ring: var(--ring);
   --color-chart-1: var(--chart-1);
   --color-chart-2: var(--chart-2);
