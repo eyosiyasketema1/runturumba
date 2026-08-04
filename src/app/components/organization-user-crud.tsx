@@ -67,7 +67,6 @@ const FilterDropdown = <T extends string>({ value, onChange, options, label }: {
   options: { id: T; label: string }[];
   label: string;
 }) => {
-  const selectedLabel = options.find(o => o.id === value)?.label ?? label;
   return (
     <div className="relative">
       <select
@@ -75,9 +74,9 @@ const FilterDropdown = <T extends string>({ value, onChange, options, label }: {
         onChange={e => onChange(e.target.value as T)}
         aria-label={label}
         className={cn(
-          "appearance-none bg-card border border-border rounded-sm px-3 pr-8 py-1.5",
+          "appearance-none bg-transparent px-3 pr-8 py-2.5",
           "text-xs font-semibold text-foreground cursor-pointer",
-          "hover:border-primary/40 focus:outline-none focus:ring-1 focus:ring-primary/30",
+          "focus:outline-none",
           "transition-all"
         )}
       >
@@ -264,74 +263,74 @@ export const TeamManagement = ({
         </Card>
       </div>
 
-      {/* Tabs + Search */}
-      <div className="flex flex-col sm:flex-row gap-3">
-        <div className="flex gap-1 p-1 bg-muted border border-border" role="tablist" aria-label="Team management">
-          <button
-            role="tab"
-            id="tab-members"
-            aria-selected={activeTab === "members"}
-            onClick={() => setActiveTab("members")}
-            className={cn(
-              "px-4 py-2 text-xs font-semibold transition-all flex items-center gap-2",
-              activeTab === "members" ? "bg-background text-foreground border border-border" : "text-muted-foreground hover:text-foreground"
-            )}
-          >
-            <UsersIcon className="w-3.5 h-3.5" />
-            Users
-            <Badge variant="secondary" className="text-xs ml-1">{users.length}</Badge>
-          </button>
-          <button
-            role="tab"
-            id="tab-audit"
-            aria-selected={activeTab === "audit"}
-            onClick={() => setActiveTab("audit")}
-            className={cn(
-              "px-4 py-2 text-xs font-semibold transition-all flex items-center gap-2",
-              activeTab === "audit" ? "bg-background text-foreground border border-border" : "text-muted-foreground hover:text-foreground"
-            )}
-          >
-            <FileText className="w-3.5 h-3.5" />
-            Audit Log
-            <Badge variant="secondary" className="text-xs ml-1">{auditLog.length}</Badge>
-          </button>
-        </div>
-        <div className="relative flex-1 max-w-sm">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-          <Input
-            placeholder={activeTab === "members" ? "Search users..." : "Search audit log..."}
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-9 h-9 text-sm"
-            aria-label={activeTab === "members" ? "Search users" : "Search audit log"}
-          />
-        </div>
+      {/* Tabs */}
+      <div className="flex gap-1 p-1 bg-muted border border-border w-fit" role="tablist" aria-label="Team management">
+        <button
+          role="tab"
+          id="tab-members"
+          aria-selected={activeTab === "members"}
+          onClick={() => setActiveTab("members")}
+          className={cn(
+            "px-4 py-2 text-xs font-semibold transition-all flex items-center gap-2",
+            activeTab === "members" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"
+          )}
+        >
+          <UsersIcon className="w-3.5 h-3.5" />
+          Users
+        </button>
+        <button
+          role="tab"
+          id="tab-audit"
+          aria-selected={activeTab === "audit"}
+          onClick={() => setActiveTab("audit")}
+          className={cn(
+            "px-4 py-2 text-xs font-semibold transition-all flex items-center gap-2",
+            activeTab === "audit" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"
+          )}
+        >
+          <FileText className="w-3.5 h-3.5" />
+          Audit Log
+        </button>
       </div>
 
       <AnimatePresence mode="wait">
         {activeTab === "members" ? (
           <motion.div key="members" role="tabpanel" aria-labelledby="tab-members" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-            {/* Filters */}
-            <div className="flex gap-3 mb-4 flex-wrap items-center">
-              <FilterDropdown
-                value={userTypeFilter}
-                onChange={setUserTypeFilter}
-                label="User Type"
-                options={[
-                  { id: "all" as any, label: "All User Types" },
-                  ...USER_TYPES.map(ut => ({ id: ut.id as any, label: ut.label })),
-                ]}
-              />
-              <FilterDropdown
-                value={statusFilter}
-                onChange={setStatusFilter}
-                label="Status"
-                options={[
-                  { id: "all" as any, label: "All Status" },
-                  { id: "active" as any, label: "Active" },
-                  { id: "pending" as any, label: "Pending" },
-                ]}
-              />
+            {/* Search + Filters bar */}
+            <div className="flex items-center border border-border bg-card mb-4">
+              <div className="relative flex-1">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                <input
+                  placeholder="Search users..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  aria-label="Search users"
+                  className="w-full bg-transparent pl-9 pr-3 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none"
+                />
+              </div>
+              <div className="flex items-center border-l border-border">
+                <FilterDropdown
+                  value={userTypeFilter}
+                  onChange={setUserTypeFilter}
+                  label="User Type"
+                  options={[
+                    { id: "all" as any, label: "All types" },
+                    ...USER_TYPES.map(ut => ({ id: ut.id as any, label: ut.label })),
+                  ]}
+                />
+              </div>
+              <div className="flex items-center border-l border-border">
+                <FilterDropdown
+                  value={statusFilter}
+                  onChange={setStatusFilter}
+                  label="Status"
+                  options={[
+                    { id: "all" as any, label: "All statuses" },
+                    { id: "active" as any, label: "Active" },
+                    { id: "pending" as any, label: "Pending" },
+                  ]}
+                />
+              </div>
             </div>
 
             {/* User Table */}
@@ -418,13 +417,13 @@ export const TeamManagement = ({
           </motion.div>
         ) : (
           <motion.div key="audit" role="tabpanel" aria-labelledby="tab-audit" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-            <AuditLogTab auditLog={auditLog} searchQuery={searchQuery} />
+            <AuditLogTab auditLog={auditLog} searchQuery={searchQuery} setSearchQuery={setSearchQuery} />
           </motion.div>
         )}
       </AnimatePresence>
 
       {/* Modals */}
-      <Modal isOpen={isAddModalOpen} onClose={() => setIsAddModalOpen(false)} title="Invite User">
+      <Modal isOpen={isAddModalOpen} onClose={() => setIsAddModalOpen(false)} title="Invite User" size="2xl">
         <AddUserForm
           onAdd={(data) => { onAddUser(data); setIsAddModalOpen(false); }}
           onCancel={() => setIsAddModalOpen(false)}
@@ -639,7 +638,7 @@ const GroupFormModal = ({ group, users, onClose, onSave }: {
 // Audit Log Tab
 // ============================================================
 
-const AuditLogTab = ({ auditLog, searchQuery }: { auditLog: AuditLogEntry[]; searchQuery: string }) => {
+const AuditLogTab = ({ auditLog, searchQuery, setSearchQuery }: { auditLog: AuditLogEntry[]; searchQuery: string; setSearchQuery: (q: string) => void }) => {
   const [actionFilter, setActionFilter] = useState<string>("all");
 
   const actionTypes = useMemo(() => {
@@ -664,16 +663,29 @@ const AuditLogTab = ({ auditLog, searchQuery }: { auditLog: AuditLogEntry[]; sea
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center gap-3">
-        <FilterDropdown
-          value={actionFilter}
-          onChange={setActionFilter}
-          label="Action Type"
-          options={[
-            { id: "all", label: "All Actions" },
-            ...actionTypes.map(at => ({ id: at, label: ACTION_CONFIG[at]?.label || at })),
-          ]}
-        />
+      {/* Search + Filters bar */}
+      <div className="flex items-center border border-border bg-card">
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+          <input
+            placeholder="Search audit log..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            aria-label="Search audit log"
+            className="w-full bg-transparent pl-9 pr-3 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none"
+          />
+        </div>
+        <div className="flex items-center border-l border-border">
+          <FilterDropdown
+            value={actionFilter}
+            onChange={setActionFilter}
+            label="Action Type"
+            options={[
+              { id: "all", label: "All actions" },
+              ...actionTypes.map(at => ({ id: at, label: ACTION_CONFIG[at]?.label || at })),
+            ]}
+          />
+        </div>
       </div>
 
       <Card>
@@ -775,27 +787,25 @@ const AddUserForm = ({ onAdd, onCancel }: { onAdd: (data: Partial<UserType>) => 
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!name || !email) { toast.error("Name and email are required."); return; }
+    if (!email) { toast.error("Email is required."); return; }
     onAdd({
-      name, email, role: legacyRole(userTypeId), status: "pending",
+      name: name || email.split("@")[0], email, role: legacyRole(userTypeId), status: "pending",
       userTypeId, roleId,
       scope: { language: language || undefined, region: region || undefined },
       joinedAt: new Date().toISOString().split("T")[0],
     });
-    toast.success("User added: " + name);
+    toast.success("Invitation sent to " + email);
   };
 
   return (
     <form onSubmit={handleSubmit} className="space-y-5">
-      <div className="grid grid-cols-2 gap-4">
-        <div className="space-y-2">
-          <Label className="text-xs font-semibold">Full Name <span className="text-destructive">*</span></Label>
-          <Input autoFocus value={name} onChange={e => setName(e.target.value)} placeholder="e.g. Abebe Kebede" className="h-9 text-sm" />
-        </div>
-        <div className="space-y-2">
-          <Label className="text-xs font-semibold">Email <span className="text-destructive">*</span></Label>
-          <Input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="abebe@gcm.org" className="h-9 text-sm" />
-        </div>
+      <div className="space-y-2">
+        <Label className="text-xs font-semibold">Email <span className="text-destructive">*</span></Label>
+        <Input autoFocus type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="abebe@gcm.org" className="h-9 text-sm" />
+      </div>
+      <div className="space-y-2">
+        <Label className="text-xs font-semibold">Full Name <span className="text-muted-foreground font-normal">(optional)</span></Label>
+        <Input value={name} onChange={e => setName(e.target.value)} placeholder="e.g. Abebe Kebede" className="h-9 text-sm" />
       </div>
 
       {/* User Type Picker */}
@@ -803,7 +813,7 @@ const AddUserForm = ({ onAdd, onCancel }: { onAdd: (data: Partial<UserType>) => 
         <Label className="text-xs font-semibold flex items-center gap-1.5">
           <Layers className="w-3 h-3" />User Type
         </Label>
-        <div className="grid grid-cols-2 gap-2">
+        <div className="grid grid-cols-3 gap-2">
           {USER_TYPES.map(ut => (
             <button
               key={ut.id}
@@ -869,7 +879,7 @@ const AddUserForm = ({ onAdd, onCancel }: { onAdd: (data: Partial<UserType>) => 
       <div className="flex justify-end gap-2 pt-2">
         <Button type="button" variant="outline" size="sm" onClick={onCancel}>Cancel</Button>
         <Button type="submit" size="sm">
-          <Plus className="w-3.5 h-3.5 mr-1.5" />Add User
+          <Mail className="w-3.5 h-3.5 mr-1.5" />Invite User
         </Button>
       </div>
     </form>
