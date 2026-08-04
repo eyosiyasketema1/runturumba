@@ -11,6 +11,7 @@ import { motion } from "motion/react";
 import { toast } from "sonner";
 
 import { cn, type Tenant, type User as UserType, type Plan, type OrgStatus, PLAN_LIMITS } from "./types";
+import { RolesPermissionsSection } from "./roles-permissions";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "./ui/card";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
@@ -21,17 +22,38 @@ import { Badge } from "./ui/badge";
 import { Textarea } from "./ui/textarea";
 import { Avatar, AvatarImage, AvatarFallback } from "./ui/avatar";
 
-// --- Settings Navigation Items ---
-const settingsNav = [
-  { id: "profile", label: "Profile", icon: User, description: "Your personal information" },
-  { id: "organization", label: "Organization", icon: Building2, description: "Workspace settings" },
-  { id: "child-orgs", label: "Organizations", icon: Building2, description: "Manage sub-organizations", superOnly: true },
-  { id: "billing", label: "Billing & Plans", icon: CreditCard, description: "Subscription management" },
-  { id: "notifications", label: "Notifications", icon: Bell, description: "Alert preferences" },
-  { id: "security", label: "Security", icon: Shield, description: "Password & authentication" },
-  { id: "api", label: "API & Integrations", icon: Key, description: "API keys & developer tools" },
-  { id: "ai", label: "AI Configuration", icon: Sparkles, description: "Business rules, API keys & sharing" },
-  { id: "terminology", label: "Terminology", icon: Globe, description: "Customize labels & terms" },
+// --- Settings Navigation Items (Categorized) ---
+const settingsNavGroups = [
+  {
+    category: "Account",
+    items: [
+      { id: "profile", label: "Profile", icon: User, description: "Your personal information" },
+      { id: "organization", label: "Organization", icon: Building2, description: "Workspace settings" },
+      { id: "child-orgs", label: "Organizations", icon: Building2, description: "Manage sub-organizations", superOnly: true },
+      { id: "billing", label: "Billing & Plans", icon: CreditCard, description: "Subscription management" },
+    ],
+  },
+  {
+    category: "Preferences",
+    items: [
+      { id: "notifications", label: "Notifications", icon: Bell, description: "Alert preferences" },
+      { id: "terminology", label: "Terminology", icon: Globe, description: "Customize labels & terms" },
+    ],
+  },
+  {
+    category: "Security & Access",
+    items: [
+      { id: "security", label: "Security", icon: Shield, description: "Password & authentication" },
+      { id: "roles", label: "Roles & Permissions", icon: Shield, description: "Manage access levels" },
+    ],
+  },
+  {
+    category: "Integrations",
+    items: [
+      { id: "api", label: "API & Integrations", icon: Key, description: "API keys & developer tools" },
+      { id: "ai", label: "AI Configuration", icon: Sparkles, description: "Business rules, API keys & sharing" },
+    ],
+  },
 ];
 
 // --- Section Header ---
@@ -1690,7 +1712,12 @@ export const SettingsView = ({
 }) => {
   const [activeSection, setActiveSection] = useState("profile");
   const isSuperOrg = tenant.orgRole === "super";
-  const filteredNav = settingsNav.filter(item => !item.superOnly || isSuperOrg);
+
+  // Filter out superOnly items when not a super org
+  const filteredGroups = settingsNavGroups.map(group => ({
+    ...group,
+    items: group.items.filter(item => !item.superOnly || isSuperOrg),
+  })).filter(group => group.items.length > 0);
 
   return (
     <div className="p-6 lg:p-10 animate-in fade-in duration-300">
@@ -1707,41 +1734,47 @@ export const SettingsView = ({
         <div className="flex flex-col lg:flex-row min-h-[600px]">
           {/* Left Navigation Column */}
           <nav className="lg:w-60 shrink-0 border-b lg:border-b-0 lg:border-r border-border bg-muted/30">
-            <div className="p-3 space-y-0.5">
-              <p className="px-3 pt-2 pb-3 text-xs font-bold text-muted-foreground uppercase tracking-widest">
-                Settings
-              </p>
-              {filteredNav.map((item) => {
-                const isActive = activeSection === item.id;
-                return (
-                  <button
-                    key={item.id}
-                    onClick={() => setActiveSection(item.id)}
-                    className={cn(
-                      "w-full flex items-center gap-3 px-3 py-2.5 rounded-md text-sm font-medium transition-all text-left group relative",
-                      isActive
-                        ? "bg-background text-foreground border border-border"
-                        : "text-muted-foreground hover:text-foreground hover:bg-background/60"
-                    )}
-                  >
-                    <item.icon
-                      className={cn(
-                        "w-4 h-4 shrink-0 transition-colors",
-                        isActive ? "text-primary" : "text-muted-foreground group-hover:text-foreground"
-                      )}
-                    />
-                    <div className="flex flex-col min-w-0">
-                      <span className="truncate">{item.label}</span>
-                      <span className={cn(
-                        "text-xs truncate transition-colors",
-                        isActive ? "text-muted-foreground" : "text-muted-foreground"
-                      )}>
-                        {item.description}
-                      </span>
-                    </div>
-                  </button>
-                );
-              })}
+            <div className="p-3">
+              {filteredGroups.map((group, gi) => (
+                <div key={group.category} className={cn(gi > 0 && "mt-4")}>
+                  <p className="px-3 pt-2 pb-2 text-[10px] font-bold text-muted-foreground uppercase tracking-widest">
+                    {group.category}
+                  </p>
+                  <div className="space-y-0.5">
+                    {group.items.map((item) => {
+                      const isActive = activeSection === item.id;
+                      return (
+                        <button
+                          key={item.id}
+                          onClick={() => setActiveSection(item.id)}
+                          className={cn(
+                            "w-full flex items-center gap-3 px-3 py-2.5 rounded-md text-sm font-medium transition-all text-left group relative",
+                            isActive
+                              ? "bg-background text-foreground border border-border"
+                              : "text-muted-foreground hover:text-foreground hover:bg-background/60"
+                          )}
+                        >
+                          <item.icon
+                            className={cn(
+                              "w-4 h-4 shrink-0 transition-colors",
+                              isActive ? "text-primary" : "text-muted-foreground group-hover:text-foreground"
+                            )}
+                          />
+                          <div className="flex flex-col min-w-0">
+                            <span className="truncate">{item.label}</span>
+                            <span className={cn(
+                              "text-xs truncate transition-colors",
+                              isActive ? "text-muted-foreground" : "text-muted-foreground"
+                            )}>
+                              {item.description}
+                            </span>
+                          </div>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              ))}
             </div>
           </nav>
 
@@ -1765,6 +1798,7 @@ export const SettingsView = ({
             {activeSection === "api" && <ApiSection />}
             {activeSection === "ai" && <AISection />}
             {activeSection === "terminology" && <TerminologySection />}
+            {activeSection === "roles" && <RolesPermissionsSection />}
           </div>
         </div>
       </Card>
