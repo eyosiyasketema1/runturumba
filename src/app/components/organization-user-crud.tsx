@@ -59,19 +59,36 @@ const ACTION_CONFIG: Record<string, { label: string; color: string; bgColor: str
   "role.created":        { label: "Role Created",       color: "text-violet-600",         bgColor: "bg-violet-50",     icon: Layers },
 };
 
-// ── Filter Button ─────────────────────────────────────────────
+// ── Filter Dropdown ───────────────────────────────────────────
 
-const FilterBtn = ({ active, onClick, children }: { active: boolean; onClick: () => void; children: React.ReactNode }) => (
-  <button
-    onClick={onClick}
-    className={cn(
-      "px-2.5 py-1.5 text-xs font-semibold transition-all whitespace-nowrap",
-      active ? "bg-background text-foreground border border-border" : "text-muted-foreground hover:text-foreground"
-    )}
-  >
-    {children}
-  </button>
-);
+const FilterDropdown = <T extends string>({ value, onChange, options, label }: {
+  value: T;
+  onChange: (v: T) => void;
+  options: { id: T; label: string }[];
+  label: string;
+}) => {
+  const selectedLabel = options.find(o => o.id === value)?.label ?? label;
+  return (
+    <div className="relative">
+      <select
+        value={value}
+        onChange={e => onChange(e.target.value as T)}
+        aria-label={label}
+        className={cn(
+          "appearance-none bg-card border border-border rounded-sm px-3 pr-8 py-1.5",
+          "text-xs font-semibold text-foreground cursor-pointer",
+          "hover:border-primary/40 focus:outline-none focus:ring-1 focus:ring-primary/30",
+          "transition-all"
+        )}
+      >
+        {options.map(o => (
+          <option key={o.id} value={o.id}>{o.label}</option>
+        ))}
+      </select>
+      <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground pointer-events-none" />
+    </div>
+  );
+};
 
 // ── UserTypeBadge ─────────────────────────────────────────────
 
@@ -208,8 +225,8 @@ export const TeamManagement = ({
               Manage Groups
             </Button>
             <Button onClick={() => setIsAddModalOpen(true)}>
-              <Plus className="w-4 h-4 mr-2" />
-              Add User
+              <Mail className="w-4 h-4 mr-2" />
+              Invite User
             </Button>
           </div>
         )}
@@ -295,20 +312,26 @@ export const TeamManagement = ({
         {activeTab === "members" ? (
           <motion.div key="members" role="tabpanel" aria-labelledby="tab-members" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
             {/* Filters */}
-            <div className="flex gap-3 mb-4 flex-wrap">
-              <div className="flex gap-1 p-1 bg-muted border border-border overflow-x-auto">
-                <FilterBtn active={userTypeFilter === "all"} onClick={() => setUserTypeFilter("all")}>All Types</FilterBtn>
-                {USER_TYPES.map(ut => (
-                  <FilterBtn key={ut.id} active={userTypeFilter === ut.id} onClick={() => setUserTypeFilter(ut.id)}>
-                    {ut.label}
-                  </FilterBtn>
-                ))}
-              </div>
-              <div className="flex gap-1 p-1 bg-muted border border-border">
-                <FilterBtn active={statusFilter === "all"} onClick={() => setStatusFilter("all")}>All Status</FilterBtn>
-                <FilterBtn active={statusFilter === "active"} onClick={() => setStatusFilter("active")}>Active</FilterBtn>
-                <FilterBtn active={statusFilter === "pending"} onClick={() => setStatusFilter("pending")}>Pending</FilterBtn>
-              </div>
+            <div className="flex gap-3 mb-4 flex-wrap items-center">
+              <FilterDropdown
+                value={userTypeFilter}
+                onChange={setUserTypeFilter}
+                label="User Type"
+                options={[
+                  { id: "all" as any, label: "All User Types" },
+                  ...USER_TYPES.map(ut => ({ id: ut.id as any, label: ut.label })),
+                ]}
+              />
+              <FilterDropdown
+                value={statusFilter}
+                onChange={setStatusFilter}
+                label="Status"
+                options={[
+                  { id: "all" as any, label: "All Status" },
+                  { id: "active" as any, label: "Active" },
+                  { id: "pending" as any, label: "Pending" },
+                ]}
+              />
             </div>
 
             {/* User Table */}
@@ -401,7 +424,7 @@ export const TeamManagement = ({
       </AnimatePresence>
 
       {/* Modals */}
-      <Modal isOpen={isAddModalOpen} onClose={() => setIsAddModalOpen(false)} title="Add User">
+      <Modal isOpen={isAddModalOpen} onClose={() => setIsAddModalOpen(false)} title="Invite User">
         <AddUserForm
           onAdd={(data) => { onAddUser(data); setIsAddModalOpen(false); }}
           onCancel={() => setIsAddModalOpen(false)}
@@ -641,12 +664,16 @@ const AuditLogTab = ({ auditLog, searchQuery }: { auditLog: AuditLogEntry[]; sea
 
   return (
     <div className="space-y-4">
-      <div className="flex gap-1 p-1 bg-muted border border-border overflow-x-auto">
-        <FilterBtn active={actionFilter === "all"} onClick={() => setActionFilter("all")}>All Actions</FilterBtn>
-        {actionTypes.map(at => {
-          const cfg = ACTION_CONFIG[at];
-          return <FilterBtn key={at} active={actionFilter === at} onClick={() => setActionFilter(at)}>{cfg?.label || at}</FilterBtn>;
-        })}
+      <div className="flex items-center gap-3">
+        <FilterDropdown
+          value={actionFilter}
+          onChange={setActionFilter}
+          label="Action Type"
+          options={[
+            { id: "all", label: "All Actions" },
+            ...actionTypes.map(at => ({ id: at, label: ACTION_CONFIG[at]?.label || at })),
+          ]}
+        />
       </div>
 
       <Card>
