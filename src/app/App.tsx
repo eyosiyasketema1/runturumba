@@ -67,7 +67,6 @@ import { Textarea } from "./components/ui/textarea";
 import turumbaLogo from "../assets/turumba-logo.png";
 
 // Extracted views
-import { DashboardView } from "./components/dashboard-view";
 import { SettingsView } from "./components/settings-view";
 import { CampaignsView } from "./components/campaigns-view";
 import { MessagesView } from "./components/messages-view";
