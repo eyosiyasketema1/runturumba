@@ -121,19 +121,25 @@ export const Modal = ({ isOpen, onClose, title, children, size = "md" }: { isOpe
 
 // --- RoleBadge ---
 
-export const RoleBadge = ({ role }: { role: Role }) => {
-  const styles = {
-    admin: "bg-primary/10 text-primary border-primary/20",
-    agent: "bg-blue-500/10 text-blue-600 border-blue-500/20",
-    viewer: "bg-muted text-muted-foreground border-border"
+export const RoleBadge = ({ role }: { role: Role | string }) => {
+  const styles: Record<string, string> = {
+    executive:   "bg-amber-500/10 text-amber-600 border-amber-500/20",
+    global_ops:  "bg-indigo-500/10 text-indigo-600 border-indigo-500/20",
+    coordinator: "bg-violet-500/10 text-violet-600 border-violet-500/20",
+    reviewer:    "bg-sky-500/10 text-sky-600 border-sky-500/20",
+    trainer:     "bg-orange-500/10 text-orange-600 border-orange-500/20",
+    volunteer:   "bg-emerald-500/10 text-emerald-600 border-emerald-500/20",
+    admin:       "bg-primary/10 text-primary border-primary/20",
+    agent:       "bg-blue-500/10 text-blue-600 border-blue-500/20",
+    viewer:      "bg-muted text-muted-foreground border-border",
   };
 
   return (
     <span className={cn(
-      "px-2 py-0.5 rounded-full text-xs font-bold border uppercase tracking-wider",
-      styles[role]
+      "px-2 py-0.5 rounded-sm text-xs font-bold border uppercase tracking-wider",
+      styles[role] ?? "bg-muted text-muted-foreground border-border"
     )}>
-      {role}
+      {role.replace(/_/g, " ")}
     </span>
   );
 };

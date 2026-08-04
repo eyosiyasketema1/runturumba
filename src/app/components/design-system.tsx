@@ -236,7 +236,7 @@ export const BADGE_VARIANTS: Record<string, string> = {
   inactive: STATUS_COLORS.neutral.badge,
   draft: STATUS_COLORS.neutral.badge,
 
-  // Roles
+  // Legacy Roles
   owner: "bg-violet-500/10 text-violet-600 border-violet-500/20",
   admin: "bg-indigo-500/10 text-indigo-600 border-indigo-500/20",
   mentor_coach: "bg-cyan-500/10 text-cyan-600 border-cyan-500/20",
@@ -245,6 +245,13 @@ export const BADGE_VARIANTS: Record<string, string> = {
   reviewer: "bg-purple-500/10 text-purple-600 border-purple-500/20",
   trainer: "bg-orange-500/10 text-orange-600 border-orange-500/20",
   volunteer: "bg-emerald-500/10 text-emerald-600 border-emerald-500/20",
+
+  // RBAC User Types
+  executive: "bg-amber-500/10 text-amber-600 border-amber-500/20",
+  global_ops: "bg-indigo-500/10 text-indigo-600 border-indigo-500/20",
+  volunteer_manager: "bg-sky-500/10 text-sky-600 border-sky-500/20",
+  language_ministry_manager: "bg-violet-500/10 text-violet-600 border-violet-500/20",
+  social_media_manager: "bg-pink-500/10 text-pink-600 border-pink-500/20",
 
   // Platforms
   whatsapp: "bg-emerald-500/10 text-emerald-600 border-emerald-500/20",

@@ -14,9 +14,60 @@ export function cn(...inputs: ClassValue[]) {
 
 // --- Types ---
 
+/** @deprecated Use UserTypeId + roleId for the new RBAC model */
 export type Role = "executive" | "global_ops" | "coordinator" | "reviewer" | "trainer" | "volunteer";
 export type Plan = "free" | "pro" | "enterprise";
 export type Status = "active" | "pending";
+
+// --- New RBAC Types (User Type → Role → Permission) ---
+
+export type UserTypeId = "ut-volunteer" | "ut-volunteer-mgr" | "ut-language-mgr" | "ut-social-media-mgr" | "ut-executive" | "ut-global-ops" | "ut-trainer";
+
+export interface UserTypeRecord {
+  id: UserTypeId;
+  label: string;
+  description: string;
+  tier: number;
+}
+
+export const USER_TYPES: UserTypeRecord[] = [
+  { id: "ut-volunteer",        label: "Volunteer",                 description: "Front-line chat associates handling live seeker conversations",    tier: 1 },
+  { id: "ut-volunteer-mgr",    label: "Volunteer Manager",         description: "Team leads overseeing volunteer performance and coaching",         tier: 2 },
+  { id: "ut-language-mgr",     label: "Language Ministry Manager", description: "Content & rules scoped to one language",                          tier: 3 },
+  { id: "ut-social-media-mgr", label: "Social Media Manager",      description: "Campaign managers across platforms",                              tier: 3 },
+  { id: "ut-executive",        label: "Executive",                 description: "Read-only dashboards, analytics & reporting",                     tier: 4 },
+  { id: "ut-global-ops",       label: "Global Ops Manager",        description: "Define roles, assign users, platform administration",             tier: 5 },
+  { id: "ut-trainer",          label: "Trainer",                   description: "Practice chats, trainee progress, and onboarding",                tier: 2 },
+];
+
+export interface RBACRole {
+  id: string;
+  name: string;
+  userTypeId: UserTypeId;
+  isSystem: boolean;
+  memberCount: number;
+}
+
+export const RBAC_ROLES: RBACRole[] = [
+  { id: "role-std-volunteer",    name: "Standard Volunteer",  userTypeId: "ut-volunteer",        isSystem: true,  memberCount: 24 },
+  { id: "role-team-lead",       name: "Team Lead",           userTypeId: "ut-volunteer-mgr",    isSystem: true,  memberCount: 4 },
+  { id: "role-language-lead",   name: "Language Lead",       userTypeId: "ut-language-mgr",     isSystem: true,  memberCount: 6 },
+  { id: "role-campaign-mgr",    name: "Campaign Manager",    userTypeId: "ut-social-media-mgr", isSystem: true,  memberCount: 2 },
+  { id: "role-ie-executive",    name: "IE Executive",        userTypeId: "ut-executive",        isSystem: true,  memberCount: 2 },
+  { id: "role-global-ops",      name: "Global Ops",          userTypeId: "ut-global-ops",       isSystem: true,  memberCount: 2 },
+  { id: "role-lead-trainer",    name: "Lead Trainer",        userTypeId: "ut-trainer",          isSystem: true,  memberCount: 3 },
+  { id: "role-senior-vol",      name: "Senior Volunteer",    userTypeId: "ut-volunteer",        isSystem: false, memberCount: 8 },
+  { id: "role-asl-vol",         name: "ASL Volunteer",       userTypeId: "ut-volunteer",        isSystem: false, memberCount: 3 },
+  { id: "role-crisis-trained",  name: "Crisis-Trained",      userTypeId: "ut-volunteer",        isSystem: false, memberCount: 5 },
+  { id: "role-trainee",         name: "Trainee",             userTypeId: "ut-volunteer",        isSystem: false, memberCount: 6 },
+  { id: "role-senior-coach",    name: "Senior Coach",        userTypeId: "ut-volunteer-mgr",    isSystem: false, memberCount: 2 },
+  { id: "role-content-editor",  name: "Content Editor",      userTypeId: "ut-language-mgr",     isSystem: false, memberCount: 3 },
+  { id: "role-community-mod",   name: "Community Moderator", userTypeId: "ut-social-media-mgr", isSystem: false, memberCount: 1 },
+  { id: "role-board-viewer",    name: "Board Viewer",        userTypeId: "ut-executive",        isSystem: false, memberCount: 1 },
+  { id: "role-compliance",      name: "Compliance Officer",  userTypeId: "ut-global-ops",       isSystem: false, memberCount: 1 },
+  { id: "role-platform-admin",  name: "Platform Admin",      userTypeId: "ut-global-ops",       isSystem: false, memberCount: 1 },
+  { id: "role-asst-trainer",    name: "Assistant Trainer",   userTypeId: "ut-trainer",          isSystem: false, memberCount: 2 },
+];
 export type MessageStatus = "sent" | "delivered" | "read" | "failed" | "scheduled" | "received";
 export type ChannelType = "whatsapp" | "sms" | "email" | "telegram" | "messenger" | "smpp" | "twilio" | "instagram" | "tiktok";
 /** @deprecated Use ChannelType instead */
@@ -147,6 +198,11 @@ export interface User {
   tenantId: string;
   avatar?: string;
   mentorProfile?: MentorProfile;
+  // New RBAC fields
+  userTypeId?: UserTypeId;
+  roleId?: string;         // references RBACRole.id
+  scope?: { language?: string; region?: string };
+  joinedAt?: string;
 }
 
 export interface TeamGroup {
@@ -569,60 +625,120 @@ export const INITIAL_USERS: User[] = [
   {
     id: "user-1",
     name: "Alex Rivera",
-    email: "alex@acme.com",
+    email: "alex@gcm.org",
     role: "executive",
     status: "active",
     tenantId: "tenant-1",
     avatar: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&h=100&fit=crop",
     mentorProfile: { specialty: "New Believers, Grief", languages: "EN, AM", capacity: "4/5", load: 80, experience: "Senior", gender: "male", strengths: ["Empathy", "Bible knowledge", "Prayer"], bio: "20+ years walking alongside new believers and those in grief. Passionate about foundational discipleship.", joined: "Jan 10, 2024" },
+    userTypeId: "ut-executive", roleId: "role-ie-executive", scope: { language: "All", region: "National" }, joinedAt: "2024-01-15",
   },
   {
     id: "user-2",
     name: "Sarah Chen",
-    email: "sarah@acme.com",
+    email: "sarah@gcm.org",
     role: "coordinator",
     status: "active",
     tenantId: "tenant-1",
     avatar: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=100&h=100&fit=crop",
     mentorProfile: { specialty: "Youth, Apologetics", languages: "EN", capacity: "3/5", load: 60, experience: "Experienced", gender: "female", strengths: ["Apologetics", "Teaching", "Patience"], bio: "Works with young seekers navigating questions of faith. Background in campus ministry.", joined: "Mar 22, 2024" },
+    userTypeId: "ut-language-mgr", roleId: "role-language-lead", scope: { language: "English", region: "Addis Ababa" }, joinedAt: "2024-01-20",
   },
   {
     id: "user-3",
     name: "Mike Ross",
-    email: "mike@acme.com",
+    email: "mike@gcm.org",
     role: "reviewer",
     status: "active",
     tenantId: "tenant-1",
-    avatar: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=100&h=100&fit=crop"
+    avatar: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=100&h=100&fit=crop",
+    userTypeId: "ut-volunteer-mgr", roleId: "role-team-lead", scope: { language: "Amharic", region: "Addis Ababa" }, joinedAt: "2024-03-01",
   },
   {
     id: "user-4",
     name: "Jessica Pearson",
-    email: "jessica@global.com",
+    email: "jessica@gcm.org",
     role: "global_ops",
     status: "active",
-    tenantId: "tenant-2",
-    avatar: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&h=100&fit=crop"
+    tenantId: "tenant-1",
+    avatar: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&h=100&fit=crop",
+    userTypeId: "ut-global-ops", roleId: "role-global-ops", scope: { language: "All", region: "National" }, joinedAt: "2024-02-10",
   },
   {
     id: "user-5",
     name: "Daniel Ortiz",
-    email: "daniel@acme.com",
+    email: "daniel@gcm.org",
     role: "volunteer",
     status: "pending",
     tenantId: "tenant-1",
-    avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop"
+    avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop",
+    userTypeId: "ut-volunteer", roleId: "role-trainee", scope: { language: "English", region: "Addis Ababa" }, joinedAt: "2025-02-01",
   },
   {
     id: "user-6",
     name: "Priya Sharma",
-    email: "priya@acme.com",
+    email: "priya@gcm.org",
     role: "trainer",
     status: "active",
     tenantId: "tenant-1",
     avatar: "https://images.unsplash.com/photo-1573497019940-1c28c88b4f3e?w=100&h=100&fit=crop",
     mentorProfile: { specialty: "Women, Prayer", languages: "EN, OM", capacity: "5/5", load: 100, experience: "Experienced", gender: "female", strengths: ["Prayer", "Counseling", "Pastoral care"], bio: "Women's ministry leader. Specialises in prayer accompaniment and seasons of transition.", joined: "May 18, 2024" },
-  }
+    userTypeId: "ut-trainer", roleId: "role-lead-trainer", scope: { language: "All", region: "National" }, joinedAt: "2024-05-18",
+  },
+  {
+    id: "user-7",
+    name: "Abebe Kebede",
+    email: "abebe@gcm.org",
+    role: "volunteer",
+    status: "active",
+    tenantId: "tenant-1",
+    userTypeId: "ut-volunteer", roleId: "role-std-volunteer", scope: { language: "Amharic", region: "Addis Ababa" }, joinedAt: "2024-06-10",
+  },
+  {
+    id: "user-8",
+    name: "Hiwot Tadesse",
+    email: "hiwot@gcm.org",
+    role: "volunteer",
+    status: "active",
+    tenantId: "tenant-1",
+    userTypeId: "ut-volunteer", roleId: "role-senior-vol", scope: { language: "Amharic", region: "Hawassa" }, joinedAt: "2024-04-05",
+  },
+  {
+    id: "user-9",
+    name: "Eyob Mekonnen",
+    email: "eyob@gcm.org",
+    role: "volunteer",
+    status: "active",
+    tenantId: "tenant-1",
+    userTypeId: "ut-volunteer", roleId: "role-asl-vol", scope: { language: "ASL/Spanish", region: "LatAm" }, joinedAt: "2025-01-12",
+  },
+  {
+    id: "user-10",
+    name: "Tigist Alemu",
+    email: "tigist@gcm.org",
+    role: "volunteer",
+    status: "active",
+    tenantId: "tenant-1",
+    userTypeId: "ut-volunteer", roleId: "role-crisis-trained", scope: { language: "Amharic", region: "National" }, joinedAt: "2024-08-20",
+  },
+  {
+    id: "user-11",
+    name: "Dawit Girma",
+    email: "dawit@gcm.org",
+    role: "coordinator",
+    status: "active",
+    tenantId: "tenant-1",
+    userTypeId: "ut-social-media-mgr", roleId: "role-campaign-mgr", scope: { language: "All", region: "National" }, joinedAt: "2024-07-15",
+  },
+  {
+    id: "user-12",
+    name: "Marta Hailu",
+    email: "marta@gcm.org",
+    role: "global_ops",
+    status: "active",
+    tenantId: "tenant-1",
+    userTypeId: "ut-global-ops", roleId: "role-compliance", scope: { language: "All", region: "National" }, joinedAt: "2024-09-01",
+  },
 ];
 
 export const INITIAL_GROUPS: Group[] = [
