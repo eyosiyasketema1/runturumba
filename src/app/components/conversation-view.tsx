@@ -247,28 +247,33 @@ function GrabCountdownBadge({ deadline }: { deadline: number }) {
 
 // ─── Response & Wait Time Helpers ─────────────────────────────────────────────
 
-/** Format elapsed time as "Xh Ym" or "Ym" */
+/** Format elapsed time: "Xm" | "Xh Ym" | "Xd Yh" */
 function formatElapsed(ms: number): string {
   if (ms <= 0) return "0m";
   const totalMin = Math.floor(ms / 60000);
-  const h = Math.floor(totalMin / 60);
+  const totalHours = Math.floor(totalMin / 60);
+  const days = Math.floor(totalHours / 24);
+  const h = totalHours % 24;
   const m = totalMin % 60;
-  if (h > 0) return `${h}h ${m}m`;
+  if (days > 0) return `${days}d ${h}h`;
+  if (totalHours > 0) return `${totalHours}h ${m}m`;
   return `${m}m`;
 }
+
+const MAX_WAIT_MS = 48 * 60 * 60 * 1000; // Only show wait time for last 48 hours
 
 /** Compute response time: how long since the contact's last message that hasn't been replied to yet */
 function getVisitorWaitTime(messages: Message[]): number | null {
   if (messages.length === 0) return null;
-  // Walk from newest to oldest — find the last contact message
   const sorted = [...messages].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
   const lastContactMsg = sorted.find(m => m.senderType === "contact");
   if (!lastContactMsg) return null;
-  // Check if we replied after that contact message
   const lastContactTime = new Date(lastContactMsg.createdAt).getTime();
   const replyAfter = sorted.find(m => m.senderType === "user" && new Date(m.createdAt).getTime() > lastContactTime);
   if (replyAfter) return null; // already replied — no wait
-  return Date.now() - lastContactTime;
+  const elapsed = Date.now() - lastContactTime;
+  if (elapsed > MAX_WAIT_MS) return null; // too old — don't show
+  return elapsed;
 }
 
 /** Compute our response time: time between the contact's last message and our reply */
