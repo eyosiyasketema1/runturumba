@@ -1774,7 +1774,7 @@ function ConversationToolbar({
   ];
 
   return (
-    <div className="shrink-0 border-t border-border bg-background">
+    <div className="shrink-0 bg-background">
       {/* Toggle bar */}
       <div className="flex items-center gap-1 px-3 py-1.5">
         <button
@@ -2028,7 +2028,7 @@ function AISuggestionPills({
   if (dismissed || visibleSuggestions.length === 0) return null;
 
   return (
-    <div className="shrink-0 px-3 py-2 border-t border-border bg-background/80 backdrop-blur-sm">
+    <div className="shrink-0 px-3 py-2 border-t border-border bg-background">
       <div className="flex items-center gap-1.5 mb-1.5">
         <Sparkles className="w-3 h-3 text-amber-500" />
         <span className="text-xs font-bold text-muted-foreground uppercase tracking-wider">AI Suggestions</span>
@@ -3432,28 +3432,26 @@ export const ConversationView = ({
                   )}
                 </div>
 
-                {/* Non-volunteer: toolbar + AI suggestions above compose */}
-                {!isAgent && (
-                  <>
-                    <ConversationToolbar
-                      contact={selectedContact}
-                      contentLibrary={contentLibrary}
-                      users={users}
-                      currentUser={currentUser}
-                      onSendMessage={onSendMessage}
-                      port={convPort}
-                      onUpdateContact={onUpdateContact}
-                    />
-                    <AISuggestionPills
-                      contact={selectedContact}
-                      messages={selectedMessages}
-                      onSelect={(text) => setAiSuggestedText(text)}
-                    />
-                  </>
-                )}
-
-                {/* Unified chat box: Quick Actions + Compose */}
+                {/* Unified chat box: Quick Actions + AI Suggestions + Compose */}
                 <div className="mx-2 mb-2 border border-border bg-background" data-dropdown-host>
+                  {!isAgent && (
+                    <>
+                      <ConversationToolbar
+                        contact={selectedContact}
+                        contentLibrary={contentLibrary}
+                        users={users}
+                        currentUser={currentUser}
+                        onSendMessage={onSendMessage}
+                        port={convPort}
+                        onUpdateContact={onUpdateContact}
+                      />
+                      <AISuggestionPills
+                        contact={selectedContact}
+                        messages={selectedMessages}
+                        onSelect={(text) => setAiSuggestedText(text)}
+                      />
+                    </>
+                  )}
                   {isAgent && (
                     <VolunteerQuickActions
                       contact={selectedContact}
