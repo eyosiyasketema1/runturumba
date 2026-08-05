@@ -8,6 +8,8 @@ import {
   FileText, BookOpen, Sparkles, RefreshCw, ChevronRight, AlertCircle,
   Zap, ListOrdered, Library, Hand, Timer,
   Image, Mic, Square, Trash2,
+  Pencil, History, Merge, ChevronUp,
+  ShieldAlert, Ban, Undo2, Church, AlertTriangle,
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { toast } from "sonner";
@@ -54,6 +56,28 @@ interface ThreadEntry {
   createdAt:   string;
   status?:     string;
   port?:       MessagePort;
+}
+
+// ── US33: Message Editing Types ────────────────────────────────────────────
+interface MessageEditRecord {
+  originalContent: string;
+  editedAt: string;
+}
+
+interface MessageEditState {
+  editedContent: Record<string, string>;     // msgId -> current edited content
+  editHistory: Record<string, MessageEditRecord[]>; // msgId -> array of previous versions
+}
+
+const EDIT_WINDOW_MINUTES = 15; // Configurable edit time window
+const MESSAGE_EDIT_WINDOW_MS = EDIT_WINDOW_MINUTES * 60 * 1000;
+
+// ── US26: Chat Merging Types ───────────────────────────────────────────────
+interface MergedConversation {
+  primaryContactId: string;
+  mergedContactIds: string[];
+  mergedAt: string;
+  channels: MessagePort[];
 }
 
 // ─── Reassignment & Forms Types ──────────────────────────────────────────────
@@ -221,6 +245,83 @@ function GrabCountdownBadge({ deadline }: { deadline: number }) {
   );
 }
 
+// ─── Response & Wait Time Helpers ─────────────────────────────────────────────
+
+/** Format elapsed time: "Xm" | "Xh Ym" | "Xd Yh" */
+function formatElapsed(ms: number): string {
+  if (ms <= 0) return "0m";
+  const totalMin = Math.floor(ms / 60000);
+  const totalHours = Math.floor(totalMin / 60);
+  const days = Math.floor(totalHours / 24);
+  const h = totalHours % 24;
+  const m = totalMin % 60;
+  if (days > 0) return `${days}d ${h}h`;
+  if (totalHours > 0) return `${totalHours}h ${m}m`;
+  return `${m}m`;
+}
+
+const MAX_WAIT_MS = 48 * 60 * 60 * 1000; // Only show wait time for last 48 hours
+
+/** Compute response time: how long since the contact's last message that hasn't been replied to yet */
+function getVisitorWaitTime(messages: Message[]): number | null {
+  if (messages.length === 0) return null;
+  const sorted = [...messages].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+  const lastContactMsg = sorted.find(m => m.senderType === "contact");
+  if (!lastContactMsg) return null;
+  const lastContactTime = new Date(lastContactMsg.createdAt).getTime();
+  const replyAfter = sorted.find(m => m.senderType === "user" && new Date(m.createdAt).getTime() > lastContactTime);
+  if (replyAfter) return null; // already replied — no wait
+  const elapsed = Date.now() - lastContactTime;
+  if (elapsed > MAX_WAIT_MS) return null; // too old — don't show
+  return elapsed;
+}
+
+/** Compute our response time: time between the contact's last message and our reply */
+function getResponseTime(messages: Message[]): number | null {
+  if (messages.length < 2) return null;
+  const sorted = [...messages].sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+  // Walk backwards to find the last contact→user reply pair
+  for (let i = sorted.length - 1; i > 0; i--) {
+    if (sorted[i].senderType === "user") {
+      // Find the preceding contact message
+      for (let j = i - 1; j >= 0; j--) {
+        if (sorted[j].senderType === "contact") {
+          return new Date(sorted[i].createdAt).getTime() - new Date(sorted[j].createdAt).getTime();
+        }
+      }
+    }
+  }
+  return null;
+}
+
+/** Badge showing visitor wait time (they're waiting for us) */
+function WaitTimeBadge({ waitMs }: { waitMs: number }) {
+  const isLong = waitMs > 30 * 60000; // > 30 min
+  return (
+    <span className={cn(
+      "inline-flex items-center gap-1 text-xs font-bold tabular-nums px-1.5 py-0.5 rounded-sm",
+      isLong ? "bg-red-500/10 text-red-600" : "bg-amber-500/10 text-amber-600"
+    )}>
+      <Clock className="w-3 h-3" />
+      {formatElapsed(waitMs)}
+    </span>
+  );
+}
+
+/** Badge showing our last response time */
+function ResponseTimeBadge({ responseMs }: { responseMs: number }) {
+  const isFast = responseMs < 15 * 60000; // < 15 min
+  return (
+    <span className={cn(
+      "inline-flex items-center gap-1 text-xs font-bold tabular-nums px-1.5 py-0.5 rounded-sm",
+      isFast ? "bg-emerald-500/10 text-emerald-600" : "bg-blue-500/10 text-blue-600"
+    )}>
+      <Zap className="w-3 h-3" />
+      {formatElapsed(responseMs)}
+    </span>
+  );
+}
+
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 const getPresence = (userId: string): "online" | "away" | "offline" =>
@@ -353,7 +454,35 @@ function VoiceMessagePlayer({ duration, isAgent }: { duration: string; isAgent: 
 
 // ─── ThreadMessage ────────────────────────────────────────────────────────────
 
-function ThreadMessage({ entry }: { entry: ThreadEntry }) {
+function ThreadMessage({ entry, isEdited, editHistory, onEdit, onDelete, canEdit, canDelete }: {
+  entry: ThreadEntry;
+  isEdited?: boolean;
+  editHistory?: MessageEditRecord[];
+  onEdit?: (id: string, newContent: string) => void;
+  onDelete?: (id: string) => void;
+  canEdit?: boolean;
+  canDelete?: boolean;
+}) {
+  const [isEditing, setIsEditing] = useState(false);
+  const [editText, setEditText] = useState(entry.content);
+  const [showHistory, setShowHistory] = useState(false);
+  const editRef = useRef<HTMLTextAreaElement>(null);
+
+  useEffect(() => {
+    if (isEditing && editRef.current) {
+      editRef.current.focus();
+      editRef.current.setSelectionRange(editRef.current.value.length, editRef.current.value.length);
+    }
+  }, [isEditing]);
+
+  const handleSaveEdit = () => {
+    const trimmed = editText.trim();
+    if (trimmed && trimmed !== entry.content && onEdit) {
+      onEdit(entry.id, trimmed);
+    }
+    setIsEditing(false);
+  };
+
   if (entry.type === "system") {
     return (
       <div className="flex items-center gap-3 py-2.5 px-5">
@@ -384,52 +513,183 @@ function ThreadMessage({ entry }: { entry: ThreadEntry }) {
   const isAgent = entry.senderType === "user";
   return (
     <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
-      className={cn("flex w-full px-5 py-0.5", isAgent ? "justify-end" : "justify-start")}
+      className={cn("flex w-full px-5 py-0.5 group/msg", isAgent ? "justify-end" : "justify-start")}
     >
-      <div className={cn("max-w-[68%] flex flex-col", isAgent ? "items-end" : "items-start")}>
-        <div className={cn(
-          "px-4 py-2.5 text-sm shadow-sm border",
-          isAgent
-            ? "bg-primary text-primary-foreground border-primary rounded-2xl rounded-tr-none"
-            : "bg-card text-foreground border-border rounded-2xl rounded-tl-none"
-        )}>
-          {/* Render image placeholders */}
-          {entry.content.includes("📷 [Image:") && (
-            <div className="flex flex-wrap gap-2 mb-2">
-              {entry.content.match(/📷 \[Image: ([^\]]+)\]/g)?.map((match, i) => {
-                const name = match.replace("📷 [Image: ", "").replace("]", "");
-                return (
-                  <div key={i} className={cn("w-40 h-28 rounded-md flex flex-col items-center justify-center gap-1", isAgent ? "bg-primary-foreground/10" : "bg-muted")}>
-                    <Image className={cn("w-6 h-6", isAgent ? "text-primary-foreground/60" : "text-muted-foreground")} />
-                    <span className={cn("text-xs px-1 truncate max-w-full", isAgent ? "text-primary-foreground/70" : "text-muted-foreground")}>{name}</span>
-                  </div>
-                );
-              })}
+      <div className={cn("max-w-[55%] flex flex-col", isAgent ? "items-end" : "items-start")}>
+        {/* Edit / Delete action buttons (visible on hover for agent messages) */}
+        {isAgent && (canEdit || canDelete) && !isEditing && (
+          <div className="flex items-center gap-0.5 mb-1 opacity-0 group-hover/msg:opacity-100 transition-opacity">
+            {canEdit && (
+              <button
+                onClick={() => { setEditText(entry.content); setIsEditing(true); }}
+                className="p-1 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+                title="Edit message"
+              >
+                <Pencil className="w-3 h-3" />
+              </button>
+            )}
+            {canDelete && (
+              <button
+                onClick={() => onDelete?.(entry.id)}
+                className="p-1 rounded-md text-muted-foreground hover:text-red-500 hover:bg-red-50 transition-colors"
+                title="Delete message"
+              >
+                <Trash2 className="w-3 h-3" />
+              </button>
+            )}
+          </div>
+        )}
+
+        {isEditing ? (
+          /* Inline edit UI */
+          <div className="w-full min-w-[280px]">
+            <div className="bg-primary/5 border border-primary/30 rounded-lg p-3">
+              <div className="flex items-center gap-1.5 mb-2">
+                <Pencil className="w-3 h-3 text-primary" />
+                <span className="text-xs font-bold text-primary">Editing message</span>
+              </div>
+              <textarea
+                ref={editRef}
+                value={editText}
+                onChange={e => setEditText(e.target.value)}
+                rows={3}
+                className="w-full px-3 py-2 text-sm border border-input bg-background rounded-md outline-none resize-none focus:ring-1 focus:ring-primary"
+                onKeyDown={e => {
+                  if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleSaveEdit(); }
+                  if (e.key === "Escape") setIsEditing(false);
+                }}
+              />
+              <div className="flex items-center justify-between mt-2">
+                <span className="text-xs text-muted-foreground">
+                  Esc to cancel, Enter to save
+                </span>
+                <div className="flex gap-1.5">
+                  <button
+                    onClick={() => setIsEditing(false)}
+                    className="px-2.5 py-1 text-xs font-medium text-muted-foreground hover:text-foreground bg-muted hover:bg-muted/80 rounded-md transition-colors"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={handleSaveEdit}
+                    disabled={!editText.trim() || editText.trim() === entry.content}
+                    className="px-2.5 py-1 text-xs font-medium text-primary-foreground bg-primary hover:bg-primary/90 rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    Save
+                  </button>
+                </div>
+              </div>
             </div>
-          )}
-          {/* Render voice message */}
-          {entry.content.includes("🎤 Voice message") && (
-            <VoiceMessagePlayer
-              duration={entry.content.match(/🎤 Voice message \(([^)]+)\)/)?.[1] || "0:05"}
-              isAgent={isAgent}
-            />
-          )}
-          {/* Render text (excluding image/voice placeholders) */}
-          {(() => {
-            const cleaned = entry.content
-              .replace(/📷 \[Image: [^\]]+\]\n*/g, "")
-              .replace(/🎤 Voice message \([^)]+\)\n*/g, "")
-              .trim();
-            return cleaned ? <p className="whitespace-pre-wrap leading-relaxed">{cleaned}</p> : null;
-          })()}
-        </div>
+          </div>
+        ) : (
+          /* Normal message bubble */
+          <div className={cn(
+            "px-4 py-2.5 text-sm border",
+            isAgent
+              ? "bg-primary text-primary-foreground border-primary rounded-2xl rounded-tr-none"
+              : "bg-card text-foreground border-border rounded-2xl rounded-tl-none"
+          )}>
+            {/* Render image placeholders */}
+            {entry.content.includes("📷 [Image:") && (
+              <div className="flex flex-wrap gap-2 mb-2">
+                {entry.content.match(/📷 \[Image: ([^\]]+)\]/g)?.map((match, i) => {
+                  const name = match.replace("📷 [Image: ", "").replace("]", "");
+                  return (
+                    <div key={i} className={cn("w-40 h-28 rounded-md flex flex-col items-center justify-center gap-1", isAgent ? "bg-primary-foreground/10" : "bg-muted")}>
+                      <Image className={cn("w-6 h-6", isAgent ? "text-primary-foreground/60" : "text-muted-foreground")} />
+                      <span className={cn("text-xs px-1 truncate max-w-full", isAgent ? "text-primary-foreground/70" : "text-muted-foreground")}>{name}</span>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+            {/* Render voice message */}
+            {entry.content.includes("🎤 Voice message") && (
+              <VoiceMessagePlayer
+                duration={entry.content.match(/🎤 Voice message \(([^)]+)\)/)?.[1] || "0:05"}
+                isAgent={isAgent}
+              />
+            )}
+            {/* Render text (excluding image/voice placeholders) */}
+            {(() => {
+              const cleaned = entry.content
+                .replace(/📷 \[Image: [^\]]+\]\n*/g, "")
+                .replace(/🎤 Voice message \([^)]+\)\n*/g, "")
+                .trim();
+              return cleaned ? <p className="whitespace-pre-wrap leading-relaxed">{cleaned}</p> : null;
+            })()}
+          </div>
+        )}
+
         <div className={cn("flex items-center gap-1.5 mt-1 px-1", isAgent ? "justify-end" : "justify-start")}>
-          {entry.port && !isAgent && (
-            <ChannelBadge port={entry.port} size="sm" />
-          )}
           <span className="text-xs font-bold text-muted-foreground uppercase tracking-wider opacity-60">
             {new Date(entry.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
           </span>
+
+          {/* US33: Edited badge with history */}
+          {isEdited && !isEditing && (
+            <div className="relative">
+              <button
+                onClick={() => setShowHistory(prev => !prev)}
+                className={cn(
+                  "flex items-center gap-0.5 text-xs font-medium px-1.5 py-0.5 rounded-sm transition-colors",
+                  isAgent
+                    ? "text-primary-foreground/60 hover:text-primary-foreground/80"
+                    : "text-muted-foreground hover:text-foreground"
+                )}
+                title="View edit history"
+              >
+                <Pencil className="w-2.5 h-2.5" />
+                edited
+              </button>
+
+              {/* Edit history popover */}
+              <AnimatePresence>
+                {showHistory && editHistory && editHistory.length > 0 && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 4, scale: 0.95 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: 4, scale: 0.95 }}
+                    className={cn(
+                      "absolute z-50 w-72 bg-background border border-border rounded-lg p-3",
+                      isAgent ? "right-0 bottom-full mb-1" : "left-0 bottom-full mb-1"
+                    )}
+                  >
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="flex items-center gap-1.5">
+                        <History className="w-3.5 h-3.5 text-muted-foreground" />
+                        <span className="text-xs font-bold text-foreground">Edit History</span>
+                      </div>
+                      <button
+                        onClick={() => setShowHistory(false)}
+                        className="p-0.5 text-muted-foreground hover:text-foreground"
+                      >
+                        <X className="w-3 h-3" />
+                      </button>
+                    </div>
+                    <div className="space-y-2 max-h-48 overflow-y-auto">
+                      {editHistory.map((record, idx) => (
+                        <div key={idx} className="bg-muted/50 rounded-md p-2 border border-border/50">
+                          <p className="text-xs text-muted-foreground whitespace-pre-wrap leading-relaxed line-through decoration-red-400/50">
+                            {record.originalContent.length > 120
+                              ? record.originalContent.slice(0, 117) + "..."
+                              : record.originalContent}
+                          </p>
+                          <span className="text-xs text-muted-foreground/60 mt-1 block">
+                            {new Date(record.editedAt).toLocaleString([], {
+                              month: "short", day: "numeric",
+                              hour: "2-digit", minute: "2-digit"
+                            })}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+          )}
+
           {isAgent && (
             <span className="opacity-50">
               {entry.status === "delivered" || entry.status === "read"
@@ -446,7 +706,7 @@ function ThreadMessage({ entry }: { entry: ThreadEntry }) {
 // ─── InboxListItem ────────────────────────────────────────────────────────────
 
 const InboxListItem = React.memo(function InboxListItem({
-  contact, lastMsg, meta, isActive, onClick, users, grabDeadline, onGrab,
+  contact, lastMsg, meta, isActive, onClick, users, grabDeadline, onGrab, contactMessages,
 }: {
   contact:  Contact;
   lastMsg:  Message | undefined;
@@ -456,11 +716,14 @@ const InboxListItem = React.memo(function InboxListItem({
   users:    User[];
   grabDeadline?: number | null;
   onGrab?:  (contactId: string) => void;
+  contactMessages?: Message[];
 }) {
   const assignee    = users.find(u => u.id === meta.assigneeId);
   const priorityOpt = PRIORITY_OPTIONS.find(p => p.id === meta.priority)!;
   const statusOpt   = STATUS_OPTIONS.find(s => s.id === meta.status)!;
   const isGrabbable = !!grabDeadline && grabDeadline > Date.now() && !meta.assigneeId;
+  const waitMs      = useMemo(() => contactMessages ? getVisitorWaitTime(contactMessages) : null, [contactMessages]);
+  const responseMs  = useMemo(() => contactMessages ? getResponseTime(contactMessages) : null, [contactMessages]);
 
   return (
     <button onClick={onClick}
@@ -476,7 +739,7 @@ const InboxListItem = React.memo(function InboxListItem({
       {/* Avatar with assignee overlay */}
       <div className="relative shrink-0">
         <div className={cn(
-          "w-10 h-10 rounded-full flex items-center justify-center border text-sm font-bold shadow-sm",
+          "w-10 h-10 rounded-full flex items-center justify-center border text-sm font-bold",
           isActive ? "bg-primary text-primary-foreground border-primary"
             : isGrabbable ? "bg-amber-100 text-amber-700 border-amber-300"
             : "bg-muted text-muted-foreground border-border"
@@ -528,7 +791,7 @@ const InboxListItem = React.memo(function InboxListItem({
           {lastMsg?.content ?? "No messages yet"}
         </p>
 
-        {/* Row 4: status + priority + grab button */}
+        {/* Row 4: status + priority + timers + grab button */}
         <div className="flex items-center gap-1.5 mt-2 flex-wrap">
           <span className={cn("text-xs font-bold px-2 py-0.5 border", statusOpt.cls)}>
             {statusOpt.label}
@@ -539,11 +802,13 @@ const InboxListItem = React.memo(function InboxListItem({
               {priorityOpt.label}
             </span>
           )}
+          {waitMs != null && waitMs > 0 && <WaitTimeBadge waitMs={waitMs} />}
+          {responseMs != null && <ResponseTimeBadge responseMs={responseMs} />}
           {isGrabbable && onGrab && (
             <span
               role="button"
               onClick={e => { e.stopPropagation(); onGrab(contact.id); }}
-              className="ml-auto inline-flex items-center gap-1 text-xs font-bold px-2.5 py-1 bg-amber-500 text-white hover:bg-amber-600 transition-colors rounded-sm cursor-pointer shadow-sm"
+              className="ml-auto inline-flex items-center gap-1 text-xs font-bold px-2.5 py-1 bg-amber-500 text-white hover:bg-amber-600 transition-colors rounded-sm cursor-pointer"
             >
               <Hand className="w-3 h-3" />
               Grab
@@ -559,7 +824,7 @@ const InboxListItem = React.memo(function InboxListItem({
 
 function ConversationControlBar({
   contact, meta, users, port, openDropdown, setOpenDropdown,
-  onUpdateMeta, onAddSystem, onToggleInfo, isInfoOpen, isAgent,
+  onUpdateMeta, onAddSystem, onToggleInfo, isInfoOpen, isAgent, contactMessages,
 }: {
   contact:          Contact;
   meta:             ConvMeta;
@@ -572,11 +837,14 @@ function ConversationControlBar({
   onToggleInfo:     () => void;
   isInfoOpen:       boolean;
   isAgent?:         boolean;
+  contactMessages?: Message[];
 }) {
   const assignee    = users.find(u => u.id === meta.assigneeId);
   const statusOpt   = STATUS_OPTIONS.find(s => s.id === meta.status)!;
   const priorityOpt = PRIORITY_OPTIONS.find(p => p.id === meta.priority)!;
   const toggle      = (name: string) => setOpenDropdown(openDropdown === name ? null : name);
+  const waitMs      = useMemo(() => contactMessages ? getVisitorWaitTime(contactMessages) : null, [contactMessages]);
+  const responseMs  = useMemo(() => contactMessages ? getResponseTime(contactMessages) : null, [contactMessages]);
 
   return (
     <div className="shrink-0 border-b border-border bg-background">
@@ -585,7 +853,7 @@ function ConversationControlBar({
         <div className={cn("h-0.5 w-full", CHANNEL_ACCENT[port] ?? "bg-primary")} />
       )}
 
-      {/* Top row: contact identity + channel badge */}
+      {/* Top row: contact identity + channel badge + timers */}
       <div className="px-5 pt-3 pb-0 flex items-center justify-between gap-3">
         <div className="flex items-center gap-3 min-w-0">
           <div className="w-9 h-9 rounded-full bg-primary/10 border border-primary/20 flex items-center justify-center text-sm font-bold text-primary shrink-0">
@@ -596,7 +864,19 @@ function ConversationControlBar({
               <h3 className="text-sm font-bold text-foreground leading-tight">{contact.name}</h3>
               {port && <ChannelBadge port={port} size="md" />}
             </div>
-            <p className="text-xs text-muted-foreground mt-0.5">{contact.phone || contact.email}</p>
+            <div className="flex items-center gap-2 mt-0.5">
+              <p className="text-xs text-muted-foreground">{contact.phone || contact.email}</p>
+              {waitMs != null && waitMs > 0 && (
+                <span className="inline-flex items-center gap-1 text-xs font-bold text-amber-600">
+                  <Clock className="w-3 h-3" />Waiting {formatElapsed(waitMs)}
+                </span>
+              )}
+              {responseMs != null && (
+                <span className="inline-flex items-center gap-1 text-xs font-bold text-emerald-600">
+                  <Zap className="w-3 h-3" />Replied in {formatElapsed(responseMs)}
+                </span>
+              )}
+            </div>
           </div>
         </div>
         <button onClick={onToggleInfo}
@@ -621,7 +901,7 @@ function ConversationControlBar({
               <ChevronDown className="w-3 h-3 text-muted-foreground" />
             </button>
             {openDropdown === "ctrl-assign" && (
-              <div className="absolute top-full left-0 z-50 mt-1 w-52 bg-background border border-border shadow-xl">
+              <div className="absolute top-full left-0 z-50 mt-1 w-52 bg-background border border-border">
                 <div className="px-3 py-2 border-b border-border">
                   <span className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Assign Agent</span>
                 </div>
@@ -670,7 +950,7 @@ function ConversationControlBar({
             <ChevronDown className="w-3 h-3 opacity-70" />
           </button>
           {openDropdown === "ctrl-status" && (
-            <div className="absolute top-full left-0 z-50 mt-1 w-40 bg-background border border-border shadow-xl">
+            <div className="absolute top-full left-0 z-50 mt-1 w-40 bg-background border border-border">
               {STATUS_OPTIONS.map(s => (
                 <button key={s.id}
                   onClick={() => { onUpdateMeta({ status: s.id }); onAddSystem(`Status changed to ${s.label}`); setOpenDropdown(null); }}
@@ -694,7 +974,7 @@ function ConversationControlBar({
             <ChevronDown className="w-3 h-3 text-muted-foreground" />
           </button>
           {openDropdown === "ctrl-priority" && (
-            <div className="absolute top-full left-0 z-50 mt-1 w-36 bg-background border border-border shadow-xl">
+            <div className="absolute top-full left-0 z-50 mt-1 w-36 bg-background border border-border">
               {PRIORITY_OPTIONS.map(p => (
                 <button key={p.id}
                   onClick={() => { onUpdateMeta({ priority: p.id }); onAddSystem(`Priority set to ${p.label}`); setOpenDropdown(null); }}
@@ -723,7 +1003,7 @@ function ConversationControlBar({
             ) : "Labels"}
           </button>
           {openDropdown === "ctrl-labels" && (
-            <div className="absolute top-full left-0 z-50 mt-1 w-48 bg-background border border-border shadow-xl p-3">
+            <div className="absolute top-full left-0 z-50 mt-1 w-48 bg-background border border-border p-3">
               <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest mb-2">Toggle Labels</p>
               <div className="flex flex-wrap gap-1.5">
                 {COMMON_LABELS.map(label => {
@@ -748,7 +1028,7 @@ function ConversationControlBar({
             <MoreHorizontal className="w-4 h-4" />
           </button>
           {openDropdown === "ctrl-more" && (
-            <div className="absolute top-full right-0 z-50 mt-1 w-44 bg-background border border-border shadow-xl py-1">
+            <div className="absolute top-full right-0 z-50 mt-1 w-44 bg-background border border-border py-1">
               {[
                 { label: "Mark as unread", fn: () => toast.info("Marked as unread"), adminOnly: false },
                 { label: "Star conversation", fn: () => toast.info("Starred"), adminOnly: false },
@@ -895,7 +1175,7 @@ function ConversationContextPanel({
             {isStatusOpen && (
               <>
                 <div className="fixed inset-0 z-40" onClick={() => setIsStatusOpen(false)} aria-hidden="true" />
-                <div className="absolute right-0 top-full mt-1 z-50 w-44 bg-background border border-border shadow-xl rounded-sm py-1">
+                <div className="absolute right-0 top-full mt-1 z-50 w-44 bg-background border border-border rounded-sm py-1">
                   <div className="px-3 py-1.5 border-b border-border">
                     <span className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Maturity</span>
                   </div>
@@ -941,7 +1221,7 @@ function ConversationContextPanel({
             className={cn(
               "px-3 py-1.5 text-xs font-semibold rounded-sm transition-all whitespace-nowrap",
               activeTab === tab.id
-                ? "bg-background text-foreground shadow-sm border border-border"
+                ? "bg-background text-foreground border border-border"
                 : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
             )}
           >
@@ -1070,7 +1350,7 @@ function ConversationContextPanel({
                     </div>
 
                     {/* Mentor Coach controls — only visible to mentor_coach / admin / super_admin */}
-                    {(viewMode === "mentor_coach" || viewMode === "admin" || viewMode === "super_admin") && (
+                    {(viewMode === "reviewer" || viewMode === "coordinator" || viewMode === "executive" || viewMode === "global_ops") && (
                       <div className="pt-2 border-t border-amber-200 space-y-2">
                         <label className="text-xs font-semibold text-amber-800 block">Assign to new mentor</label>
                         <select
@@ -1775,6 +2055,305 @@ function AISuggestionPills({
   );
 }
 
+// ─── VolunteerQuickActions (unified bar above compose for volunteer mode) ─────
+
+function VolunteerQuickActions({
+  contact, port, users, currentUser, contentLibrary,
+  onSendMessage, onRequestReassign, onInsertText,
+}: {
+  contact:          Contact;
+  port:             MessagePort;
+  users:            User[];
+  currentUser:      User;
+  contentLibrary:   ContentRow[];
+  onSendMessage:    (contactId: string, content: string, scheduledAt?: string, port?: MessagePort) => void;
+  onRequestReassign?: (contactId: string, reason: string) => void;
+  onInsertText?:    (text: string) => void;
+}) {
+  const [activePanel, setActivePanel] = useState<string | null>(null);
+  const [reassignReason, setReassignReason] = useState("");
+  const [collapsed, setCollapsed] = useState(false);
+  const [moreOpen, setMoreOpen] = useState(false);
+
+  const QUICK_REPLY_TEMPLATES = [
+    "Hi! Thank you for reaching out. How can I help you today?",
+    "I'd love to share some resources about that topic. Give me a moment.",
+    "That's a great question! Let me connect you with someone who can help.",
+    "I'm praying for you. Would you like to share more about your situation?",
+    "Here's a scripture that might encourage you: ",
+    "Thank you for sharing. Would you like to join one of our small groups?",
+  ];
+
+  const qaSuggestions = useMemo(() => {
+    const published = contentLibrary.filter(c => c.status === "Published");
+    const maturity = contact.maturity;
+    const diffMap: Record<string, string> = { "Pre-Seeker": "Beginner", "Seeker": "Beginner", "New Believer": "Beginner", "Growing": "Intermediate", "Mature": "Advanced", "Leader": "Advanced" };
+    const targetDiff = diffMap[maturity || "Seeker"] || "Beginner";
+    const matched = published.filter(c => c.difficulty === targetDiff);
+    return matched.length > 0 ? matched.slice(0, 4) : published.slice(0, 4);
+  }, [contentLibrary, contact.maturity]);
+
+  // Primary actions shown as named buttons
+  const PRIMARY_ACTIONS: { id: string; label: string; icon: React.ComponentType<{ className?: string }>; panel?: boolean; emergency?: boolean }[] = [
+    { id: "reassign",  label: "Request Reassign", icon: RefreshCw, panel: true },
+    { id: "replies",   label: "Quick Replies",     icon: Zap, panel: true },
+    { id: "form",      label: "Send Form",         icon: FileText, panel: true },
+    { id: "series",    label: "Content Series",    icon: ListOrdered, panel: true },
+    { id: "suggest",   label: "AI Suggest",        icon: Sparkles, panel: true },
+    { id: "emergency", label: "Emergency",         icon: AlertTriangle, emergency: true },
+  ];
+
+  // Secondary actions inside the "+" popover
+  const MORE_ACTIONS: { id: string; label: string; icon: React.ComponentType<{ className?: string }> }[] = [
+    { id: "queue",     label: "Return to Queue",   icon: Undo2 },
+    { id: "spam",      label: "Mark Spam",         icon: Ban },
+    { id: "church",    label: "Church Connect",    icon: Church },
+    { id: "admins",    label: "Alert Admins",      icon: ShieldAlert },
+    { id: "scripture", label: "Scripture",          icon: BookOpen },
+  ];
+
+  const handleClick = (id: string) => {
+    const primary = PRIMARY_ACTIONS.find(a => a.id === id);
+    if (primary?.panel) { setActivePanel(prev => prev === id ? null : id); setMoreOpen(false); return; }
+    switch (id) {
+      case "queue": toast.success(`${contact.name}'s conversation returned to the queue.`); break;
+      case "spam": toast.success(`${contact.name}'s conversation marked as spam.`); break;
+      case "church": toast.success(`Church connections opened for ${contact.name}. Matching local churches...`); break;
+      case "admins": toast.success(`Admin alert sent for ${contact.name}'s conversation.`); break;
+      case "scripture": toast.info("Opening scripture library..."); break;
+      case "emergency": toast.error("Emergency alert sent to all admins and coordinators!"); break;
+    }
+    setMoreOpen(false);
+  };
+
+  const handleSendForm = (formId: string) => {
+    const form = FORM_TEMPLATES.find(f => f.id === formId);
+    if (!form) return;
+    onSendMessage(contact.id, `📋 *${form.label}*\n\n${form.desc}\n\n👉 Please fill out this form: [Open Form]`, undefined, port);
+    toast.success(`${form.label} sent to ${contact.name.split(" ")[0]}`);
+    setActivePanel(null);
+  };
+
+  const handleStartSeries = (seriesId: string) => {
+    const series = CONTENT_SERIES.find(s => s.id === seriesId);
+    if (!series) return;
+    onSendMessage(contact.id, `📚 *${series.label}* — ${series.lessons}-part series\n\n${series.desc}\n\nLesson 1 is on its way!`, undefined, port);
+    toast.success(`Started "${series.label}" series for ${contact.name.split(" ")[0]}`);
+    setActivePanel(null);
+  };
+
+  const handleSendContent = (item: ContentRow) => {
+    const variant = item.variants?.[port] || item.variants?.web || item.body;
+    onSendMessage(contact.id, `📖 *${item.title}*\n\n${variant}`, undefined, port);
+    toast.success(`Sent "${item.title}"`);
+    setActivePanel(null);
+  };
+
+  return (
+    <div className="shrink-0 mx-2 mb-2 border border-border rounded-md bg-muted/20">
+      {/* Toggle header */}
+      <button
+        onClick={() => { setCollapsed(c => !c); if (!collapsed) setActivePanel(null); }}
+        className="w-full flex items-center justify-between px-3 py-1.5 text-xs font-bold text-muted-foreground uppercase tracking-widest hover:bg-muted/30 transition-colors rounded-t-md"
+      >
+        Quick Actions
+        {collapsed ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
+      </button>
+
+      {!collapsed && (
+        <>
+          {/* Action buttons row */}
+          <div className="flex items-center gap-1 px-3 pb-2">
+            {PRIMARY_ACTIONS.map(act => (
+              <button
+                key={act.id}
+                onClick={() => handleClick(act.id)}
+                className={cn(
+                  "flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium rounded-sm transition-colors whitespace-nowrap",
+                  activePanel === act.id
+                    ? "bg-primary/10 text-primary"
+                    : act.emergency
+                    ? "text-red-600 hover:bg-red-50 border border-red-200"
+                    : "text-foreground hover:bg-muted border border-transparent"
+                )}
+              >
+                <act.icon className="w-3.5 h-3.5 shrink-0" />
+                {act.label}
+              </button>
+            ))}
+
+            {/* "+" more actions popover */}
+            <div className="relative">
+              <button
+                onClick={() => setMoreOpen(o => !o)}
+                className={cn(
+                  "flex items-center justify-center w-7 h-7 rounded-sm transition-colors",
+                  moreOpen ? "bg-primary/10 text-primary" : "text-muted-foreground hover:text-foreground hover:bg-muted"
+                )}
+                title="More actions"
+              >
+                <Plus className="w-4 h-4" />
+              </button>
+              {moreOpen && (
+                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 z-50 w-48 bg-background border border-border rounded-md py-1">
+                  {MORE_ACTIONS.map(act => (
+                    <button
+                      key={act.id}
+                      onClick={() => handleClick(act.id)}
+                      className="w-full flex items-center gap-2.5 px-3 py-2 text-xs font-medium text-foreground hover:bg-muted/50 transition-colors text-left"
+                    >
+                      <act.icon className="w-3.5 h-3.5 shrink-0" />
+                      {act.label}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Expandable panels */}
+          <AnimatePresence mode="wait">
+            {activePanel && (
+              <motion.div
+                key={activePanel}
+                initial={{ height: 0, opacity: 0 }}
+                animate={{ height: "auto", opacity: 1 }}
+                exit={{ height: 0, opacity: 0 }}
+                transition={{ duration: 0.15 }}
+                className="overflow-hidden border-t border-border rounded-b-md"
+              >
+                <div className="p-3 max-h-52 overflow-y-auto">
+                  {/* REQUEST REASSIGN */}
+                  {activePanel === "reassign" && (
+                    <div className="space-y-2.5">
+                      <p className="text-xs font-bold text-foreground">Request Reassignment</p>
+                      <p className="text-xs text-muted-foreground leading-snug">
+                        Submit a reason and the mentor coach will review and assign a new volunteer.
+                      </p>
+                      <textarea
+                        value={reassignReason}
+                        onChange={e => setReassignReason(e.target.value)}
+                        placeholder="e.g. Language barrier, scheduling conflict..."
+                        rows={3}
+                        aria-label="Reassignment reason"
+                        className="w-full px-3 py-2 text-xs border border-input bg-background rounded-sm outline-none resize-none focus:ring-1 focus:ring-ring"
+                      />
+                      <div className="flex items-center justify-end gap-2">
+                        <button onClick={() => { setActivePanel(null); setReassignReason(""); }}
+                          className="px-3 py-1.5 text-xs font-semibold text-muted-foreground hover:text-foreground transition-colors"
+                        >Cancel</button>
+                        <button
+                          onClick={() => {
+                            if (!reassignReason.trim()) { toast.error("Please provide a reason"); return; }
+                            if (onRequestReassign) onRequestReassign(contact.id, reassignReason.trim());
+                            else toast.success(`Reassignment request submitted for ${contact.name}.`);
+                            setReassignReason("");
+                            setActivePanel(null);
+                          }}
+                          disabled={!reassignReason.trim()}
+                          className={cn(
+                            "flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-sm transition-all",
+                            reassignReason.trim()
+                              ? "bg-primary text-primary-foreground hover:bg-primary/90"
+                              : "bg-muted text-muted-foreground cursor-not-allowed"
+                          )}
+                        >
+                          <Send className="w-3 h-3" />
+                          Submit
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* QUICK REPLIES */}
+                  {activePanel === "replies" && (
+                    <div className="space-y-1">
+                      {QUICK_REPLY_TEMPLATES.map((reply, i) => (
+                        <button
+                          key={i}
+                          onClick={() => {
+                            onInsertText?.(reply);
+                            setActivePanel(null);
+                          }}
+                          className="w-full text-left text-xs px-2.5 py-2 bg-muted/30 border border-border rounded-sm hover:bg-muted transition-colors text-foreground leading-relaxed"
+                          title={reply}
+                        >
+                          {reply}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* SEND FORM */}
+                  {activePanel === "form" && (
+                    <div className="space-y-1.5">
+                      {FORM_TEMPLATES.map(form => (
+                        <button key={form.id} onClick={() => handleSendForm(form.id)}
+                          className="w-full flex items-start gap-3 p-2 text-left bg-muted/20 hover:bg-muted/50 transition-colors rounded-sm group"
+                        >
+                          <form.icon className="w-4 h-4 mt-0.5 shrink-0 text-muted-foreground" />
+                          <div className="min-w-0 flex-1">
+                            <p className="text-xs font-bold text-foreground">{form.label}</p>
+                            <p className="text-xs text-muted-foreground leading-snug">{form.desc}</p>
+                          </div>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* CONTENT SERIES */}
+                  {activePanel === "series" && (
+                    <div className="space-y-1.5">
+                      {CONTENT_SERIES.map(series => (
+                        <button key={series.id} onClick={() => handleStartSeries(series.id)}
+                          className="w-full flex items-start gap-3 p-2 text-left bg-muted/20 hover:bg-muted/50 transition-colors rounded-sm group"
+                        >
+                          <Library className="w-4 h-4 mt-0.5 shrink-0 text-muted-foreground" />
+                          <div className="min-w-0 flex-1">
+                            <p className="text-xs font-bold text-foreground">{series.label} <span className="font-normal text-muted-foreground">· {series.lessons} lessons</span></p>
+                            <p className="text-xs text-muted-foreground leading-snug">{series.desc}</p>
+                          </div>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* AI SUGGEST */}
+                  {activePanel === "suggest" && (
+                    <div className="space-y-1.5">
+                      <div className="flex items-center gap-2 mb-1">
+                        <p className="text-xs font-bold text-foreground">AI picks for {contact.name.split(" ")[0]}</p>
+                        {contact.maturity && (
+                          <span className="text-xs font-semibold px-1.5 py-0.5 rounded-sm bg-muted text-muted-foreground">{contact.maturity}</span>
+                        )}
+                      </div>
+                      {qaSuggestions.length === 0 ? (
+                        <p className="text-xs text-muted-foreground py-4 text-center">No published content found.</p>
+                      ) : (
+                        qaSuggestions.map(item => (
+                          <button key={item.id} onClick={() => handleSendContent(item)}
+                            className="w-full flex items-start gap-3 p-2 text-left bg-muted/20 hover:bg-muted/50 transition-colors rounded-sm group"
+                          >
+                            <BookOpen className="w-4 h-4 mt-0.5 shrink-0 text-muted-foreground" />
+                            <div className="min-w-0 flex-1">
+                              <p className="text-xs font-bold text-foreground">{item.title}</p>
+                              <p className="text-xs text-muted-foreground leading-snug line-clamp-2">{item.summary}</p>
+                            </div>
+                          </button>
+                        ))
+                      )}
+                    </div>
+                  )}
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </>
+      )}
+    </div>
+  );
+}
+
 // ─── ComposeArea ──────────────────────────────────────────────────────────────
 
 function ComposeArea({
@@ -1903,41 +2482,7 @@ function ComposeArea({
   };
 
   return (
-    <div className="shrink-0 border-t border-border bg-background">
-      {/* Channel indicator */}
-      <div className="flex items-center justify-end px-4 pt-3 pb-2">
-        <div className="flex items-center gap-2">
-          <span className="text-xs text-muted-foreground font-medium">Replying via</span>
-          <div className="relative">
-            <button onClick={() => setOpenDropdown(openDropdown === "compose-port" ? null : "compose-port")}
-              className={cn("flex items-center gap-1.5 text-xs font-bold px-2.5 py-1 border transition-colors hover:opacity-80", PORT_COLORS[port] ?? "bg-muted text-muted-foreground border-border")}
-            >
-              {channelIcon(port, "w-3 h-3")}
-              {CHANNEL_LABEL[port] ?? port}
-              <ChevronDown className="w-3 h-3 opacity-60" />
-            </button>
-            {openDropdown === "compose-port" && (
-              <div className="absolute bottom-full right-0 mb-1 z-50 w-44 bg-background border border-border shadow-xl py-1">
-                <div className="px-3 py-1.5 border-b border-border">
-                  <span className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Send via</span>
-                </div>
-                {Object.entries(CHANNEL_LABEL).filter(([k]) => k !== "smpp").map(([k, label]) => (
-                  <button key={k} onClick={() => { setPort(k as MessagePort); setOpenDropdown(null); }}
-                    className={cn("w-full flex items-center gap-2.5 px-3 py-2.5 text-xs font-semibold hover:bg-muted/50 transition-colors", port === k && "bg-muted/30")}
-                  >
-                    <span className={cn("inline-flex items-center justify-center w-6 h-6 border shrink-0", PORT_COLORS[k] ?? "bg-muted text-muted-foreground border-border")}>
-                      {channelIcon(k, "w-3 h-3")}
-                    </span>
-                    <span className={port === k ? "text-primary font-bold" : "text-foreground"}>{label}</span>
-                    {port === k && <Check className="w-3 h-3 text-primary ml-auto" />}
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
-        </div>
-      </div>
-
+    <div className="shrink-0 bg-background">
       {/* Image preview strip */}
       {images.length > 0 && (
         <div className="px-4 pb-2 flex flex-wrap gap-2">
@@ -1947,7 +2492,7 @@ function ComposeArea({
               <button
                 type="button"
                 onClick={() => removeImage(img.id)}
-                className="absolute -top-1.5 -right-1.5 w-5 h-5 bg-red-500 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 focus-visible:opacity-100 transition-opacity shadow-sm"
+                className="absolute -top-1.5 -right-1.5 w-5 h-5 bg-red-500 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 focus-visible:opacity-100 transition-opacity"
               >
                 <X className="w-3 h-3" />
               </button>
@@ -2003,8 +2548,8 @@ function ComposeArea({
       )}
 
       {/* Textarea */}
-      <form onSubmit={handleSend} className="px-4 pb-3">
-        <div className="border border-input bg-background transition-colors">
+      <form onSubmit={handleSend} className="mx-2 mb-2">
+        <div className="border border-input bg-background rounded-md transition-colors">
           <textarea
             ref={textareaRef}
             value={text}
@@ -2012,7 +2557,7 @@ function ComposeArea({
             placeholder={`Message ${contact.name.split(" ")[0]} via ${CHANNEL_LABEL[port]}…`}
             rows={3}
             aria-label="Compose message"
-            className="w-full px-4 pt-3 pb-2 text-sm outline-none resize-none bg-transparent text-foreground"
+            className="w-full px-3 pt-3 pb-2 text-sm outline-none resize-none bg-transparent text-foreground rounded-t-md"
             onKeyDown={e => {
               if (e.key === "Enter" && !e.shiftKey) {
                 e.preventDefault();
@@ -2022,7 +2567,7 @@ function ComposeArea({
           />
 
           {/* Toolbar */}
-          <div className="flex items-center justify-between px-3 pb-2 border-t border-inherit">
+          <div className="flex items-center justify-between px-3 py-2 border-t border-inherit">
             <div className="flex items-center gap-0.5">
               {/* Image / file attachment */}
               <input ref={fileInputRef} type="file" accept="image/*" multiple className="hidden" onChange={handleImageSelect} aria-label="Attach image" />
@@ -2058,7 +2603,7 @@ function ComposeArea({
                   <Smile className="w-4 h-4" />
                 </button>
                 {openDropdown === "compose-emoji" && (
-                  <div className="absolute bottom-full left-0 mb-2 z-50 bg-background border border-border shadow-xl p-2 w-52">
+                  <div className="absolute bottom-full left-0 mb-2 z-50 bg-background border border-border p-2 w-52">
                     <div className="grid grid-cols-5 gap-0.5">
                       {COMMON_EMOJIS.map(e => (
                         <button key={e} type="button" onClick={() => insertEmoji(e)}
@@ -2071,22 +2616,50 @@ function ComposeArea({
                   </div>
                 )}
               </div>
+
+              {/* Channel selector — beside emoji */}
+              <div className="relative ml-1 flex items-center gap-1.5">
+                <span className="text-xs text-muted-foreground font-medium">Replying via</span>
+                <button type="button" onClick={() => setOpenDropdown(openDropdown === "compose-port" ? null : "compose-port")}
+                  className={cn("flex items-center gap-1 text-xs font-bold px-2 py-1 border transition-colors hover:opacity-80 rounded-sm", PORT_COLORS[port] ?? "bg-muted text-muted-foreground border-border")}
+                  title={`Replying via ${CHANNEL_LABEL[port] ?? port}`}
+                >
+                  {channelIcon(port, "w-3 h-3")}
+                  {CHANNEL_LABEL[port] ?? port}
+                  <ChevronDown className="w-2.5 h-2.5 opacity-60" />
+                </button>
+                {openDropdown === "compose-port" && (
+                  <div className="absolute bottom-full right-0 mb-1 z-50 w-44 bg-background border border-border py-1">
+                    <div className="px-3 py-1.5 border-b border-border">
+                      <span className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Send via</span>
+                    </div>
+                    {Object.entries(CHANNEL_LABEL).filter(([k]) => k !== "smpp").map(([k, label]) => (
+                      <button key={k} type="button" onClick={() => { setPort(k as MessagePort); setOpenDropdown(null); }}
+                        className={cn("w-full flex items-center gap-2.5 px-3 py-2.5 text-xs font-semibold hover:bg-muted/50 transition-colors", port === k && "bg-muted/30")}
+                      >
+                        <span className={cn("inline-flex items-center justify-center w-6 h-6 border shrink-0", PORT_COLORS[k] ?? "bg-muted text-muted-foreground border-border")}>
+                          {channelIcon(k, "w-3 h-3")}
+                        </span>
+                        <span className={port === k ? "text-primary font-bold" : "text-foreground"}>{label}</span>
+                        {port === k && <Check className="w-3 h-3 text-primary ml-auto" />}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
 
             {/* Send */}
             <button type="submit" disabled={!canSend}
-              className="flex items-center gap-1.5 px-4 py-1.5 text-xs font-bold transition-all disabled:opacity-40 disabled:cursor-not-allowed bg-primary text-primary-foreground hover:bg-primary/90"
+              className="flex items-center gap-1.5 px-4 py-1.5 text-xs font-bold rounded-sm transition-all disabled:opacity-40 disabled:cursor-not-allowed bg-primary text-primary-foreground hover:bg-primary/90"
             >
               <Send className="w-3 h-3" />
               Send
             </button>
           </div>
         </div>
-        <div className="flex items-center justify-between mt-1.5">
+        <div className="mt-1 px-1">
           <p className="text-xs text-muted-foreground">Enter to send · Shift+Enter for new line</p>
-          <p className="text-xs font-medium text-muted-foreground/70">
-            Replying via <span className="font-bold capitalize">{CHANNEL_LABEL[port] || port}</span>
-          </p>
         </div>
       </form>
     </div>
@@ -2152,7 +2725,7 @@ function NewConversationModal({ isOpen, onClose, contacts, onStart }: {
       >
         <motion.div initial={{ opacity: 0, scale: 0.97, y: 12 }} animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.97, y: 12 }} transition={{ duration: 0.18 }}
-          className="bg-background border border-border shadow-2xl w-full max-w-lg flex flex-col"
+          className="bg-background border border-border w-full max-w-lg flex flex-col"
         >
           <div className="flex items-center justify-between px-5 py-4 border-b border-border bg-muted/10">
             <div className="flex items-center gap-2.5">
@@ -2190,7 +2763,7 @@ function NewConversationModal({ isOpen, onClose, contacts, onStart }: {
                   </div>
                 )}
                 {!selected && showDropdown && (
-                  <div className="absolute top-full left-0 right-0 z-20 bg-background border border-border shadow-xl mt-1 max-h-48 overflow-y-auto">
+                  <div className="absolute top-full left-0 right-0 z-20 bg-background border border-border mt-1 max-h-48 overflow-y-auto">
                     {filtered.length === 0
                       ? <div className="flex items-center justify-center py-6 text-xs text-muted-foreground gap-2"><UserIcon className="w-4 h-4 opacity-40" />No contacts found</div>
                       : filtered.map(c => (
@@ -2258,7 +2831,7 @@ interface ConversationViewProps {
   onUpdateRule:      (id: string, data: Partial<ConversationRule>) => void;
   onDeleteRule:      (id: string) => void;
   onReorderRules:    (rules: ConversationRule[]) => void;
-  viewMode?:         "super_admin" | "agent";
+  viewMode?:         "executive" | "volunteer";
   // --- discipleship data ---
   faithJourneys?:      FaithJourney[];
   contactMilestones?:  ContactMilestones[];
@@ -2280,13 +2853,13 @@ export const ConversationView = ({
   contacts, messages, notes, users, currentUser, onSendMessage,
   preSelectedContactId, conversationRules, chatEndpoints, groups,
   teamGroups, onAddRule, onUpdateRule, onDeleteRule, onReorderRules,
-  viewMode = "super_admin",
+  viewMode = "executive",
   faithJourneys = [], contactMilestones = [], matches = [], contentLibrary = [],
   onUpdateContact, onUpdateJourney, onLogMilestone, onUpdateMatch,
   onAddNote, onDeleteNote,
   reassignRequests = [], onRequestReassign, onApproveReassign, onRejectReassign,
 }: ConversationViewProps) => {
-  const isAgent = viewMode === "agent";
+  const isAgent = viewMode === "volunteer";
 
   // ── State ────────────────────────────────────────────────────────────────
   const contactsWithMsg = useMemo(() => {
@@ -2314,6 +2887,45 @@ export const ConversationView = ({
 
   // ── Grab Conversation state (declared here, logic wired after helpers) ──
   const [grabDeadlines, setGrabDeadlines] = useState<Record<string, number>>({});
+
+  // ── US33: Message Edit State ───────────────────────────────────────────
+  const [msgEdits, setMsgEdits] = useState<MessageEditState>({ editedContent: {}, editHistory: {} });
+  const [deletedMsgs, setDeletedMsgs] = useState<Set<string>>(new Set());
+
+  const handleEditMessage = useCallback((msgId: string, newContent: string) => {
+    setMsgEdits(prev => {
+      // Find the current content (either already-edited or original from messages)
+      const currentContent = prev.editedContent[msgId]
+        ?? messages.find(m => m.id === msgId)?.content ?? "";
+
+      const history = prev.editHistory[msgId] ?? [];
+      return {
+        editedContent: { ...prev.editedContent, [msgId]: newContent },
+        editHistory: {
+          ...prev.editHistory,
+          [msgId]: [...history, { originalContent: currentContent, editedAt: new Date().toISOString() }],
+        },
+      };
+    });
+    toast.success("Message updated. Original preserved in edit history.");
+  }, [messages]);
+
+  const handleDeleteMessage = useCallback((msgId: string) => {
+    setDeletedMsgs(prev => new Set(prev).add(msgId));
+    toast.success("Message deleted.");
+  }, []);
+
+  const canEditMessage = useCallback((msg: { createdAt: string; senderType?: string }) => {
+    if (msg.senderType !== "user") return false;
+    const elapsed = Date.now() - new Date(msg.createdAt).getTime();
+    return elapsed < MESSAGE_EDIT_WINDOW_MS;
+  }, []);
+
+  // ── US26: Chat Merge State ─────────────────────────────────────────────
+  const [mergedConversations, setMergedConversations] = useState<MergedConversation[]>([]);
+  const [mergeMode, setMergeMode] = useState(false);
+  const [mergeSelection, setMergeSelection] = useState<Set<string>>(new Set());
+  const [showMergeConfirm, setShowMergeConfirm] = useState(false);
 
   // ── Helpers ────────────────────────────────────────────────────────────
   const getMeta = useCallback((id: string): ConvMeta => convMeta[id] ?? DEFAULT_META, [convMeta]);
@@ -2412,11 +3024,22 @@ export const ConversationView = ({
       senderType: m.senderType, senderId: m.senderId,
       createdAt: m.createdAt, status: m.status, port: m.port,
     }));
+    // US26: Include messages from merged conversations
+    const mergeRecord = mergedConversations.find(mc => mc.primaryContactId === selectedId);
+    const mergedMsgEntries: ThreadEntry[] = mergeRecord
+      ? messages
+          .filter(m => mergeRecord.mergedContactIds.includes(m.contactId))
+          .map(m => ({
+            id: m.id, type: "message" as const, content: m.content,
+            senderType: m.senderType, senderId: m.senderId,
+            createdAt: m.createdAt, status: m.status, port: m.port,
+          }))
+      : [];
     const localEntries: ThreadEntry[] = localItems
       .filter(i => i.contactId === selectedId)
       .map(i => ({ id: i.id, type: i.type, content: i.content, senderId: i.senderId, createdAt: i.createdAt }));
-    return [...msgEntries, ...localEntries].sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
-  }, [selectedMessages, localItems, selectedId]);
+    return [...msgEntries, ...mergedMsgEntries, ...localEntries].sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+  }, [selectedMessages, localItems, selectedId, mergedConversations, messages]);
 
   // ── Filtered + sorted inbox ────────────────────────────────────────────
   const filteredContacts = useMemo(() => {
@@ -2483,6 +3106,16 @@ export const ConversationView = ({
           <p className="text-sm text-muted-foreground">{contactsWithMsg.length} active thread{contactsWithMsg.length !== 1 ? "s" : ""}</p>
         </div>
         <div className="flex items-center gap-2">
+          {/* US26: Merge button */}
+          {isAgent && selectedId && !mergeMode && (
+            <button
+              onClick={() => { setMergeMode(true); setMergeSelection(new Set()); }}
+              className="flex items-center gap-2 px-4 py-1.5 bg-background border border-border text-sm font-semibold text-foreground hover:bg-muted/40 transition-colors"
+            >
+              <Merge className="w-4 h-4" />
+              Merge Chats
+            </button>
+          )}
           {!isAgent && (
             <button onClick={() => setIsRoutingOpen(true)}
               className="flex items-center gap-2 px-4 py-1.5 bg-background border border-border text-sm font-semibold text-foreground hover:bg-muted/40 transition-colors"
@@ -2540,7 +3173,7 @@ export const ConversationView = ({
                   <ChevronDown className="w-3 h-3" />
                 </button>
                 {openDropdown === "f-assign" && (
-                  <div className="absolute top-full left-0 z-50 mt-1 w-44 bg-background border border-border shadow-xl py-1">
+                  <div className="absolute top-full left-0 z-50 mt-1 w-44 bg-background border border-border py-1">
                     <button onClick={() => { setAssigneeFilter(null); setOpenDropdown(null); }} className="w-full text-left px-3 py-2 text-xs font-semibold text-muted-foreground hover:bg-muted/50 transition-colors">All agents</button>
                     {users.filter(u => u.status === "active").map(u => (
                       <button key={u.id} onClick={() => { setAssigneeFilter(u.id); setOpenDropdown(null); }}
@@ -2562,7 +3195,7 @@ export const ConversationView = ({
                 <ChevronDown className="w-3 h-3" />
               </button>
               {openDropdown === "f-channel" && (
-                <div className="absolute top-full left-0 z-50 mt-1 w-36 bg-background border border-border shadow-xl py-1">
+                <div className="absolute top-full left-0 z-50 mt-1 w-36 bg-background border border-border py-1">
                   <button onClick={() => { setChannelFilter(null); setOpenDropdown(null); }} className="w-full text-left px-3 py-2 text-xs font-semibold text-muted-foreground hover:bg-muted/50 transition-colors">All channels</button>
                   {Object.entries(CHANNEL_LABEL).filter(([k]) => k !== "smpp").map(([k, label]) => (
                     <button key={k} onClick={() => { setChannelFilter(k); setOpenDropdown(null); }}
@@ -2583,7 +3216,7 @@ export const ConversationView = ({
                 <ChevronDown className="w-3 h-3" />
               </button>
               {openDropdown === "f-priority" && (
-                <div className="absolute top-full left-0 z-50 mt-1 w-32 bg-background border border-border shadow-xl py-1">
+                <div className="absolute top-full left-0 z-50 mt-1 w-32 bg-background border border-border py-1">
                   <button onClick={() => { setPriorityFilter(null); setOpenDropdown(null); }} className="w-full text-left px-3 py-2 text-xs font-semibold text-muted-foreground hover:bg-muted/50 transition-colors">All priorities</button>
                   {PRIORITY_OPTIONS.map(p => (
                     <button key={p.id} onClick={() => { setPriorityFilter(p.id); setOpenDropdown(null); }}
@@ -2615,13 +3248,47 @@ export const ConversationView = ({
             ) : (
               filteredContacts.map(c => {
                 const lastMsg = messages.filter(m => m.contactId === c.id).sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())[0];
+                const isMergeCandidate = mergeMode && c.id !== selectedId;
+                const isMergeSelected = mergeSelection.has(c.id);
                 return (
-                  <InboxListItem key={c.id} contact={c} lastMsg={lastMsg} meta={getMeta(c.id)}
-                    isActive={selectedId === c.id} users={users}
-                    grabDeadline={grabDeadlines[c.id] ?? null}
-                    onGrab={grabConversation}
-                    onClick={() => { setSelectedId(c.id); }}
-                  />
+                  <div key={c.id} className="relative">
+                    <InboxListItem contact={c} lastMsg={lastMsg} meta={getMeta(c.id)}
+                      isActive={selectedId === c.id} users={users}
+                      grabDeadline={grabDeadlines[c.id] ?? null}
+                      onGrab={grabConversation}
+                      contactMessages={messages.filter(m => m.contactId === c.id)}
+                      onClick={() => {
+                        if (mergeMode && c.id !== selectedId) {
+                          setMergeSelection(prev => {
+                            const next = new Set(prev);
+                            if (next.has(c.id)) next.delete(c.id);
+                            else next.add(c.id);
+                            return next;
+                          });
+                        } else {
+                          setSelectedId(c.id);
+                        }
+                      }}
+                    />
+                    {/* US26: Merge selection overlay */}
+                    {isMergeCandidate && (
+                      <div
+                        className={cn(
+                          "absolute inset-0 flex items-center justify-end pr-4 pointer-events-none transition-colors",
+                          isMergeSelected ? "bg-indigo-500/10" : "bg-transparent"
+                        )}
+                      >
+                        <div className={cn(
+                          "w-5 h-5 rounded-sm border-2 flex items-center justify-center transition-all",
+                          isMergeSelected
+                            ? "bg-indigo-600 border-indigo-600"
+                            : "bg-background border-border"
+                        )}>
+                          {isMergeSelected && <Check className="w-3 h-3 text-white" />}
+                        </div>
+                      </div>
+                    )}
+                  </div>
                 );
               })
             )}
@@ -2648,6 +3315,7 @@ export const ConversationView = ({
                     onToggleInfo={() => setIsInfoOpen(v => !v)}
                     isInfoOpen={isInfoOpen}
                     isAgent={isAgent}
+                    contactMessages={messages.filter(m => m.contactId === selectedId)}
                   />
                 </div>
 
@@ -2655,7 +3323,7 @@ export const ConversationView = ({
                 {selectedId && grabDeadlines[selectedId] && !selectedMeta.assigneeId && grabDeadlines[selectedId] > Date.now() && (
                   <div className="shrink-0 bg-amber-50 border-b border-amber-200 px-5 py-3 flex items-center justify-between gap-3 animate-in slide-in-from-top-2 duration-300">
                     <div className="flex items-center gap-3 min-w-0">
-                      <div className="w-8 h-8 rounded-sm bg-amber-500 flex items-center justify-center shrink-0 shadow-sm">
+                      <div className="w-8 h-8 rounded-sm bg-amber-500 flex items-center justify-center shrink-0">
                         <Hand className="w-4 h-4 text-white" />
                       </div>
                       <div className="min-w-0">
@@ -2667,11 +3335,64 @@ export const ConversationView = ({
                       <GrabCountdownBadge deadline={grabDeadlines[selectedId]} />
                       <button
                         onClick={() => grabConversation(selectedId)}
-                        className="inline-flex items-center gap-1.5 px-4 py-2 bg-amber-500 text-white text-sm font-bold hover:bg-amber-600 transition-colors rounded-sm shadow-sm"
+                        className="inline-flex items-center gap-1.5 px-4 py-2 bg-amber-500 text-white text-sm font-bold hover:bg-amber-600 transition-colors rounded-sm"
                       >
                         <Hand className="w-3.5 h-3.5" />
                         Grab Conversation
                       </button>
+                    </div>
+                  </div>
+                )}
+
+                {/* US26: Merged conversation indicator */}
+                {selectedId && mergedConversations.find(mc => mc.primaryContactId === selectedId) && (
+                  <div className="shrink-0 bg-violet-50 border-b border-violet-200 px-5 py-2.5 flex items-center gap-3 animate-in slide-in-from-top-2 duration-300">
+                    <Merge className="w-4 h-4 text-violet-600 shrink-0" />
+                    <div className="flex-1 min-w-0">
+                      <span className="text-xs font-bold text-violet-800">Merged conversation</span>
+                      <span className="text-xs text-violet-600 ml-2">
+                        Includes messages from {mergedConversations.find(mc => mc.primaryContactId === selectedId)!.mergedContactIds.length} other contact{mergedConversations.find(mc => mc.primaryContactId === selectedId)!.mergedContactIds.length > 1 ? "s" : ""} across {mergedConversations.find(mc => mc.primaryContactId === selectedId)!.channels.map(ch => CHANNEL_LABEL[ch] ?? ch).join(", ")}
+                      </span>
+                    </div>
+                  </div>
+                )}
+
+                {/* US26: Merge mode selection banner */}
+                {mergeMode && selectedId && (
+                  <div className="shrink-0 bg-indigo-50 border-b border-indigo-200 px-5 py-3 animate-in slide-in-from-top-2 duration-300">
+                    <div className="flex items-center justify-between gap-3">
+                      <div className="flex items-center gap-3 min-w-0">
+                        <div className="w-8 h-8 rounded-sm bg-indigo-500 flex items-center justify-center shrink-0">
+                          <Merge className="w-4 h-4 text-white" />
+                        </div>
+                        <div className="min-w-0">
+                          <p className="text-sm font-bold text-indigo-900">Merge Mode</p>
+                          <p className="text-xs text-indigo-700/80">
+                            Select conversations from the inbox to merge into this thread ({mergeSelection.size} selected)
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2 shrink-0">
+                        <button
+                          onClick={() => { setMergeMode(false); setMergeSelection(new Set()); }}
+                          className="px-3 py-1.5 text-xs font-medium text-indigo-700 border border-indigo-300 hover:bg-indigo-100 transition-colors rounded-sm"
+                        >
+                          Cancel
+                        </button>
+                        <button
+                          onClick={() => setShowMergeConfirm(true)}
+                          disabled={mergeSelection.size === 0}
+                          className="inline-flex items-center gap-1.5 px-4 py-1.5 bg-indigo-600 text-white text-xs font-bold hover:bg-indigo-700 transition-colors rounded-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          <Merge className="w-3 h-3" />
+                          Merge {mergeSelection.size > 0 ? `(${mergeSelection.size})` : ""}
+                        </button>
+                      </div>
+                    </div>
+                    {/* Compatible channels note */}
+                    <div className="mt-2 flex items-center gap-1.5 text-xs text-indigo-600">
+                      <AlertCircle className="w-3 h-3" />
+                      Compatible channels: conversations from any channel can be merged into a unified thread
                     </div>
                   </div>
                 )}
@@ -2685,7 +3406,26 @@ export const ConversationView = ({
                     </div>
                   ) : (
                     <>
-                      {threadEntries.map(entry => <ThreadMessage key={entry.id} entry={entry} />)}
+                      {threadEntries
+                        .filter(entry => !deletedMsgs.has(entry.id))
+                        .map(entry => {
+                          // Apply edited content if available
+                          const displayEntry = msgEdits.editedContent[entry.id]
+                            ? { ...entry, content: msgEdits.editedContent[entry.id] }
+                            : entry;
+                          return (
+                            <ThreadMessage
+                              key={entry.id}
+                              entry={displayEntry}
+                              isEdited={!!msgEdits.editHistory[entry.id]?.length}
+                              editHistory={msgEdits.editHistory[entry.id]}
+                              onEdit={handleEditMessage}
+                              onDelete={handleDeleteMessage}
+                              canEdit={canEditMessage(entry)}
+                              canDelete={isAgent}
+                            />
+                          );
+                        })}
                       {/* Typing indicator */}
                       {typingSet.has(selectedId!) && (
                         <div className="px-5"><TypingIndicator /></div>
@@ -2695,23 +3435,39 @@ export const ConversationView = ({
                   )}
                 </div>
 
-                {/* Quick Actions Toolbar */}
-                <ConversationToolbar
-                  contact={selectedContact}
-                  contentLibrary={contentLibrary}
-                  users={users}
-                  currentUser={currentUser}
-                  onSendMessage={onSendMessage}
-                  port={convPort}
-                  onUpdateContact={onUpdateContact}
-                />
+                {/* Non-volunteer: toolbar + AI suggestions above compose */}
+                {!isAgent && (
+                  <>
+                    <ConversationToolbar
+                      contact={selectedContact}
+                      contentLibrary={contentLibrary}
+                      users={users}
+                      currentUser={currentUser}
+                      onSendMessage={onSendMessage}
+                      port={convPort}
+                      onUpdateContact={onUpdateContact}
+                    />
+                    <AISuggestionPills
+                      contact={selectedContact}
+                      messages={selectedMessages}
+                      onSelect={(text) => setAiSuggestedText(text)}
+                    />
+                  </>
+                )}
 
-                {/* AI Reply Suggestions */}
-                <AISuggestionPills
-                  contact={selectedContact}
-                  messages={selectedMessages}
-                  onSelect={(text) => setAiSuggestedText(text)}
-                />
+                {/* Volunteer: unified quick actions bar above compose */}
+                {isAgent && (
+                  <VolunteerQuickActions
+                    contact={selectedContact}
+                    port={convPort}
+                    users={users}
+                    currentUser={currentUser}
+                    contentLibrary={contentLibrary}
+                    onSendMessage={onSendMessage}
+                    onRequestReassign={onRequestReassign}
+                    onInsertText={(text) => setAiSuggestedText(text)}
+                  />
+                )}
 
                 {/* Compose */}
                 <div data-dropdown-host>
@@ -2788,6 +3544,133 @@ export const ConversationView = ({
         contacts={contacts}
         onStart={(contactId, message, port) => { onSendMessage(contactId, message, undefined, port); setSelectedId(contactId); }}
       />
+
+      {/* US26: Merge Confirmation Modal */}
+      <AnimatePresence>
+        {showMergeConfirm && selectedId && mergeSelection.size > 0 && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm"
+            onClick={() => setShowMergeConfirm(false)}
+          >
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              transition={{ type: "spring", duration: 0.3, bounce: 0.1 }}
+              onClick={e => e.stopPropagation()}
+              className="bg-background border border-border rounded-lg max-w-lg w-full mx-4 overflow-hidden"
+            >
+              <div className="px-6 pt-6 pb-4">
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="w-10 h-10 rounded-full bg-indigo-500/10 flex items-center justify-center">
+                    <Merge className="w-5 h-5 text-indigo-600" />
+                  </div>
+                  <div>
+                    <h3 className="text-base font-bold text-foreground">Merge Conversations?</h3>
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      Merge {mergeSelection.size} conversation{mergeSelection.size > 1 ? "s" : ""} into {contacts.find(c => c.id === selectedId)?.name}'s thread
+                    </p>
+                  </div>
+                </div>
+
+                {/* Selected conversations to merge */}
+                <div className="bg-muted/30 border border-border rounded-md p-3 mb-4 max-h-40 overflow-y-auto">
+                  <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest mb-2">
+                    Conversations to merge
+                  </p>
+                  <div className="space-y-2">
+                    {Array.from(mergeSelection).map(cid => {
+                      const contact = contacts.find(c => c.id === cid);
+                      const lastMsg = messages.filter(m => m.contactId === cid).sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())[0];
+                      return (
+                        <div key={cid} className="flex items-center gap-2">
+                          <div className="w-6 h-6 rounded-full bg-indigo-500/10 flex items-center justify-center text-xs font-bold text-indigo-600">
+                            {contact?.name?.charAt(0) ?? "?"}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <span className="text-xs font-semibold text-foreground">{contact?.name ?? "Unknown"}</span>
+                            {lastMsg?.port && (
+                              <span className="ml-1.5"><ChannelBadge port={lastMsg.port} size="sm" /></span>
+                            )}
+                          </div>
+                          <button
+                            onClick={() => setMergeSelection(prev => { const n = new Set(prev); n.delete(cid); return n; })}
+                            className="p-0.5 text-muted-foreground hover:text-red-500"
+                          >
+                            <X className="w-3 h-3" />
+                          </button>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                <div className="bg-amber-50 border border-amber-200/60 rounded-md p-3">
+                  <div className="flex items-start gap-2">
+                    <AlertCircle className="w-4 h-4 text-amber-600 mt-0.5 shrink-0" />
+                    <div className="text-xs text-amber-800 leading-relaxed">
+                      <p className="font-semibold mb-1">This action will:</p>
+                      <ul className="space-y-0.5 ml-3 list-disc">
+                        <li>Combine all messages into a single unified thread</li>
+                        <li>Preserve channel information on each message</li>
+                        <li>Mark the merged conversations as linked</li>
+                      </ul>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div className="flex items-center gap-3 px-6 py-4 bg-muted/30 border-t border-border">
+                <button
+                  onClick={() => setShowMergeConfirm(false)}
+                  className="flex-1 px-4 py-2 text-sm font-semibold border border-border text-muted-foreground hover:text-foreground hover:bg-muted/40 rounded-md transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={() => {
+                    // Collect all unique channels from selected conversations
+                    const mergedChannels = new Set<MessagePort>();
+                    mergeSelection.forEach(cid => {
+                      messages
+                        .filter(m => m.contactId === cid)
+                        .forEach(m => mergedChannels.add(m.port));
+                    });
+
+                    setMergedConversations(prev => [
+                      ...prev,
+                      {
+                        primaryContactId: selectedId!,
+                        mergedContactIds: Array.from(mergeSelection),
+                        mergedAt: new Date().toISOString(),
+                        channels: Array.from(mergedChannels),
+                      },
+                    ]);
+
+                    // Add system message
+                    addLocalItem({
+                      contactId: selectedId!,
+                      type: "system",
+                      content: `${mergeSelection.size} conversation${mergeSelection.size > 1 ? "s" : ""} merged into this thread`,
+                    });
+
+                    toast.success(`${mergeSelection.size} conversation${mergeSelection.size > 1 ? "s" : ""} merged successfully!`);
+                    setShowMergeConfirm(false);
+                    setMergeMode(false);
+                    setMergeSelection(new Set());
+                  }}
+                  className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-2 text-sm font-semibold bg-indigo-600 text-white hover:bg-indigo-700 rounded-md transition-colors"
+                >
+                  <Merge className="w-4 h-4" />
+                  Confirm Merge
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };
