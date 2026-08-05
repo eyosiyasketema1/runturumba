@@ -1,6 +1,6 @@
-import React, { useEffect, useMemo, useState, useCallback } from "react";
+import React, { useMemo, useState, useCallback } from "react";
 import {
-  Plus, Lock, Check, Search, Copy, User,
+  Plus, Lock, Copy, ArrowLeft,
 } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "./types";
@@ -90,7 +90,7 @@ const ALL_PERM_KEYS = GROUPS.flatMap((g) => g.perms.map((p) => p[0]));
 
 // Dashboard views
 const VIEWS: [string, string, string][] = [
-  ["responder", "Responder", "My Queue, active chats, today’s stats, notifications."],
+  ["responder", "Responder", "My Queue, active chats, today's stats, notifications."],
   ["team", "Team Manager", "Team load, coverage, coaching queue, escalations."],
   ["language", "Language Manager", "Queue health, routing, review & policy, reporting."],
   ["social", "Social & Content", "Campaigns, channel performance, content calendar."],
@@ -192,7 +192,7 @@ const ROLES: RoleRecord[] = [
 ];
 
 // ============================================================================
-// SVG icon paths (inline to avoid extra lucide imports)
+// Inline SVG icons
 // ============================================================================
 
 function LockIcon({ className }: { className?: string }) {
@@ -222,28 +222,37 @@ function CheckIcon({ className }: { className?: string }) {
 }
 
 // ============================================================================
-// Main component
+// Main component — two screens: list → detail/edit/create
 // ============================================================================
 
+type Screen = "list" | "detail";
+
 export const RolesPermissionsSection = () => {
-  const [currentIndex, setCurrentIndex] = useState(4); // Volunteer Responder
-  const [sel, setSel] = useState<Set<string>>(() => new Set(ROLES[4].perms));
-  const [scope, setScope] = useState<string | null>(ROLES[4].scope);
-  const [view, setView] = useState<string | null>(ROLES[4].view);
-  const [locked, setLocked] = useState(false);
+  // Screen state
+  const [screen, setScreen] = useState<Screen>("list");
 
-  const [roleName, setRoleName] = useState(ROLES[4].name);
-  const [roleDesc, setRoleDesc] = useState(ROLES[4].desc);
-  const [roleBase, setRoleBase] = useState(0);
-
+  // List screen state
   const [roleFilter, setRoleFilter] = useState("");
+
+  // Detail screen state
+  const [currentIndex, setCurrentIndex] = useState(-1);
+  const [isCreating, setIsCreating] = useState(false);
+  const [sel, setSel] = useState<Set<string>>(new Set());
+  const [scope, setScope] = useState<string | null>(null);
+  const [view, setView] = useState<string | null>(null);
+  const [locked, setLocked] = useState(false);
+  const [roleName, setRoleName] = useState("");
+  const [roleDesc, setRoleDesc] = useState("");
+  const [roleBase, setRoleBase] = useState(0);
   const [permFilter, setPermFilter] = useState("");
 
-  // Load a role by index
-  const load = useCallback((i: number) => {
+  // ── Navigation ──
+
+  function openRole(i: number) {
     const r = ROLES[i];
     if (!r) return;
     setCurrentIndex(i);
+    setIsCreating(false);
     setLocked(r.system);
     setSel(new Set(r.perms));
     setScope(r.scope);
@@ -251,13 +260,50 @@ export const RolesPermissionsSection = () => {
     setRoleName(r.name);
     setRoleDesc(r.desc);
     setRoleBase(0);
-  }, []);
+    setPermFilter("");
+    setScreen("detail");
+  }
 
-  // Computed counts
-  const permCount = sel.size + (scope ? 1 : 0);
-  const viewLabel = view ? VIEWS.find((v) => v[0] === view)?.[1] ?? "not selected" : "not selected";
+  function openNew() {
+    setCurrentIndex(-1);
+    setIsCreating(true);
+    setLocked(false);
+    setSel(new Set());
+    setScope(null);
+    setView(null);
+    setRoleName("");
+    setRoleDesc("");
+    setRoleBase(0);
+    setPermFilter("");
+    setScreen("detail");
+  }
 
-  // Toggle a permission
+  function openDuplicate(i?: number) {
+    const idx = i !== undefined ? i : currentIndex >= 0 ? currentIndex : 0;
+    const r = ROLES[idx];
+    if (!r) return;
+    setCurrentIndex(-1);
+    setIsCreating(true);
+    setLocked(false);
+    setSel(new Set(r.perms));
+    setScope(r.scope);
+    setView(r.view);
+    setRoleName(r.name + " (copy)");
+    setRoleDesc(r.desc);
+    setRoleBase(0);
+    setPermFilter("");
+    setScreen("detail");
+    toast.success("Duplicated", {
+      description: `Editable copy of ${r.name} — not yet saved.`,
+    });
+  }
+
+  function goBack() {
+    setScreen("list");
+  }
+
+  // ── Permission actions ──
+
   function togglePerm(key: string) {
     if (locked) return;
     setSel((prev) => {
@@ -268,65 +314,39 @@ export const RolesPermissionsSection = () => {
     });
   }
 
-  // Select all / clear
   function selectAll() {
     if (locked) return;
     setSel(new Set(ALL_PERM_KEYS));
     setScope("all");
   }
+
   function clearAll() {
     if (locked) return;
     setSel(new Set());
     setScope(null);
   }
 
-  // New role
-  function handleNewRole() {
-    setCurrentIndex(-1);
-    setLocked(false);
-    setSel(new Set());
-    setScope(null);
-    setView(null);
-    setRoleName("");
-    setRoleDesc("");
-    setRoleBase(0);
-  }
-
-  // Duplicate
-  function handleDuplicate() {
-    const r = currentIndex >= 0 ? ROLES[currentIndex] : ROLES[0];
-    setCurrentIndex(-1);
-    setLocked(false);
-    setSel(new Set(r.perms));
-    setScope(r.scope);
-    setView(r.view);
-    setRoleName(r.name + " (copy)");
-    setRoleDesc(r.desc);
-    setRoleBase(0);
-    toast.success("Duplicated", {
-      description: `Editable copy of ${r.name} — not yet saved.`,
-    });
-  }
-
-  // Save
   function handleSave() {
     if (!roleName.trim() || !view) {
       toast.error("Please fill in the role name and select a dashboard view.");
       return;
     }
     toast.success("Role saved", {
-      description: "Changes apply on the member’s next page load.",
+      description: "Changes apply on the member's next page load.",
     });
+    setScreen("list");
   }
 
-  // Cancel
   function handleCancel() {
-    if (currentIndex >= 0) {
-      load(currentIndex);
-    }
+    setScreen("list");
   }
 
-  // Filter roles
+  // ── Computed ──
+
+  const permCount = sel.size + (scope ? 1 : 0);
+  const viewLabel = view ? VIEWS.find((v) => v[0] === view)?.[1] ?? "not selected" : "not selected";
+  const saveDisabled = locked || !view || !roleName.trim();
+
   const filteredRoles = useMemo(() => {
     const q = roleFilter.toLowerCase();
     return ROLES.map((r, i) => ({ r, i })).filter(({ r }) =>
@@ -337,482 +357,493 @@ export const RolesPermissionsSection = () => {
   const systemRoles = filteredRoles.filter(({ r }) => r.system);
   const customRoles = filteredRoles.filter(({ r }) => !r.system);
 
-  // Disabled state for save button
-  const saveDisabled = locked || !view || !roleName.trim();
+  // ════════════════════════════════════════════════════════════════════
+  // SCREEN 1: Roles list
+  // ════════════════════════════════════════════════════════════════════
+
+  if (screen === "list") {
+    return (
+      <div className="space-y-5">
+        {/* Page header */}
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <h1 className="text-lg font-semibold">Roles & Permissions</h1>
+            <p className="text-[13px] text-muted-foreground mt-0.5">
+              Four built-in roles ship with every account. Build custom roles by
+              ticking permissions and choosing the dashboard each role lands on.
+            </p>
+          </div>
+          <div className="flex gap-2 shrink-0">
+            <button
+              className="inline-flex items-center justify-center gap-[7px] h-[34px] px-[13px] text-[13px] font-semibold border border-border bg-card hover:bg-accent hover:text-accent-foreground transition-colors"
+              onClick={() => openNew()}
+            >
+              <Plus className="w-[15px] h-[15px]" />
+              New role
+            </button>
+          </div>
+        </div>
+
+        {/* Search */}
+        <div>
+          <input
+            className="h-[34px] w-full max-w-xs px-[10px] bg-card border border-input text-[13px] focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
+            placeholder="Search roles…"
+            value={roleFilter}
+            onChange={(e) => setRoleFilter(e.target.value)}
+          />
+        </div>
+
+        {/* System roles */}
+        {systemRoles.length > 0 && (
+          <div>
+            <div className="text-[11px] font-semibold text-muted-foreground pb-[6px] tracking-[0.04em] uppercase">
+              System roles
+            </div>
+            <div className="flex flex-col gap-px">
+              {systemRoles.map(({ r, i }) => (
+                <RoleListCard
+                  key={i}
+                  role={r}
+                  onClick={() => openRole(i)}
+                  onDuplicate={() => openDuplicate(i)}
+                />
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Custom roles */}
+        {customRoles.length > 0 && (
+          <div>
+            <div className="text-[11px] font-semibold text-muted-foreground pb-[6px] tracking-[0.04em] uppercase">
+              Custom roles
+            </div>
+            <div className="flex flex-col gap-px">
+              {customRoles.map(({ r, i }) => (
+                <RoleListCard
+                  key={i}
+                  role={r}
+                  onClick={() => openRole(i)}
+                  onDuplicate={() => openDuplicate(i)}
+                />
+              ))}
+            </div>
+          </div>
+        )}
+
+        {filteredRoles.length === 0 && (
+          <div className="py-10 text-center text-[13px] text-muted-foreground border border-border bg-card">
+            No roles match your search.
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  // ════════════════════════════════════════════════════════════════════
+  // SCREEN 2: Detail / Edit / Create
+  // ════════════════════════════════════════════════════════════════════
 
   return (
     <div className="space-y-5">
-      {/* Page header */}
-      <div className="flex items-start justify-between gap-4">
+      {/* Back + title */}
+      <div className="flex items-center gap-3">
+        <button
+          className="inline-flex items-center justify-center w-8 h-8 hover:bg-accent transition-colors"
+          onClick={goBack}
+          title="Back to roles"
+        >
+          <ArrowLeft className="w-4 h-4" />
+        </button>
         <div>
-          <h1 className="text-lg font-semibold">Roles & Permissions</h1>
+          <h1 className="text-lg font-semibold">
+            {isCreating
+              ? "New custom role"
+              : locked
+              ? ROLES[currentIndex]?.name ?? "Role"
+              : `Edit role — ${ROLES[currentIndex]?.name ?? ""}`}
+          </h1>
           <p className="text-[13px] text-muted-foreground mt-0.5">
-            Four built-in roles ship with every account. Build custom roles by
-            ticking permissions and choosing the dashboard each role lands on.
+            {isCreating
+              ? "Tick permissions, set the reach, then choose a dashboard view."
+              : locked
+              ? "Built-in role, kept in sync by the platform."
+              : "Define what this role can do and where it lands."}
           </p>
         </div>
-        <div className="flex gap-2 shrink-0">
-          <button
-            className="inline-flex items-center justify-center gap-[7px] h-[34px] px-[13px] text-[13px] font-semibold border border-border bg-card hover:bg-accent hover:text-accent-foreground transition-colors"
-            onClick={handleDuplicate}
-          >
-            <Copy className="w-[15px] h-[15px]" />
-            Duplicate
-          </button>
-          <button
-            className="inline-flex items-center justify-center gap-[7px] h-[34px] px-[13px] text-[13px] font-semibold bg-primary text-primary-foreground hover:brightness-107 transition-colors border border-transparent"
-            onClick={handleNewRole}
-          >
-            <Plus className="w-[15px] h-[15px]" />
-            New role
-          </button>
+        <div className="flex gap-[6px] ml-auto">
+          {locked && (
+            <span className="inline-flex items-center gap-1 h-5 px-[7px] text-[11px] font-semibold border border-border bg-muted text-muted-foreground">
+              <Lock className="w-[11px] h-[11px]" />
+              LOCKED
+            </span>
+          )}
+          {currentIndex >= 0 && ROLES[currentIndex]?.persona && (
+            <span className="inline-flex items-center h-5 px-[7px] text-[11px] font-semibold border border-border bg-secondary text-secondary-foreground">
+              {ROLES[currentIndex].persona}
+            </span>
+          )}
+          {isCreating && (
+            <span className="inline-flex items-center gap-1 h-5 px-[7px] text-[11px] font-semibold border border-[color-mix(in_oklab,var(--primary)_30%,transparent)] bg-[color-mix(in_oklab,var(--primary)_12%,transparent)] text-primary">
+              DRAFT
+            </span>
+          )}
+          {currentIndex >= 0 && (
+            <span className="inline-flex items-center h-5 px-[7px] text-[11px] font-semibold border border-border bg-secondary text-secondary-foreground">
+              {ROLES[currentIndex].members} members
+            </span>
+          )}
         </div>
       </div>
 
-      {/* Split layout */}
-      <div className="grid grid-cols-[296px_1fr] gap-[18px] items-start">
-        {/* ── Roles list sidebar ── */}
-        <section className="bg-card border border-border">
-          {/* Header */}
-          <div className="px-4 pt-[14px]">
-            <div className="text-sm font-semibold">Roles</div>
-            <div className="text-[12.5px] text-muted-foreground mt-px">
-              {ROLES.length} in this account
+      {/* Builder card */}
+      <div className="bg-card border border-border">
+        <div className="p-4">
+          {/* Lock banner */}
+          {locked && currentIndex >= 0 && (
+            <div className="flex gap-[10px] p-[11px_13px] border border-border bg-muted mb-4 items-start">
+              <LockIcon className="w-4 h-4 shrink-0 mt-px text-muted-foreground" />
+              <div>
+                <div className="font-semibold text-[13px]">
+                  This is a built-in role and can&rsquo;t be changed.
+                </div>
+                <div className="text-[12.5px] text-muted-foreground mt-px">
+                  Owner, Admin, Mentor Coach and Mentor are seeded into every
+                  account and kept in sync by the platform. Duplicate it to make your own version.
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Name + Start from */}
+          <div className="grid grid-cols-2 gap-[14px] mb-5">
+            <div className="flex flex-col gap-[6px]">
+              <label className="text-[12.5px] font-semibold">Role name</label>
+              <input
+                className="h-[34px] w-full px-[10px] bg-card border border-input text-[13px] disabled:bg-muted disabled:text-muted-foreground disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
+                placeholder="e.g. Volunteer Responder"
+                value={roleName}
+                onChange={(e) => setRoleName(e.target.value)}
+                disabled={locked}
+              />
+              <span className="text-[12px] text-muted-foreground">
+                {locked ? "Built-in role names are fixed." : "Must be unique within the account."}
+              </span>
+            </div>
+            <div className="flex flex-col gap-[6px]">
+              <label className="text-[12.5px] font-semibold">Start from</label>
+              <select
+                className="h-[34px] w-full px-[10px] bg-card border border-input text-[13px] disabled:bg-muted disabled:text-muted-foreground disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
+                value={roleBase}
+                onChange={(e) => setRoleBase(Number(e.target.value))}
+                disabled={locked}
+              >
+                <option value={0}>Empty &mdash; no permissions</option>
+                <option value={1}>Duplicate: Owner</option>
+                <option value={2}>Duplicate: Admin</option>
+                <option value={3}>Duplicate: Mentor Coach</option>
+                <option value={4}>Duplicate: Mentor</option>
+              </select>
+              <span className="text-[12px] text-muted-foreground">
+                Copies that role&rsquo;s permissions as a starting set.
+              </span>
             </div>
           </div>
 
-          {/* Search */}
-          <div className="px-3 pt-3">
-            <input
-              className="h-[34px] w-full px-[10px] bg-card border border-input text-[13px] focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
-              placeholder="Search roles…"
-              value={roleFilter}
-              onChange={(e) => setRoleFilter(e.target.value)}
+          {/* Description */}
+          <div className="flex flex-col gap-[6px] mb-[22px]">
+            <label className="text-[12.5px] font-semibold">Description</label>
+            <textarea
+              className="w-full px-[10px] py-2 bg-card border border-input text-[13px] resize-y min-h-[60px] disabled:bg-muted disabled:text-muted-foreground disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
+              rows={2}
+              placeholder="Shown wherever this role is assigned."
+              value={roleDesc}
+              onChange={(e) => setRoleDesc(e.target.value)}
+              disabled={locked}
             />
           </div>
 
-          {/* Role list */}
-          <div className="p-2 flex flex-col gap-px max-h-[640px] overflow-auto">
-            {systemRoles.length > 0 && (
-              <>
-                <div className="text-[11px] font-semibold text-muted-foreground px-2 pt-[11px] pb-[5px] tracking-[0.04em] uppercase">
-                  System roles
-                </div>
-                {systemRoles.map(({ r, i }) => (
-                  <RoleItem
-                    key={i}
-                    role={r}
-                    active={i === currentIndex}
-                    onClick={() => load(i)}
-                  />
-                ))}
-              </>
-            )}
-            {customRoles.length > 0 && (
-              <>
-                <div className="text-[11px] font-semibold text-muted-foreground px-2 pt-[11px] pb-[5px] tracking-[0.04em] uppercase">
-                  Custom roles
-                </div>
-                {customRoles.map(({ r, i }) => (
-                  <RoleItem
-                    key={i}
-                    role={r}
-                    active={i === currentIndex}
-                    onClick={() => load(i)}
-                  />
-                ))}
-              </>
-            )}
-            {filteredRoles.length === 0 && (
-              <div className="py-[22px] px-[10px] text-center text-[12px] text-muted-foreground">
-                No roles match.
-              </div>
-            )}
-          </div>
-        </section>
-
-        {/* ── Role builder ── */}
-        <section className="bg-card border border-border">
-          {/* Builder header */}
-          <div className="px-4 py-[14px] border-b border-border flex items-center justify-between gap-3">
-            <div>
-              <div className="text-sm font-semibold">
-                {currentIndex < 0
-                  ? "New custom role"
-                  : locked
-                  ? ROLES[currentIndex]?.name ?? "Role details"
-                  : `Edit role — ${ROLES[currentIndex]?.name ?? ""}`}
-              </div>
-              <div className="text-[12.5px] text-muted-foreground mt-px">
-                {currentIndex < 0
-                  ? "Tick permissions, set the reach, then choose a dashboard view."
-                  : locked
-                  ? "Built-in role, kept in sync by the platform."
-                  : "Define what this role can do and where it lands."}
-              </div>
+          {/* Dashboard view */}
+          <div className="mb-2">
+            <div className="text-[12.5px] font-semibold mb-[3px]">Dashboard view</div>
+            <div className="text-[12px] text-muted-foreground mb-[11px]">
+              Where a member holding this role lands after login. Widgets that
+              need a permission the role lacks are hidden automatically.
             </div>
-            <div className="flex gap-[6px]">
-              {locked && (
-                <span className="inline-flex items-center gap-1 h-5 px-[7px] text-[11px] font-semibold border border-border bg-muted text-muted-foreground">
-                  <Lock className="w-[11px] h-[11px]" />
-                  LOCKED
-                </span>
-              )}
-              {currentIndex >= 0 && ROLES[currentIndex]?.persona && (
-                <span className="inline-flex items-center gap-1 h-5 px-[7px] text-[11px] font-semibold border border-border bg-secondary text-secondary-foreground">
-                  {ROLES[currentIndex].persona}
-                </span>
-              )}
-              {currentIndex < 0 && (
-                <span className="inline-flex items-center gap-1 h-5 px-[7px] text-[11px] font-semibold border border-[color-mix(in_oklab,var(--primary)_30%,transparent)] bg-[color-mix(in_oklab,var(--primary)_12%,transparent)] text-primary">
-                  DRAFT
-                </span>
-              )}
-              {currentIndex >= 0 && (
-                <span className="inline-flex items-center gap-1 h-5 px-[7px] text-[11px] font-semibold border border-border bg-secondary text-secondary-foreground">
-                  {ROLES[currentIndex].members} members
-                </span>
-              )}
-            </div>
-          </div>
-
-          <div className="p-4">
-            {/* Lock banner */}
-            {locked && currentIndex >= 0 && (
-              <div className="flex gap-[10px] p-[11px_13px] border border-border bg-muted mb-4 items-start">
-                <LockIcon className="w-4 h-4 shrink-0 mt-px text-muted-foreground" />
-                <div>
-                  <div className="font-semibold text-[13px]">
-                    This is a built-in role and can&rsquo;t be changed.
-                  </div>
-                  <div className="text-[12.5px] text-muted-foreground mt-px">
-                    Owner, Admin, Mentor Coach and Mentor are seeded into every
-                    account and kept in sync by the platform. Duplicate it to make your own version.
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* Name + Start from */}
-            <div className="grid grid-cols-2 gap-[14px] mb-5">
-              <div className="flex flex-col gap-[6px]">
-                <label className="text-[12.5px] font-semibold">Role name</label>
-                <input
-                  className="h-[34px] w-full px-[10px] bg-card border border-input text-[13px] disabled:bg-muted disabled:text-muted-foreground disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
-                  placeholder="e.g. Volunteer Responder"
-                  value={roleName}
-                  onChange={(e) => setRoleName(e.target.value)}
-                  disabled={locked}
-                />
-                <span className="text-[12px] text-muted-foreground">
-                  {locked ? "Built-in role names are fixed." : "Must be unique within the account."}
-                </span>
-              </div>
-              <div className="flex flex-col gap-[6px]">
-                <label className="text-[12.5px] font-semibold">Start from</label>
-                <select
-                  className="h-[34px] w-full px-[10px] bg-card border border-input text-[13px] disabled:bg-muted disabled:text-muted-foreground disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
-                  value={roleBase}
-                  onChange={(e) => setRoleBase(Number(e.target.value))}
-                  disabled={locked}
-                >
-                  <option value={0}>Empty &mdash; no permissions</option>
-                  <option value={1}>Duplicate: Owner</option>
-                  <option value={2}>Duplicate: Admin</option>
-                  <option value={3}>Duplicate: Mentor Coach</option>
-                  <option value={4}>Duplicate: Mentor</option>
-                </select>
-                <span className="text-[12px] text-muted-foreground">
-                  Copies that role&rsquo;s permissions as a starting set.
-                </span>
-              </div>
-            </div>
-
-            {/* Description */}
-            <div className="flex flex-col gap-[6px] mb-[22px]">
-              <label className="text-[12.5px] font-semibold">Description</label>
-              <textarea
-                className="w-full px-[10px] py-2 bg-card border border-input text-[13px] resize-y min-h-[60px] disabled:bg-muted disabled:text-muted-foreground disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
-                rows={2}
-                placeholder="Shown wherever this role is assigned."
-                value={roleDesc}
-                onChange={(e) => setRoleDesc(e.target.value)}
-                disabled={locked}
-              />
-            </div>
-
-            {/* Dashboard view */}
-            <div className="mb-2">
-              <div className="text-[12.5px] font-semibold mb-[3px]">Dashboard view</div>
-              <div className="text-[12px] text-muted-foreground mb-[11px]">
-                Where a member holding this role lands after login. Widgets that
-                need a permission the role lacks are hidden automatically.
-              </div>
-              <div className="grid grid-cols-3 gap-[9px]">
-                {VIEWS.map(([id, name, desc]) => {
-                  const selected = view === id;
-                  return (
-                    <button
-                      key={id}
-                      className={cn(
-                        "border p-[11px] text-left flex gap-[9px] items-start bg-card transition-colors",
-                        selected
-                          ? "border-primary bg-[color-mix(in_oklab,var(--primary)_5%,transparent)]"
-                          : "border-border hover:border-primary",
-                        locked && "opacity-55 cursor-not-allowed"
-                      )}
-                      onClick={() => {
-                        if (!locked) setView(id);
-                      }}
-                      disabled={locked}
-                    >
-                      <span
-                        className={cn(
-                          "w-[15px] h-[15px] rounded-full border shrink-0 mt-px grid place-items-center",
-                          selected ? "border-primary" : "border-input"
-                        )}
-                      >
-                        {selected && (
-                          <span className="w-[7px] h-[7px] rounded-full bg-primary" />
-                        )}
-                      </span>
-                      <span>
-                        <span className="font-semibold text-[12.5px] block">{name}</span>
-                        <span className="text-[11.5px] text-muted-foreground mt-[2px] leading-[1.35] block">
-                          {desc}
-                        </span>
-                      </span>
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-
-            {/* Permissions */}
-            <div className="mt-[26px]">
-              {/* Toolbar */}
-              <div className="flex items-center gap-[9px] flex-wrap pb-3 mb-1 border-b border-border">
-                <div className="text-[13px] font-semibold">Permissions</div>
-                <span className="inline-flex items-center gap-1 h-5 px-[7px] text-[11px] font-semibold border border-[color-mix(in_oklab,var(--primary)_30%,transparent)] bg-[color-mix(in_oklab,var(--primary)_12%,transparent)] text-primary">
-                  {permCount} selected
-                </span>
-                <span className="flex-1" />
-                <input
-                  className="h-[34px] w-[230px] px-[10px] bg-card border border-input text-[13px] focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
-                  placeholder="Filter permissions…"
-                  value={permFilter}
-                  onChange={(e) => setPermFilter(e.target.value)}
-                />
-                <button
-                  className="inline-flex items-center justify-center h-[29px] px-[10px] text-[12px] font-semibold border border-border bg-card hover:bg-accent hover:text-accent-foreground transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                  onClick={selectAll}
-                  disabled={locked}
-                >
-                  Select all
-                </button>
-                <button
-                  className="inline-flex items-center justify-center h-[29px] px-[10px] text-[12px] font-semibold border border-border bg-card hover:bg-accent hover:text-accent-foreground transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                  onClick={clearAll}
-                  disabled={locked}
-                >
-                  Clear
-                </button>
-              </div>
-
-              {/* Permission groups */}
-              {GROUPS.map((group) => {
-                const q = permFilter.toLowerCase();
-                const hits = group.perms.filter(
-                  ([k, l]) =>
-                    k.toLowerCase().includes(q) || l.toLowerCase().includes(q)
-                );
-                const scopedHit =
-                  group.scoped &&
-                  ("conversations:read".includes(q) ||
-                    "read conversations".includes(q) ||
-                    q === "");
-                if (!hits.length && !scopedHit) return null;
-
-                const on =
-                  group.perms.filter(([k]) => sel.has(k)).length +
-                  (group.scoped && scope ? 1 : 0);
-                const tot = group.perms.length + (group.scoped ? 1 : 0);
-
+            <div className="grid grid-cols-3 gap-[9px]">
+              {VIEWS.map(([id, name, desc]) => {
+                const selected = view === id;
                 return (
-                  <div key={group.id} className="border-t border-border first:border-t-0">
-                    <div className="flex items-center gap-[9px] py-3">
-                      <span className="font-semibold text-[13px]">{group.title}</span>
-                      <span className="text-[11.5px] text-muted-foreground">
-                        {on}/{tot}
-                      </span>
-                    </div>
-                    <div className="grid grid-cols-2 gap-x-[18px] gap-y-px pb-[10px]">
-                      {/* Scoped permission block */}
-                      {group.scoped && scopedHit && (
-                        <div className="col-span-2 border border-border p-[11px] bg-muted my-1 mb-[10px]">
-                          <div className="flex items-center gap-2 flex-wrap">
-                            <span className="text-[13px] font-medium">Read conversations</span>
-                            <span className="inline-flex items-center gap-1 h-5 px-[7px] text-[11px] font-semibold border border-[color-mix(in_oklab,var(--info)_30%,transparent)] bg-[color-mix(in_oklab,var(--info)_12%,transparent)] text-info">
-                              SCOPED
-                            </span>
-                            <span className="text-[11px] text-muted-foreground font-mono">
-                              conversations:read:&lt;scope&gt;
-                            </span>
-                          </div>
-                          <div className="text-[12px] text-muted-foreground mt-1">
-                            The only scoped permission. A role may hold exactly one level &mdash;
-                            widening circles: own &sub; group &sub; all.
-                          </div>
-                          <div className="flex gap-2 mt-[9px] flex-wrap">
-                            {(
-                              [
-                                ["own", "Own", "their own chats"],
-                                ["group", "Group", "their group’s chats"],
-                                ["all", "All", "every conversation"],
-                              ] as [string, string, string][]
-                            ).map(([s, label, note]) => (
-                              <button
-                                key={s}
-                                className={cn(
-                                  "flex items-center gap-[7px] px-[11px] py-[7px] border text-[12.5px] font-medium bg-card transition-colors",
-                                  scope === s
-                                    ? "border-primary bg-[color-mix(in_oklab,var(--primary)_6%,transparent)]"
-                                    : "border-input",
-                                  locked && "cursor-not-allowed opacity-60"
-                                )}
-                                onClick={() => {
-                                  if (locked) return;
-                                  setScope((prev) => (prev === s ? null : s));
-                                }}
-                                disabled={locked}
-                              >
-                                <span
-                                  className={cn(
-                                    "w-[15px] h-[15px] rounded-full border grid place-items-center",
-                                    scope === s ? "border-primary" : "border-input"
-                                  )}
-                                >
-                                  {scope === s && (
-                                    <span className="w-[7px] h-[7px] rounded-full bg-primary" />
-                                  )}
-                                </span>
-                                <span>
-                                  {label}{" "}
-                                  <small className="text-muted-foreground font-normal">
-                                    &middot; {note}
-                                  </small>
-                                </span>
-                              </button>
-                            ))}
-                          </div>
-                        </div>
+                  <button
+                    key={id}
+                    className={cn(
+                      "border p-[11px] text-left flex gap-[9px] items-start bg-card transition-colors",
+                      selected
+                        ? "border-primary bg-[color-mix(in_oklab,var(--primary)_5%,transparent)]"
+                        : "border-border hover:border-primary",
+                      locked && "opacity-55 cursor-not-allowed"
+                    )}
+                    onClick={() => {
+                      if (!locked) setView(id);
+                    }}
+                    disabled={locked}
+                  >
+                    <span
+                      className={cn(
+                        "w-[15px] h-[15px] rounded-full border shrink-0 mt-px grid place-items-center",
+                        selected ? "border-primary" : "border-input"
                       )}
-
-                      {/* Permission checkboxes */}
-                      {hits.map(([k, l]) => {
-                        const isOn = sel.has(k);
-                        return (
-                          <div
-                            key={k}
-                            className={cn(
-                              "flex gap-[9px] p-[6px] items-start border border-transparent transition-colors",
-                              locked
-                                ? "cursor-not-allowed opacity-60"
-                                : "cursor-pointer hover:bg-accent"
-                            )}
-                            onClick={() => togglePerm(k)}
-                          >
-                            <span
-                              className={cn(
-                                "w-[15px] h-[15px] border shrink-0 mt-[2px] grid place-items-center",
-                                isOn
-                                  ? "bg-primary border-primary"
-                                  : "bg-card border-input"
-                              )}
-                            >
-                              {isOn && (
-                                <CheckIcon className="w-[11px] h-[11px] text-white" />
-                              )}
-                            </span>
-                            <span>
-                              <span className="text-[13px] font-medium block">{l}</span>
-                              <span className="text-[11px] text-muted-foreground mt-px block font-mono">
-                                {k}
-                              </span>
-                            </span>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
+                    >
+                      {selected && (
+                        <span className="w-[7px] h-[7px] rounded-full bg-primary" />
+                      )}
+                    </span>
+                    <span>
+                      <span className="font-semibold text-[12.5px] block">{name}</span>
+                      <span className="text-[11.5px] text-muted-foreground mt-[2px] leading-[1.35] block">
+                        {desc}
+                      </span>
+                    </span>
+                  </button>
                 );
               })}
             </div>
           </div>
 
-          {/* Footer */}
-          <div className="px-4 py-3 border-t border-border flex items-center justify-between gap-3 bg-muted">
-            <div className="text-[12.5px] text-muted-foreground">
-              <b className="text-foreground">{permCount}</b> of 44 permissions &middot;
-              reach <b className="text-foreground">{scope ?? "none"}</b> &middot;
-              view <b className="text-foreground">{viewLabel}</b>
-            </div>
-            <div className="flex gap-2">
+          {/* Permissions */}
+          <div className="mt-[26px]">
+            {/* Toolbar */}
+            <div className="flex items-center gap-[9px] flex-wrap pb-3 mb-1 border-b border-border">
+              <div className="text-[13px] font-semibold">Permissions</div>
+              <span className="inline-flex items-center gap-1 h-5 px-[7px] text-[11px] font-semibold border border-[color-mix(in_oklab,var(--primary)_30%,transparent)] bg-[color-mix(in_oklab,var(--primary)_12%,transparent)] text-primary">
+                {permCount} selected
+              </span>
+              <span className="flex-1" />
+              <input
+                className="h-[34px] w-[230px] px-[10px] bg-card border border-input text-[13px] focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
+                placeholder="Filter permissions…"
+                value={permFilter}
+                onChange={(e) => setPermFilter(e.target.value)}
+              />
               <button
-                className="inline-flex items-center justify-center h-[34px] px-[13px] text-[13px] font-semibold border border-border bg-card hover:bg-accent hover:text-accent-foreground transition-colors"
-                onClick={handleCancel}
+                className="inline-flex items-center justify-center h-[29px] px-[10px] text-[12px] font-semibold border border-border bg-card hover:bg-accent hover:text-accent-foreground transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                onClick={selectAll}
+                disabled={locked}
               >
-                Cancel
+                Select all
               </button>
               <button
-                className={cn(
-                  "inline-flex items-center justify-center h-[34px] px-[13px] text-[13px] font-semibold bg-primary text-primary-foreground border border-transparent transition-colors",
-                  saveDisabled
-                    ? "opacity-50 cursor-not-allowed"
-                    : "hover:brightness-107"
-                )}
-                onClick={handleSave}
-                disabled={saveDisabled}
+                className="inline-flex items-center justify-center h-[29px] px-[10px] text-[12px] font-semibold border border-border bg-card hover:bg-accent hover:text-accent-foreground transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                onClick={clearAll}
+                disabled={locked}
               >
-                Save role
+                Clear
               </button>
             </div>
+
+            {/* Permission groups */}
+            {GROUPS.map((group) => {
+              const q = permFilter.toLowerCase();
+              const hits = group.perms.filter(
+                ([k, l]) =>
+                  k.toLowerCase().includes(q) || l.toLowerCase().includes(q)
+              );
+              const scopedHit =
+                group.scoped &&
+                ("conversations:read".includes(q) ||
+                  "read conversations".includes(q) ||
+                  q === "");
+              if (!hits.length && !scopedHit) return null;
+
+              const on =
+                group.perms.filter(([k]) => sel.has(k)).length +
+                (group.scoped && scope ? 1 : 0);
+              const tot = group.perms.length + (group.scoped ? 1 : 0);
+
+              return (
+                <div key={group.id} className="border-t border-border first:border-t-0">
+                  <div className="flex items-center gap-[9px] py-3">
+                    <span className="font-semibold text-[13px]">{group.title}</span>
+                    <span className="text-[11.5px] text-muted-foreground">
+                      {on}/{tot}
+                    </span>
+                  </div>
+                  <div className="grid grid-cols-2 gap-x-[18px] gap-y-px pb-[10px]">
+                    {/* Scoped permission block */}
+                    {group.scoped && scopedHit && (
+                      <div className="col-span-2 border border-border p-[11px] bg-muted my-1 mb-[10px]">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="text-[13px] font-medium">Read conversations</span>
+                          <span className="inline-flex items-center gap-1 h-5 px-[7px] text-[11px] font-semibold border border-[color-mix(in_oklab,var(--info)_30%,transparent)] bg-[color-mix(in_oklab,var(--info)_12%,transparent)] text-info">
+                            SCOPED
+                          </span>
+                          <span className="text-[11px] text-muted-foreground font-mono">
+                            conversations:read:&lt;scope&gt;
+                          </span>
+                        </div>
+                        <div className="text-[12px] text-muted-foreground mt-1">
+                          The only scoped permission. A role may hold exactly one level &mdash;
+                          widening circles: own &sub; group &sub; all.
+                        </div>
+                        <div className="flex gap-2 mt-[9px] flex-wrap">
+                          {(
+                            [
+                              ["own", "Own", "their own chats"],
+                              ["group", "Group", "their group's chats"],
+                              ["all", "All", "every conversation"],
+                            ] as [string, string, string][]
+                          ).map(([s, label, note]) => (
+                            <button
+                              key={s}
+                              className={cn(
+                                "flex items-center gap-[7px] px-[11px] py-[7px] border text-[12.5px] font-medium bg-card transition-colors",
+                                scope === s
+                                  ? "border-primary bg-[color-mix(in_oklab,var(--primary)_6%,transparent)]"
+                                  : "border-input",
+                                locked && "cursor-not-allowed opacity-60"
+                              )}
+                              onClick={() => {
+                                if (locked) return;
+                                setScope((prev) => (prev === s ? null : s));
+                              }}
+                              disabled={locked}
+                            >
+                              <span
+                                className={cn(
+                                  "w-[15px] h-[15px] rounded-full border grid place-items-center",
+                                  scope === s ? "border-primary" : "border-input"
+                                )}
+                              >
+                                {scope === s && (
+                                  <span className="w-[7px] h-[7px] rounded-full bg-primary" />
+                                )}
+                              </span>
+                              <span>
+                                {label}{" "}
+                                <small className="text-muted-foreground font-normal">
+                                  &middot; {note}
+                                </small>
+                              </span>
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Permission checkboxes */}
+                    {hits.map(([k, l]) => {
+                      const isOn = sel.has(k);
+                      return (
+                        <div
+                          key={k}
+                          className={cn(
+                            "flex gap-[9px] p-[6px] items-start border border-transparent transition-colors",
+                            locked
+                              ? "cursor-not-allowed opacity-60"
+                              : "cursor-pointer hover:bg-accent"
+                          )}
+                          onClick={() => togglePerm(k)}
+                        >
+                          <span
+                            className={cn(
+                              "w-[15px] h-[15px] border shrink-0 mt-[2px] grid place-items-center",
+                              isOn
+                                ? "bg-primary border-primary"
+                                : "bg-card border-input"
+                            )}
+                          >
+                            {isOn && (
+                              <CheckIcon className="w-[11px] h-[11px] text-white" />
+                            )}
+                          </span>
+                          <span>
+                            <span className="text-[13px] font-medium block">{l}</span>
+                            <span className="text-[11px] text-muted-foreground mt-px block font-mono">
+                              {k}
+                            </span>
+                          </span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              );
+            })}
           </div>
-        </section>
+        </div>
+
+        {/* Footer */}
+        <div className="px-4 py-3 border-t border-border flex items-center justify-between gap-3 bg-muted">
+          <div className="text-[12.5px] text-muted-foreground">
+            <b className="text-foreground">{permCount}</b> of 44 permissions &middot;
+            reach <b className="text-foreground">{scope ?? "none"}</b> &middot;
+            view <b className="text-foreground">{viewLabel}</b>
+          </div>
+          <div className="flex gap-2">
+            {locked ? (
+              <button
+                className="inline-flex items-center justify-center gap-[7px] h-[34px] px-[13px] text-[13px] font-semibold border border-border bg-card hover:bg-accent hover:text-accent-foreground transition-colors"
+                onClick={() => openDuplicate(currentIndex)}
+              >
+                <Copy className="w-[15px] h-[15px]" />
+                Duplicate to customize
+              </button>
+            ) : (
+              <>
+                <button
+                  className="inline-flex items-center justify-center h-[34px] px-[13px] text-[13px] font-semibold border border-border bg-card hover:bg-accent hover:text-accent-foreground transition-colors"
+                  onClick={handleCancel}
+                >
+                  Cancel
+                </button>
+                <button
+                  className={cn(
+                    "inline-flex items-center justify-center h-[34px] px-[13px] text-[13px] font-semibold bg-primary text-primary-foreground border border-transparent transition-colors",
+                    saveDisabled
+                      ? "opacity-50 cursor-not-allowed"
+                      : "hover:brightness-107"
+                  )}
+                  onClick={handleSave}
+                  disabled={saveDisabled}
+                >
+                  Save role
+                </button>
+              </>
+            )}
+          </div>
+        </div>
       </div>
     </div>
   );
 };
 
 // ============================================================================
-// Role list item
+// Role list card — used on the list screen
 // ============================================================================
 
-function RoleItem({
+function RoleListCard({
   role,
-  active,
   onClick,
+  onDuplicate,
 }: {
   role: RoleRecord;
-  active: boolean;
   onClick: () => void;
+  onDuplicate: () => void;
 }) {
+  const permTotal = role.perms.length + (role.scope ? 1 : 0);
+  const viewName = VIEWS.find((v) => v[0] === role.view)?.[1] ?? "—";
+
   return (
-    <button
-      className={cn(
-        "flex items-start gap-[9px] p-[9px] text-left w-full border-l-2 border-transparent transition-colors",
-        active
-          ? "bg-accent border-l-primary"
-          : "hover:bg-accent"
-      )}
+    <div
+      className="flex items-start gap-3 p-3 border border-border bg-card cursor-pointer hover:border-primary/40 transition-colors"
       onClick={onClick}
     >
+      {/* Icon */}
       <span
         className={cn(
-          "w-7 h-7 grid place-items-center shrink-0 mt-px",
-          active
-            ? "bg-primary text-white"
-            : "bg-secondary"
+          "w-8 h-8 grid place-items-center shrink-0 mt-0.5",
+          role.system ? "bg-muted text-muted-foreground" : "bg-secondary text-secondary-foreground"
         )}
       >
         {role.system ? (
@@ -821,9 +852,11 @@ function RoleItem({
           <UserIcon className="w-[14px] h-[14px]" />
         )}
       </span>
-      <span className="min-w-0 flex-1">
-        <span className="font-semibold text-[13px] flex items-center gap-[6px] flex-wrap">
-          {role.name}
+
+      {/* Body */}
+      <div className="flex-1 min-w-0">
+        <div className="flex items-center gap-[6px] flex-wrap">
+          <span className="font-semibold text-[13px]">{role.name}</span>
           {role.system && (
             <span className="inline-flex items-center gap-1 h-5 px-[7px] text-[11px] font-semibold border border-border bg-muted text-muted-foreground">
               LOCKED
@@ -834,11 +867,28 @@ function RoleItem({
               {role.persona}
             </span>
           )}
-        </span>
-        <span className="text-[11.5px] text-muted-foreground mt-px block whitespace-nowrap overflow-hidden text-ellipsis">
-          {role.perms.length + 1} permissions &middot; {role.members} members
-        </span>
-      </span>
-    </button>
+        </div>
+        <p className="text-[12.5px] text-muted-foreground mt-0.5 line-clamp-1">{role.desc}</p>
+        <div className="flex items-center gap-3 mt-1.5 text-[11.5px] text-muted-foreground">
+          <span>{permTotal} permissions</span>
+          <span>&middot;</span>
+          <span>{role.members} members</span>
+          <span>&middot;</span>
+          <span>{viewName} view</span>
+        </div>
+      </div>
+
+      {/* Duplicate button */}
+      <button
+        className="inline-flex items-center justify-center w-8 h-8 shrink-0 hover:bg-accent transition-colors"
+        title="Duplicate"
+        onClick={(e) => {
+          e.stopPropagation();
+          onDuplicate();
+        }}
+      >
+        <Copy className="w-[14px] h-[14px] text-muted-foreground" />
+      </button>
+    </div>
   );
 }
