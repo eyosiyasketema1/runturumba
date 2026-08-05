@@ -375,7 +375,7 @@ export const RolesPermissionsSection = () => {
           </div>
           <div className="flex gap-2 shrink-0">
             <button
-              className="inline-flex items-center justify-center gap-[7px] h-[34px] px-[13px] text-[13px] font-semibold border border-border bg-card hover:bg-accent hover:text-accent-foreground transition-colors"
+              className="inline-flex items-center justify-center gap-[7px] h-[34px] px-[13px] text-[13px] font-semibold bg-primary text-primary-foreground border border-transparent hover:brightness-107 transition-colors"
               onClick={() => openNew()}
             >
               <Plus className="w-[15px] h-[15px]" />
@@ -400,7 +400,7 @@ export const RolesPermissionsSection = () => {
             <div className="text-[11px] font-semibold text-muted-foreground pb-[6px] tracking-[0.04em] uppercase">
               System roles
             </div>
-            <div className="flex flex-col gap-px">
+            <div className="flex flex-col gap-2">
               {systemRoles.map(({ r, i }) => (
                 <RoleListCard
                   key={i}
@@ -419,7 +419,7 @@ export const RolesPermissionsSection = () => {
             <div className="text-[11px] font-semibold text-muted-foreground pb-[6px] tracking-[0.04em] uppercase">
               Custom roles
             </div>
-            <div className="flex flex-col gap-px">
+            <div className="flex flex-col gap-2">
               {customRoles.map(({ r, i }) => (
                 <RoleListCard
                   key={i}
@@ -836,7 +836,7 @@ function RoleListCard({
 
   return (
     <div
-      className="flex items-start gap-3 p-3 border border-border bg-card cursor-pointer hover:border-primary/40 transition-colors"
+      className="group flex items-start gap-3 p-3 border border-border bg-card cursor-pointer hover:border-primary/40 transition-colors"
       onClick={onClick}
     >
       {/* Icon */}
@@ -880,7 +880,7 @@ function RoleListCard({
 
       {/* Duplicate button */}
       <button
-        className="inline-flex items-center justify-center w-8 h-8 shrink-0 hover:bg-accent transition-colors"
+        className="inline-flex items-center justify-center w-8 h-8 shrink-0 opacity-0 group-hover:opacity-100 hover:bg-accent transition-all"
         title="Duplicate"
         onClick={(e) => {
           e.stopPropagation();
