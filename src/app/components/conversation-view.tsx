@@ -2150,11 +2150,11 @@ function VolunteerQuickActions({
   };
 
   return (
-    <div className="shrink-0 mx-2 mb-2 border border-border rounded-md bg-muted/20">
+    <div className="shrink-0">
       {/* Toggle header */}
       <button
         onClick={() => { setCollapsed(c => !c); if (!collapsed) setActivePanel(null); }}
-        className="w-full flex items-center justify-between px-3 py-1.5 text-xs font-bold text-muted-foreground uppercase tracking-widest hover:bg-muted/30 transition-colors rounded-t-md"
+        className="w-full flex items-center justify-between px-3 py-1.5 text-xs font-bold text-muted-foreground uppercase tracking-widest hover:bg-muted/30 transition-colors"
       >
         Quick Actions
         {collapsed ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
@@ -2220,7 +2220,7 @@ function VolunteerQuickActions({
                 animate={{ height: "auto", opacity: 1 }}
                 exit={{ height: 0, opacity: 0 }}
                 transition={{ duration: 0.15 }}
-                className="overflow-hidden border-t border-border rounded-b-md"
+                className="overflow-hidden border-t border-border"
               >
                 <div className="p-3 max-h-52 overflow-y-auto">
                   {/* REQUEST REASSIGN */}
@@ -2548,8 +2548,8 @@ function ComposeArea({
       )}
 
       {/* Textarea */}
-      <form onSubmit={handleSend} className="mx-2 mb-2">
-        <div className="border border-input bg-background rounded-md transition-colors">
+      <form onSubmit={handleSend}>
+        <div className="bg-background transition-colors">
           <textarea
             ref={textareaRef}
             value={text}
@@ -2557,7 +2557,7 @@ function ComposeArea({
             placeholder={`Message ${contact.name.split(" ")[0]} via ${CHANNEL_LABEL[port]}…`}
             rows={3}
             aria-label="Compose message"
-            className="w-full px-3 pt-3 pb-2 text-sm outline-none resize-none bg-transparent text-foreground rounded-t-md"
+            className="w-full px-3 pt-3 pb-2 text-sm outline-none resize-none bg-transparent text-foreground"
             onKeyDown={e => {
               if (e.key === "Enter" && !e.shiftKey) {
                 e.preventDefault();
@@ -2657,9 +2657,6 @@ function ComposeArea({
               Send
             </button>
           </div>
-        </div>
-        <div className="mt-1 px-1">
-          <p className="text-xs text-muted-foreground">Enter to send · Shift+Enter for new line</p>
         </div>
       </form>
     </div>
@@ -3455,22 +3452,20 @@ export const ConversationView = ({
                   </>
                 )}
 
-                {/* Volunteer: unified quick actions bar above compose */}
-                {isAgent && (
-                  <VolunteerQuickActions
-                    contact={selectedContact}
-                    port={convPort}
-                    users={users}
-                    currentUser={currentUser}
-                    contentLibrary={contentLibrary}
-                    onSendMessage={onSendMessage}
-                    onRequestReassign={onRequestReassign}
-                    onInsertText={(text) => setAiSuggestedText(text)}
-                  />
-                )}
-
-                {/* Compose */}
-                <div data-dropdown-host>
+                {/* Unified chat box: Quick Actions + Compose */}
+                <div className="mx-2 mb-2 border border-border bg-background" data-dropdown-host>
+                  {isAgent && (
+                    <VolunteerQuickActions
+                      contact={selectedContact}
+                      port={convPort}
+                      users={users}
+                      currentUser={currentUser}
+                      contentLibrary={contentLibrary}
+                      onSendMessage={onSendMessage}
+                      onRequestReassign={onRequestReassign}
+                      onInsertText={(text) => setAiSuggestedText(text)}
+                    />
+                  )}
                   <ComposeArea
                     contact={selectedContact}
                     port={convPort}
@@ -3481,6 +3476,9 @@ export const ConversationView = ({
                     suggestedText={aiSuggestedText}
                     onSuggestedTextConsumed={() => setAiSuggestedText("")}
                   />
+                </div>
+                <div className="mx-2 -mt-1 mb-1 px-1">
+                  <p className="text-xs text-muted-foreground">Enter to send · Shift+Enter for new line</p>
                 </div>
               </div>
 
