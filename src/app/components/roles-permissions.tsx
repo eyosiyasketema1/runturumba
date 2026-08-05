@@ -1,562 +1,223 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState, useCallback } from "react";
 import {
-  Plus, Lock, MoreVertical, ChevronDown, ArrowLeft, Info, AlertTriangle,
-  Trash2, Copy, Eye, Pencil, UserPlus, Users, X, Shield,
+  Plus, Lock, Check, Search, Copy, User,
 } from "lucide-react";
-import { motion, AnimatePresence } from "motion/react";
 import { toast } from "sonner";
 import { cn } from "./types";
-import { Card, CardContent } from "./ui/card";
-import { Button } from "./ui/button";
-import { Input } from "./ui/input";
-import { Label } from "./ui/label";
-import { Separator } from "./ui/separator";
-import { Switch } from "./ui/switch";
-import { Badge } from "./ui/badge";
-import { Textarea } from "./ui/textarea";
-import { Avatar, AvatarFallback } from "./ui/avatar";
 
 // ============================================================================
-// Types
+// Permission catalog — mirrors the HTML reference exactly
+// 41 unscoped + conversations:read {own,group,all} = 44
 // ============================================================================
 
-type Scope = "own" | "group" | "all";
-
-interface ConversationPermValue {
-  enabled: boolean;
-  scope: Scope;
+interface PermGroup {
+  id: string;
+  title: string;
+  scoped?: boolean;
+  perms: [string, string][];
 }
 
-interface PermissionState {
-  groupA: Record<string, boolean>;
-  groupB: Record<string, boolean>;
-  groupC: Record<string, boolean>;
-  groupD: Record<string, ConversationPermValue>;
-}
+const GROUPS: PermGroup[] = [
+  {
+    id: "A",
+    title: "A · People & Account",
+    perms: [
+      ["accounts:manage", "Manage account settings"],
+      ["users:read", "View users"],
+      ["users:manage", "Manage users"],
+      ["roles:read", "View roles"],
+      ["roles:manage", "Manage roles & permissions"],
+      ["contacts:read", "View contacts"],
+      ["contacts:manage", "Manage contacts"],
+      ["groups:read", "View groups"],
+      ["groups:manage", "Manage groups"],
+      ["persons:read", "View people"],
+      ["persons:manage", "Manage people"],
+      ["teams:read", "View teams"],
+      ["teams:manage", "Manage teams"],
+      ["invitations:manage", "Manage invitations"],
+    ],
+  },
+  {
+    id: "B",
+    title: "B · Mentoring",
+    perms: [
+      ["mentors:read", "View mentors"],
+      ["mentors:manage", "Manage mentors"],
+      ["mentors:review", "Review / approve mentors"],
+      ["mentor_groups:read", "View mentor groups"],
+      ["mentor_groups:manage", "Manage mentor groups"],
+      ["mentor_groups:delete", "Delete mentor groups"],
+      ["mentor_forms:manage", "Manage mentor forms"],
+      ["seekers:designate", "Designate seekers"],
+      ["provider_connections:manage", "Manage provider connections"],
+    ],
+  },
+  {
+    id: "C",
+    title: "C · Messaging & Channels",
+    perms: [
+      ["channels:read", "View channels"],
+      ["channels:manage", "Manage channels"],
+      ["messages:read", "Read messages"],
+      ["messages:send", "Send messages"],
+      ["templates:read", "View templates"],
+      ["templates:manage", "Manage templates"],
+      ["group_messages:read", "View group messages"],
+      ["group_messages:create", "Create group messages"],
+      ["scheduled_messages:read", "View scheduled messages"],
+      ["scheduled_messages:manage", "Manage scheduled messages"],
+      ["automations:read", "View automations"],
+      ["automations:manage", "Manage automations"],
+      ["webhooks:manage", "Manage webhooks"],
+    ],
+  },
+  {
+    id: "D",
+    title: "D · Conversations",
+    scoped: true,
+    perms: [
+      ["conversations:reply", "Reply in conversations"],
+      ["conversations:private_note", "Add private notes"],
+      ["conversations:claim", "Claim conversations"],
+      ["conversations:reassign", "Reassign conversations"],
+      ["conversations:configure", "Configure conversations"],
+    ],
+  },
+];
+
+const ALL_PERM_KEYS = GROUPS.flatMap((g) => g.perms.map((p) => p[0]));
+
+// Dashboard views
+const VIEWS: [string, string, string][] = [
+  ["responder", "Responder", "My Queue, active chats, today’s stats, notifications."],
+  ["team", "Team Manager", "Team load, coverage, coaching queue, escalations."],
+  ["language", "Language Manager", "Queue health, routing, review & policy, reporting."],
+  ["social", "Social & Content", "Campaigns, channel performance, content calendar."],
+  ["ops", "Operations & Governance", "Roles, members, compliance & audit, coverage map."],
+  ["exec", "Executive Analytics", "Impact trends, cross-language comparison, export."],
+];
+
+// ============================================================================
+// Role presets
+// ============================================================================
+
+const FULL = ALL_PERM_KEYS.slice();
+const COACH = [
+  "mentor_groups:read", "mentor_groups:manage", "mentors:read", "mentors:review",
+  "seekers:designate", "contacts:read", "groups:read", "persons:read", "users:read", "roles:read",
+  "conversations:reply", "conversations:private_note", "conversations:claim",
+  "conversations:reassign", "messages:read", "templates:read",
+];
+const MENTOR = [
+  "seekers:designate", "contacts:read", "persons:read", "conversations:reply",
+  "conversations:private_note", "conversations:claim", "messages:read", "templates:read",
+];
 
 interface RoleRecord {
-  id: string;
   name: string;
-  description: string;
-  isSystem: boolean;
-  memberCount: number;
-  permissions: PermissionState;
+  system: boolean;
+  desc: string;
+  perms: string[];
+  scope: string | null;
+  view: string;
+  members: number;
+  persona?: string;
 }
 
-interface Member {
-  id: string;
-  name: string;
-  email: string;
-  roleId: string;
-}
-
-type Screen = "list" | "builder" | "view";
-type BuilderMode = "create" | "edit";
-
-// ============================================================================
-// Permission catalog definitions
-// ============================================================================
-
-const GROUP_A_PERMS: { id: string; label: string }[] = [
-  { id: "view_team_members", label: "View team members" },
-  { id: "invite_members", label: "Invite new members" },
-  { id: "remove_members", label: "Remove members" },
-  { id: "assign_roles", label: "Assign roles to members" },
-  { id: "view_org_settings", label: "View organization settings" },
-  { id: "edit_org_settings", label: "Edit organization settings" },
-  { id: "manage_billing", label: "Manage billing" },
-  { id: "view_audit_log", label: "View audit log" },
-  { id: "export_audit_log", label: "Export audit log" },
-  { id: "manage_integrations", label: "Manage integrations" },
-  { id: "manage_api_keys", label: "Manage API keys" },
-  { id: "manage_child_orgs", label: "Manage child organizations" },
-  { id: "view_analytics", label: "View analytics & reports" },
-];
-
-const GROUP_B_PERMS: { id: string; label: string }[] = [
-  { id: "view_training_materials", label: "View training materials" },
-  { id: "create_training_materials", label: "Create training materials" },
-  { id: "edit_training_materials", label: "Edit training materials" },
-  { id: "delete_training_materials", label: "Delete training materials" },
-  { id: "view_practice_sessions", label: "View practice sessions" },
-  { id: "create_practice_sessions", label: "Create practice sessions" },
-  { id: "review_practice_sessions", label: "Review practice sessions" },
-  { id: "manage_training_programs", label: "Manage training programs" },
-  { id: "view_trainee_progress", label: "View trainee progress" },
-];
-
-const GROUP_C_PERMS: { id: string; label: string }[] = [
-  { id: "view_channels", label: "View channels" },
-  { id: "create_channels", label: "Create channels" },
-  { id: "edit_channels", label: "Edit channels" },
-  { id: "delete_channels", label: "Delete channels" },
-  { id: "send_messages", label: "Send messages" },
-  { id: "send_broadcasts", label: "Send broadcasts" },
-  { id: "manage_message_templates", label: "Manage message templates" },
-  { id: "view_broadcast_history", label: "View broadcast history" },
-  { id: "manage_automations", label: "Manage automations" },
-  { id: "view_automation_logs", label: "View automation logs" },
-  { id: "manage_contact_lists", label: "Manage contact lists" },
-];
-
-const GROUP_D_PERMS: { id: string; label: string }[] = [
-  { id: "read_conversations", label: "Read conversations" },
-  { id: "reply_conversations", label: "Reply to conversations" },
-  { id: "reassign_conversations", label: "Reassign conversations" },
-  { id: "close_conversations", label: "Close/resolve conversations" },
-  { id: "delete_conversation_messages", label: "Delete conversation messages" },
-  { id: "export_conversations", label: "Export conversations" },
-];
-
-const PERMISSION_GROUP_META = [
-  { key: "groupA" as const, title: "People & Account", perms: GROUP_A_PERMS },
-  { key: "groupB" as const, title: "Mentoring", perms: GROUP_B_PERMS },
-  { key: "groupC" as const, title: "Messaging & Channels", perms: GROUP_C_PERMS },
-  { key: "groupD" as const, title: "Conversations", perms: GROUP_D_PERMS },
-];
-
-const SCOPE_OPTIONS: { value: Scope; label: string }[] = [
-  { value: "own", label: "Own" },
-  { value: "group", label: "Group" },
-  { value: "all", label: "All" },
-];
-
-// ============================================================================
-// Permission state builders
-// ============================================================================
-
-function emptyPermissions(): PermissionState {
-  return {
-    groupA: Object.fromEntries(GROUP_A_PERMS.map((p) => [p.id, false])),
-    groupB: Object.fromEntries(GROUP_B_PERMS.map((p) => [p.id, false])),
-    groupC: Object.fromEntries(GROUP_C_PERMS.map((p) => [p.id, false])),
-    groupD: Object.fromEntries(
-      GROUP_D_PERMS.map((p) => [p.id, { enabled: false, scope: "own" as Scope }])
-    ),
-  };
-}
-
-function setKeys(perms: PermissionState, changes: {
-  groupA?: string[];
-  groupB?: string[];
-  groupC?: string[];
-  groupD?: { ids: string[]; scope: Scope };
-}): PermissionState {
-  const next = clonePermissions(perms);
-  changes.groupA?.forEach((id) => (next.groupA[id] = true));
-  changes.groupB?.forEach((id) => (next.groupB[id] = true));
-  changes.groupC?.forEach((id) => (next.groupC[id] = true));
-  changes.groupD?.ids.forEach((id) => (next.groupD[id] = { enabled: true, scope: changes.groupD!.scope }));
-  return next;
-}
-
-function clonePermissions(p: PermissionState): PermissionState {
-  return {
-    groupA: { ...p.groupA },
-    groupB: { ...p.groupB },
-    groupC: { ...p.groupC },
-    groupD: Object.fromEntries(Object.entries(p.groupD).map(([k, v]) => [k, { ...v }])),
-  };
-}
-
-function allOnPermissions(scope: Scope): PermissionState {
-  const base = emptyPermissions();
-  return setKeys(base, {
-    groupA: GROUP_A_PERMS.map((p) => p.id),
-    groupB: GROUP_B_PERMS.map((p) => p.id),
-    groupC: GROUP_C_PERMS.map((p) => p.id),
-    groupD: { ids: GROUP_D_PERMS.map((p) => p.id), scope },
-  });
-}
-
-function countGroup(obj: Record<string, boolean>): number {
-  return Object.values(obj).filter(Boolean).length;
-}
-
-function countGroupD(obj: Record<string, ConversationPermValue>): number {
-  return Object.values(obj).filter((v) => v.enabled).length;
-}
-
-function totalEnabled(p: PermissionState): number {
-  return countGroup(p.groupA) + countGroup(p.groupB) + countGroup(p.groupC) + countGroupD(p.groupD);
-}
-
-function getInitials(name: string): string {
-  const parts = name.trim().split(/\s+/);
-  return ((parts[0]?.[0] ?? "") + (parts[1]?.[0] ?? "")).toUpperCase();
-}
-
-function generateId(prefix: string): string {
-  return `${prefix}-${Date.now().toString(36)}-${Math.floor(Math.random() * 10000)}`;
-}
-
-// ============================================================================
-// System role defaults
-// ============================================================================
-
-const OWNER_PERMISSIONS = allOnPermissions("all");
-
-const ADMIN_PERMISSIONS = (() => {
-  const p = allOnPermissions("all");
-  p.groupA["manage_billing"] = false;
-  p.groupA["manage_child_orgs"] = false;
-  return p;
-})();
-
-const MENTOR_COACH_PERMISSIONS = setKeys(emptyPermissions(), {
-  groupA: ["view_team_members", "view_org_settings", "view_audit_log", "view_analytics"],
-  groupB: GROUP_B_PERMS.map((p) => p.id),
-  groupC: ["view_channels", "send_messages", "view_broadcast_history", "manage_contact_lists"],
-  groupD: { ids: GROUP_D_PERMS.map((p) => p.id), scope: "group" },
-});
-
-const MENTOR_PERMISSIONS = setKeys(emptyPermissions(), {
-  groupA: ["view_team_members", "view_org_settings"],
-  groupB: ["view_training_materials", "view_practice_sessions"],
-  groupC: ["view_channels", "send_messages"],
-  groupD: { ids: ["read_conversations", "reply_conversations", "close_conversations"], scope: "own" },
-});
-
-const SENIOR_MENTOR_PERMISSIONS = setKeys(emptyPermissions(), {
-  groupA: ["view_team_members", "view_org_settings"],
-  groupB: ["view_training_materials", "view_practice_sessions", "review_practice_sessions", "view_trainee_progress"],
-  groupC: ["view_channels", "send_messages", "view_broadcast_history"],
-  groupD: { ids: ["read_conversations", "reply_conversations", "reassign_conversations", "close_conversations"], scope: "group" },
-});
-
-const CONTENT_MANAGER_PERMISSIONS = setKeys(emptyPermissions(), {
-  groupA: ["view_team_members", "view_org_settings"],
-  groupB: ["view_training_materials", "create_training_materials", "edit_training_materials", "delete_training_materials", "manage_training_programs"],
-  groupC: ["view_channels", "manage_message_templates", "view_broadcast_history"],
-});
-
-const INITIAL_ROLES: RoleRecord[] = [
+const ROLES: RoleRecord[] = [
   {
-    id: "role-owner",
-    name: "Owner",
-    description: "Full platform access with billing and ownership controls",
-    isSystem: true,
-    memberCount: 1,
-    permissions: OWNER_PERMISSIONS,
+    name: "Owner", system: true,
+    desc: "Owner of the account",
+    perms: FULL, scope: "all", view: "ops", members: 2,
   },
   {
-    id: "role-admin",
-    name: "Admin",
-    description: "Complete operational access without billing controls",
-    isSystem: true,
-    memberCount: 2,
-    permissions: ADMIN_PERMISSIONS,
+    name: "Admin", system: true,
+    desc: "Administrator with invite and member-management privileges",
+    perms: FULL, scope: "all", view: "ops", members: 3,
   },
   {
-    id: "role-mentor-coach",
-    name: "Mentor Coach",
-    description: "Oversee mentors, review conversations, manage training",
-    isSystem: true,
-    memberCount: 5,
-    permissions: MENTOR_COACH_PERMISSIONS,
+    name: "Mentor Coach", system: true,
+    desc: "Reviews and approves mentor applications; manages mentor groups.",
+    perms: COACH, scope: "group", view: "team", members: 6,
   },
   {
-    id: "role-mentor",
-    name: "Mentor",
-    description: "Handle conversations, follow guidelines, participate in training",
-    isSystem: true,
-    memberCount: 12,
-    permissions: MENTOR_PERMISSIONS,
+    name: "Mentor", system: true,
+    desc: "Mentor — can view their own availability and mentees.",
+    perms: MENTOR, scope: "group", view: "responder", members: 48,
   },
   {
-    id: "role-senior-mentor",
-    name: "Senior Mentor",
-    description: "Experienced mentors with expanded conversation access",
-    isSystem: false,
-    memberCount: 4,
-    permissions: SENIOR_MENTOR_PERMISSIONS,
+    name: "Volunteer Responder", system: false, persona: "P6",
+    desc: "Front-line responder across every channel.",
+    perms: MENTOR.concat(["messages:send", "channels:read"]), scope: "own",
+    view: "responder", members: 127,
   },
   {
-    id: "role-content-manager",
-    name: "Content Manager",
-    description: "Manage training materials and conversation templates",
-    isSystem: false,
-    memberCount: 3,
-    permissions: CONTENT_MANAGER_PERMISSIONS,
+    name: "Volunteer Manager", system: false, persona: "P9",
+    desc: "Oversees and coaches volunteers.",
+    perms: COACH.concat(["messages:send", "users:manage"]), scope: "group",
+    view: "team", members: 9,
+  },
+  {
+    name: "Language Ministry Manager", system: false, persona: "P3",
+    desc: "Routing, review, policy and reporting for one language team.",
+    perms: COACH.concat(["templates:manage", "automations:read", "channels:read"]),
+    scope: "group", view: "language", members: 11,
+  },
+  {
+    name: "Social Media Manager", system: false, persona: "P4",
+    desc: "Creates and schedules content; monitors channel performance.",
+    perms: [
+      "channels:read", "channels:manage", "templates:read", "templates:manage",
+      "group_messages:read", "group_messages:create", "scheduled_messages:read",
+      "scheduled_messages:manage", "contacts:read", "messages:read",
+    ],
+    scope: "own", view: "social", members: 4,
+  },
+  {
+    name: "Global Operations Manager", system: false, persona: "P7",
+    desc: "Governance, compliance and coverage across all regions.",
+    perms: FULL.filter((p) => p !== "accounts:manage"), scope: "all", view: "ops", members: 2,
+  },
+  {
+    name: "Internet Evangelism Executive", system: false, persona: "P5",
+    desc: "Evaluates ministry impact across channels and languages.",
+    perms: [
+      "users:read", "roles:read", "contacts:read", "persons:read", "groups:read",
+      "teams:read", "mentors:read", "mentor_groups:read", "messages:read",
+      "channels:read", "templates:read", "automations:read",
+    ],
+    scope: "all", view: "exec", members: 1,
   },
 ];
 
-const INITIAL_MEMBERS: Member[] = [
-  { id: "mem-1", name: "Eyosias Ketema", email: "eyosias@turumba.org", roleId: "role-owner" },
-  { id: "mem-2", name: "Samson Usmael", email: "samson@turumba.org", roleId: "role-admin" },
-  { id: "mem-3", name: "Abebe Bekele", email: "abebe@turumba.org", roleId: "role-admin" },
-  { id: "mem-4", name: "Sara Tadesse", email: "sara@turumba.org", roleId: "role-mentor-coach" },
-  { id: "mem-5", name: "Daniel Hailu", email: "daniel@turumba.org", roleId: "role-mentor-coach" },
-  { id: "mem-6", name: "Hanna Girma", email: "hanna@turumba.org", roleId: "role-mentor" },
-  { id: "mem-7", name: "Yonas Tesfaye", email: "yonas@turumba.org", roleId: "role-mentor" },
-  { id: "mem-8", name: "Meron Alemu", email: "meron@turumba.org", roleId: "role-mentor" },
-];
-
 // ============================================================================
-// Small shared UI bits
+// SVG icon paths (inline to avoid extra lucide imports)
 // ============================================================================
 
-function ModalShell({
-  onClose,
-  children,
-  labelledBy,
-  maxWidth = "max-w-lg",
-}: {
-  onClose: () => void;
-  children: React.ReactNode;
-  labelledBy: string;
-  maxWidth?: string;
-}) {
-  useEffect(() => {
-    const handler = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
-    };
-    document.addEventListener("keydown", handler);
-    return () => document.removeEventListener("keydown", handler);
-  }, [onClose]);
-
+function LockIcon({ className }: { className?: string }) {
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      <div
-        className="absolute inset-0 bg-black/40"
-        onClick={onClose}
-        aria-hidden="true"
-      />
-      <motion.div
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby={labelledBy}
-        initial={{ opacity: 0, y: 12, scale: 0.98 }}
-        animate={{ opacity: 1, y: 0, scale: 1 }}
-        exit={{ opacity: 0, y: 12, scale: 0.98 }}
-        transition={{ duration: 0.18 }}
-        className={cn(
-          "relative z-10 w-full bg-card border rounded-xl shadow-xl max-h-[85vh] overflow-y-auto",
-          maxWidth
-        )}
-      >
-        {children}
-      </motion.div>
-    </div>
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.2} className={className}>
+      <rect x="3" y="11" width="18" height="11" rx="2" />
+      <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+    </svg>
   );
 }
 
-function ScopeSelector({
-  value,
-  onChange,
-  disabled,
-}: {
-  value: Scope;
-  onChange: (scope: Scope) => void;
-  disabled?: boolean;
-}) {
+function UserIcon({ className }: { className?: string }) {
   return (
-    <div
-      role="radiogroup"
-      aria-label="Permission scope"
-      className={cn(
-        "inline-flex items-center rounded-full border bg-muted p-0.5 gap-0.5",
-        disabled && "opacity-50"
-      )}
-    >
-      {SCOPE_OPTIONS.map((opt) => (
-        <button
-          key={opt.value}
-          type="button"
-          role="radio"
-          aria-checked={value === opt.value}
-          disabled={disabled}
-          onClick={() => onChange(opt.value)}
-          className={cn(
-            "px-3 py-1 text-xs font-medium rounded-full transition-colors min-h-[28px]",
-            value === opt.value
-              ? "bg-primary text-primary-foreground shadow-sm"
-              : "text-muted-foreground hover:text-foreground",
-            disabled && "cursor-not-allowed"
-          )}
-        >
-          {opt.label}
-        </button>
-      ))}
-    </div>
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.2} className={className}>
+      <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+      <circle cx="9" cy="7" r="4" />
+    </svg>
   );
 }
 
-function PermissionToggleRow({
-  label,
-  checked,
-  onChange,
-  disabled,
-  id,
-}: {
-  label: string;
-  checked: boolean;
-  onChange: (v: boolean) => void;
-  disabled?: boolean;
-  id: string;
-}) {
+function CheckIcon({ className }: { className?: string }) {
   return (
-    <div className="flex items-center justify-between gap-4 py-2.5">
-      <Label htmlFor={id} className="text-sm font-normal text-foreground cursor-pointer">
-        {label}
-      </Label>
-      <Switch id={id} checked={checked} onCheckedChange={onChange} disabled={disabled} aria-label={label} />
-    </div>
-  );
-}
-
-function ConversationPermissionRow({
-  label,
-  value,
-  onToggle,
-  onScopeChange,
-  disabled,
-  id,
-}: {
-  label: string;
-  value: ConversationPermValue;
-  onToggle: (v: boolean) => void;
-  onScopeChange: (scope: Scope) => void;
-  disabled?: boolean;
-  id: string;
-}) {
-  return (
-    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 py-2.5">
-      <Label htmlFor={id} className="text-sm font-normal text-foreground cursor-pointer">
-        {label}
-      </Label>
-      <div className="flex items-center gap-3">
-        <ScopeSelector value={value.scope} onChange={onScopeChange} disabled={disabled || !value.enabled} />
-        <Switch id={id} checked={value.enabled} onCheckedChange={onToggle} disabled={disabled} aria-label={label} />
-      </div>
-    </div>
-  );
-}
-
-function RoleCard({
-  role,
-  onView,
-  onEdit,
-  onDuplicate,
-  onDelete,
-  onAssign,
-  menuOpen,
-  onToggleMenu,
-}: {
-  role: RoleRecord;
-  onView: () => void;
-  onEdit: () => void;
-  onDuplicate: () => void;
-  onDelete: () => void;
-  onAssign: () => void;
-  menuOpen: boolean;
-  onToggleMenu: () => void;
-}) {
-  return (
-    <Card
-      className={cn(
-        "transition-colors",
-        role.isSystem ? "hover:border-border" : "hover:border-primary/40 cursor-pointer"
-      )}
-      onClick={role.isSystem ? onView : undefined}
-    >
-      <CardContent className="p-4 flex items-center justify-between gap-4">
-        <div className="flex items-start gap-3 min-w-0">
-          <div
-            className={cn(
-              "mt-0.5 flex size-9 shrink-0 items-center justify-center rounded-lg",
-              role.isSystem ? "bg-muted text-muted-foreground" : "bg-primary/10 text-primary"
-            )}
-          >
-            {role.isSystem ? <Lock className="w-4 h-4" /> : <Shield className="w-4 h-4" />}
-          </div>
-          <div className="min-w-0">
-            <div className="flex items-center gap-2 flex-wrap">
-              <p className="font-bold text-foreground">{role.name}</p>
-              <Badge variant={role.isSystem ? "outline" : "secondary"}>
-                {role.isSystem ? "System" : "Custom"}
-              </Badge>
-              <Badge variant="outline" className="gap-1">
-                <Users className="w-3 h-3" />
-                {role.memberCount} {role.memberCount === 1 ? "member" : "members"}
-              </Badge>
-            </div>
-            <p className="text-sm text-muted-foreground mt-1">{role.description}</p>
-          </div>
-        </div>
-
-        <div className="flex items-center gap-1 shrink-0" onClick={(e) => e.stopPropagation()}>
-          <Button
-            variant="ghost"
-            size="icon"
-            title="Assign members"
-            aria-label={`Assign members to ${role.name}`}
-            onClick={onAssign}
-          >
-            <UserPlus className="w-4 h-4" />
-          </Button>
-
-          {role.isSystem ? (
-            <Button variant="ghost" size="icon" title="View role" aria-label={`View ${role.name}`} onClick={onView}>
-              <Eye className="w-4 h-4" />
-            </Button>
-          ) : (
-            <div className="relative">
-              <Button
-                variant="ghost"
-                size="icon"
-                title="Role actions"
-                aria-label={`Actions for ${role.name}`}
-                aria-haspopup="menu"
-                aria-expanded={menuOpen}
-                onClick={onToggleMenu}
-              >
-                <MoreVertical className="w-4 h-4" />
-              </Button>
-              {menuOpen && (
-                <>
-                  <div className="fixed inset-0 z-10" onClick={onToggleMenu} aria-hidden="true" />
-                  <div
-                    role="menu"
-                    className="absolute right-0 top-full mt-1 w-44 bg-card border rounded-md shadow-lg z-20 py-1"
-                  >
-                    <button
-                      role="menuitem"
-                      onClick={onView}
-                      className="w-full flex items-center gap-2 px-3 py-2 text-sm text-left hover:bg-accent"
-                    >
-                      <Eye className="w-4 h-4" /> View
-                    </button>
-                    <button
-                      role="menuitem"
-                      onClick={onEdit}
-                      className="w-full flex items-center gap-2 px-3 py-2 text-sm text-left hover:bg-accent"
-                    >
-                      <Pencil className="w-4 h-4" /> Edit
-                    </button>
-                    <button
-                      role="menuitem"
-                      onClick={onDuplicate}
-                      className="w-full flex items-center gap-2 px-3 py-2 text-sm text-left hover:bg-accent"
-                    >
-                      <Copy className="w-4 h-4" /> Duplicate
-                    </button>
-                    <Separator className="my-1" />
-                    <button
-                      role="menuitem"
-                      onClick={onDelete}
-                      className="w-full flex items-center gap-2 px-3 py-2 text-sm text-left text-destructive hover:bg-destructive/10"
-                    >
-                      <Trash2 className="w-4 h-4" /> Delete
-                    </button>
-                  </div>
-                </>
-              )}
-            </div>
-          )}
-        </div>
-      </CardContent>
-    </Card>
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={3} className={className}>
+      <path d="m5 12 5 5L20 6" />
+    </svg>
   );
 }
 
@@ -565,593 +226,619 @@ function RoleCard({
 // ============================================================================
 
 export const RolesPermissionsSection = () => {
-  const [roles, setRoles] = useState<RoleRecord[]>(INITIAL_ROLES);
-  const [members, setMembers] = useState<Member[]>(INITIAL_MEMBERS);
+  const [currentIndex, setCurrentIndex] = useState(4); // Volunteer Responder
+  const [sel, setSel] = useState<Set<string>>(() => new Set(ROLES[4].perms));
+  const [scope, setScope] = useState<string | null>(ROLES[4].scope);
+  const [view, setView] = useState<string | null>(ROLES[4].view);
+  const [locked, setLocked] = useState(false);
 
-  const [screen, setScreen] = useState<Screen>("list");
-  const [builderMode, setBuilderMode] = useState<BuilderMode>("create");
-  const [activeRoleId, setActiveRoleId] = useState<string | null>(null);
+  const [roleName, setRoleName] = useState(ROLES[4].name);
+  const [roleDesc, setRoleDesc] = useState(ROLES[4].desc);
+  const [roleBase, setRoleBase] = useState(0);
 
-  const [formName, setFormName] = useState("");
-  const [formDescription, setFormDescription] = useState("");
-  const [formPermissions, setFormPermissions] = useState<PermissionState>(emptyPermissions());
-  const [formErrors, setFormErrors] = useState<{ name?: string; permissions?: string }>({});
+  const [roleFilter, setRoleFilter] = useState("");
+  const [permFilter, setPermFilter] = useState("");
 
-  const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>({
-    groupA: true,
-    groupB: true,
-    groupC: true,
-    groupD: true,
-  });
+  // Load a role by index
+  const load = useCallback((i: number) => {
+    const r = ROLES[i];
+    if (!r) return;
+    setCurrentIndex(i);
+    setLocked(r.system);
+    setSel(new Set(r.perms));
+    setScope(r.scope);
+    setView(r.view);
+    setRoleName(r.name);
+    setRoleDesc(r.desc);
+    setRoleBase(0);
+  }, []);
 
-  const [openMenuRoleId, setOpenMenuRoleId] = useState<string | null>(null);
+  // Computed counts
+  const permCount = sel.size + (scope ? 1 : 0);
+  const viewLabel = view ? VIEWS.find((v) => v[0] === view)?.[1] ?? "not selected" : "not selected";
 
-  const [isAssignOpen, setIsAssignOpen] = useState(false);
-  const [assignContextRoleId, setAssignContextRoleId] = useState<string | null>(null);
-  const [assignSelections, setAssignSelections] = useState<Record<string, string>>({});
-
-  const [deleteRoleId, setDeleteRoleId] = useState<string | null>(null);
-
-  const systemRoles = useMemo(() => roles.filter((r) => r.isSystem), [roles]);
-  const customRoles = useMemo(() => roles.filter((r) => !r.isSystem), [roles]);
-  const activeRole = useMemo(() => roles.find((r) => r.id === activeRoleId) ?? null, [roles, activeRoleId]);
-  const deleteRole = useMemo(() => roles.find((r) => r.id === deleteRoleId) ?? null, [roles, deleteRoleId]);
-
-  function isNameTaken(name: string, excludeId?: string | null): boolean {
-    const normalized = name.trim().toLowerCase();
-    return roles.some((r) => r.id !== excludeId && r.name.trim().toLowerCase() === normalized);
+  // Toggle a permission
+  function togglePerm(key: string) {
+    if (locked) return;
+    setSel((prev) => {
+      const next = new Set(prev);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      return next;
+    });
   }
 
-  function toggleExpand(key: string) {
-    setExpandedGroups((prev) => ({ ...prev, [key]: !prev[key] }));
+  // Select all / clear
+  function selectAll() {
+    if (locked) return;
+    setSel(new Set(ALL_PERM_KEYS));
+    setScope("all");
+  }
+  function clearAll() {
+    if (locked) return;
+    setSel(new Set());
+    setScope(null);
   }
 
-  function toggleSimplePermission(group: "groupA" | "groupB" | "groupC", id: string, value: boolean) {
-    setFormPermissions((prev) => ({ ...prev, [group]: { ...prev[group], [id]: value } }));
+  // New role
+  function handleNewRole() {
+    setCurrentIndex(-1);
+    setLocked(false);
+    setSel(new Set());
+    setScope(null);
+    setView(null);
+    setRoleName("");
+    setRoleDesc("");
+    setRoleBase(0);
   }
 
-  function toggleConversationPermission(id: string, enabled: boolean) {
-    setFormPermissions((prev) => ({
-      ...prev,
-      groupD: { ...prev.groupD, [id]: { ...prev.groupD[id], enabled } },
-    }));
+  // Duplicate
+  function handleDuplicate() {
+    const r = currentIndex >= 0 ? ROLES[currentIndex] : ROLES[0];
+    setCurrentIndex(-1);
+    setLocked(false);
+    setSel(new Set(r.perms));
+    setScope(r.scope);
+    setView(r.view);
+    setRoleName(r.name + " (copy)");
+    setRoleDesc(r.desc);
+    setRoleBase(0);
+    toast.success("Duplicated", {
+      description: `Editable copy of ${r.name} — not yet saved.`,
+    });
   }
 
-  function setConversationScope(id: string, scope: Scope) {
-    setFormPermissions((prev) => ({
-      ...prev,
-      groupD: { ...prev.groupD, [id]: { ...prev.groupD[id], scope } },
-    }));
-  }
-
-  function resetBuilderState() {
-    setFormName("");
-    setFormDescription("");
-    setFormPermissions(emptyPermissions());
-    setFormErrors({});
-  }
-
-  function openCreate() {
-    resetBuilderState();
-    setBuilderMode("create");
-    setActiveRoleId(null);
-    setScreen("builder");
-  }
-
-  function openEdit(role: RoleRecord) {
-    setFormName(role.name);
-    setFormDescription(role.description);
-    setFormPermissions(clonePermissions(role.permissions));
-    setFormErrors({});
-    setBuilderMode("edit");
-    setActiveRoleId(role.id);
-    setScreen("builder");
-  }
-
-  function openView(role: RoleRecord) {
-    setFormName(role.name);
-    setFormDescription(role.description);
-    setFormPermissions(clonePermissions(role.permissions));
-    setActiveRoleId(role.id);
-    setScreen("view");
-  }
-
-  function handleDuplicate(role: RoleRecord) {
-    const baseName = `Copy of ${role.name}`;
-    let finalName = baseName;
-    let i = 2;
-    while (isNameTaken(finalName)) {
-      finalName = `${baseName} ${i}`;
-      i += 1;
-    }
-    const newRole: RoleRecord = {
-      id: generateId("role"),
-      name: finalName,
-      description: role.description,
-      isSystem: false,
-      memberCount: 0,
-      permissions: clonePermissions(role.permissions),
-    };
-    setRoles((prev) => [...prev, newRole]);
-    toast.success(`Duplicated "${role.name}" as "${finalName}"`);
-    openEdit(newRole);
-  }
-
+  // Save
   function handleSave() {
-    const errors: { name?: string; permissions?: string } = {};
-    const trimmedName = formName.trim();
-
-    if (!trimmedName) {
-      errors.name = "Role name is required.";
-    } else if (trimmedName.length > 50) {
-      errors.name = "Role name must be 50 characters or fewer.";
-    } else if (isNameTaken(trimmedName, builderMode === "edit" ? activeRoleId : null)) {
-      errors.name = "A role with this name already exists.";
-    }
-
-    if (totalEnabled(formPermissions) === 0) {
-      errors.permissions = "Select at least one permission before saving.";
-    }
-
-    setFormErrors(errors);
-    if (Object.keys(errors).length > 0) {
-      toast.error("Please fix the errors before saving.");
+    if (!roleName.trim() || !view) {
+      toast.error("Please fill in the role name and select a dashboard view.");
       return;
     }
+    toast.success("Role saved", {
+      description: "Changes apply on the member’s next page load.",
+    });
+  }
 
-    const trimmedDescription = formDescription.trim().slice(0, 200);
-
-    if (builderMode === "create") {
-      const newRole: RoleRecord = {
-        id: generateId("role"),
-        name: trimmedName,
-        description: trimmedDescription,
-        isSystem: false,
-        memberCount: 0,
-        permissions: formPermissions,
-      };
-      setRoles((prev) => [...prev, newRole]);
-      toast.success(`Role "${trimmedName}" created`);
-    } else if (activeRoleId) {
-      setRoles((prev) =>
-        prev.map((r) =>
-          r.id === activeRoleId
-            ? { ...r, name: trimmedName, description: trimmedDescription, permissions: formPermissions }
-            : r
-        )
-      );
-      toast.success(`Role "${trimmedName}" updated`);
+  // Cancel
+  function handleCancel() {
+    if (currentIndex >= 0) {
+      load(currentIndex);
     }
-
-    setScreen("list");
   }
 
-  function handleCancelBuilder() {
-    setScreen("list");
-  }
+  // Filter roles
+  const filteredRoles = useMemo(() => {
+    const q = roleFilter.toLowerCase();
+    return ROLES.map((r, i) => ({ r, i })).filter(({ r }) =>
+      r.name.toLowerCase().includes(q)
+    );
+  }, [roleFilter]);
 
-  function openAssign(role?: RoleRecord) {
-    setAssignContextRoleId(role?.id ?? null);
-    const selections: Record<string, string> = {};
-    members.forEach((m) => (selections[m.id] = m.roleId));
-    setAssignSelections(selections);
-    setIsAssignOpen(true);
-  }
+  const systemRoles = filteredRoles.filter(({ r }) => r.system);
+  const customRoles = filteredRoles.filter(({ r }) => !r.system);
 
-  function handleAssignSave() {
-    setMembers((prev) => prev.map((m) => ({ ...m, roleId: assignSelections[m.id] ?? m.roleId })));
-    toast.success("Role assignments updated");
-    setIsAssignOpen(false);
-  }
-
-  function handleDeleteConfirm() {
-    if (!deleteRole) return;
-    if (deleteRole.memberCount > 0) return;
-    setRoles((prev) => prev.filter((r) => r.id !== deleteRole.id));
-    toast.success(`Role "${deleteRole.name}" deleted`);
-    setDeleteRoleId(null);
-  }
-
-  const isReadOnly = screen === "view";
+  // Disabled state for save button
+  const saveDisabled = locked || !view || !roleName.trim();
 
   return (
-    <div className="p-6 lg:p-10">
-      <AnimatePresence mode="wait">
-        {screen === "list" && (
-          <motion.div
-            key="list"
-            initial={{ opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -8 }}
-            transition={{ duration: 0.2 }}
-            className="space-y-8"
+    <div className="space-y-5">
+      {/* Page header */}
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <h1 className="text-lg font-semibold">Roles & Permissions</h1>
+          <p className="text-[13px] text-muted-foreground mt-0.5">
+            Four built-in roles ship with every account. Build custom roles by
+            ticking permissions and choosing the dashboard each role lands on.
+          </p>
+        </div>
+        <div className="flex gap-2 shrink-0">
+          <button
+            className="inline-flex items-center justify-center gap-[7px] h-[34px] px-[13px] text-[13px] font-semibold border border-border bg-card hover:bg-accent hover:text-accent-foreground transition-colors"
+            onClick={handleDuplicate}
           >
-            <header className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
-              <div>
-                <h2 className="text-2xl font-bold tracking-tight text-foreground">Roles & Permissions</h2>
-                <p className="text-muted-foreground text-sm mt-1">
-                  Manage access levels and permissions for your organization
-                </p>
-              </div>
-              <Button onClick={openCreate}>
-                <Plus className="w-4 h-4 mr-2" />
-                Create Custom Role
-              </Button>
-            </header>
+            <Copy className="w-[15px] h-[15px]" />
+            Duplicate
+          </button>
+          <button
+            className="inline-flex items-center justify-center gap-[7px] h-[34px] px-[13px] text-[13px] font-semibold bg-primary text-primary-foreground hover:brightness-107 transition-colors border border-transparent"
+            onClick={handleNewRole}
+          >
+            <Plus className="w-[15px] h-[15px]" />
+            New role
+          </button>
+        </div>
+      </div>
 
-            <div className="space-y-3">
-              <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground">System Roles</p>
-              <div className="space-y-3">
-                {systemRoles.map((role) => (
-                  <RoleCard
-                    key={role.id}
-                    role={role}
-                    onView={() => openView(role)}
-                    onEdit={() => openEdit(role)}
-                    onDuplicate={() => handleDuplicate(role)}
-                    onDelete={() => setDeleteRoleId(role.id)}
-                    onAssign={() => openAssign(role)}
-                    menuOpen={openMenuRoleId === role.id}
-                    onToggleMenu={() => setOpenMenuRoleId((prev) => (prev === role.id ? null : role.id))}
+      {/* Split layout */}
+      <div className="grid grid-cols-[296px_1fr] gap-[18px] items-start">
+        {/* ── Roles list sidebar ── */}
+        <section className="bg-card border border-border">
+          {/* Header */}
+          <div className="px-4 pt-[14px]">
+            <div className="text-sm font-semibold">Roles</div>
+            <div className="text-[12.5px] text-muted-foreground mt-px">
+              {ROLES.length} in this account
+            </div>
+          </div>
+
+          {/* Search */}
+          <div className="px-3 pt-3">
+            <input
+              className="h-[34px] w-full px-[10px] bg-card border border-input text-[13px] focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
+              placeholder="Search roles…"
+              value={roleFilter}
+              onChange={(e) => setRoleFilter(e.target.value)}
+            />
+          </div>
+
+          {/* Role list */}
+          <div className="p-2 flex flex-col gap-px max-h-[640px] overflow-auto">
+            {systemRoles.length > 0 && (
+              <>
+                <div className="text-[11px] font-semibold text-muted-foreground px-2 pt-[11px] pb-[5px] tracking-[0.04em] uppercase">
+                  System roles
+                </div>
+                {systemRoles.map(({ r, i }) => (
+                  <RoleItem
+                    key={i}
+                    role={r}
+                    active={i === currentIndex}
+                    onClick={() => load(i)}
                   />
                 ))}
+              </>
+            )}
+            {customRoles.length > 0 && (
+              <>
+                <div className="text-[11px] font-semibold text-muted-foreground px-2 pt-[11px] pb-[5px] tracking-[0.04em] uppercase">
+                  Custom roles
+                </div>
+                {customRoles.map(({ r, i }) => (
+                  <RoleItem
+                    key={i}
+                    role={r}
+                    active={i === currentIndex}
+                    onClick={() => load(i)}
+                  />
+                ))}
+              </>
+            )}
+            {filteredRoles.length === 0 && (
+              <div className="py-[22px] px-[10px] text-center text-[12px] text-muted-foreground">
+                No roles match.
+              </div>
+            )}
+          </div>
+        </section>
+
+        {/* ── Role builder ── */}
+        <section className="bg-card border border-border">
+          {/* Builder header */}
+          <div className="px-4 py-[14px] border-b border-border flex items-center justify-between gap-3">
+            <div>
+              <div className="text-sm font-semibold">
+                {currentIndex < 0
+                  ? "New custom role"
+                  : locked
+                  ? ROLES[currentIndex]?.name ?? "Role details"
+                  : `Edit role — ${ROLES[currentIndex]?.name ?? ""}`}
+              </div>
+              <div className="text-[12.5px] text-muted-foreground mt-px">
+                {currentIndex < 0
+                  ? "Tick permissions, set the reach, then choose a dashboard view."
+                  : locked
+                  ? "Built-in role, kept in sync by the platform."
+                  : "Define what this role can do and where it lands."}
               </div>
             </div>
-
-            <div className="space-y-3">
-              <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Custom Roles</p>
-              {customRoles.length === 0 ? (
-                <Card>
-                  <CardContent className="p-8 text-center text-muted-foreground text-sm">
-                    No custom roles yet. Create one to tailor permissions for your organization.
-                  </CardContent>
-                </Card>
-              ) : (
-                <div className="space-y-3">
-                  {customRoles.map((role) => (
-                    <RoleCard
-                      key={role.id}
-                      role={role}
-                      onView={() => openView(role)}
-                      onEdit={() => openEdit(role)}
-                      onDuplicate={() => handleDuplicate(role)}
-                      onDelete={() => setDeleteRoleId(role.id)}
-                      onAssign={() => openAssign(role)}
-                      menuOpen={openMenuRoleId === role.id}
-                      onToggleMenu={() => setOpenMenuRoleId((prev) => (prev === role.id ? null : role.id))}
-                    />
-                  ))}
-                </div>
+            <div className="flex gap-[6px]">
+              {locked && (
+                <span className="inline-flex items-center gap-1 h-5 px-[7px] text-[11px] font-semibold border border-border bg-muted text-muted-foreground">
+                  <Lock className="w-[11px] h-[11px]" />
+                  LOCKED
+                </span>
+              )}
+              {currentIndex >= 0 && ROLES[currentIndex]?.persona && (
+                <span className="inline-flex items-center gap-1 h-5 px-[7px] text-[11px] font-semibold border border-border bg-secondary text-secondary-foreground">
+                  {ROLES[currentIndex].persona}
+                </span>
+              )}
+              {currentIndex < 0 && (
+                <span className="inline-flex items-center gap-1 h-5 px-[7px] text-[11px] font-semibold border border-[color-mix(in_oklab,var(--primary)_30%,transparent)] bg-[color-mix(in_oklab,var(--primary)_12%,transparent)] text-primary">
+                  DRAFT
+                </span>
+              )}
+              {currentIndex >= 0 && (
+                <span className="inline-flex items-center gap-1 h-5 px-[7px] text-[11px] font-semibold border border-border bg-secondary text-secondary-foreground">
+                  {ROLES[currentIndex].members} members
+                </span>
               )}
             </div>
-          </motion.div>
-        )}
+          </div>
 
-        {(screen === "builder" || screen === "view") && (
-          <motion.div
-            key="builder"
-            initial={{ opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -8 }}
-            transition={{ duration: 0.2 }}
-            className="space-y-6"
-          >
-            <div className="flex items-center gap-3">
-              <Button variant="ghost" size="icon" aria-label="Back to roles list" onClick={() => setScreen("list")}>
-                <ArrowLeft className="w-4 h-4" />
-              </Button>
-              <h2 className="text-xl font-bold tracking-tight text-foreground">
-                {screen === "view"
-                  ? `View Role: ${activeRole?.name ?? ""}`
-                  : builderMode === "create"
-                  ? "Create Custom Role"
-                  : `Edit Role: ${activeRole?.name ?? ""}`}
-              </h2>
-            </div>
-
-            {screen === "view" && activeRole?.isSystem && (
-              <div className="flex items-start gap-3 rounded-lg border border-blue-200 bg-blue-50 p-4 text-sm text-blue-900">
-                <Info className="w-4 h-4 mt-0.5 shrink-0" />
-                <p>System roles cannot be edited. You can duplicate this role to create a custom version.</p>
+          <div className="p-4">
+            {/* Lock banner */}
+            {locked && currentIndex >= 0 && (
+              <div className="flex gap-[10px] p-[11px_13px] border border-border bg-muted mb-4 items-start">
+                <LockIcon className="w-4 h-4 shrink-0 mt-px text-muted-foreground" />
+                <div>
+                  <div className="font-semibold text-[13px]">
+                    This is a built-in role and can&rsquo;t be changed.
+                  </div>
+                  <div className="text-[12.5px] text-muted-foreground mt-px">
+                    Owner, Admin, Mentor Coach and Mentor are seeded into every
+                    account and kept in sync by the platform. Duplicate it to make your own version.
+                  </div>
+                </div>
               </div>
             )}
 
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-              {/* Left column */}
-              <div className="lg:col-span-4 space-y-6">
-                <Card>
-                  <CardContent className="p-4 space-y-4">
-                    <div className="space-y-1.5">
-                      <Label htmlFor="role-name">Role Name</Label>
-                      <Input
-                        id="role-name"
-                        value={formName}
-                        maxLength={50}
-                        disabled={isReadOnly}
-                        placeholder="e.g. Senior Mentor"
-                        onChange={(e) => setFormName(e.target.value)}
-                        aria-invalid={!!formErrors.name}
-                      />
-                      <div className="flex items-center justify-between">
-                        {formErrors.name ? (
-                          <p className="text-xs text-destructive">{formErrors.name}</p>
-                        ) : (
-                          <span />
-                        )}
-                        <p className="text-xs text-muted-foreground">{formName.length}/50</p>
-                      </div>
-                    </div>
-
-                    <div className="space-y-1.5">
-                      <Label htmlFor="role-description">Role Description</Label>
-                      <Textarea
-                        id="role-description"
-                        value={formDescription}
-                        maxLength={200}
-                        disabled={isReadOnly}
-                        placeholder="Briefly describe what this role can do"
-                        onChange={(e) => setFormDescription(e.target.value)}
-                        rows={3}
-                      />
-                      <p className="text-xs text-muted-foreground text-right">{formDescription.length}/200</p>
-                    </div>
-                  </CardContent>
-                </Card>
-
-                <Card>
-                  <CardContent className="p-4 space-y-3">
-                    <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground">
-                      Permission Summary
-                    </p>
-                    <div className="space-y-2">
-                      {PERMISSION_GROUP_META.map((group) => {
-                        const count =
-                          group.key === "groupD"
-                            ? countGroupD(formPermissions.groupD)
-                            : countGroup(formPermissions[group.key]);
-                        return (
-                          <div key={group.key} className="flex items-center justify-between text-sm">
-                            <span className="text-foreground">{group.title}</span>
-                            <Badge variant="outline">
-                              {count}/{group.perms.length}
-                            </Badge>
-                          </div>
-                        );
-                      })}
-                    </div>
-                    <Separator />
-                    <div className="flex items-center justify-between text-sm font-semibold">
-                      <span>Total enabled</span>
-                      <span>{totalEnabled(formPermissions)}</span>
-                    </div>
-                    {formErrors.permissions && (
-                      <p className="text-xs text-destructive">{formErrors.permissions}</p>
-                    )}
-                  </CardContent>
-                </Card>
+            {/* Name + Start from */}
+            <div className="grid grid-cols-2 gap-[14px] mb-5">
+              <div className="flex flex-col gap-[6px]">
+                <label className="text-[12.5px] font-semibold">Role name</label>
+                <input
+                  className="h-[34px] w-full px-[10px] bg-card border border-input text-[13px] disabled:bg-muted disabled:text-muted-foreground disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
+                  placeholder="e.g. Volunteer Responder"
+                  value={roleName}
+                  onChange={(e) => setRoleName(e.target.value)}
+                  disabled={locked}
+                />
+                <span className="text-[12px] text-muted-foreground">
+                  {locked ? "Built-in role names are fixed." : "Must be unique within the account."}
+                </span>
               </div>
+              <div className="flex flex-col gap-[6px]">
+                <label className="text-[12.5px] font-semibold">Start from</label>
+                <select
+                  className="h-[34px] w-full px-[10px] bg-card border border-input text-[13px] disabled:bg-muted disabled:text-muted-foreground disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
+                  value={roleBase}
+                  onChange={(e) => setRoleBase(Number(e.target.value))}
+                  disabled={locked}
+                >
+                  <option value={0}>Empty &mdash; no permissions</option>
+                  <option value={1}>Duplicate: Owner</option>
+                  <option value={2}>Duplicate: Admin</option>
+                  <option value={3}>Duplicate: Mentor Coach</option>
+                  <option value={4}>Duplicate: Mentor</option>
+                </select>
+                <span className="text-[12px] text-muted-foreground">
+                  Copies that role&rsquo;s permissions as a starting set.
+                </span>
+              </div>
+            </div>
 
-              {/* Right column */}
-              <div className="lg:col-span-8 space-y-4">
-                <h3 className="text-sm font-bold uppercase tracking-widest text-muted-foreground">
-                  Permission Catalog
-                </h3>
+            {/* Description */}
+            <div className="flex flex-col gap-[6px] mb-[22px]">
+              <label className="text-[12.5px] font-semibold">Description</label>
+              <textarea
+                className="w-full px-[10px] py-2 bg-card border border-input text-[13px] resize-y min-h-[60px] disabled:bg-muted disabled:text-muted-foreground disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
+                rows={2}
+                placeholder="Shown wherever this role is assigned."
+                value={roleDesc}
+                onChange={(e) => setRoleDesc(e.target.value)}
+                disabled={locked}
+              />
+            </div>
 
-                {PERMISSION_GROUP_META.map((group) => {
-                  const expanded = expandedGroups[group.key];
-                  const count =
-                    group.key === "groupD"
-                      ? countGroupD(formPermissions.groupD)
-                      : countGroup(formPermissions[group.key]);
+            {/* Dashboard view */}
+            <div className="mb-2">
+              <div className="text-[12.5px] font-semibold mb-[3px]">Dashboard view</div>
+              <div className="text-[12px] text-muted-foreground mb-[11px]">
+                Where a member holding this role lands after login. Widgets that
+                need a permission the role lacks are hidden automatically.
+              </div>
+              <div className="grid grid-cols-3 gap-[9px]">
+                {VIEWS.map(([id, name, desc]) => {
+                  const selected = view === id;
                   return (
-                    <Card key={group.key} className="overflow-hidden">
-                      <button
-                        type="button"
-                        onClick={() => toggleExpand(group.key)}
-                        aria-expanded={expanded}
-                        className="w-full flex items-center justify-between gap-3 p-4 text-left hover:bg-accent/50 transition-colors"
-                      >
-                        <div className="flex items-center gap-2">
-                          <span className="font-semibold text-foreground">{group.title}</span>
-                          <Badge variant="outline">
-                            {count}/{group.perms.length}
-                          </Badge>
-                        </div>
-                        <ChevronDown
-                          className={cn("w-4 h-4 text-muted-foreground transition-transform", expanded && "rotate-180")}
-                        />
-                      </button>
-                      <AnimatePresence initial={false}>
-                        {expanded && (
-                          <motion.div
-                            initial={{ height: 0, opacity: 0 }}
-                            animate={{ height: "auto", opacity: 1 }}
-                            exit={{ height: 0, opacity: 0 }}
-                            transition={{ duration: 0.2 }}
-                            className="overflow-hidden"
-                          >
-                            <div className="px-4 pb-2 divide-y divide-border border-t">
-                              {group.key === "groupD"
-                                ? GROUP_D_PERMS.map((perm) => (
-                                    <ConversationPermissionRow
-                                      key={perm.id}
-                                      id={`perm-${perm.id}`}
-                                      label={perm.label}
-                                      value={formPermissions.groupD[perm.id]}
-                                      disabled={isReadOnly}
-                                      onToggle={(v) => toggleConversationPermission(perm.id, v)}
-                                      onScopeChange={(scope) => setConversationScope(perm.id, scope)}
-                                    />
-                                  ))
-                                : group.perms.map((perm) => (
-                                    <PermissionToggleRow
-                                      key={perm.id}
-                                      id={`perm-${perm.id}`}
-                                      label={perm.label}
-                                      checked={formPermissions[group.key][perm.id]}
-                                      disabled={isReadOnly}
-                                      onChange={(v) => toggleSimplePermission(group.key, perm.id, v)}
-                                    />
-                                  ))}
-                            </div>
-                          </motion.div>
+                    <button
+                      key={id}
+                      className={cn(
+                        "border p-[11px] text-left flex gap-[9px] items-start bg-card transition-colors",
+                        selected
+                          ? "border-primary bg-[color-mix(in_oklab,var(--primary)_5%,transparent)]"
+                          : "border-border hover:border-primary",
+                        locked && "opacity-55 cursor-not-allowed"
+                      )}
+                      onClick={() => {
+                        if (!locked) setView(id);
+                      }}
+                      disabled={locked}
+                    >
+                      <span
+                        className={cn(
+                          "w-[15px] h-[15px] rounded-full border shrink-0 mt-px grid place-items-center",
+                          selected ? "border-primary" : "border-input"
                         )}
-                      </AnimatePresence>
-                    </Card>
+                      >
+                        {selected && (
+                          <span className="w-[7px] h-[7px] rounded-full bg-primary" />
+                        )}
+                      </span>
+                      <span>
+                        <span className="font-semibold text-[12.5px] block">{name}</span>
+                        <span className="text-[11.5px] text-muted-foreground mt-[2px] leading-[1.35] block">
+                          {desc}
+                        </span>
+                      </span>
+                    </button>
                   );
                 })}
               </div>
             </div>
 
-            <div className="flex items-center justify-end gap-3 pt-2">
-              {screen === "view" ? (
-                activeRole?.isSystem ? (
-                  <Button onClick={() => activeRole && handleDuplicate(activeRole)}>
-                    <Copy className="w-4 h-4 mr-2" />
-                    Duplicate to Customize
-                  </Button>
-                ) : (
-                  <Button onClick={() => activeRole && openEdit(activeRole)}>
-                    <Pencil className="w-4 h-4 mr-2" />
-                    Edit Role
-                  </Button>
-                )
-              ) : (
-                <>
-                  <Button variant="outline" onClick={handleCancelBuilder}>
-                    Cancel
-                  </Button>
-                  <Button onClick={handleSave}>Save Role</Button>
-                </>
-              )}
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+            {/* Permissions */}
+            <div className="mt-[26px]">
+              {/* Toolbar */}
+              <div className="flex items-center gap-[9px] flex-wrap pb-3 mb-1 border-b border-border">
+                <div className="text-[13px] font-semibold">Permissions</div>
+                <span className="inline-flex items-center gap-1 h-5 px-[7px] text-[11px] font-semibold border border-[color-mix(in_oklab,var(--primary)_30%,transparent)] bg-[color-mix(in_oklab,var(--primary)_12%,transparent)] text-primary">
+                  {permCount} selected
+                </span>
+                <span className="flex-1" />
+                <input
+                  className="h-[34px] w-[230px] px-[10px] bg-card border border-input text-[13px] focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
+                  placeholder="Filter permissions…"
+                  value={permFilter}
+                  onChange={(e) => setPermFilter(e.target.value)}
+                />
+                <button
+                  className="inline-flex items-center justify-center h-[29px] px-[10px] text-[12px] font-semibold border border-border bg-card hover:bg-accent hover:text-accent-foreground transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  onClick={selectAll}
+                  disabled={locked}
+                >
+                  Select all
+                </button>
+                <button
+                  className="inline-flex items-center justify-center h-[29px] px-[10px] text-[12px] font-semibold border border-border bg-card hover:bg-accent hover:text-accent-foreground transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  onClick={clearAll}
+                  disabled={locked}
+                >
+                  Clear
+                </button>
+              </div>
 
-      {/* S4 — Assign Role Modal */}
-      <AnimatePresence>
-        {isAssignOpen && (
-          <ModalShell onClose={() => setIsAssignOpen(false)} labelledBy="assign-role-title" maxWidth="max-w-xl">
-            <div className="flex items-center justify-between p-5 border-b">
-              <h3 id="assign-role-title" className="text-lg font-bold text-foreground">
-                Assign Role
-              </h3>
-              <Button variant="ghost" size="icon" aria-label="Close" onClick={() => setIsAssignOpen(false)}>
-                <X className="w-4 h-4" />
-              </Button>
-            </div>
+              {/* Permission groups */}
+              {GROUPS.map((group) => {
+                const q = permFilter.toLowerCase();
+                const hits = group.perms.filter(
+                  ([k, l]) =>
+                    k.toLowerCase().includes(q) || l.toLowerCase().includes(q)
+                );
+                const scopedHit =
+                  group.scoped &&
+                  ("conversations:read".includes(q) ||
+                    "read conversations".includes(q) ||
+                    q === "");
+                if (!hits.length && !scopedHit) return null;
 
-            <div className="p-5 space-y-4">
-              {assignContextRoleId && (
-                <p className="text-sm text-muted-foreground">
-                  Assigning access for role{" "}
-                  <span className="font-semibold text-foreground">
-                    {roles.find((r) => r.id === assignContextRoleId)?.name}
-                  </span>
-                </p>
-              )}
-              <div className="space-y-4 max-h-[50vh] overflow-y-auto pr-1">
-                {members.map((member) => (
-                  <div key={member.id} className="flex flex-col sm:flex-row sm:items-center gap-3 pb-4 border-b last:border-b-0">
-                    <div className="flex items-center gap-3 min-w-0 sm:w-56 shrink-0">
-                      <Avatar className="size-9">
-                        <AvatarFallback className="text-xs font-semibold">
-                          {getInitials(member.name)}
-                        </AvatarFallback>
-                      </Avatar>
-                      <div className="min-w-0">
-                        <p className="text-sm font-semibold text-foreground truncate">{member.name}</p>
-                        <p className="text-xs text-muted-foreground truncate">{member.email}</p>
-                      </div>
+                const on =
+                  group.perms.filter(([k]) => sel.has(k)).length +
+                  (group.scoped && scope ? 1 : 0);
+                const tot = group.perms.length + (group.scoped ? 1 : 0);
+
+                return (
+                  <div key={group.id} className="border-t border-border first:border-t-0">
+                    <div className="flex items-center gap-[9px] py-3">
+                      <span className="font-semibold text-[13px]">{group.title}</span>
+                      <span className="text-[11.5px] text-muted-foreground">
+                        {on}/{tot}
+                      </span>
                     </div>
-                    <div className="flex flex-wrap gap-2" role="radiogroup" aria-label={`Role for ${member.name}`}>
-                      {roles.map((role) => {
-                        const checked = assignSelections[member.id] === role.id;
+                    <div className="grid grid-cols-2 gap-x-[18px] gap-y-px pb-[10px]">
+                      {/* Scoped permission block */}
+                      {group.scoped && scopedHit && (
+                        <div className="col-span-2 border border-border p-[11px] bg-muted my-1 mb-[10px]">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <span className="text-[13px] font-medium">Read conversations</span>
+                            <span className="inline-flex items-center gap-1 h-5 px-[7px] text-[11px] font-semibold border border-[color-mix(in_oklab,var(--info)_30%,transparent)] bg-[color-mix(in_oklab,var(--info)_12%,transparent)] text-info">
+                              SCOPED
+                            </span>
+                            <span className="text-[11px] text-muted-foreground font-mono">
+                              conversations:read:&lt;scope&gt;
+                            </span>
+                          </div>
+                          <div className="text-[12px] text-muted-foreground mt-1">
+                            The only scoped permission. A role may hold exactly one level &mdash;
+                            widening circles: own &sub; group &sub; all.
+                          </div>
+                          <div className="flex gap-2 mt-[9px] flex-wrap">
+                            {(
+                              [
+                                ["own", "Own", "their own chats"],
+                                ["group", "Group", "their group’s chats"],
+                                ["all", "All", "every conversation"],
+                              ] as [string, string, string][]
+                            ).map(([s, label, note]) => (
+                              <button
+                                key={s}
+                                className={cn(
+                                  "flex items-center gap-[7px] px-[11px] py-[7px] border text-[12.5px] font-medium bg-card transition-colors",
+                                  scope === s
+                                    ? "border-primary bg-[color-mix(in_oklab,var(--primary)_6%,transparent)]"
+                                    : "border-input",
+                                  locked && "cursor-not-allowed opacity-60"
+                                )}
+                                onClick={() => {
+                                  if (locked) return;
+                                  setScope((prev) => (prev === s ? null : s));
+                                }}
+                                disabled={locked}
+                              >
+                                <span
+                                  className={cn(
+                                    "w-[15px] h-[15px] rounded-full border grid place-items-center",
+                                    scope === s ? "border-primary" : "border-input"
+                                  )}
+                                >
+                                  {scope === s && (
+                                    <span className="w-[7px] h-[7px] rounded-full bg-primary" />
+                                  )}
+                                </span>
+                                <span>
+                                  {label}{" "}
+                                  <small className="text-muted-foreground font-normal">
+                                    &middot; {note}
+                                  </small>
+                                </span>
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Permission checkboxes */}
+                      {hits.map(([k, l]) => {
+                        const isOn = sel.has(k);
                         return (
-                          <label
-                            key={role.id}
+                          <div
+                            key={k}
                             className={cn(
-                              "flex items-center gap-1.5 px-2.5 py-1 rounded-full border text-xs cursor-pointer transition-colors",
-                              checked
-                                ? "bg-primary text-primary-foreground border-primary"
-                                : "bg-background text-foreground hover:bg-accent"
+                              "flex gap-[9px] p-[6px] items-start border border-transparent transition-colors",
+                              locked
+                                ? "cursor-not-allowed opacity-60"
+                                : "cursor-pointer hover:bg-accent"
                             )}
+                            onClick={() => togglePerm(k)}
                           >
-                            <input
-                              type="radio"
-                              className="sr-only"
-                              name={`role-select-${member.id}`}
-                              checked={checked}
-                              onChange={() =>
-                                setAssignSelections((prev) => ({ ...prev, [member.id]: role.id }))
-                              }
-                            />
-                            {role.name}
-                          </label>
+                            <span
+                              className={cn(
+                                "w-[15px] h-[15px] border shrink-0 mt-[2px] grid place-items-center",
+                                isOn
+                                  ? "bg-primary border-primary"
+                                  : "bg-card border-input"
+                              )}
+                            >
+                              {isOn && (
+                                <CheckIcon className="w-[11px] h-[11px] text-white" />
+                              )}
+                            </span>
+                            <span>
+                              <span className="text-[13px] font-medium block">{l}</span>
+                              <span className="text-[11px] text-muted-foreground mt-px block font-mono">
+                                {k}
+                              </span>
+                            </span>
+                          </div>
                         );
                       })}
                     </div>
                   </div>
-                ))}
-              </div>
+                );
+              })}
             </div>
+          </div>
 
-            <div className="flex items-center justify-end gap-3 p-5 border-t">
-              <Button variant="outline" onClick={() => setIsAssignOpen(false)}>
-                Cancel
-              </Button>
-              <Button onClick={handleAssignSave}>Save</Button>
+          {/* Footer */}
+          <div className="px-4 py-3 border-t border-border flex items-center justify-between gap-3 bg-muted">
+            <div className="text-[12.5px] text-muted-foreground">
+              <b className="text-foreground">{permCount}</b> of 44 permissions &middot;
+              reach <b className="text-foreground">{scope ?? "none"}</b> &middot;
+              view <b className="text-foreground">{viewLabel}</b>
             </div>
-          </ModalShell>
-        )}
-      </AnimatePresence>
-
-      {/* S5 — Delete Role Modal */}
-      <AnimatePresence>
-        {deleteRole && (
-          <ModalShell onClose={() => setDeleteRoleId(null)} labelledBy="delete-role-title" maxWidth="max-w-md">
-            <div className="p-5 space-y-4">
-              <div className="flex items-center gap-3">
-                <div className="flex size-10 items-center justify-center rounded-full bg-destructive/10 text-destructive">
-                  <Trash2 className="w-5 h-5" />
-                </div>
-                <h3 id="delete-role-title" className="text-lg font-bold text-foreground">
-                  Delete Role
-                </h3>
-              </div>
-
-              <p className="text-sm text-muted-foreground">
-                Are you sure you want to delete the role &ldquo;{deleteRole.name}&rdquo;? This action cannot be
-                undone.
-              </p>
-
-              {deleteRole.memberCount > 0 && (
-                <div className="flex items-start gap-3 rounded-lg border border-destructive/30 bg-destructive/10 p-3 text-sm text-destructive">
-                  <AlertTriangle className="w-4 h-4 mt-0.5 shrink-0" />
-                  <p>
-                    This role has {deleteRole.memberCount} members assigned. You must reassign them before
-                    deleting.
-                  </p>
-                </div>
-              )}
-            </div>
-
-            <div className="flex items-center justify-end gap-3 p-5 border-t">
-              <Button variant="outline" onClick={() => setDeleteRoleId(null)}>
-                Cancel
-              </Button>
-              <Button
-                variant="destructive"
-                disabled={deleteRole.memberCount > 0}
-                onClick={handleDeleteConfirm}
+            <div className="flex gap-2">
+              <button
+                className="inline-flex items-center justify-center h-[34px] px-[13px] text-[13px] font-semibold border border-border bg-card hover:bg-accent hover:text-accent-foreground transition-colors"
+                onClick={handleCancel}
               >
-                Delete Role
-              </Button>
+                Cancel
+              </button>
+              <button
+                className={cn(
+                  "inline-flex items-center justify-center h-[34px] px-[13px] text-[13px] font-semibold bg-primary text-primary-foreground border border-transparent transition-colors",
+                  saveDisabled
+                    ? "opacity-50 cursor-not-allowed"
+                    : "hover:brightness-107"
+                )}
+                onClick={handleSave}
+                disabled={saveDisabled}
+              >
+                Save role
+              </button>
             </div>
-          </ModalShell>
-        )}
-      </AnimatePresence>
+          </div>
+        </section>
+      </div>
     </div>
   );
 };
+
+// ============================================================================
+// Role list item
+// ============================================================================
+
+function RoleItem({
+  role,
+  active,
+  onClick,
+}: {
+  role: RoleRecord;
+  active: boolean;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      className={cn(
+        "flex items-start gap-[9px] p-[9px] text-left w-full border-l-2 border-transparent transition-colors",
+        active
+          ? "bg-accent border-l-primary"
+          : "hover:bg-accent"
+      )}
+      onClick={onClick}
+    >
+      <span
+        className={cn(
+          "w-7 h-7 grid place-items-center shrink-0 mt-px",
+          active
+            ? "bg-primary text-white"
+            : "bg-secondary"
+        )}
+      >
+        {role.system ? (
+          <LockIcon className="w-[14px] h-[14px]" />
+        ) : (
+          <UserIcon className="w-[14px] h-[14px]" />
+        )}
+      </span>
+      <span className="min-w-0 flex-1">
+        <span className="font-semibold text-[13px] flex items-center gap-[6px] flex-wrap">
+          {role.name}
+          {role.system && (
+            <span className="inline-flex items-center gap-1 h-5 px-[7px] text-[11px] font-semibold border border-border bg-muted text-muted-foreground">
+              LOCKED
+            </span>
+          )}
+          {role.persona && (
+            <span className="inline-flex items-center h-5 px-[7px] text-[11px] font-semibold border border-border bg-secondary text-secondary-foreground">
+              {role.persona}
+            </span>
+          )}
+        </span>
+        <span className="text-[11.5px] text-muted-foreground mt-px block whitespace-nowrap overflow-hidden text-ellipsis">
+          {role.perms.length + 1} permissions &middot; {role.members} members
+        </span>
+      </span>
+    </button>
+  );
+}
