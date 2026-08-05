@@ -435,14 +435,14 @@ export const SCHEDULE_FREQUENCIES: { id: ScheduleFrequency; label: string; descr
 ];
 
 export const QUICK_TEMPLATES: QuickTemplate[] = [
-  { id: "tpl-1", label: "Welcome", content: "Hi! Welcome to our platform. How can we help?", category: "Greeting" },
-  { id: "tpl-2", label: "Follow Up", content: "Just checking in! Any other questions?", category: "Follow Up" },
-  { id: "tpl-3", label: "Thank You", content: "Thank you for reaching out! We look forward to working with you.", category: "Closing" },
-  { id: "tpl-4", label: "Schedule Call", content: "Let's hop on a call. Morning or afternoon?", category: "Meeting" },
-  { id: "tpl-5", label: "Order Update", content: "Order processed! Shipping in 1-2 business days.", category: "Support" },
-  { id: "tpl-6", label: "Issue Resolved", content: "The issue has been resolved. Let us know if you need anything else.", category: "Support" },
-  { id: "tpl-7", label: "Promo Offer", content: "Exclusive: SPECIAL15 for 15% off. Valid this month!", category: "Sales" },
-  { id: "tpl-8", label: "Feedback Request", content: "Rate your experience 1-10. We'd love your feedback!", category: "Engagement" },
+  { id: "tpl-1", label: "Welcome", content: "Peace be with you! We're so glad you reached out. How can we walk alongside you today?", category: "Greeting" },
+  { id: "tpl-2", label: "Follow Up", content: "Just checking in on you! How are things going since we last talked?", category: "Follow Up" },
+  { id: "tpl-3", label: "Thank You", content: "Thank you for sharing with us. We're praying for you and look forward to continuing this journey together.", category: "Closing" },
+  { id: "tpl-4", label: "Schedule Call", content: "Would you like to hop on a call to talk more? Morning or afternoon works for us.", category: "Meeting" },
+  { id: "tpl-5", label: "Prayer Support", content: "We've received your prayer request and our team is lifting you up in prayer right now.", category: "Support" },
+  { id: "tpl-6", label: "Bible Study", content: "Here's the Bible study resource we discussed. Take your time with it and let us know your thoughts!", category: "Discipleship" },
+  { id: "tpl-7", label: "Group Invite", content: "We'd love for you to join our small group this week! It's a safe space to ask questions and grow together.", category: "Community" },
+  { id: "tpl-8", label: "Devotional", content: "Today's verse: 'For I know the plans I have for you, declares the Lord.' — Jeremiah 29:11. How does this speak to you?", category: "Engagement" },
 ];
 
 // --- Mock Data ---
@@ -763,50 +763,71 @@ export const INITIAL_CONTACTS: Contact[] = [
 ];
 
 export const INITIAL_MESSAGES: Message[] = [
-  { id: "msg-1", contactId: "contact-1", tenantId: "tenant-1", senderId: "contact-1", senderType: "contact", content: "Hey, question about order #4521.", status: "received", port: "whatsapp", createdAt: "2025-02-10T09:00:00Z" },
-  { id: "msg-2", contactId: "contact-1", tenantId: "tenant-1", senderId: "user-1", senderType: "user", content: "Sure thing! What can I help with?", status: "read", port: "whatsapp", createdAt: "2025-02-10T09:05:00Z" },
-  { id: "msg-3", contactId: "contact-1", tenantId: "tenant-1", senderId: "contact-1", senderType: "contact", content: "Got Basic instead of Premium. Can you check?", status: "received", port: "whatsapp", createdAt: "2025-02-10T09:08:00Z" },
-  { id: "msg-4", contactId: "contact-1", tenantId: "tenant-1", senderId: "user-1", senderType: "user", content: "Shipping mix-up. Sending correct package with priority delivery today.", status: "delivered", port: "whatsapp", createdAt: "2025-02-10T09:15:00Z" },
-  { id: "msg-5", contactId: "contact-1", tenantId: "tenant-1", senderId: "contact-1", senderType: "contact", content: "Great, thank you! You guys are always so fast.", status: "received", port: "whatsapp", createdAt: "2025-02-10T09:18:00Z" },
-  { id: "msg-6", contactId: "contact-2", tenantId: "tenant-1", senderId: "contact-2", senderType: "contact", content: "Is the newsletter coming out today?", status: "received", port: "email", createdAt: "2025-02-11T08:30:00Z" },
-  { id: "msg-7", contactId: "contact-2", tenantId: "tenant-1", senderId: "user-1", senderType: "user", content: "Yes, going out at 2 PM today!", status: "delivered", port: "email", createdAt: "2025-02-11T08:35:00Z" },
-  { id: "msg-8", contactId: "contact-2", tenantId: "tenant-1", senderId: "contact-2", senderType: "contact", content: "Is there a referral program?", status: "received", port: "email", createdAt: "2025-02-11T08:40:00Z" },
-  { id: "msg-9", contactId: "contact-2", tenantId: "tenant-1", senderId: "user-1", senderType: "user", content: "Yes! You both get 15% off. Sending link now.", status: "read", port: "email", createdAt: "2025-02-11T08:45:00Z" },
-  { id: "msg-10", contactId: "contact-3", tenantId: "tenant-1", senderId: "user-1", senderType: "user", content: "Appointment scheduled for tomorrow at 3 PM.", status: "scheduled", port: "sms", createdAt: "2025-02-12T10:00:00Z" },
-  { id: "msg-11", contactId: "contact-3", tenantId: "tenant-1", senderId: "user-1", senderType: "user", content: "Subscription renews on Feb 15th.", status: "failed", port: "sms", createdAt: "2025-02-11T12:00:00Z" },
-  { id: "msg-12", contactId: "contact-3", tenantId: "tenant-1", senderId: "contact-3", senderType: "contact", content: "Can I upgrade to annual plan?", status: "received", port: "sms", createdAt: "2025-02-11T14:00:00Z" },
-  { id: "msg-13", contactId: "contact-3", tenantId: "tenant-1", senderId: "user-1", senderType: "user", content: "Done! You save 20% with annual billing.", status: "delivered", port: "sms", createdAt: "2025-02-11T14:10:00Z" },
-  { id: "msg-14", contactId: "contact-4", tenantId: "tenant-1", senderId: "user-1", senderType: "user", content: "Welcome Emily! Here's your guide: acme.co/start", status: "delivered", port: "whatsapp", createdAt: "2025-02-04T10:00:00Z" },
-  { id: "msg-15", contactId: "contact-4", tenantId: "tenant-1", senderId: "contact-4", senderType: "contact", content: "How do I set up notifications?", status: "received", port: "whatsapp", createdAt: "2025-02-04T11:30:00Z" },
-  { id: "msg-16", contactId: "contact-4", tenantId: "tenant-1", senderId: "user-1", senderType: "user", content: "Settings > Notifications. Let me know if you need help!", status: "read", port: "whatsapp", createdAt: "2025-02-04T11:35:00Z" },
-  { id: "msg-17", contactId: "contact-4", tenantId: "tenant-1", senderId: "contact-4", senderType: "contact", content: "All set up now. Love the platform!", status: "received", port: "whatsapp", createdAt: "2025-02-04T12:00:00Z" },
-  { id: "msg-18", contactId: "contact-5", tenantId: "tenant-1", senderId: "contact-5", senderType: "contact", content: "Interested in enterprise pricing. Can we talk?", status: "received", port: "telegram", createdAt: "2025-02-06T09:00:00Z" },
-  { id: "msg-19", contactId: "contact-5", tenantId: "tenant-1", senderId: "user-1", senderType: "user", content: "Thursday 10 AM or 2 PM — which works?", status: "delivered", port: "telegram", createdAt: "2025-02-06T09:15:00Z" },
-  { id: "msg-20", contactId: "contact-5", tenantId: "tenant-1", senderId: "contact-5", senderType: "contact", content: "2 PM Thursday works great!", status: "received", port: "telegram", createdAt: "2025-02-06T09:20:00Z" },
-  { id: "msg-21", contactId: "contact-5", tenantId: "tenant-1", senderId: "user-1", senderType: "user", content: "Confirmed! Calendar invite coming shortly.", status: "sent", port: "telegram", createdAt: "2025-02-06T09:25:00Z" },
-  { id: "msg-22", contactId: "contact-6", tenantId: "tenant-1", senderId: "user-1", senderType: "user", content: "Your Q1 code: SAVE20Q1. Valid until March 31.", status: "delivered", port: "whatsapp", createdAt: "2025-02-07T10:00:00Z" },
-  { id: "msg-23", contactId: "contact-6", tenantId: "tenant-1", senderId: "contact-6", senderType: "contact", content: "Thanks! Already adding items to cart.", status: "received", port: "whatsapp", createdAt: "2025-02-07T10:30:00Z" },
-  { id: "msg-24", contactId: "contact-6", tenantId: "tenant-1", senderId: "user-1", senderType: "user", content: "Need any product recommendations?", status: "read", port: "whatsapp", createdAt: "2025-02-07T10:35:00Z" },
-  { id: "msg-25", contactId: "contact-7", tenantId: "tenant-1", senderId: "user-1", senderType: "user", content: "Welcome aboard, Chris!", status: "delivered", port: "sms", createdAt: "2025-02-08T14:00:00Z" },
-  { id: "msg-26", contactId: "contact-7", tenantId: "tenant-1", senderId: "contact-7", senderType: "contact", content: "Thanks! Tell me more about Pro plan?", status: "received", port: "sms", createdAt: "2025-02-08T14:30:00Z" },
-  { id: "msg-28", contactId: "contact-8", tenantId: "tenant-1", senderId: "contact-8", senderType: "contact", content: "I need to update my billing address.", status: "received", port: "email", createdAt: "2025-02-09T11:00:00Z" },
-  { id: "msg-29", contactId: "contact-8", tenantId: "tenant-1", senderId: "user-1", senderType: "user", content: "Go to Account > Billing > Update Address.", status: "delivered", port: "email", createdAt: "2025-02-09T11:05:00Z" },
-  { id: "msg-32", contactId: "contact-9", tenantId: "tenant-1", senderId: "user-1", senderType: "user", content: "Hi Ahmed, welcome! How's everything going?", status: "delivered", port: "whatsapp", createdAt: "2025-02-09T15:00:00Z" },
-  { id: "msg-33", contactId: "contact-9", tenantId: "tenant-1", senderId: "contact-9", senderType: "contact", content: "Great! API integration was smooth.", status: "received", port: "whatsapp", createdAt: "2025-02-09T15:30:00Z" },
-  { id: "msg-35", contactId: "contact-10", tenantId: "tenant-1", senderId: "contact-10", senderType: "contact", content: "Your design tools look incredible!", status: "received", port: "telegram", createdAt: "2025-02-10T16:00:00Z" },
-  { id: "msg-36", contactId: "contact-10", tenantId: "tenant-1", senderId: "user-1", senderType: "user", content: "Want early access to beta features?", status: "delivered", port: "telegram", createdAt: "2025-02-10T16:10:00Z" },
-  { id: "msg-38", contactId: "contact-5", tenantId: "tenant-1", senderId: "user-1", senderType: "user", content: "Enterprise trial expires in 3 days.", status: "scheduled", port: "whatsapp", createdAt: "2025-02-13T09:00:00Z" },
-  { id: "msg-39", contactId: "contact-7", tenantId: "tenant-1", senderId: "user-1", senderType: "user", content: "Check out new Pro features!", status: "failed", port: "sms", createdAt: "2025-02-09T08:00:00Z" },
-  { id: "msg-40", contactId: "contact-9", tenantId: "tenant-1", senderId: "user-1", senderType: "user", content: "API usage report for January is ready.", status: "scheduled", port: "email", createdAt: "2025-02-14T08:00:00Z" },
+  // Abel Tesfaye — Seeker asking about prayer & faith
+  { id: "msg-1", contactId: "contact-1", tenantId: "tenant-1", senderId: "contact-1", senderType: "contact", content: "Hello, I saw your page on Telegram. I have been thinking about God lately and I don't know where to start.", status: "received", port: "telegram", createdAt: "2025-02-10T09:00:00Z" },
+  { id: "msg-2", contactId: "contact-1", tenantId: "tenant-1", senderId: "user-1", senderType: "user", content: "Peace be with you Abel! We're so glad you reached out. What has been on your heart lately?", status: "read", port: "telegram", createdAt: "2025-02-10T09:05:00Z" },
+  { id: "msg-3", contactId: "contact-1", tenantId: "tenant-1", senderId: "contact-1", senderType: "contact", content: "My friend became a Christian and his life changed. I want to understand what he found. Can you teach me about Jesus?", status: "received", port: "telegram", createdAt: "2025-02-10T09:08:00Z" },
+  { id: "msg-4", contactId: "contact-1", tenantId: "tenant-1", senderId: "user-1", senderType: "user", content: "That's beautiful to hear. I'd love to share with you. Have you ever read the Gospel of John? It's a great place to start learning about who Jesus is.", status: "delivered", port: "telegram", createdAt: "2025-02-10T09:15:00Z" },
+  { id: "msg-5", contactId: "contact-1", tenantId: "tenant-1", senderId: "contact-1", senderType: "contact", content: "No I haven't. Can you send it to me? Also, can I ask you to pray for my family? Things have been difficult.", status: "received", port: "telegram", createdAt: "2025-02-10T09:18:00Z" },
+
+  // Hanna Bekele — Growing believer, discipleship
+  { id: "msg-6", contactId: "contact-2", tenantId: "tenant-1", senderId: "contact-2", senderType: "contact", content: "I finished the Foundations of Faith study! It was really powerful. What should I study next?", status: "received", port: "whatsapp", createdAt: "2025-02-11T08:30:00Z" },
+  { id: "msg-7", contactId: "contact-2", tenantId: "tenant-1", senderId: "user-1", senderType: "user", content: "Praise God, Hanna! That's wonderful progress. I'd recommend Bible 101 next — it will help you learn how to read and apply Scripture on your own.", status: "delivered", port: "whatsapp", createdAt: "2025-02-11T08:35:00Z" },
+  { id: "msg-8", contactId: "contact-2", tenantId: "tenant-1", senderId: "contact-2", senderType: "contact", content: "That sounds perfect. Also, I want to get baptized. How do I prepare for that?", status: "received", port: "whatsapp", createdAt: "2025-02-11T08:40:00Z" },
+  { id: "msg-9", contactId: "contact-2", tenantId: "tenant-1", senderId: "user-1", senderType: "user", content: "We have a baptism preparation guide! I'll send it to you. We also have a group of believers preparing together — would you like to join them?", status: "read", port: "whatsapp", createdAt: "2025-02-11T08:45:00Z" },
+
+  // Mikias Alemu — New believer, needs encouragement
+  { id: "msg-10", contactId: "contact-3", tenantId: "tenant-1", senderId: "user-1", senderType: "user", content: "Hi Mikias! How is your week going? Have you been able to read the passage from Romans we discussed?", status: "scheduled", port: "telegram", createdAt: "2025-02-12T10:00:00Z" },
+  { id: "msg-11", contactId: "contact-3", tenantId: "tenant-1", senderId: "user-1", senderType: "user", content: "Just a reminder: our small group meets this Saturday at 3 PM. We'd love to see you there!", status: "failed", port: "sms", createdAt: "2025-02-11T12:00:00Z" },
+  { id: "msg-12", contactId: "contact-3", tenantId: "tenant-1", senderId: "contact-3", senderType: "contact", content: "I read Romans 8 and it really spoke to me. But my family is not supportive of my decision. Please pray for me.", status: "received", port: "telegram", createdAt: "2025-02-11T14:00:00Z" },
+  { id: "msg-13", contactId: "contact-3", tenantId: "tenant-1", senderId: "user-1", senderType: "user", content: "Thank you for sharing that, Mikias. Romans 8:28 reminds us that God works all things for good. We are praying for you and your family. You are not alone in this.", status: "delivered", port: "telegram", createdAt: "2025-02-11T14:10:00Z" },
+
+  // Yordanos Girma — Seeker, follow-up needed
+  { id: "msg-14", contactId: "contact-4", tenantId: "tenant-1", senderId: "user-1", senderType: "user", content: "Welcome Yordanos! We're glad you connected with us. Here's a short video about the love of God — we'd love to hear your thoughts.", status: "delivered", port: "whatsapp", createdAt: "2025-02-04T10:00:00Z" },
+  { id: "msg-15", contactId: "contact-4", tenantId: "tenant-1", senderId: "contact-4", senderType: "contact", content: "I watched the video. It was touching but I have so many questions. Is Christianity only for certain people?", status: "received", port: "whatsapp", createdAt: "2025-02-04T11:30:00Z" },
+  { id: "msg-16", contactId: "contact-4", tenantId: "tenant-1", senderId: "user-1", senderType: "user", content: "Great question! The Gospel is for everyone — God's love has no boundaries. John 3:16 says He loved the whole world. Would you like to explore this more together?", status: "read", port: "whatsapp", createdAt: "2025-02-04T11:35:00Z" },
+  { id: "msg-17", contactId: "contact-4", tenantId: "tenant-1", senderId: "contact-4", senderType: "contact", content: "Yes, I would like that. Can we talk more this week?", status: "received", port: "whatsapp", createdAt: "2025-02-04T12:00:00Z" },
+
+  // Daniel Haile — Growing, prayer life
+  { id: "msg-18", contactId: "contact-5", tenantId: "tenant-1", senderId: "contact-5", senderType: "contact", content: "I've been trying to pray every morning but I struggle to focus. How do other believers pray?", status: "received", port: "telegram", createdAt: "2025-02-06T09:00:00Z" },
+  { id: "msg-19", contactId: "contact-5", tenantId: "tenant-1", senderId: "user-1", senderType: "user", content: "That's a great question, Daniel. Many find the ACTS model helpful — Adoration, Confession, Thanksgiving, Supplication. Would you like a simple guide?", status: "delivered", port: "telegram", createdAt: "2025-02-06T09:15:00Z" },
+  { id: "msg-20", contactId: "contact-5", tenantId: "tenant-1", senderId: "contact-5", senderType: "contact", content: "Yes please! Also, is there a prayer group I can join?", status: "received", port: "telegram", createdAt: "2025-02-06T09:20:00Z" },
+  { id: "msg-21", contactId: "contact-5", tenantId: "tenant-1", senderId: "user-1", senderType: "user", content: "Absolutely! Our Prayer Basics group meets on Wednesdays. I'll add you to the group chat. Sending the prayer guide now.", status: "sent", port: "telegram", createdAt: "2025-02-06T09:25:00Z" },
+
+  // Meron Abebe — New believer, prayer request
+  { id: "msg-22", contactId: "contact-6", tenantId: "tenant-1", senderId: "user-1", senderType: "user", content: "Hi Meron! Today's devotional: 'Cast all your anxiety on Him because He cares for you.' — 1 Peter 5:7. How are you doing today?", status: "delivered", port: "telegram", createdAt: "2025-02-07T10:00:00Z" },
+  { id: "msg-23", contactId: "contact-6", tenantId: "tenant-1", senderId: "contact-6", senderType: "contact", content: "Thank you for this verse. I really needed it today. I'm going through a hard time at work and I need prayer for peace and wisdom.", status: "received", port: "telegram", createdAt: "2025-02-07T10:30:00Z" },
+  { id: "msg-24", contactId: "contact-6", tenantId: "tenant-1", senderId: "user-1", senderType: "user", content: "I'm lifting you up in prayer right now, Meron. God sees your situation and He is with you. Would you like to talk about what's happening?", status: "read", port: "telegram", createdAt: "2025-02-07T10:35:00Z" },
+
+  // Samuel Tadesse — Mature believer, leadership
+  { id: "msg-25", contactId: "contact-7", tenantId: "tenant-1", senderId: "user-1", senderType: "user", content: "Samuel, thank you for leading the small group so faithfully! The new believers are growing because of your ministry.", status: "delivered", port: "whatsapp", createdAt: "2025-02-08T14:00:00Z" },
+  { id: "msg-26", contactId: "contact-7", tenantId: "tenant-1", senderId: "contact-7", senderType: "contact", content: "Glory to God! I'm seeing such transformation in the group. Two members want to be baptized. Can we arrange that?", status: "received", port: "whatsapp", createdAt: "2025-02-08T14:30:00Z" },
+
+  // Bethlehem Yohannes — Growing, Bible study
+  { id: "msg-28", contactId: "contact-8", tenantId: "tenant-1", senderId: "contact-8", senderType: "contact", content: "I'm reading through the book of Acts and I have questions about the Holy Spirit. Can we discuss this?", status: "received", port: "whatsapp", createdAt: "2025-02-09T11:00:00Z" },
+  { id: "msg-29", contactId: "contact-8", tenantId: "tenant-1", senderId: "user-1", senderType: "user", content: "Of course, Bethlehem! Acts is such a powerful book. What chapter are you on? Let's go through your questions together.", status: "delivered", port: "whatsapp", createdAt: "2025-02-09T11:05:00Z" },
+
+  // Robel Desta — New believer, follow-up
+  { id: "msg-32", contactId: "contact-9", tenantId: "tenant-1", senderId: "user-1", senderType: "user", content: "Hi Robel! How has your first week been since accepting Christ? We're here for you every step of the way.", status: "delivered", port: "whatsapp", createdAt: "2025-02-09T15:00:00Z" },
+  { id: "msg-33", contactId: "contact-9", tenantId: "tenant-1", senderId: "contact-9", senderType: "contact", content: "It has been amazing! I feel different inside. But I don't know how to tell my friends about my faith. Can you help me?", status: "received", port: "whatsapp", createdAt: "2025-02-09T15:30:00Z" },
+
+  // Selamawit Kebede — Leader, mentoring
+  { id: "msg-35", contactId: "contact-10", tenantId: "tenant-1", senderId: "contact-10", senderType: "contact", content: "I've been mentoring 3 new believers and one of them is ready to start leading a small group herself. How do I help her prepare?", status: "received", port: "telegram", createdAt: "2025-02-10T16:00:00Z" },
+  { id: "msg-36", contactId: "contact-10", tenantId: "tenant-1", senderId: "user-1", senderType: "user", content: "That's incredible, Selamawit! We have a leadership training module. I'll send it over. Let's also schedule a call to talk through the transition.", status: "delivered", port: "telegram", createdAt: "2025-02-10T16:10:00Z" },
+
+  // Scheduled & follow-up messages
+  { id: "msg-38", contactId: "contact-5", tenantId: "tenant-1", senderId: "user-1", senderType: "user", content: "Daniel, reminder: Prayer Basics group meets tomorrow at 6 PM. Looking forward to seeing you!", status: "scheduled", port: "whatsapp", createdAt: "2025-02-13T09:00:00Z" },
+  { id: "msg-39", contactId: "contact-7", tenantId: "tenant-1", senderId: "user-1", senderType: "user", content: "Samuel, the baptism preparation materials are ready. Please share with the two members in your group.", status: "failed", port: "sms", createdAt: "2025-02-09T08:00:00Z" },
+  { id: "msg-40", contactId: "contact-9", tenantId: "tenant-1", senderId: "user-1", senderType: "user", content: "Robel, here's a simple guide on sharing your faith with friends. Take your time and let us know how it goes!", status: "scheduled", port: "email", createdAt: "2025-02-14T08:00:00Z" },
 ];
 
 export const INITIAL_BROADCASTS: Broadcast[] = [
   {
     id: "bc-1",
     tenantId: "tenant-1",
-    name: "Monthly Newsletter — February",
+    name: "Monthly Devotional — February",
     targetGroupId: "group-4",
-    content: "Check out our latest updates and customer success stories!",
+    content: "This month's theme: Walking in Faith. Read stories of believers who trusted God through difficult seasons.",
     status: "delivered",
     port: "email",
     stats: { sent: 150, delivered: 148, read: 120, failed: 2 },
@@ -816,9 +837,9 @@ export const INITIAL_BROADCASTS: Broadcast[] = [
   {
     id: "bc-2",
     tenantId: "tenant-1",
-    name: "Weekend Flash Sale",
+    name: "Weekend Prayer Gathering",
     targetGroupId: "all",
-    content: "50% off this weekend! Code FLASH50. Limited time.",
+    content: "Join us this Saturday for a special prayer and worship gathering. All are welcome!",
     status: "scheduled",
     port: "whatsapp",
     stats: { sent: 0, delivered: 0, read: 0, failed: 0 },
@@ -829,9 +850,9 @@ export const INITIAL_BROADCASTS: Broadcast[] = [
   {
     id: "bc-3",
     tenantId: "tenant-1",
-    name: "System Maintenance Notice",
+    name: "Bible Study Schedule Update",
     targetGroupId: "group-2",
-    content: "Scheduled downtime Sunday 10 PM - 2 AM EST.",
+    content: "This week's Bible study on the Book of James has been moved to Thursday at 7 PM.",
     status: "failed",
     port: "sms",
     stats: { sent: 50, delivered: 0, read: 0, failed: 50 },
@@ -840,9 +861,9 @@ export const INITIAL_BROADCASTS: Broadcast[] = [
   {
     id: "bc-4",
     tenantId: "tenant-1",
-    name: "VIP Exclusive — Early Access",
+    name: "New Believer Welcome Series",
     targetGroupId: "group-3",
-    content: "VIP early access to new products launching March 1st!",
+    content: "Welcome to the family of God! Here are resources to help you grow in your new faith journey.",
     status: "delivered",
     port: "whatsapp",
     stats: { sent: 85, delivered: 83, read: 71, failed: 2 },
@@ -851,9 +872,9 @@ export const INITIAL_BROADCASTS: Broadcast[] = [
   {
     id: "bc-5",
     tenantId: "tenant-1",
-    name: "Q1 Promo Broadcast",
+    name: "Lent Devotional Series",
     targetGroupId: "group-1",
-    content: "Code SAVE20Q1 for 20% off. Valid through March 31!",
+    content: "Join our 40-day Lent devotional series starting next week. Daily reflections sent to your inbox.",
     status: "sent",
     port: "whatsapp",
     stats: { sent: 210, delivered: 195, read: 142, failed: 15 },
@@ -862,9 +883,9 @@ export const INITIAL_BROADCASTS: Broadcast[] = [
   {
     id: "bc-6",
     tenantId: "tenant-1",
-    name: "New Feature Announcement",
+    name: "Baptism Sunday Announcement",
     targetGroupId: "all",
-    content: "New: conversation analytics, bulk messaging, and 3 integrations!",
+    content: "Baptism Sunday is coming up on March 2nd! If you or someone you know is ready, let your mentor know.",
     status: "delivered",
     port: "telegram",
     stats: { sent: 320, delivered: 312, read: 245, failed: 8 },
@@ -873,9 +894,9 @@ export const INITIAL_BROADCASTS: Broadcast[] = [
   {
     id: "bc-7",
     tenantId: "tenant-1",
-    name: "Valentine's Day Special",
+    name: "Easter Celebration Invite",
     targetGroupId: "group-4",
-    content: "Special Valentine's Day offer inside!",
+    content: "You're invited to our Easter celebration service! Bring a friend and experience the joy of resurrection together.",
     status: "scheduled",
     port: "email",
     stats: { sent: 0, delivered: 0, read: 0, failed: 0 },
@@ -886,12 +907,12 @@ export const INITIAL_BROADCASTS: Broadcast[] = [
 ];
 
 export const INITIAL_NOTES: ContactNote[] = [
-  { id: "note-1", contactId: "contact-1", content: "VIP customer. Prefers WhatsApp.", createdAt: "2025-02-08T10:00:00Z", authorId: "user-1" },
-  { id: "note-2", contactId: "contact-1", content: "Shipping issue resolved Feb 10.", createdAt: "2025-02-10T09:20:00Z", authorId: "user-1" },
-  { id: "note-3", contactId: "contact-2", content: "Referral link sent Feb 11.", createdAt: "2025-02-11T08:50:00Z", authorId: "user-1" },
-  { id: "note-4", contactId: "contact-5", content: "Enterprise prospect. Demo Thu 2 PM.", createdAt: "2025-02-06T09:30:00Z", authorId: "user-1" },
-  { id: "note-5", contactId: "contact-8", content: "Billing address updated. Happy with dashboard.", createdAt: "2025-02-09T11:30:00Z", authorId: "user-1" },
-  { id: "note-6", contactId: "contact-10", content: "Beta program. Great UX feedback candidate.", createdAt: "2025-02-10T16:20:00Z", authorId: "user-1" },
+  { id: "note-1", contactId: "contact-1", content: "Seeker stage. Referred by a Christian friend. Very open to learning about Jesus. Prefers Telegram.", createdAt: "2025-02-08T10:00:00Z", authorId: "user-1" },
+  { id: "note-2", contactId: "contact-1", content: "Sent Gospel of John PDF. Has prayer request for family situation.", createdAt: "2025-02-10T09:20:00Z", authorId: "user-1" },
+  { id: "note-3", contactId: "contact-2", content: "Completed Foundations study. Interested in baptism preparation. Very committed.", createdAt: "2025-02-11T08:50:00Z", authorId: "user-1" },
+  { id: "note-4", contactId: "contact-5", content: "Struggling with prayer life. Connected to Prayer Basics group. Wednesday meetup.", createdAt: "2025-02-06T09:30:00Z", authorId: "user-1" },
+  { id: "note-5", contactId: "contact-8", content: "Reading through Acts. Has deep questions about the Holy Spirit. Very thoughtful.", createdAt: "2025-02-09T11:30:00Z", authorId: "user-1" },
+  { id: "note-6", contactId: "contact-10", content: "Strong leader. Mentoring 3 new believers. One mentee ready for leadership training.", createdAt: "2025-02-10T16:20:00Z", authorId: "user-1" },
 ];
 
 export const INITIAL_CHANNELS: DeliveryChannel[] = [
@@ -899,7 +920,7 @@ export const INITIAL_CHANNELS: DeliveryChannel[] = [
     id: "ch-1", tenantId: "tenant-1", name: "Main WhatsApp", type: "whatsapp",
     status: "connected", enabled: true,
     config: { phoneNumber: "+1 555-0199", businessId: "waba-123456" },
-    senderName: "Acme Corp", rateLimit: 1000, priority: 1,
+    senderName: "GCM Ethiopia", rateLimit: 1000, priority: 1,
     createdAt: "2025-01-15T10:00:00Z", lastActiveAt: "2026-02-21T08:30:00Z",
     stats: { sent: 4520, delivered: 4380, failed: 140 }
   },
@@ -907,31 +928,31 @@ export const INITIAL_CHANNELS: DeliveryChannel[] = [
     id: "ch-2", tenantId: "tenant-1", name: "Transactional SMS", type: "sms",
     status: "connected", enabled: true,
     config: { provider: "Twilio", accountSid: "AC***", authToken: "***" },
-    senderName: "ACME", defaultCountryCode: "+1", rateLimit: 500, priority: 2,
+    senderName: "GCM", defaultCountryCode: "+1", rateLimit: 500, priority: 2,
     createdAt: "2025-01-20T10:00:00Z", lastActiveAt: "2026-02-20T14:00:00Z",
     stats: { sent: 2100, delivered: 2050, failed: 50 }
   },
   {
     id: "ch-3", tenantId: "tenant-1", name: "Support Email", type: "email",
     status: "connected", enabled: true,
-    config: { smtpHost: "smtp.acme.com", smtpPort: "587", imapHost: "imap.acme.com" },
-    senderName: "support@acme.com", priority: 3,
+    config: { smtpHost: "smtp.gcmethiopia.org", smtpPort: "587", imapHost: "imap.gcmethiopia.org" },
+    senderName: "support@gcmethiopia.org", priority: 3,
     createdAt: "2025-01-22T10:00:00Z", lastActiveAt: "2026-02-21T09:00:00Z",
     stats: { sent: 1800, delivered: 1790, failed: 10 }
   },
   {
-    id: "ch-4", tenantId: "tenant-1", name: "Acme Bot", type: "telegram",
+    id: "ch-4", tenantId: "tenant-1", name: "GCM Bot", type: "telegram",
     status: "disconnected", enabled: false,
     config: { botToken: "bot***" },
-    senderName: "AcmeBot", priority: 4,
+    senderName: "GCMBot", priority: 4,
     createdAt: "2025-02-01T10:00:00Z", lastActiveAt: "2026-01-15T16:00:00Z",
     stats: { sent: 320, delivered: 312, failed: 8 }
   },
   {
     id: "ch-5", tenantId: "tenant-1", name: "Bulk SMS Gateway", type: "smpp",
     status: "error", enabled: true,
-    config: { host: "smsc.provider.com", port: "2775", systemId: "acme_sys" },
-    senderName: "ACME", defaultCountryCode: "+1", rateLimit: 2000,
+    config: { host: "smsc.provider.com", port: "2775", systemId: "gcm_sys" },
+    senderName: "GCM", defaultCountryCode: "+1", rateLimit: 2000,
     createdAt: "2025-02-10T10:00:00Z",
     stats: { sent: 0, delivered: 0, failed: 0 }
   },
@@ -1025,7 +1046,7 @@ export const INITIAL_AUTOMATIONS: AutomationRule[] = [
     id: "auto-4", tenantId: "tenant-1", name: "CRM Sync Webhook",
     description: "Journey · Post contact data to CRM on message received",
     trigger: "message_received", triggerConfig: {},
-    action: "webhook_call", actionConfig: { url: "https://crm.acme.com/api/sync" },
+    action: "webhook_call", actionConfig: { url: "https://crm.gcmethiopia.org/api/sync" },
     enabled: true, lastTriggeredAt: "2026-02-21T07:45:00Z", triggerCount: 892,
     createdAt: "2025-01-25T10:00:00Z"
   },
@@ -1066,14 +1087,14 @@ export const INITIAL_AUTOMATIONS: AutomationRule[] = [
 export const INITIAL_WEBHOOKS: Webhook[] = [
   {
     id: "wh-1", tenantId: "tenant-1", name: "CRM Integration",
-    url: "https://crm.acme.com/api/webhooks/turumba",
+    url: "https://crm.gcmethiopia.org/api/webhooks/turumba",
     secret: "whsec_***", events: ["message.received", "contact.created", "contact.updated"],
     enabled: true, lastCalledAt: "2026-02-21T07:45:00Z", failureCount: 0,
     createdAt: "2025-01-25T10:00:00Z"
   },
   {
     id: "wh-2", tenantId: "tenant-1", name: "Analytics Pipeline",
-    url: "https://analytics.acme.com/ingest",
+    url: "https://analytics.gcmethiopia.org/ingest",
     events: ["message.sent", "message.delivered", "broadcast.completed"],
     enabled: true, lastCalledAt: "2026-02-20T23:00:00Z", failureCount: 2,
     createdAt: "2025-02-05T10:00:00Z"
@@ -1100,7 +1121,7 @@ export const INITIAL_AUDIT_LOG: AuditLogEntry[] = [
   { id: "log-4", tenantId: "tenant-1", userId: "user-1", userName: "Alex Rivera", action: "user.invited", target: "Daniel Ortiz", details: "Invited as agent role", createdAt: "2025-02-07T09:00:00Z" },
   { id: "log-5", tenantId: "tenant-1", userId: "user-1", userName: "Alex Rivera", action: "automation.created", target: "Welcome Message", details: "New automation rule: send welcome on contact_added", createdAt: "2025-02-08T10:00:00Z" },
   { id: "log-6", tenantId: "tenant-1", userId: "user-2", userName: "Sarah Chen", action: "message.sent", target: "John Smith", details: "Direct message via WhatsApp", createdAt: "2025-02-10T09:15:00Z" },
-  { id: "log-7", tenantId: "tenant-1", userId: "user-1", userName: "Alex Rivera", action: "channel.disabled", target: "Acme Bot", details: "Disabled Telegram channel", createdAt: "2025-02-12T16:00:00Z" },
+  { id: "log-7", tenantId: "tenant-1", userId: "user-1", userName: "Alex Rivera", action: "channel.disabled", target: "GCM Bot", details: "Disabled Telegram channel", createdAt: "2025-02-12T16:00:00Z" },
   { id: "log-8", tenantId: "tenant-1", userId: "user-6", userName: "Priya Sharma", action: "broadcast.scheduled", target: "Weekend Flash Sale", details: "Scheduled for Feb 14 via WhatsApp", createdAt: "2025-02-10T15:00:00Z" },
 ];
 
@@ -1210,7 +1231,7 @@ export const INITIAL_CHAT_ENDPOINTS: ChatEndpoint[] = [
       name: { enabled: true, required: true },
       email: { enabled: true, required: false },
     },
-    allowedOrigins: ["https://acme.com", "https://app.acme.com"],
+    allowedOrigins: ["https://gcmethiopia.org", "https://app.gcmethiopia.org"],
     createdAt: "2025-02-01T10:00:00Z",
   },
   {
@@ -1229,7 +1250,7 @@ export const INITIAL_CHAT_ENDPOINTS: ChatEndpoint[] = [
       name: { enabled: false, required: false },
       email: { enabled: false, required: false },
     },
-    allowedOrigins: ["https://acme.com"],
+    allowedOrigins: ["https://gcmethiopia.org"],
     createdAt: "2025-02-10T14:00:00Z",
   },
   {
@@ -1241,14 +1262,14 @@ export const INITIAL_CHAT_ENDPOINTS: ChatEndpoint[] = [
     brandColor: "#10b981",
     publicKey: "pk_live_jkl345mno678pqr901",
     launcherText: "Need help?",
-    welcomeMessage: "Welcome to the Acme Developer Portal! How can we assist?",
+    welcomeMessage: "Welcome to GCM Ethiopia! How can we walk alongside you today?",
     offlineMessage: "Our devrel team will respond within 24 hours.",
     preChatForm: true,
     preChatFields: {
       name: { enabled: true, required: true },
       email: { enabled: true, required: true },
     },
-    allowedOrigins: ["https://developers.acme.com"],
+    allowedOrigins: ["https://developers.gcmethiopia.org"],
     createdAt: "2025-02-15T09:00:00Z",
   },
 ];

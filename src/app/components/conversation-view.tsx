@@ -245,6 +245,78 @@ function GrabCountdownBadge({ deadline }: { deadline: number }) {
   );
 }
 
+// ─── Response & Wait Time Helpers ─────────────────────────────────────────────
+
+/** Format elapsed time as "Xh Ym" or "Ym" */
+function formatElapsed(ms: number): string {
+  if (ms <= 0) return "0m";
+  const totalMin = Math.floor(ms / 60000);
+  const h = Math.floor(totalMin / 60);
+  const m = totalMin % 60;
+  if (h > 0) return `${h}h ${m}m`;
+  return `${m}m`;
+}
+
+/** Compute response time: how long since the contact's last message that hasn't been replied to yet */
+function getVisitorWaitTime(messages: Message[]): number | null {
+  if (messages.length === 0) return null;
+  // Walk from newest to oldest — find the last contact message
+  const sorted = [...messages].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+  const lastContactMsg = sorted.find(m => m.senderType === "contact");
+  if (!lastContactMsg) return null;
+  // Check if we replied after that contact message
+  const lastContactTime = new Date(lastContactMsg.createdAt).getTime();
+  const replyAfter = sorted.find(m => m.senderType === "user" && new Date(m.createdAt).getTime() > lastContactTime);
+  if (replyAfter) return null; // already replied — no wait
+  return Date.now() - lastContactTime;
+}
+
+/** Compute our response time: time between the contact's last message and our reply */
+function getResponseTime(messages: Message[]): number | null {
+  if (messages.length < 2) return null;
+  const sorted = [...messages].sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+  // Walk backwards to find the last contact→user reply pair
+  for (let i = sorted.length - 1; i > 0; i--) {
+    if (sorted[i].senderType === "user") {
+      // Find the preceding contact message
+      for (let j = i - 1; j >= 0; j--) {
+        if (sorted[j].senderType === "contact") {
+          return new Date(sorted[i].createdAt).getTime() - new Date(sorted[j].createdAt).getTime();
+        }
+      }
+    }
+  }
+  return null;
+}
+
+/** Badge showing visitor wait time (they're waiting for us) */
+function WaitTimeBadge({ waitMs }: { waitMs: number }) {
+  const isLong = waitMs > 30 * 60000; // > 30 min
+  return (
+    <span className={cn(
+      "inline-flex items-center gap-1 text-xs font-bold tabular-nums px-1.5 py-0.5 rounded-sm",
+      isLong ? "bg-red-500/10 text-red-600" : "bg-amber-500/10 text-amber-600"
+    )}>
+      <Clock className="w-3 h-3" />
+      {formatElapsed(waitMs)}
+    </span>
+  );
+}
+
+/** Badge showing our last response time */
+function ResponseTimeBadge({ responseMs }: { responseMs: number }) {
+  const isFast = responseMs < 15 * 60000; // < 15 min
+  return (
+    <span className={cn(
+      "inline-flex items-center gap-1 text-xs font-bold tabular-nums px-1.5 py-0.5 rounded-sm",
+      isFast ? "bg-emerald-500/10 text-emerald-600" : "bg-blue-500/10 text-blue-600"
+    )}>
+      <Zap className="w-3 h-3" />
+      {formatElapsed(responseMs)}
+    </span>
+  );
+}
+
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 const getPresence = (userId: string): "online" | "away" | "offline" =>
@@ -632,7 +704,7 @@ function ThreadMessage({ entry, isEdited, editHistory, onEdit, onDelete, canEdit
 // ─── InboxListItem ────────────────────────────────────────────────────────────
 
 const InboxListItem = React.memo(function InboxListItem({
-  contact, lastMsg, meta, isActive, onClick, users, grabDeadline, onGrab,
+  contact, lastMsg, meta, isActive, onClick, users, grabDeadline, onGrab, contactMessages,
 }: {
   contact:  Contact;
   lastMsg:  Message | undefined;
@@ -642,11 +714,14 @@ const InboxListItem = React.memo(function InboxListItem({
   users:    User[];
   grabDeadline?: number | null;
   onGrab?:  (contactId: string) => void;
+  contactMessages?: Message[];
 }) {
   const assignee    = users.find(u => u.id === meta.assigneeId);
   const priorityOpt = PRIORITY_OPTIONS.find(p => p.id === meta.priority)!;
   const statusOpt   = STATUS_OPTIONS.find(s => s.id === meta.status)!;
   const isGrabbable = !!grabDeadline && grabDeadline > Date.now() && !meta.assigneeId;
+  const waitMs      = useMemo(() => contactMessages ? getVisitorWaitTime(contactMessages) : null, [contactMessages]);
+  const responseMs  = useMemo(() => contactMessages ? getResponseTime(contactMessages) : null, [contactMessages]);
 
   return (
     <button onClick={onClick}
@@ -714,7 +789,7 @@ const InboxListItem = React.memo(function InboxListItem({
           {lastMsg?.content ?? "No messages yet"}
         </p>
 
-        {/* Row 4: status + priority + grab button */}
+        {/* Row 4: status + priority + timers + grab button */}
         <div className="flex items-center gap-1.5 mt-2 flex-wrap">
           <span className={cn("text-xs font-bold px-2 py-0.5 border", statusOpt.cls)}>
             {statusOpt.label}
@@ -725,6 +800,8 @@ const InboxListItem = React.memo(function InboxListItem({
               {priorityOpt.label}
             </span>
           )}
+          {waitMs != null && waitMs > 0 && <WaitTimeBadge waitMs={waitMs} />}
+          {responseMs != null && <ResponseTimeBadge responseMs={responseMs} />}
           {isGrabbable && onGrab && (
             <span
               role="button"
@@ -745,7 +822,7 @@ const InboxListItem = React.memo(function InboxListItem({
 
 function ConversationControlBar({
   contact, meta, users, port, openDropdown, setOpenDropdown,
-  onUpdateMeta, onAddSystem, onToggleInfo, isInfoOpen, isAgent,
+  onUpdateMeta, onAddSystem, onToggleInfo, isInfoOpen, isAgent, contactMessages,
 }: {
   contact:          Contact;
   meta:             ConvMeta;
@@ -758,11 +835,14 @@ function ConversationControlBar({
   onToggleInfo:     () => void;
   isInfoOpen:       boolean;
   isAgent?:         boolean;
+  contactMessages?: Message[];
 }) {
   const assignee    = users.find(u => u.id === meta.assigneeId);
   const statusOpt   = STATUS_OPTIONS.find(s => s.id === meta.status)!;
   const priorityOpt = PRIORITY_OPTIONS.find(p => p.id === meta.priority)!;
   const toggle      = (name: string) => setOpenDropdown(openDropdown === name ? null : name);
+  const waitMs      = useMemo(() => contactMessages ? getVisitorWaitTime(contactMessages) : null, [contactMessages]);
+  const responseMs  = useMemo(() => contactMessages ? getResponseTime(contactMessages) : null, [contactMessages]);
 
   return (
     <div className="shrink-0 border-b border-border bg-background">
@@ -771,7 +851,7 @@ function ConversationControlBar({
         <div className={cn("h-0.5 w-full", CHANNEL_ACCENT[port] ?? "bg-primary")} />
       )}
 
-      {/* Top row: contact identity + channel badge */}
+      {/* Top row: contact identity + channel badge + timers */}
       <div className="px-5 pt-3 pb-0 flex items-center justify-between gap-3">
         <div className="flex items-center gap-3 min-w-0">
           <div className="w-9 h-9 rounded-full bg-primary/10 border border-primary/20 flex items-center justify-center text-sm font-bold text-primary shrink-0">
@@ -782,7 +862,19 @@ function ConversationControlBar({
               <h3 className="text-sm font-bold text-foreground leading-tight">{contact.name}</h3>
               {port && <ChannelBadge port={port} size="md" />}
             </div>
-            <p className="text-xs text-muted-foreground mt-0.5">{contact.phone || contact.email}</p>
+            <div className="flex items-center gap-2 mt-0.5">
+              <p className="text-xs text-muted-foreground">{contact.phone || contact.email}</p>
+              {waitMs != null && waitMs > 0 && (
+                <span className="inline-flex items-center gap-1 text-xs font-bold text-amber-600">
+                  <Clock className="w-3 h-3" />Waiting {formatElapsed(waitMs)}
+                </span>
+              )}
+              {responseMs != null && (
+                <span className="inline-flex items-center gap-1 text-xs font-bold text-emerald-600">
+                  <Zap className="w-3 h-3" />Replied in {formatElapsed(responseMs)}
+                </span>
+              )}
+            </div>
           </div>
         </div>
         <button onClick={onToggleInfo}
@@ -3162,6 +3254,7 @@ export const ConversationView = ({
                       isActive={selectedId === c.id} users={users}
                       grabDeadline={grabDeadlines[c.id] ?? null}
                       onGrab={grabConversation}
+                      contactMessages={messages.filter(m => m.contactId === c.id)}
                       onClick={() => {
                         if (mergeMode && c.id !== selectedId) {
                           setMergeSelection(prev => {
@@ -3220,6 +3313,7 @@ export const ConversationView = ({
                     onToggleInfo={() => setIsInfoOpen(v => !v)}
                     isInfoOpen={isInfoOpen}
                     isAgent={isAgent}
+                    contactMessages={messages.filter(m => m.contactId === selectedId)}
                   />
                 </div>
 
