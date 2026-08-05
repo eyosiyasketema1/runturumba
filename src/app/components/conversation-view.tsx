@@ -1775,161 +1775,84 @@ function ConversationToolbar({
 
   return (
     <div className="shrink-0 bg-background">
-      {/* Toggle bar */}
-      <div className="flex items-center gap-1 px-3 py-1.5">
-        <button
-          onClick={() => { setIsExpanded(!isExpanded); if (isExpanded) setActivePanel(null); }}
-          className="flex items-center gap-1.5 px-2 py-1 text-xs font-semibold text-muted-foreground hover:text-foreground transition-colors"
-        >
-          <Zap className="w-3.5 h-3.5 text-amber-500" />
-          <span>Quick Actions</span>
-          <ChevronDown className={cn("w-3 h-3 transition-transform", isExpanded && "rotate-180")} />
-        </button>
-
-        {/* Compact action chips when collapsed */}
-        {!isExpanded && (
-          <div className="flex items-center gap-1 ml-1">
-            {TOOLBAR_ACTIONS.map(action => (
-              <button
-                key={action.id}
-                onClick={() => togglePanel(action.id)}
-                className="flex items-center gap-1 px-2 py-1 text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-all rounded-sm"
-                title={action.desc}
-              >
-                <action.icon className="w-3 h-3" />
-                <span className="hidden sm:inline">{action.label}</span>
-              </button>
-            ))}
-          </div>
-        )}
+      {/* Flat action row — always visible */}
+      <div className="flex items-center gap-0.5 px-2 py-1 border-b border-border">
+        <span className="text-xs font-bold text-muted-foreground uppercase tracking-widest mr-1 shrink-0">Quick Actions</span>
+        {TOOLBAR_ACTIONS.map(action => {
+          const isActive = activePanel === action.id;
+          return (
+            <button
+              key={action.id}
+              onClick={() => togglePanel(action.id)}
+              className={cn(
+                "flex items-center gap-1 px-2 py-1 text-xs font-medium transition-colors whitespace-nowrap",
+                isActive ? "text-primary" : "text-foreground hover:bg-muted"
+              )}
+            >
+              <action.icon className="w-3.5 h-3.5 shrink-0" />
+              {action.label}
+            </button>
+          );
+        })}
+        <ChevronDown className={cn("w-3 h-3 text-muted-foreground ml-auto shrink-0 transition-transform", isExpanded && "rotate-180")} />
       </div>
 
-      {/* Expanded toolbar with action tiles */}
-      <AnimatePresence>
-        {isExpanded && (
+      {/* Panel content */}
+      <AnimatePresence mode="wait">
+        {activePanel && (
           <motion.div
+            key={activePanel}
             initial={{ height: 0, opacity: 0 }}
             animate={{ height: "auto", opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: 0.15 }}
-            className="overflow-hidden"
+            transition={{ duration: 0.12 }}
+            className="overflow-hidden border-b border-border"
           >
-            {/* Action tiles row */}
-            <div className="grid grid-cols-3 gap-1.5 px-3 pb-2">
-              {TOOLBAR_ACTIONS.map(action => {
-                const isActive = activePanel === action.id;
-                return (
-                  <button
-                    key={action.id}
-                    onClick={() => setActivePanel(isActive ? null : action.id)}
-                    className={cn(
-                      "flex flex-col items-center gap-1 px-2 py-2.5 text-center transition-all rounded-sm border",
-                      isActive
-                        ? "bg-primary/5 border-primary/30 text-primary"
-                        : "bg-muted/30 border-transparent text-muted-foreground hover:bg-muted/50 hover:text-foreground"
-                    )}
-                  >
-                    <action.icon className="w-4 h-4" />
-                    <span className="text-xs font-semibold leading-tight">{action.label}</span>
-                  </button>
-                );
-              })}
-            </div>
-
-            {/* Panel content */}
-            <AnimatePresence mode="wait">
-              {activePanel && (
-                <motion.div
-                  key={activePanel}
-                  initial={{ height: 0, opacity: 0 }}
-                  animate={{ height: "auto", opacity: 1 }}
-                  exit={{ height: 0, opacity: 0 }}
-                  transition={{ duration: 0.12 }}
-                  className="overflow-hidden border-t border-border"
-                >
-                  <div className="px-3 py-3 max-h-52 overflow-y-auto custom-scrollbar">
-                    {/* SEND FORM */}
-                    {activePanel === "form" && (
-                      <div className="space-y-1.5">
-                        <p className="text-xs font-bold text-foreground mb-2">Send a form to {contact.name.split(" ")[0]}</p>
-                        {FORM_TEMPLATES.map(form => (
-                          <button key={form.id} onClick={() => handleSendForm(form.id)}
-                            className="w-full flex items-start gap-3 p-2.5 text-left bg-muted/20 hover:bg-muted/50 transition-colors rounded-sm group"
-                          >
-                            <div className="w-8 h-8 bg-blue-50 text-blue-600 rounded-sm flex items-center justify-center shrink-0">
-                              <form.icon className="w-4 h-4" />
-                            </div>
-                            <div className="min-w-0 flex-1">
-                              <p className="text-xs font-bold text-foreground">{form.label}</p>
-                              <p className="text-xs text-muted-foreground leading-snug">{form.desc}</p>
-                            </div>
-                            <Send className="w-3.5 h-3.5 text-muted-foreground opacity-0 group-hover:opacity-100 group-focus-visible:opacity-100 transition-opacity mt-1 shrink-0" />
-                          </button>
-                        ))}
-                      </div>
-                    )}
-
-                    {/* CONTENT SERIES */}
-                    {activePanel === "series" && (
-                      <div className="space-y-1.5">
-                        <p className="text-xs font-bold text-foreground mb-2">Start a content series</p>
-                        {CONTENT_SERIES.map(series => (
-                          <button key={series.id} onClick={() => handleStartSeries(series.id)}
-                            className="w-full flex items-start gap-3 p-2.5 text-left bg-muted/20 hover:bg-muted/50 transition-colors rounded-sm group"
-                          >
-                            <div className="w-8 h-8 bg-violet-50 text-violet-600 rounded-sm flex items-center justify-center shrink-0">
-                              <Library className="w-4 h-4" />
-                            </div>
-                            <div className="min-w-0 flex-1">
-                              <p className="text-xs font-bold text-foreground">{series.label} <span className="font-normal text-muted-foreground">· {series.lessons} lessons</span></p>
-                              <p className="text-xs text-muted-foreground leading-snug">{series.desc}</p>
-                            </div>
-                            <ChevronRight className="w-3.5 h-3.5 text-muted-foreground opacity-0 group-hover:opacity-100 group-focus-visible:opacity-100 transition-opacity mt-1 shrink-0" />
-                          </button>
-                        ))}
-                      </div>
-                    )}
-
-                    {/* AI CONTENT SUGGESTION */}
-                    {activePanel === "suggest" && (
-                      <div className="space-y-1.5">
-                        <div className="flex items-center gap-2 mb-2">
-                          <Sparkles className="w-3.5 h-3.5 text-amber-500" />
-                          <p className="text-xs font-bold text-foreground">AI picks for {contact.name.split(" ")[0]}</p>
-                          {contact.maturity && (
-                            <span className="text-xs font-semibold px-1.5 py-0.5 rounded-sm bg-muted text-muted-foreground">{contact.maturity}</span>
-                          )}
-                        </div>
-                        {suggestions.length === 0 ? (
-                          <p className="text-xs text-muted-foreground py-4 text-center">No published content found. Add content in the Content Library first.</p>
-                        ) : (
-                          suggestions.map(item => (
-                            <button key={item.id} onClick={() => handleSendContent(item)}
-                              className="w-full flex items-start gap-3 p-2.5 text-left bg-muted/20 hover:bg-muted/50 transition-colors rounded-sm group"
-                            >
-                              <div className="w-8 h-8 bg-amber-50 text-amber-600 rounded-sm flex items-center justify-center shrink-0">
-                                <BookOpen className="w-4 h-4" />
-                              </div>
-                              <div className="min-w-0 flex-1">
-                                <p className="text-xs font-bold text-foreground">{item.title}</p>
-                                <p className="text-xs text-muted-foreground leading-snug line-clamp-2">{item.summary}</p>
-                                <div className="flex items-center gap-2 mt-1">
-                                  <span className="text-xs font-semibold px-1.5 py-0.5 rounded-sm bg-muted text-muted-foreground">{item.type}</span>
-                                  <span className="text-xs text-muted-foreground">{item.readTimeMin} min read</span>
-                                </div>
-                              </div>
-                              <Send className="w-3.5 h-3.5 text-muted-foreground opacity-0 group-hover:opacity-100 group-focus-visible:opacity-100 transition-opacity mt-1 shrink-0" />
-                            </button>
-                          ))
-                        )}
-                      </div>
-                    )}
-
-                    {/* Reassignment moved to Profile tab in info panel */}
-                  </div>
-                </motion.div>
+            <div className="px-3 py-2 max-h-44 overflow-y-auto">
+              {activePanel === "form" && (
+                <div className="space-y-1">
+                  {FORM_TEMPLATES.map(form => (
+                    <button key={form.id} onClick={() => handleSendForm(form.id)}
+                      className="w-full flex items-center gap-2.5 px-2 py-1.5 text-left hover:bg-muted/50 transition-colors rounded-sm"
+                    >
+                      <form.icon className="w-3.5 h-3.5 shrink-0 text-muted-foreground" />
+                      <span className="text-xs font-medium text-foreground">{form.label}</span>
+                      <span className="text-xs text-muted-foreground truncate flex-1">{form.desc}</span>
+                    </button>
+                  ))}
+                </div>
               )}
-            </AnimatePresence>
+              {activePanel === "series" && (
+                <div className="space-y-1">
+                  {CONTENT_SERIES.map(series => (
+                    <button key={series.id} onClick={() => handleStartSeries(series.id)}
+                      className="w-full flex items-center gap-2.5 px-2 py-1.5 text-left hover:bg-muted/50 transition-colors rounded-sm"
+                    >
+                      <Library className="w-3.5 h-3.5 shrink-0 text-muted-foreground" />
+                      <span className="text-xs font-medium text-foreground">{series.label}</span>
+                      <span className="text-xs text-muted-foreground">· {series.lessons} lessons</span>
+                    </button>
+                  ))}
+                </div>
+              )}
+              {activePanel === "suggest" && (
+                <div className="space-y-1">
+                  {suggestions.length === 0 ? (
+                    <p className="text-xs text-muted-foreground py-2 text-center">No published content found.</p>
+                  ) : (
+                    suggestions.map(item => (
+                      <button key={item.id} onClick={() => handleSendContent(item)}
+                        className="w-full flex items-center gap-2.5 px-2 py-1.5 text-left hover:bg-muted/50 transition-colors rounded-sm"
+                      >
+                        <BookOpen className="w-3.5 h-3.5 shrink-0 text-muted-foreground" />
+                        <span className="text-xs font-medium text-foreground truncate">{item.title}</span>
+                        <span className="text-xs text-muted-foreground">{item.type}</span>
+                      </button>
+                    ))
+                  )}
+                </div>
+              )}
+            </div>
           </motion.div>
         )}
       </AnimatePresence>
@@ -2555,9 +2478,9 @@ function ComposeArea({
             value={text}
             onChange={e => setText(e.target.value)}
             placeholder={`Message ${contact.name.split(" ")[0]} via ${CHANNEL_LABEL[port]}…`}
-            rows={3}
+            rows={2}
             aria-label="Compose message"
-            className="w-full px-3 pt-3 pb-2 text-sm outline-none resize-none bg-transparent text-foreground"
+            className="w-full px-3 pt-2.5 pb-1.5 text-sm outline-none resize-none bg-transparent text-foreground"
             onKeyDown={e => {
               if (e.key === "Enter" && !e.shiftKey) {
                 e.preventDefault();
@@ -2567,7 +2490,7 @@ function ComposeArea({
           />
 
           {/* Toolbar */}
-          <div className="flex items-center justify-between px-3 py-2 border-t border-inherit">
+          <div className="flex items-center justify-between px-3 py-1.5 border-t border-border">
             <div className="flex items-center gap-0.5">
               {/* Image / file attachment */}
               <input ref={fileInputRef} type="file" accept="image/*" multiple className="hidden" onChange={handleImageSelect} aria-label="Attach image" />
@@ -3432,25 +3355,18 @@ export const ConversationView = ({
                   )}
                 </div>
 
-                {/* Unified chat box: Quick Actions + AI Suggestions + Compose */}
+                {/* Unified chat box: Quick Actions + Compose */}
                 <div className="mx-2 mb-2 border border-border bg-background" data-dropdown-host>
                   {!isAgent && (
-                    <>
-                      <ConversationToolbar
-                        contact={selectedContact}
-                        contentLibrary={contentLibrary}
-                        users={users}
-                        currentUser={currentUser}
-                        onSendMessage={onSendMessage}
-                        port={convPort}
-                        onUpdateContact={onUpdateContact}
-                      />
-                      <AISuggestionPills
-                        contact={selectedContact}
-                        messages={selectedMessages}
-                        onSelect={(text) => setAiSuggestedText(text)}
-                      />
-                    </>
+                    <ConversationToolbar
+                      contact={selectedContact}
+                      contentLibrary={contentLibrary}
+                      users={users}
+                      currentUser={currentUser}
+                      onSendMessage={onSendMessage}
+                      port={convPort}
+                      onUpdateContact={onUpdateContact}
+                    />
                   )}
                   {isAgent && (
                     <VolunteerQuickActions
