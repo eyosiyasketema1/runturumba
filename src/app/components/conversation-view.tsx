@@ -515,7 +515,7 @@ function ThreadMessage({ entry, isEdited, editHistory, onEdit, onDelete, canEdit
     <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
       className={cn("flex w-full px-5 py-0.5 group/msg", isAgent ? "justify-end" : "justify-start")}
     >
-      <div className={cn("max-w-[68%] flex flex-col", isAgent ? "items-end" : "items-start")}>
+      <div className={cn("max-w-[55%] flex flex-col", isAgent ? "items-end" : "items-start")}>
         {/* Edit / Delete action buttons (visible on hover for agent messages) */}
         {isAgent && (canEdit || canDelete) && !isEditing && (
           <div className="flex items-center gap-0.5 mb-1 opacity-0 group-hover/msg:opacity-100 transition-opacity">
@@ -622,9 +622,6 @@ function ThreadMessage({ entry, isEdited, editHistory, onEdit, onDelete, canEdit
         )}
 
         <div className={cn("flex items-center gap-1.5 mt-1 px-1", isAgent ? "justify-end" : "justify-start")}>
-          {entry.port && !isAgent && (
-            <ChannelBadge port={entry.port} size="sm" />
-          )}
           <span className="text-xs font-bold text-muted-foreground uppercase tracking-wider opacity-60">
             {new Date(entry.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
           </span>
