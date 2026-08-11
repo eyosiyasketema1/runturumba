@@ -7,6 +7,8 @@ import {
   TestTube, Send, Clock, BarChart3, ChevronLeft,
   Shield, Loader2, CircleCheck,
   CircleX, Info, Ellipsis, Bot,
+  ExternalLink, BookOpen, ChevronDown, ChevronUp,
+  Monitor, MousePointerClick,
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { toast } from "sonner";
@@ -89,6 +91,142 @@ const CHANNEL_CONFIG_FIELDS: Record<ChannelType, { key: string; label: string; p
 
 const POPULAR_CHANNELS: ChannelType[] = ["whatsapp", "messenger", "instagram"];
 const BETA_CHANNELS: ChannelType[] = ["tiktok"];
+
+// ============================================================
+// Setup Guides — step-by-step tutorials per channel type
+// ============================================================
+
+interface SetupStep {
+  title: string;
+  description: string;
+  platform: string;
+  visualHint: string;
+}
+
+interface SetupGuide {
+  prerequisites: string;
+  estimatedTime: string;
+  docsUrl: string;
+  steps: SetupStep[];
+}
+
+const CHANNEL_SETUP_GUIDES: Record<ChannelType, SetupGuide> = {
+  whatsapp: {
+    prerequisites: "Meta (Facebook) account, Meta Business account, a phone number not registered with WhatsApp",
+    estimatedTime: "30–45 min",
+    docsUrl: "https://developers.facebook.com/docs/whatsapp/cloud-api/get-started",
+    steps: [
+      { title: "Create a Meta Developer Account", description: "Go to developers.facebook.com, click \"Get Started\", and log in with your Facebook account.", platform: "developers.facebook.com", visualHint: "Look for the blue \"Get Started\" button in the top-right navigation" },
+      { title: "Create a New App", description: "Click \"My Apps\" → \"Create App\". Select \"Business\" as the type, enter your app name and email.", platform: "developers.facebook.com/apps", visualHint: "Look for the green \"Create App\" button on the dashboard" },
+      { title: "Add WhatsApp Product", description: "In your app dashboard, scroll to \"Add Products\", find WhatsApp, and click \"Set Up\".", platform: "App Dashboard → Add Products", visualHint: "Find the WhatsApp icon with a green \"Set Up\" button" },
+      { title: "Add a Phone Number", description: "Register a phone number for the API. It must not be currently registered with any WhatsApp app.", platform: "App Dashboard → WhatsApp → Getting Started", visualHint: "Look for \"Add phone number\" button and the \"From\" dropdown" },
+      { title: "Generate an Access Token", description: "Click \"Generate\" for a temporary token, or create a System User at business.facebook.com for a permanent one.", platform: "App Dashboard or Business Settings → System Users", visualHint: "Look for \"Generate\" next to \"Temporary access token\"" },
+      { title: "Copy Your Business Account ID", description: "Copy the WhatsApp Business Account ID and Phone Number ID shown on the Getting Started page.", platform: "App Dashboard → WhatsApp → Getting Started", visualHint: "Find the ID values next to your phone number listing" },
+      { title: "Configure Webhooks", description: "Under WhatsApp → Configuration, enter your HTTPS callback URL and verify token. Subscribe to message events.", platform: "App Dashboard → WhatsApp → Configuration", visualHint: "Look for \"Callback URL\" and \"Verify Token\" fields" },
+    ],
+  },
+  telegram: {
+    prerequisites: "A Telegram account with the app installed on phone or desktop",
+    estimatedTime: "5–10 min",
+    docsUrl: "https://core.telegram.org/bots#botfather",
+    steps: [
+      { title: "Open BotFather", description: "Open Telegram and search for \"BotFather\" in the search bar. Select the verified account with a blue checkmark.", platform: "Telegram App → Search", visualHint: "Look for \"BotFather\" with a blue verification badge" },
+      { title: "Start a Chat", description: "Click \"Start\" or type /start to begin. BotFather will display a list of available commands.", platform: "Telegram → BotFather chat", visualHint: "Look for the \"Start\" button at the bottom of the chat" },
+      { title: "Create a New Bot", description: "Type /newbot and send it. BotFather will ask you to choose a display name for your bot.", platform: "Telegram → BotFather chat", visualHint: "BotFather replies: \"How are we going to call it?\"" },
+      { title: "Set the Bot Username", description: "Enter a unique username ending with \"bot\" (e.g. my_support_bot). If taken, try adding numbers.", platform: "Telegram → BotFather chat", visualHint: "BotFather asks: \"Now let's choose a username\"" },
+      { title: "Copy Your API Token", description: "BotFather confirms creation and shows your HTTP API token (e.g. 123456789:AAHdq...). Copy and store it securely.", platform: "Telegram → BotFather chat", visualHint: "Look for \"Use this token to access the HTTP API:\"" },
+    ],
+  },
+  twilio: {
+    prerequisites: "Email address, phone number for verification, credit card for account upgrade",
+    estimatedTime: "15–20 min",
+    docsUrl: "https://www.twilio.com/docs/messaging/quickstart",
+    steps: [
+      { title: "Create a Twilio Account", description: "Go to twilio.com, click \"Start for free\", fill in your details, and verify your email.", platform: "twilio.com", visualHint: "Look for \"Start for free\" in the top-right corner" },
+      { title: "Verify Your Phone", description: "After email verification, Twilio asks you to verify a phone number via SMS or voice call.", platform: "Twilio Console → Onboarding", visualHint: "Phone verification form with country code selector" },
+      { title: "Find Your Account Credentials", description: "On the Console dashboard, find Account SID and Auth Token under \"Account Info\". Click the eye icon to reveal the token.", platform: "console.twilio.com", visualHint: "Look for \"Account Info\" panel with SID and Auth Token" },
+      { title: "Buy a Phone Number", description: "Go to Phone Numbers → Buy a Number. Select your country, choose SMS capability, search, and buy.", platform: "Console → Phone Numbers → Buy a Number", visualHint: "Look for \"Buy a Number\" in the sidebar, then \"Search\" button" },
+      { title: "Create a Messaging Service", description: "Go to Messaging → Services, click \"Create Messaging Service\", name it, and add your number as a sender.", platform: "Console → Messaging → Services", visualHint: "Look for \"Create Messaging Service\" button" },
+      { title: "Configure Webhook URL", description: "In your phone number settings, enter your server URL in \"A Message Comes In\" webhook field.", platform: "Console → Phone Numbers → Active Numbers", visualHint: "Find \"A MESSAGE COMES IN\" with URL input and HTTP method" },
+    ],
+  },
+  sms: {
+    prerequisites: "An account with any SMS gateway provider (MessageBird, Vonage, Plivo, etc.)",
+    estimatedTime: "10–15 min",
+    docsUrl: "https://www.messagingsonnet.com/docs",
+    steps: [
+      { title: "Choose an SMS Provider", description: "Select a gateway provider that supports your target countries and volume. Options include MessageBird, Vonage, Plivo.", platform: "Provider's website", visualHint: "Look for \"Sign Up\" or \"Get Started\" on the provider's page" },
+      { title: "Create a Provider Account", description: "Register for an account, complete email and phone verification as required.", platform: "Provider's signup page", visualHint: "Look for the registration form and email confirmation" },
+      { title: "Obtain API Credentials", description: "Navigate to your provider's API settings. Locate and copy your API Key (or SID) and API Secret (or Auth Token).", platform: "Provider Dashboard → API Settings", visualHint: "Look for \"API Keys\" or \"Credentials\" in the sidebar" },
+      { title: "Get a Sender Number", description: "Purchase or register a phone number or alphanumeric Sender ID through your provider.", platform: "Provider → Numbers / Sender IDs", visualHint: "Look for \"Numbers\" or \"Buy a Number\" in the navigation" },
+      { title: "Send a Test Message", description: "Use the provider's dashboard or API testing tool to send a test SMS to your phone and verify delivery.", platform: "Provider Dashboard", visualHint: "Look for \"Send Test Message\" or \"API Explorer\"" },
+    ],
+  },
+  messenger: {
+    prerequisites: "Facebook account, a Facebook Page, Meta Developer account",
+    estimatedTime: "20–30 min",
+    docsUrl: "https://developers.facebook.com/docs/messenger-platform/getting-started",
+    steps: [
+      { title: "Create a Meta Developer Account", description: "Go to developers.facebook.com, click \"Get Started\" and complete the registration.", platform: "developers.facebook.com", visualHint: "Look for \"Get Started\" in the top navigation" },
+      { title: "Create a New App", description: "Click \"My Apps\" → \"Create App\". Select \"Business\" type, then choose \"Business messaging\" use case.", platform: "developers.facebook.com/apps", visualHint: "Look for \"Create App\" button, then \"Business messaging\" card" },
+      { title: "Add Messenger Product", description: "In the app dashboard, click \"Add Product\", find the Messenger tile, and click \"Set Up\".", platform: "App Dashboard → Add Product", visualHint: "Find the Messenger icon with \"Set Up\" button" },
+      { title: "Connect Your Facebook Page", description: "Under Messenger Settings → Access Tokens, click \"Add or Remove Pages\" and select your Page.", platform: "App Dashboard → Messenger → Settings", visualHint: "Look for \"Add or Remove Pages\" and the page selector" },
+      { title: "Generate a Page Access Token", description: "After connecting your page, click \"Generate Token\" next to the page name. Copy and store it securely.", platform: "App Dashboard → Messenger → Settings", visualHint: "Look for \"Generate Token\" next to your page name" },
+      { title: "Configure Webhooks", description: "Scroll to \"Webhooks\", click \"Add Callback URL\". Enter your HTTPS URL and verify token, then save.", platform: "App Dashboard → Messenger → Webhooks", visualHint: "Look for \"Callback URL\" and \"Verify Token\" fields" },
+      { title: "Subscribe to Events", description: "After verifying, click \"Add Subscriptions\" and check \"messages\" and \"messaging_postbacks\". Save.", platform: "App Dashboard → Messenger → Webhooks", visualHint: "Look for checklist of event types with checkboxes" },
+    ],
+  },
+  instagram: {
+    prerequisites: "Instagram Business/Creator Account, linked Facebook Page, Meta Developer account",
+    estimatedTime: "25–35 min",
+    docsUrl: "https://developers.facebook.com/docs/instagram-platform/instagram-api-with-instagram-login",
+    steps: [
+      { title: "Switch to Business Account", description: "In Instagram app, go to Settings → Account → Switch to Professional Account. Choose Business and connect a Facebook Page.", platform: "Instagram App → Settings", visualHint: "Look for \"Switch to Professional Account\" under Account" },
+      { title: "Link to a Facebook Page", description: "In Instagram Settings → Linked Accounts, connect your Facebook Page. This is required for API access.", platform: "Instagram App → Settings → Linked Accounts", visualHint: "Look for \"Facebook\" and the page selector" },
+      { title: "Create a Meta App", description: "On developers.facebook.com, create an app with \"Business\" type. Add the \"Instagram\" product.", platform: "developers.facebook.com/apps", visualHint: "Find the Instagram tile under \"Add Products\"" },
+      { title: "Configure Permissions", description: "In App Review → Permissions, request instagram_basic, instagram_manage_messages, pages_manage_metadata.", platform: "App Dashboard → App Review → Permissions", visualHint: "Look for permissions list with \"Request\" buttons" },
+      { title: "Set Up Webhooks", description: "Under Webhooks, add an \"Instagram\" subscription. Enter your callback URL and verify token, subscribe to \"messages\".", platform: "App Dashboard → Webhooks", visualHint: "Select \"Instagram\" from the object dropdown" },
+      { title: "Generate an Access Token", description: "In Messenger/Instagram Settings, generate a Page access token for the linked Facebook Page.", platform: "App Dashboard → Messenger → Settings", visualHint: "Look for \"Generate Token\" next to your linked page" },
+    ],
+  },
+  tiktok: {
+    prerequisites: "TikTok for Business account, business entity registration",
+    estimatedTime: "20–30 min",
+    docsUrl: "https://business-api.tiktok.com/portal/docs",
+    steps: [
+      { title: "Create a Developer Account", description: "Go to the TikTok Developer Portal and register with your TikTok for Business credentials.", platform: "developers.tiktok.com", visualHint: "Look for \"Log In\" or \"Sign Up\" on the Developer Portal" },
+      { title: "Create a New App", description: "In the dashboard, click \"Create App\". Enter your app name, description, and select your use case.", platform: "developers.tiktok.com → Manage Apps", visualHint: "Look for the \"Create App\" button" },
+      { title: "Apply for Messaging API", description: "In app settings, navigate to permissions and apply for Business Messaging API access.", platform: "Developer Portal → App Settings", visualHint: "Look for \"Business Messaging\" under API products" },
+      { title: "Configure Permissions", description: "Once approved, enable \"TikTok Accounts\" under Scope of permission. Add required redirect URLs.", platform: "Developer Portal → App Settings → Permissions", visualHint: "Look for the permission toggles" },
+      { title: "Set Up Webhook", description: "Configure your callback URL to receive real-time message notifications via HTTPS POST.", platform: "Developer Portal → App Settings → Webhooks", visualHint: "Look for the \"Webhook\" or \"Callback URL\" field" },
+      { title: "Copy Your Credentials", description: "Copy your Client Key (App ID) and Client Secret from the app settings page.", platform: "Developer Portal → App Settings", visualHint: "Look for \"Client Key\" and \"Client Secret\" with copy icons" },
+    ],
+  },
+  email: {
+    prerequisites: "An email account or service provider (Gmail, Outlook, SendGrid, Amazon SES, etc.)",
+    estimatedTime: "10–15 min",
+    docsUrl: "https://support.google.com/mail/answer/7126229",
+    steps: [
+      { title: "Identify Your SMTP Server", description: "Find the hostname: smtp.gmail.com (Gmail), smtp.office365.com (Outlook), smtp.sendgrid.net (SendGrid).", platform: "Email provider's documentation", visualHint: "Look for \"SMTP settings\" or \"Outgoing server\" in help docs" },
+      { title: "Determine Port & Encryption", description: "Use port 587 (TLS/STARTTLS — recommended), 465 (SSL), or 25 (unencrypted, not recommended).", platform: "Email provider's documentation", visualHint: "Port and security settings listed with the SMTP hostname" },
+      { title: "Generate an App Password", description: "If using Gmail or 2FA-enabled accounts: Google Account → Security → App Passwords → Generate.", platform: "myaccount.google.com/apppasswords (Gmail)", visualHint: "Look for \"App Passwords\" under Security, then \"Generate\"" },
+      { title: "Enter SMTP Credentials", description: "Use your full email as the username and your password (or app password). For SendGrid, username is \"apikey\".", platform: "Connection form", visualHint: "Enter in the Username and Password fields on this page" },
+      { title: "Set the Sender Address", description: "Enter the \"From\" email address. This should match or be authorized by your SMTP account.", platform: "Connection form", visualHint: "Enter in the From Address field on this page" },
+    ],
+  },
+  smpp: {
+    prerequisites: "SMSC provider account, SMPP credentials (system_id, password, host, port), static IP for whitelisting",
+    estimatedTime: "15–25 min",
+    docsUrl: "https://smpp.org/SMPP_v3_4_Issue1_2.pdf",
+    steps: [
+      { title: "Obtain SMSC Credentials", description: "Contact your SMPP provider or log into their portal to get: SMSC host/IP, port, system_id (username), and password.", platform: "SMPP provider portal", visualHint: "Look for \"SMPP Credentials\" or \"Connection Details\"" },
+      { title: "Set Connection Parameters", description: "Enter the SMSC host and port (typically 2775 standard, 2776 TLS). Set bind type to Transceiver for two-way messaging.", platform: "Connection form", visualHint: "Enter Host and Port fields, select Transceiver mode" },
+      { title: "Enter Authentication", description: "Enter your system_id (ESME identifier) and password from your SMSC operator. Optionally set system_type.", platform: "Connection form", visualHint: "Enter in the System ID, Password, and System Type fields" },
+      { title: "Configure Source Address", description: "Enter your source address (sender ID) — typically a short code or phone number assigned by your provider.", platform: "Connection form", visualHint: "Enter in the source address or sender ID field" },
+      { title: "Test the Connection", description: "Initiate a bind to verify connectivity. A successful bind returns ESME_ROK status (0x00000000).", platform: "Connection form → Test", visualHint: "Click \"Test Connection\" and look for success indicator" },
+    ],
+  },
+};
 
 type TestPhase = "idle" | "dns" | "handshake" | "auth" | "send" | "done";
 type TestResult = "pending" | "pass" | "fail";
@@ -722,7 +860,7 @@ const ConnectedChannelRow = ({
 
 
 // ============================================================
-// Screen 2: Connect (full-page setup form)
+// Screen 2: Connect (two-column: form left, guide right)
 // ============================================================
 
 const ConnectScreen = ({
@@ -736,6 +874,7 @@ const ConnectScreen = ({
 }) => {
   const typeInfo = CHANNEL_TYPES.find(c => c.id === channelType)!;
   const fields = CHANNEL_CONFIG_FIELDS[channelType];
+  const guide = CHANNEL_SETUP_GUIDES[channelType];
 
   const [name, setName] = useState("");
   const [senderName, setSenderName] = useState("");
@@ -743,6 +882,7 @@ const ConnectScreen = ({
   const [priority, setPriority] = useState("");
   const [countryCode, setCountryCode] = useState("");
   const [config, setConfig] = useState<Record<string, string>>({});
+  const [showAdvanced, setShowAdvanced] = useState(false);
 
   const handleSubmit = () => {
     if (!name.trim()) return;
@@ -762,7 +902,7 @@ const ConnectScreen = ({
   };
 
   return (
-    <div className="p-6 lg:p-10 max-w-2xl mx-auto space-y-6">
+    <div className="p-6 lg:p-10 space-y-6">
       {/* Back */}
       <button onClick={onBack} className="flex items-center gap-1.5 text-sm font-semibold text-muted-foreground hover:text-foreground transition-colors">
         <ArrowLeft className="w-4 h-4" />
@@ -774,106 +914,279 @@ const ConnectScreen = ({
         <div className={cn("w-12 h-12 flex items-center justify-center border", typeInfo.bgColor, typeInfo.borderColor)}>
           <ChannelIcon type={typeInfo} className="w-6 h-6" />
         </div>
-        <div>
+        <div className="flex-1">
           <h1 className="text-lg font-bold text-foreground">Connect {typeInfo.label}</h1>
           <p className="text-sm text-muted-foreground">{typeInfo.description}</p>
         </div>
+        <div className="hidden sm:flex items-center gap-3 text-xs text-muted-foreground">
+          <span className="flex items-center gap-1">
+            <Clock className="w-3 h-3" />
+            {guide.estimatedTime}
+          </span>
+        </div>
       </div>
 
-      {/* Form */}
-      <div className="space-y-5">
-        {/* Basics */}
-        <div className="space-y-1.5">
-          <label className="text-xs font-semibold text-foreground">Channel Name <span className="text-destructive">*</span></label>
-          <input
-            placeholder="e.g. Main WhatsApp, Support SMS"
-            value={name}
-            onChange={e => setName(e.target.value)}
-            className="w-full h-9 px-3 text-sm bg-background border border-border text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary"
-            aria-label="Channel name"
-          />
-        </div>
+      {/* Two-column layout */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
 
-        <div className="space-y-1.5">
-          <label className="text-xs font-semibold text-foreground">Sender Name</label>
-          <input
-            placeholder="e.g. Acme Corp, support@acme.com"
-            value={senderName}
-            onChange={e => setSenderName(e.target.value)}
-            className="w-full h-9 px-3 text-sm bg-background border border-border text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary"
-            aria-label="Sender name"
-          />
-          <p className="text-xs text-muted-foreground">The name or number recipients will see.</p>
-        </div>
+        {/* ─── LEFT: Connection Form ─── */}
+        <div className="space-y-5">
+          <h2 className="text-sm font-bold text-foreground flex items-center gap-2">
+            <Shield className="w-4 h-4 text-primary" />
+            Connection Details
+          </h2>
 
-        <div className="border-t border-border" />
-
-        {/* Credentials */}
-        <h4 className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Credentials & API Settings</h4>
-        {fields.map(f => (
-          <div key={f.key} className="space-y-1.5">
-            <label className="text-xs font-semibold text-foreground">{f.label}</label>
+          {/* Basics */}
+          <div className="space-y-1.5">
+            <label className="text-xs font-semibold text-foreground">Channel Name <span className="text-destructive">*</span></label>
             <input
-              type={f.sensitive ? "password" : "text"}
-              placeholder={f.placeholder}
-              value={config[f.key] || ""}
-              onChange={e => setConfig(prev => ({ ...prev, [f.key]: e.target.value }))}
+              placeholder="e.g. Main WhatsApp, Support SMS"
+              value={name}
+              onChange={e => setName(e.target.value)}
               className="w-full h-9 px-3 text-sm bg-background border border-border text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary"
-              aria-label={f.label}
+              aria-label="Channel name"
             />
-            {f.hint && <p className="text-xs text-muted-foreground">{f.hint}</p>}
           </div>
-        ))}
 
-        <div className="border-t border-border" />
+          <div className="space-y-1.5">
+            <label className="text-xs font-semibold text-foreground">Sender Name</label>
+            <input
+              placeholder="e.g. Acme Corp, support@acme.com"
+              value={senderName}
+              onChange={e => setSenderName(e.target.value)}
+              className="w-full h-9 px-3 text-sm bg-background border border-border text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+              aria-label="Sender name"
+            />
+            <p className="text-xs text-muted-foreground">The name or number recipients will see.</p>
+          </div>
 
-        {/* Advanced */}
-        <h4 className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Advanced Options</h4>
-        <div className="grid grid-cols-3 gap-3">
-          <div className="space-y-1.5">
-            <label className="text-xs font-semibold text-foreground">Rate Limit</label>
-            <input type="number" placeholder="msg/hr" value={rateLimit} onChange={e => setRateLimit(e.target.value)}
-              className="w-full h-9 px-3 text-sm bg-background border border-border text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary" aria-label="Rate limit" />
+          <div className="border-t border-border" />
+
+          {/* Credentials */}
+          <h4 className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Credentials & API Settings</h4>
+          {fields.map(f => (
+            <div key={f.key} className="space-y-1.5">
+              <label className="text-xs font-semibold text-foreground">{f.label}</label>
+              <input
+                type={f.sensitive ? "password" : "text"}
+                placeholder={f.placeholder}
+                value={config[f.key] || ""}
+                onChange={e => setConfig(prev => ({ ...prev, [f.key]: e.target.value }))}
+                className="w-full h-9 px-3 text-sm bg-background border border-border text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+                aria-label={f.label}
+              />
+              {f.hint && <p className="text-xs text-muted-foreground">{f.hint}</p>}
+            </div>
+          ))}
+
+          {/* Advanced (collapsible) */}
+          <button
+            onClick={() => setShowAdvanced(!showAdvanced)}
+            className="flex items-center gap-1.5 text-xs font-semibold text-muted-foreground hover:text-foreground transition-colors"
+          >
+            {showAdvanced ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+            Advanced Options
+          </button>
+
+          <AnimatePresence>
+            {showAdvanced && (
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: "auto" }}
+                exit={{ opacity: 0, height: 0 }}
+                transition={{ duration: 0.2 }}
+                className="space-y-3 overflow-hidden"
+              >
+                <div className="grid grid-cols-3 gap-3">
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-semibold text-foreground">Rate Limit</label>
+                    <input type="number" placeholder="msg/hr" value={rateLimit} onChange={e => setRateLimit(e.target.value)}
+                      className="w-full h-9 px-3 text-sm bg-background border border-border text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary" aria-label="Rate limit" />
+                  </div>
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-semibold text-foreground">Priority</label>
+                    <input type="number" placeholder="1-10" value={priority} onChange={e => setPriority(e.target.value)}
+                      className="w-full h-9 px-3 text-sm bg-background border border-border text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary" aria-label="Channel priority" />
+                  </div>
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-semibold text-foreground">Country Code</label>
+                    <input placeholder="+1" value={countryCode} onChange={e => setCountryCode(e.target.value)}
+                      className="w-full h-9 px-3 text-sm bg-background border border-border text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary" aria-label="Country code" />
+                  </div>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          {/* Warning */}
+          <div className="p-3 bg-amber-50 border border-amber-200">
+            <p className="text-xs text-amber-700">
+              <AlertTriangle className="w-3 h-3 inline mr-1 -mt-0.5" />
+              The channel will be created in <strong>Disconnected</strong> state. Use "Test Connection" to verify credentials, then enable to go live.
+            </p>
           </div>
-          <div className="space-y-1.5">
-            <label className="text-xs font-semibold text-foreground">Priority</label>
-            <input type="number" placeholder="1-10" value={priority} onChange={e => setPriority(e.target.value)}
-              className="w-full h-9 px-3 text-sm bg-background border border-border text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary" aria-label="Channel priority" />
-          </div>
-          <div className="space-y-1.5">
-            <label className="text-xs font-semibold text-foreground">Country Code</label>
-            <input placeholder="+1" value={countryCode} onChange={e => setCountryCode(e.target.value)}
-              className="w-full h-9 px-3 text-sm bg-background border border-border text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary" aria-label="Country code" />
+
+          {/* Actions */}
+          <div className="flex justify-end gap-2 pt-4 border-t border-border">
+            <button onClick={onBack} className="px-4 py-2 text-sm font-semibold border border-border bg-background text-foreground hover:bg-muted transition-colors">
+              Cancel
+            </button>
+            <button
+              disabled={!name.trim()}
+              onClick={handleSubmit}
+              className={cn(
+                "inline-flex items-center gap-1.5 px-4 py-2 text-sm font-semibold transition-colors",
+                name.trim()
+                  ? "bg-primary text-primary-foreground hover:bg-primary/90"
+                  : "bg-muted text-muted-foreground cursor-not-allowed"
+              )}
+            >
+              <Plus className="w-3.5 h-3.5" />
+              Create Channel
+            </button>
           </div>
         </div>
 
-        {/* Warning */}
-        <div className="p-3 bg-amber-50 border border-amber-200">
-          <p className="text-xs text-amber-700">
-            <AlertTriangle className="w-3 h-3 inline mr-1 -mt-0.5" />
-            The channel will be created in <strong>Disconnected</strong> state. Use "Test Connection" to verify credentials, then enable to go live.
-          </p>
+        {/* ─── RIGHT: Setup Guide ─── */}
+        <div className="space-y-4">
+          <h2 className="text-sm font-bold text-foreground flex items-center gap-2">
+            <BookOpen className="w-4 h-4 text-primary" />
+            How to Connect
+          </h2>
+
+          {/* Prerequisites */}
+          <div className="p-3 bg-primary/5 border border-primary/15">
+            <p className="text-[10px] font-bold text-primary uppercase tracking-widest mb-1">Prerequisites</p>
+            <p className="text-xs text-foreground">{guide.prerequisites}</p>
+          </div>
+
+          {/* Steps */}
+          <div className="space-y-0">
+            {guide.steps.map((step, i) => (
+              <SetupStepCard key={i} step={step} index={i} isLast={i === guide.steps.length - 1} />
+            ))}
+          </div>
+
+          {/* Docs link */}
+          <a
+            href={guide.docsUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center gap-2 p-3 border border-border bg-muted/30 hover:bg-muted/50 transition-colors group"
+          >
+            <ExternalLink className="w-4 h-4 text-muted-foreground group-hover:text-primary transition-colors" />
+            <div className="flex-1 min-w-0">
+              <p className="text-xs font-semibold text-foreground group-hover:text-primary transition-colors">Official Documentation</p>
+              <p className="text-[10px] text-muted-foreground truncate">{guide.docsUrl}</p>
+            </div>
+            <ArrowLeft className="w-3 h-3 text-muted-foreground rotate-180 group-hover:translate-x-0.5 transition-transform" />
+          </a>
         </div>
       </div>
+    </div>
+  );
+};
 
-      {/* Actions */}
-      <div className="flex justify-end gap-2 pt-4 border-t border-border">
-        <button onClick={onBack} className="px-4 py-2 text-sm font-semibold border border-border bg-background text-foreground hover:bg-muted transition-colors">
-          Cancel
-        </button>
+
+// ============================================================
+// Setup Step Card (used in connect screen guide)
+// ============================================================
+
+const SetupStepCard = ({ step, index, isLast }: { step: SetupStep; index: number; isLast: boolean }) => {
+  const [expanded, setExpanded] = useState(false);
+
+  return (
+    <div className="flex gap-3">
+      {/* Timeline line + number */}
+      <div className="flex flex-col items-center">
+        <div className="w-7 h-7 flex items-center justify-center border border-border bg-background text-xs font-bold text-foreground shrink-0">
+          {index + 1}
+        </div>
+        {!isLast && <div className="w-px flex-1 bg-border min-h-[16px]" />}
+      </div>
+
+      {/* Content */}
+      <div className={cn("flex-1 pb-4 min-w-0", isLast && "pb-0")}>
         <button
-          disabled={!name.trim()}
-          onClick={handleSubmit}
-          className={cn(
-            "inline-flex items-center gap-1.5 px-4 py-2 text-sm font-semibold transition-colors",
-            name.trim()
-              ? "bg-primary text-primary-foreground hover:bg-primary/90"
-              : "bg-muted text-muted-foreground cursor-not-allowed"
-          )}
+          onClick={() => setExpanded(!expanded)}
+          className="w-full text-left group"
         >
-          <Plus className="w-3.5 h-3.5" />
-          Create Channel
+          <p className="text-xs font-semibold text-foreground group-hover:text-primary transition-colors">
+            {step.title}
+          </p>
+          <p className="text-xs text-muted-foreground mt-0.5">{step.description}</p>
         </button>
+
+        <AnimatePresence>
+          {expanded && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: "auto" }}
+              exit={{ opacity: 0, height: 0 }}
+              transition={{ duration: 0.15 }}
+              className="overflow-hidden"
+            >
+              {/* Visual hint card — mini browser mockup */}
+              <div className="mt-2 border border-border bg-muted/30 overflow-hidden">
+                {/* Browser chrome */}
+                <div className="flex items-center gap-1.5 px-3 py-1.5 bg-muted border-b border-border">
+                  <div className="flex gap-1">
+                    <div className="w-2 h-2 rounded-full bg-red-400/60" />
+                    <div className="w-2 h-2 rounded-full bg-amber-400/60" />
+                    <div className="w-2 h-2 rounded-full bg-emerald-400/60" />
+                  </div>
+                  <div className="flex-1 px-2 py-0.5 bg-background border border-border mx-2">
+                    <p className="text-[9px] text-muted-foreground truncate font-mono">{step.platform}</p>
+                  </div>
+                </div>
+
+                {/* Visual hint content */}
+                <div className="p-3 space-y-2">
+                  <div className="flex items-start gap-2">
+                    <MousePointerClick className="w-3.5 h-3.5 text-primary shrink-0 mt-0.5" />
+                    <p className="text-[11px] text-foreground leading-relaxed">{step.visualHint}</p>
+                  </div>
+
+                  {/* Stylized UI mockup */}
+                  <div className="p-2 bg-background border border-border space-y-1.5">
+                    <div className="flex items-center gap-2">
+                      <div className="h-2 bg-muted-foreground/15 flex-1 max-w-[60%]" />
+                      <div className="h-2 bg-muted-foreground/10 w-8" />
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div className="h-2 bg-muted-foreground/10 w-12" />
+                      <div className="h-5 px-2 bg-primary/15 border border-primary/25 flex items-center">
+                        <span className="text-[8px] font-bold text-primary tracking-wide">
+                          {step.title.includes("Generate") ? "GENERATE" :
+                           step.title.includes("Create") ? "CREATE" :
+                           step.title.includes("Add") ? "ADD" :
+                           step.title.includes("Configure") ? "SAVE" :
+                           step.title.includes("Copy") ? "COPY" :
+                           step.title.includes("Set") ? "SET UP" :
+                           step.title.includes("Connect") ? "CONNECT" :
+                           step.title.includes("Subscribe") ? "SUBSCRIBE" :
+                           step.title.includes("Open") ? "OPEN" :
+                           step.title.includes("Send") ? "SEND" :
+                           step.title.includes("Test") ? "TEST" :
+                           step.title.includes("Enter") ? "SUBMIT" :
+                           step.title.includes("Identify") ? "FIND" :
+                           step.title.includes("Determine") ? "SELECT" :
+                           step.title.includes("Obtain") ? "GET" :
+                           step.title.includes("Choose") ? "SELECT" :
+                           step.title.includes("Switch") ? "SWITCH" :
+                           step.title.includes("Link") ? "LINK" :
+                           step.title.includes("Apply") ? "APPLY" :
+                           "CLICK"}
+                        </span>
+                      </div>
+                    </div>
+                    <div className="h-2 bg-muted-foreground/10 w-3/4" />
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
     </div>
   );
