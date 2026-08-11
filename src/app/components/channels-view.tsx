@@ -177,6 +177,7 @@ const InfoRow = ({ label, value }: { label: string; value: string }) => (
 // ============================================================
 
 type Screen =
+  | { kind: "list" }
   | { kind: "catalog" }
   | { kind: "connect"; channelType: ChannelType }
   | { kind: "detail"; channelId: string }
@@ -202,7 +203,7 @@ export const ChannelsView = ({
   onDeleteRule,
   onReorderRules,
 }: ChannelsViewProps) => {
-  const [screen, setScreen] = useState<Screen>({ kind: "catalog" });
+  const [screen, setScreen] = useState<Screen>({ kind: "list" });
   const [isChatEndpointsOpen, setIsChatEndpointsOpen] = useState(false);
 
   const handleDuplicate = (ch: DeliveryChannel) => {
@@ -286,15 +287,25 @@ export const ChannelsView = ({
       )}
 
       <AnimatePresence mode="wait">
-        {screen.kind === "catalog" && (
-          <motion.div key="catalog" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.2 }}>
-            <CatalogScreen
+        {screen.kind === "list" && (
+          <motion.div key="list" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.2 }}>
+            <ChannelListScreen
               channels={channels}
               onToggleChannel={onToggleChannel}
-              onGoConnect={(type) => setScreen({ kind: "connect", channelType: type })}
               onGoDetail={(id) => setScreen({ kind: "detail", channelId: id })}
+              onGoAddChannel={() => setScreen({ kind: "catalog" })}
               onOpenChatEndpoints={() => setIsChatEndpointsOpen(true)}
               chatEndpointsCount={chatEndpoints.length}
+            />
+          </motion.div>
+        )}
+
+        {screen.kind === "catalog" && (
+          <motion.div key="catalog" initial={{ opacity: 0, x: 24 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -24 }} transition={{ duration: 0.2 }}>
+            <CatalogScreen
+              channels={channels}
+              onGoConnect={(type) => setScreen({ kind: "connect", channelType: type })}
+              onBack={() => setScreen({ kind: "list" })}
             />
           </motion.div>
         )}
@@ -304,7 +315,10 @@ export const ChannelsView = ({
             <ConnectScreen
               channelType={screen.channelType}
               onBack={() => setScreen({ kind: "catalog" })}
-              onAdd={onAddChannel}
+              onAdd={(data) => {
+                onAddChannel(data);
+                setScreen({ kind: "list" });
+              }}
             />
           </motion.div>
         )}
@@ -314,10 +328,10 @@ export const ChannelsView = ({
             <DetailScreen
               channelId={screen.channelId}
               channels={channels}
-              onBack={() => setScreen({ kind: "catalog" })}
+              onBack={() => setScreen({ kind: "list" })}
               onEdit={() => setScreen({ kind: "edit", channelId: screen.channelId })}
               onToggle={() => onToggleChannel(screen.channelId)}
-              onDelete={() => { onDeleteChannel(screen.channelId); setScreen({ kind: "catalog" }); }}
+              onDelete={() => { onDeleteChannel(screen.channelId); setScreen({ kind: "list" }); }}
               onDuplicate={() => {
                 const ch = channels.find(c => c.id === screen.channelId);
                 if (ch) handleDuplicate(ch);
@@ -347,53 +361,50 @@ export const ChannelsView = ({
 
 
 // ============================================================
-// Screen 1: Catalog
+// Screen 0: Channel List (default — your connected channels)
 // ============================================================
 
-const CatalogScreen = ({
+const ChannelListScreen = ({
   channels,
   onToggleChannel,
-  onGoConnect,
   onGoDetail,
+  onGoAddChannel,
   onOpenChatEndpoints,
   chatEndpointsCount,
 }: {
   channels: DeliveryChannel[];
   onToggleChannel: (id: string) => void;
-  onGoConnect: (type: ChannelType) => void;
   onGoDetail: (id: string) => void;
+  onGoAddChannel: () => void;
   onOpenChatEndpoints: () => void;
   chatEndpointsCount: number;
 }) => {
-  const [typeFilter, setTypeFilter] = useState<ChannelType | "all">("all");
   const [searchQuery, setSearchQuery] = useState("");
-
-  const filteredTypes = useMemo(() => {
-    const q = searchQuery.toLowerCase();
-    return CHANNEL_TYPES.filter(ct => {
-      const matchesType = typeFilter === "all" || ct.id === typeFilter;
-      const matchesSearch = !q || ct.label.toLowerCase().includes(q) || ct.description.toLowerCase().includes(q);
-      return matchesType && matchesSearch;
-    });
-  }, [typeFilter, searchQuery]);
+  const [statusFilter, setStatusFilter] = useState<ChannelStatus | "all">("all");
 
   const filteredChannels = useMemo(() => {
     const q = searchQuery.toLowerCase();
     return channels.filter(ch => {
-      const matchesType = typeFilter === "all" || ch.type === typeFilter;
       const matchesSearch = !q || ch.name.toLowerCase().includes(q) || ch.type.toLowerCase().includes(q);
-      return matchesType && matchesSearch;
+      const matchesStatus = statusFilter === "all" || ch.status === statusFilter;
+      return matchesSearch && matchesStatus;
     });
-  }, [channels, typeFilter, searchQuery]);
+  }, [channels, searchQuery, statusFilter]);
+
+  const statusCounts = useMemo(() => {
+    const counts: Record<string, number> = { all: channels.length };
+    channels.forEach(ch => { counts[ch.status] = (counts[ch.status] || 0) + 1; });
+    return counts;
+  }, [channels]);
 
   return (
-    <div className="space-y-8 p-6 lg:p-10">
+    <div className="space-y-6 p-6 lg:p-10">
       {/* Header */}
       <header className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight text-foreground">Channel Catalog</h1>
+          <h1 className="text-3xl font-bold tracking-tight text-foreground">Channels</h1>
           <p className="text-muted-foreground text-sm mt-1">
-            Manage your messaging channels and discover new ones to help you acquire more customers.
+            Manage your messaging channels and monitor their performance.
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -409,21 +420,36 @@ const CatalogScreen = ({
               </span>
             )}
           </button>
+          <button
+            onClick={onGoAddChannel}
+            className="inline-flex items-center gap-2 px-3 py-2 text-sm font-semibold bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
+          >
+            <Plus className="w-4 h-4" />
+            Add Channel
+          </button>
         </div>
       </header>
 
-      {/* Tab bar + search */}
+      {/* Filters + search */}
       <div className="flex flex-col sm:flex-row sm:items-center gap-3">
-        <div className="flex gap-1 p-1 bg-muted border border-border overflow-x-auto flex-1">
-          <FilterButton active={typeFilter === "all"} onClick={() => setTypeFilter("all")}>All</FilterButton>
-          {CHANNEL_TYPES.map(ct => (
-            <FilterButton key={ct.id} active={typeFilter === ct.id} onClick={() => setTypeFilter(ct.id)}>
-              <ChannelIcon type={ct} className="w-3 h-3" />
-              {ct.label}
-            </FilterButton>
-          ))}
+        <div className="flex gap-1 p-1 bg-muted border border-border overflow-x-auto">
+          <FilterButton active={statusFilter === "all"} onClick={() => setStatusFilter("all")}>
+            All <span className="ml-1 opacity-60">{statusCounts.all || 0}</span>
+          </FilterButton>
+          <FilterButton active={statusFilter === "connected"} onClick={() => setStatusFilter("connected")}>
+            <Wifi className="w-3 h-3" />
+            Connected <span className="ml-1 opacity-60">{statusCounts.connected || 0}</span>
+          </FilterButton>
+          <FilterButton active={statusFilter === "disconnected"} onClick={() => setStatusFilter("disconnected")}>
+            <WifiOff className="w-3 h-3" />
+            Disconnected <span className="ml-1 opacity-60">{statusCounts.disconnected || 0}</span>
+          </FilterButton>
+          <FilterButton active={statusFilter === "error"} onClick={() => setStatusFilter("error")}>
+            <AlertTriangle className="w-3 h-3" />
+            Error <span className="ml-1 opacity-60">{statusCounts.error || 0}</span>
+          </FilterButton>
         </div>
-        <div className="relative w-full sm:w-64">
+        <div className="relative w-full sm:w-64 sm:ml-auto">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
           <input
             placeholder="Search channels..."
@@ -435,84 +461,183 @@ const CatalogScreen = ({
         </div>
       </div>
 
-      {/* Channel type cards grid */}
-      <div>
-        <h2 className="text-sm font-bold text-muted-foreground uppercase tracking-widest mb-4">Available Channels</h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {filteredTypes.map(ct => {
-            const isPopular = POPULAR_CHANNELS.includes(ct.id);
-            const isBeta = BETA_CHANNELS.includes(ct.id);
-            const connectedCount = channels.filter(ch => ch.type === ct.id).length;
-            return (
-              <div key={ct.id} className="relative border border-border bg-card p-5 flex items-start gap-4 group hover:border-primary/30 transition-colors">
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 mb-1">
-                    <h3 className="text-sm font-bold text-foreground">{ct.label}</h3>
-                    {isPopular && (
-                      <span className="px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wider bg-emerald-50 text-emerald-700 border border-emerald-200">
-                        Popular
-                      </span>
-                    )}
-                    {isBeta && (
-                      <span className="px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wider bg-amber-50 text-amber-700 border border-amber-200">
-                        Beta
-                      </span>
-                    )}
-                  </div>
-                  <p className="text-xs text-muted-foreground mb-3">{ct.description}</p>
-                  <div className="flex items-center gap-2">
-                    <button
-                      onClick={() => onGoConnect(ct.id)}
-                      className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
-                    >
-                      <Plus className="w-3 h-3" />
-                      Connect
-                    </button>
-                    {connectedCount > 0 && (
-                      <span className="text-xs text-muted-foreground">
-                        {connectedCount} connected
-                      </span>
-                    )}
-                  </div>
-                </div>
-                <div className={cn("w-10 h-10 flex items-center justify-center shrink-0", ct.bgColor, "border", ct.borderColor)}>
-                  <ChannelIcon type={ct} className="w-5 h-5" />
-                </div>
-              </div>
-            );
-          })}
+      {/* Channel list */}
+      {channels.length === 0 ? (
+        <div className="border border-border p-16 text-center">
+          <Signal className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+          <h3 className="text-sm font-bold text-foreground mb-1">No channels connected yet</h3>
+          <p className="text-xs text-muted-foreground mb-4">
+            Connect your first messaging channel to start sending and receiving messages.
+          </p>
+          <button
+            onClick={onGoAddChannel}
+            className="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-semibold bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
+          >
+            <Plus className="w-4 h-4" />
+            Add Channel
+          </button>
         </div>
-        {filteredTypes.length === 0 && (
-          <div className="border border-border p-12 text-center">
-            <Signal className="w-10 h-10 text-muted-foreground mx-auto mb-3" />
-            <p className="text-sm font-medium text-muted-foreground">No channel types match your search</p>
-          </div>
-        )}
+      ) : filteredChannels.length === 0 ? (
+        <div className="border border-border p-12 text-center">
+          <Search className="w-10 h-10 text-muted-foreground mx-auto mb-3" />
+          <p className="text-sm font-medium text-muted-foreground">No channels match your search.</p>
+        </div>
+      ) : (
+        <div className="space-y-2">
+          {filteredChannels.map(channel => (
+            <ConnectedChannelRow
+              key={channel.id}
+              channel={channel}
+              onToggle={() => onToggleChannel(channel.id)}
+              onClick={() => onGoDetail(channel.id)}
+            />
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
+
+
+// ============================================================
+// Screen 1: Catalog (reached via "Add Channel")
+// ============================================================
+
+const CatalogScreen = ({
+  channels,
+  onGoConnect,
+  onBack,
+}: {
+  channels: DeliveryChannel[];
+  onGoConnect: (type: ChannelType) => void;
+  onBack: () => void;
+}) => {
+  const [categoryFilter, setCategoryFilter] = useState<string>("all");
+  const [searchQuery, setSearchQuery] = useState("");
+
+  const CATEGORIES = [
+    { id: "all", label: "All" },
+    { id: "messaging", label: "Business Messaging" },
+    { id: "sms", label: "SMS" },
+    { id: "email", label: "Email" },
+    { id: "social", label: "Social Media" },
+  ];
+
+  const CHANNEL_CATEGORY: Record<ChannelType, string> = {
+    whatsapp: "messaging",
+    messenger: "messaging",
+    telegram: "messaging",
+    sms: "sms",
+    twilio: "sms",
+    smpp: "sms",
+    email: "email",
+    instagram: "social",
+    tiktok: "social",
+  };
+
+  const filteredTypes = useMemo(() => {
+    const q = searchQuery.toLowerCase();
+    return CHANNEL_TYPES.filter(ct => {
+      const matchesCategory = categoryFilter === "all" || CHANNEL_CATEGORY[ct.id] === categoryFilter;
+      const matchesSearch = !q || ct.label.toLowerCase().includes(q) || ct.description.toLowerCase().includes(q);
+      return matchesCategory && matchesSearch;
+    });
+  }, [categoryFilter, searchQuery]);
+
+  return (
+    <div className="space-y-6 p-6 lg:p-10">
+      {/* Back */}
+      <button onClick={onBack} className="flex items-center gap-1.5 text-sm font-semibold text-muted-foreground hover:text-foreground transition-colors">
+        <ArrowLeft className="w-4 h-4" />
+        Back to Channels
+      </button>
+
+      {/* Header */}
+      <header>
+        <h1 className="text-3xl font-bold tracking-tight text-foreground">Channel Catalog</h1>
+        <p className="text-muted-foreground text-sm mt-1">
+          Manage your messaging channels and discover new ones to help you acquire more customers.
+        </p>
+      </header>
+
+      {/* Category tabs + search */}
+      <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+        <div className="flex gap-1 p-1 bg-muted border border-border overflow-x-auto flex-1">
+          {CATEGORIES.map(cat => (
+            <FilterButton key={cat.id} active={categoryFilter === cat.id} onClick={() => setCategoryFilter(cat.id)}>
+              {cat.label}
+            </FilterButton>
+          ))}
+        </div>
+        <div className="relative w-full sm:w-64">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+          <input
+            placeholder="Search Channel Catalog"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full h-9 pl-9 pr-3 text-sm bg-background border border-border text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+            aria-label="Search channel catalog"
+          />
+        </div>
       </div>
 
-      {/* Your Channels section */}
-      {channels.length > 0 && (
-        <div>
-          <h2 className="text-sm font-bold text-muted-foreground uppercase tracking-widest mb-4">
-            Your Channels
-            <span className="ml-2 text-foreground">{filteredChannels.length}</span>
-          </h2>
-          <div className="space-y-2">
-            {filteredChannels.length === 0 ? (
-              <div className="border border-border p-8 text-center">
-                <p className="text-sm text-muted-foreground">No connected channels match the current filter.</p>
+      {/* Channel type cards grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+        {filteredTypes.map(ct => {
+          const isPopular = POPULAR_CHANNELS.includes(ct.id);
+          const isBeta = BETA_CHANNELS.includes(ct.id);
+          const connectedCount = channels.filter(ch => ch.type === ct.id).length;
+          return (
+            <div key={ct.id} className="relative border border-border bg-card p-5 flex flex-col group hover:border-primary/30 transition-colors">
+              {/* Badge row */}
+              {(isPopular || isBeta) && (
+                <div className="flex gap-1.5 mb-3">
+                  {isPopular && (
+                    <span className="px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wider bg-emerald-50 text-emerald-700 border border-emerald-200">
+                      Popular
+                    </span>
+                  )}
+                  {isBeta && (
+                    <span className="px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wider bg-amber-50 text-amber-700 border border-amber-200">
+                      Beta
+                    </span>
+                  )}
+                </div>
+              )}
+
+              {/* Icon + title row */}
+              <div className="flex items-start gap-3 mb-2">
+                <div className={cn("w-10 h-10 flex items-center justify-center shrink-0 border", ct.bgColor, ct.borderColor)}>
+                  <ChannelIcon type={ct} className="w-5 h-5" />
+                </div>
+                <h3 className="text-sm font-bold text-foreground pt-2">{ct.label}</h3>
               </div>
-            ) : (
-              filteredChannels.map(channel => (
-                <ConnectedChannelRow
-                  key={channel.id}
-                  channel={channel}
-                  onToggle={() => onToggleChannel(channel.id)}
-                  onClick={() => onGoDetail(channel.id)}
-                />
-              ))
-            )}
-          </div>
+
+              {/* Description */}
+              <p className="text-xs text-muted-foreground mb-4 flex-1">{ct.description}</p>
+
+              {/* Connect button */}
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => onGoConnect(ct.id)}
+                  className="inline-flex items-center justify-center w-full gap-1.5 px-3 py-2 text-xs font-semibold border border-border bg-background text-foreground hover:bg-muted transition-colors"
+                >
+                  Connect
+                </button>
+              </div>
+              {connectedCount > 0 && (
+                <p className="text-[10px] text-muted-foreground text-center mt-2">
+                  {connectedCount} already connected
+                </p>
+              )}
+            </div>
+          );
+        })}
+      </div>
+      {filteredTypes.length === 0 && (
+        <div className="border border-border p-12 text-center">
+          <Signal className="w-10 h-10 text-muted-foreground mx-auto mb-3" />
+          <p className="text-sm font-medium text-muted-foreground">No channel types match your search</p>
         </div>
       )}
     </div>
@@ -634,7 +759,6 @@ const ConnectScreen = ({
       defaultCountryCode: countryCode.trim() || undefined,
     });
     toast.success(`"${name}" channel created`);
-    onBack();
   };
 
   return (
@@ -790,7 +914,7 @@ const DetailScreen = ({
       <div className="p-6 lg:p-10">
         <button onClick={onBack} className="flex items-center gap-1.5 text-sm font-semibold text-muted-foreground hover:text-foreground transition-colors mb-6">
           <ArrowLeft className="w-4 h-4" />
-          Back to Catalog
+          Back to Channels
         </button>
         <div className="border border-border p-12 text-center">
           <Signal className="w-10 h-10 text-muted-foreground mx-auto mb-3" />
@@ -811,7 +935,7 @@ const DetailScreen = ({
       {/* Back */}
       <button onClick={onBack} className="flex items-center gap-1.5 text-sm font-semibold text-muted-foreground hover:text-foreground transition-colors">
         <ArrowLeft className="w-4 h-4" />
-        Back to Catalog
+        Back to Channels
       </button>
 
       {/* Channel header */}
