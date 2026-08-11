@@ -92,6 +92,18 @@ const CHANNEL_CONFIG_FIELDS: Record<ChannelType, { key: string; label: string; p
 const POPULAR_CHANNELS: ChannelType[] = ["whatsapp", "messenger", "instagram"];
 const BETA_CHANNELS: ChannelType[] = ["tiktok"];
 
+const CHANNEL_CATALOG_DESCRIPTIONS: Record<ChannelType, string> = {
+  whatsapp: "Connect WhatsApp Business API via Facebook to enable seamless customer engagement and support.",
+  sms: "Connect your SMS provider to send and receive text messages for customer outreach and support.",
+  twilio: "Connect Twilio to power SMS, MMS, and voice messaging with reliable global delivery.",
+  telegram: "Connect Telegram Bot to provide real-time support when customers reach out.",
+  smpp: "Connect via SMPP protocol for direct, high-throughput messaging with your SMSC provider.",
+  email: "Connect your email server to manage customer conversations through email channels.",
+  messenger: "Connect Facebook Messenger to engage with your customers on the world's largest social media...",
+  instagram: "Connect Instagram to reply to private messages and build strong brand connections.",
+  tiktok: "Connect TikTok Business Messaging to engage with a whole new audience from TikTok.",
+};
+
 // ============================================================
 // Setup Guides — step-by-step tutorials per channel type
 // ============================================================
@@ -725,49 +737,58 @@ const CatalogScreen = ({
           const isPopular = POPULAR_CHANNELS.includes(ct.id);
           const isBeta = BETA_CHANNELS.includes(ct.id);
           const connectedCount = channels.filter(ch => ch.type === ct.id).length;
+          const catalogDesc = CHANNEL_CATALOG_DESCRIPTIONS[ct.id] || ct.description;
           return (
-            <div key={ct.id} className="relative border border-border bg-card p-5 flex flex-col group hover:border-primary/30 transition-colors">
-              {/* Badge row */}
+            <div
+              key={ct.id}
+              className={cn(
+                "relative border p-5 flex flex-col group hover:border-primary/30 transition-colors",
+                ct.bgColor, ct.borderColor
+              )}
+            >
+              {/* Badge */}
               {(isPopular || isBeta) && (
                 <div className="flex gap-1.5 mb-3">
                   {isPopular && (
-                    <span className="px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wider bg-emerald-50 text-emerald-700 border border-emerald-200">
+                    <span className={cn("inline-flex items-center gap-1 px-1.5 py-0.5 text-[10px] font-bold", ct.color)}>
+                      <Signal className="w-3 h-3" />
                       Popular
                     </span>
                   )}
                   {isBeta && (
-                    <span className="px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wider bg-amber-50 text-amber-700 border border-amber-200">
+                    <span className="inline-flex items-center gap-1 px-1.5 py-0.5 text-[10px] font-bold text-amber-600">
+                      <Activity className="w-3 h-3" />
                       Beta
                     </span>
                   )}
                 </div>
               )}
 
-              {/* Icon + title row */}
-              <div className="flex items-start gap-3 mb-2">
-                <div className={cn("w-10 h-10 flex items-center justify-center shrink-0 border", ct.bgColor, ct.borderColor)}>
-                  <ChannelIcon type={ct} className="w-5 h-5" />
+              {/* Title + large icon */}
+              <div className="flex items-start justify-between gap-3 mb-2">
+                <h3 className="text-base font-bold text-foreground leading-snug flex-1">{ct.label}</h3>
+                <div className="w-12 h-12 flex items-center justify-center shrink-0">
+                  <ChannelIcon type={ct} className="w-10 h-10" />
                 </div>
-                <h3 className="text-sm font-bold text-foreground pt-2">{ct.label}</h3>
               </div>
 
               {/* Description */}
-              <p className="text-xs text-muted-foreground mb-4 flex-1">{ct.description}</p>
+              <p className="text-xs text-muted-foreground leading-relaxed flex-1">{catalogDesc}</p>
 
-              {/* Connect button */}
-              <div className="flex items-center gap-2">
+              {/* Separator + Connect button */}
+              <div className="border-t border-border/60 mt-4 pt-3 flex items-center justify-end gap-2">
+                {connectedCount > 0 && (
+                  <span className="text-[10px] text-muted-foreground mr-auto">
+                    {connectedCount} connected
+                  </span>
+                )}
                 <button
                   onClick={() => onGoConnect(ct.id)}
-                  className="inline-flex items-center justify-center w-full gap-1.5 px-3 py-2 text-xs font-semibold border border-border bg-background text-foreground hover:bg-muted transition-colors"
+                  className="inline-flex items-center gap-1.5 px-4 py-1.5 text-xs font-semibold border border-border bg-background/80 text-foreground hover:bg-background transition-colors"
                 >
                   Connect
                 </button>
               </div>
-              {connectedCount > 0 && (
-                <p className="text-[10px] text-muted-foreground text-center mt-2">
-                  {connectedCount} already connected
-                </p>
-              )}
             </div>
           );
         })}
