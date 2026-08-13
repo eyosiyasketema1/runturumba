@@ -122,121 +122,281 @@ interface SetupGuide {
   steps: SetupStep[];
 }
 
-const CHANNEL_SETUP_GUIDES: Record<ChannelType, SetupGuide> = {
+type ConnectMethod = "new" | "existing";
+
+interface ChannelConnectConfig {
+  /** Title on the choice screen, e.g. "Connect Telegram Bot" */
+  choiceTitle: string;
+  /** Subtitle on the choice screen */
+  choiceSubtitle: string;
+  /** Label for "create new" button */
+  newLabel: string;
+  /** Label for "connect existing" link */
+  existingLabel: string;
+  /** Guide for creating from scratch */
+  newGuide: SetupGuide;
+  /** Guide for connecting with existing credentials */
+  existingGuide: SetupGuide;
+}
+
+const CHANNEL_CONNECT_CONFIG: Record<ChannelType, ChannelConnectConfig> = {
   whatsapp: {
-    prerequisites: "Meta (Facebook) account, Meta Business account, a phone number not registered with WhatsApp",
-    estimatedTime: "30–45 min",
-    docsUrl: "https://developers.facebook.com/docs/whatsapp/cloud-api/get-started",
-    steps: [
-      { title: "Create a Meta Developer Account", description: "Go to developers.facebook.com, click \"Get Started\", and log in with your Facebook account.", platform: "developers.facebook.com", visualHint: "Look for the blue \"Get Started\" button in the top-right navigation" },
-      { title: "Create a New App", description: "Click \"My Apps\" → \"Create App\". Select \"Business\" as the type, enter your app name and email.", platform: "developers.facebook.com/apps", visualHint: "Look for the green \"Create App\" button on the dashboard" },
-      { title: "Add WhatsApp Product", description: "In your app dashboard, scroll to \"Add Products\", find WhatsApp, and click \"Set Up\".", platform: "App Dashboard → Add Products", visualHint: "Find the WhatsApp icon with a green \"Set Up\" button" },
-      { title: "Add a Phone Number", description: "Register a phone number for the API. It must not be currently registered with any WhatsApp app.", platform: "App Dashboard → WhatsApp → Getting Started", visualHint: "Look for \"Add phone number\" button and the \"From\" dropdown" },
-      { title: "Generate an Access Token", description: "Click \"Generate\" for a temporary token, or create a System User at business.facebook.com for a permanent one.", platform: "App Dashboard or Business Settings → System Users", visualHint: "Look for \"Generate\" next to \"Temporary access token\"" },
-      { title: "Copy Your Business Account ID", description: "Copy the WhatsApp Business Account ID and Phone Number ID shown on the Getting Started page.", platform: "App Dashboard → WhatsApp → Getting Started", visualHint: "Find the ID values next to your phone number listing" },
-      { title: "Configure Webhooks", description: "Under WhatsApp → Configuration, enter your HTTPS callback URL and verify token. Subscribe to message events.", platform: "App Dashboard → WhatsApp → Configuration", visualHint: "Look for \"Callback URL\" and \"Verify Token\" fields" },
-    ],
+    choiceTitle: "Connect WhatsApp Business",
+    choiceSubtitle: "Get started by setting up a new WhatsApp Business account or connecting an existing one.",
+    newLabel: "Set up a new account",
+    existingLabel: "Connect an existing account",
+    newGuide: {
+      prerequisites: "Meta (Facebook) account, a phone number not registered with WhatsApp",
+      estimatedTime: "30–45 min",
+      docsUrl: "https://developers.facebook.com/docs/whatsapp/cloud-api/get-started",
+      steps: [
+        { title: "Create a Meta Developer Account", description: "Go to developers.facebook.com, click \"Get Started\", and log in with your Facebook account.", platform: "developers.facebook.com", visualHint: "Look for the blue \"Get Started\" button in the top-right navigation" },
+        { title: "Create a New App", description: "Click \"My Apps\" → \"Create App\". Select \"Business\" as the type, enter your app name and email.", platform: "developers.facebook.com/apps", visualHint: "Look for the green \"Create App\" button on the dashboard" },
+        { title: "Add WhatsApp Product", description: "In your app dashboard, scroll to \"Add Products\", find WhatsApp, and click \"Set Up\".", platform: "App Dashboard → Add Products", visualHint: "Find the WhatsApp icon with a green \"Set Up\" button" },
+        { title: "Add a Phone Number", description: "Register a phone number for the API. It must not be currently registered with any WhatsApp app.", platform: "App Dashboard → WhatsApp → Getting Started", visualHint: "Look for \"Add phone number\" button and the \"From\" dropdown" },
+        { title: "Generate an Access Token", description: "Click \"Generate\" for a temporary token, or create a System User at business.facebook.com for a permanent one.", platform: "App Dashboard or Business Settings → System Users", visualHint: "Look for \"Generate\" next to \"Temporary access token\"" },
+        { title: "Copy Your Business Account ID", description: "Copy the WhatsApp Business Account ID and Phone Number ID shown on the Getting Started page.", platform: "App Dashboard → WhatsApp → Getting Started", visualHint: "Find the ID values next to your phone number listing" },
+        { title: "Configure Webhooks", description: "Under WhatsApp → Configuration, enter your HTTPS callback URL and verify token. Subscribe to message events.", platform: "App Dashboard → WhatsApp → Configuration", visualHint: "Look for \"Callback URL\" and \"Verify Token\" fields" },
+      ],
+    },
+    existingGuide: {
+      prerequisites: "Existing WhatsApp Business API account with API access",
+      estimatedTime: "5 min",
+      docsUrl: "https://developers.facebook.com/docs/whatsapp/cloud-api/get-started",
+      steps: [
+        { title: "Locate Your API Credentials", description: "Go to your Meta App Dashboard → WhatsApp → Getting Started. Find your API Key, Business Account ID, and Phone Number ID.", platform: "developers.facebook.com/apps", visualHint: "Look for \"API Setup\" section with your credentials" },
+        { title: "Copy the Access Token", description: "Copy your permanent access token from Business Settings → System Users, or generate a temporary one from the dashboard.", platform: "App Dashboard → WhatsApp → Getting Started", visualHint: "Look for the access token field with a copy button" },
+        { title: "Paste Credentials Below", description: "Enter your Business Phone Number, WhatsApp Business Account ID, and API Key in the form on this page.", platform: "Connection form", visualHint: "Fill in the credential fields on the left side" },
+      ],
+    },
   },
   telegram: {
-    prerequisites: "A Telegram account with the app installed on phone or desktop",
-    estimatedTime: "5–10 min",
-    docsUrl: "https://core.telegram.org/bots#botfather",
-    steps: [
-      { title: "Open BotFather", description: "Open Telegram and search for \"BotFather\" in the search bar. Select the verified account with a blue checkmark.", platform: "Telegram App → Search", visualHint: "Look for \"BotFather\" with a blue verification badge" },
-      { title: "Start a Chat", description: "Click \"Start\" or type /start to begin. BotFather will display a list of available commands.", platform: "Telegram → BotFather chat", visualHint: "Look for the \"Start\" button at the bottom of the chat" },
-      { title: "Create a New Bot", description: "Type /newbot and send it. BotFather will ask you to choose a display name for your bot.", platform: "Telegram → BotFather chat", visualHint: "BotFather replies: \"How are we going to call it?\"" },
-      { title: "Set the Bot Username", description: "Enter a unique username ending with \"bot\" (e.g. my_support_bot). If taken, try adding numbers.", platform: "Telegram → BotFather chat", visualHint: "BotFather asks: \"Now let's choose a username\"" },
-      { title: "Copy Your API Token", description: "BotFather confirms creation and shows your HTTP API token (e.g. 123456789:AAHdq...). Copy and store it securely.", platform: "Telegram → BotFather chat", visualHint: "Look for \"Use this token to access the HTTP API:\"" },
-    ],
+    choiceTitle: "Connect Telegram Bot",
+    choiceSubtitle: "Get started by creating a new bot or connecting to an existing bot.",
+    newLabel: "Create a new bot",
+    existingLabel: "Connect an existing bot",
+    newGuide: {
+      prerequisites: "A Telegram account with the app installed on phone or desktop",
+      estimatedTime: "5–10 min",
+      docsUrl: "https://core.telegram.org/bots#botfather",
+      steps: [
+        { title: "Open BotFather", description: "Open Telegram and search for \"BotFather\" in the search bar. Select the verified account with a blue checkmark.", platform: "Telegram App → Search", visualHint: "Look for \"BotFather\" with a blue verification badge" },
+        { title: "Start a Chat", description: "Click \"Start\" or type /start to begin. BotFather will display a list of available commands.", platform: "Telegram → BotFather chat", visualHint: "Look for the \"Start\" button at the bottom of the chat" },
+        { title: "Create a New Bot", description: "Type /newbot and send it. BotFather will ask you to choose a display name for your bot.", platform: "Telegram → BotFather chat", visualHint: "BotFather replies: \"How are we going to call it?\"" },
+        { title: "Set the Bot Username", description: "Enter a unique username ending with \"bot\" (e.g. my_support_bot). If taken, try adding numbers.", platform: "Telegram → BotFather chat", visualHint: "BotFather asks: \"Now let's choose a username\"" },
+        { title: "Copy Your API Token", description: "BotFather confirms creation and shows your HTTP API token (e.g. 123456789:AAHdq...). Copy and store it securely.", platform: "Telegram → BotFather chat", visualHint: "Look for \"Use this token to access the HTTP API:\"" },
+      ],
+    },
+    existingGuide: {
+      prerequisites: "An existing Telegram bot created via BotFather",
+      estimatedTime: "2 min",
+      docsUrl: "https://core.telegram.org/bots#botfather",
+      steps: [
+        { title: "Find Your Bot Token", description: "Open Telegram, go to BotFather, type /mybots, select your bot, then click \"API Token\" to reveal it.", platform: "Telegram → BotFather chat", visualHint: "Type /mybots, select the bot, then tap \"API Token\"" },
+        { title: "Copy the Bot Username", description: "Your bot username is shown in BotFather's bot list (e.g. @YourBot). Copy it without the @ symbol.", platform: "Telegram → BotFather chat", visualHint: "Look for the @username in the bot details" },
+        { title: "Paste Credentials Below", description: "Enter your Bot Token and Bot Username in the form on this page.", platform: "Connection form", visualHint: "Fill in the Bot Token and Bot Username fields on the left" },
+      ],
+    },
   },
   twilio: {
-    prerequisites: "Email address, phone number for verification, credit card for account upgrade",
-    estimatedTime: "15–20 min",
-    docsUrl: "https://www.twilio.com/docs/messaging/quickstart",
-    steps: [
-      { title: "Create a Twilio Account", description: "Go to twilio.com, click \"Start for free\", fill in your details, and verify your email.", platform: "twilio.com", visualHint: "Look for \"Start for free\" in the top-right corner" },
-      { title: "Verify Your Phone", description: "After email verification, Twilio asks you to verify a phone number via SMS or voice call.", platform: "Twilio Console → Onboarding", visualHint: "Phone verification form with country code selector" },
-      { title: "Find Your Account Credentials", description: "On the Console dashboard, find Account SID and Auth Token under \"Account Info\". Click the eye icon to reveal the token.", platform: "console.twilio.com", visualHint: "Look for \"Account Info\" panel with SID and Auth Token" },
-      { title: "Buy a Phone Number", description: "Go to Phone Numbers → Buy a Number. Select your country, choose SMS capability, search, and buy.", platform: "Console → Phone Numbers → Buy a Number", visualHint: "Look for \"Buy a Number\" in the sidebar, then \"Search\" button" },
-      { title: "Create a Messaging Service", description: "Go to Messaging → Services, click \"Create Messaging Service\", name it, and add your number as a sender.", platform: "Console → Messaging → Services", visualHint: "Look for \"Create Messaging Service\" button" },
-      { title: "Configure Webhook URL", description: "In your phone number settings, enter your server URL in \"A Message Comes In\" webhook field.", platform: "Console → Phone Numbers → Active Numbers", visualHint: "Find \"A MESSAGE COMES IN\" with URL input and HTTP method" },
-    ],
+    choiceTitle: "Connect Twilio",
+    choiceSubtitle: "Get started by creating a new Twilio account or connecting your existing one.",
+    newLabel: "Create a new account",
+    existingLabel: "Connect an existing account",
+    newGuide: {
+      prerequisites: "Email address, phone number for verification, credit card for account upgrade",
+      estimatedTime: "15–20 min",
+      docsUrl: "https://www.twilio.com/docs/messaging/quickstart",
+      steps: [
+        { title: "Create a Twilio Account", description: "Go to twilio.com, click \"Start for free\", fill in your details, and verify your email.", platform: "twilio.com", visualHint: "Look for \"Start for free\" in the top-right corner" },
+        { title: "Verify Your Phone", description: "After email verification, Twilio asks you to verify a phone number via SMS or voice call.", platform: "Twilio Console → Onboarding", visualHint: "Phone verification form with country code selector" },
+        { title: "Find Your Account Credentials", description: "On the Console dashboard, find Account SID and Auth Token under \"Account Info\". Click the eye icon to reveal the token.", platform: "console.twilio.com", visualHint: "Look for \"Account Info\" panel with SID and Auth Token" },
+        { title: "Buy a Phone Number", description: "Go to Phone Numbers → Buy a Number. Select your country, choose SMS capability, search, and buy.", platform: "Console → Phone Numbers → Buy a Number", visualHint: "Look for \"Buy a Number\" in the sidebar, then \"Search\" button" },
+        { title: "Create a Messaging Service", description: "Go to Messaging → Services, click \"Create Messaging Service\", name it, and add your number as a sender.", platform: "Console → Messaging → Services", visualHint: "Look for \"Create Messaging Service\" button" },
+        { title: "Configure Webhook URL", description: "In your phone number settings, enter your server URL in \"A Message Comes In\" webhook field.", platform: "Console → Phone Numbers → Active Numbers", visualHint: "Find \"A MESSAGE COMES IN\" with URL input and HTTP method" },
+      ],
+    },
+    existingGuide: {
+      prerequisites: "An existing Twilio account with a phone number",
+      estimatedTime: "3 min",
+      docsUrl: "https://www.twilio.com/docs/messaging/quickstart",
+      steps: [
+        { title: "Find Your Account SID & Auth Token", description: "Log in to console.twilio.com. Your Account SID and Auth Token are on the main dashboard under \"Account Info\".", platform: "console.twilio.com", visualHint: "Look for the \"Account Info\" panel; click the eye icon to reveal the Auth Token" },
+        { title: "Copy Your Phone Number", description: "Go to Phone Numbers → Manage → Active Numbers. Copy the phone number you want to use.", platform: "Console → Phone Numbers → Active Numbers", visualHint: "Click on the number to see its details and copy it" },
+        { title: "Paste Credentials Below", description: "Enter your Account SID, Auth Token, and Twilio phone number in the form on this page.", platform: "Connection form", visualHint: "Fill in the credential fields on the left side" },
+      ],
+    },
   },
   sms: {
-    prerequisites: "An account with any SMS gateway provider (MessageBird, Vonage, Plivo, etc.)",
-    estimatedTime: "10–15 min",
-    docsUrl: "https://www.messagingsonnet.com/docs",
-    steps: [
-      { title: "Choose an SMS Provider", description: "Select a gateway provider that supports your target countries and volume. Options include MessageBird, Vonage, Plivo.", platform: "Provider's website", visualHint: "Look for \"Sign Up\" or \"Get Started\" on the provider's page" },
-      { title: "Create a Provider Account", description: "Register for an account, complete email and phone verification as required.", platform: "Provider's signup page", visualHint: "Look for the registration form and email confirmation" },
-      { title: "Obtain API Credentials", description: "Navigate to your provider's API settings. Locate and copy your API Key (or SID) and API Secret (or Auth Token).", platform: "Provider Dashboard → API Settings", visualHint: "Look for \"API Keys\" or \"Credentials\" in the sidebar" },
-      { title: "Get a Sender Number", description: "Purchase or register a phone number or alphanumeric Sender ID through your provider.", platform: "Provider → Numbers / Sender IDs", visualHint: "Look for \"Numbers\" or \"Buy a Number\" in the navigation" },
-      { title: "Send a Test Message", description: "Use the provider's dashboard or API testing tool to send a test SMS to your phone and verify delivery.", platform: "Provider Dashboard", visualHint: "Look for \"Send Test Message\" or \"API Explorer\"" },
-    ],
+    choiceTitle: "Connect SMS Provider",
+    choiceSubtitle: "Get started by setting up a new SMS provider account or connecting an existing one.",
+    newLabel: "Set up a new provider",
+    existingLabel: "Connect an existing provider",
+    newGuide: {
+      prerequisites: "An email address to sign up with an SMS gateway provider",
+      estimatedTime: "10–15 min",
+      docsUrl: "https://www.vonage.com/communications-apis/sms/",
+      steps: [
+        { title: "Choose an SMS Provider", description: "Select a gateway provider that supports your target countries and volume. Options include MessageBird, Vonage, Plivo.", platform: "Provider's website", visualHint: "Look for \"Sign Up\" or \"Get Started\" on the provider's page" },
+        { title: "Create a Provider Account", description: "Register for an account, complete email and phone verification as required.", platform: "Provider's signup page", visualHint: "Look for the registration form and email confirmation" },
+        { title: "Obtain API Credentials", description: "Navigate to your provider's API settings. Locate and copy your API Key (or SID) and API Secret (or Auth Token).", platform: "Provider Dashboard → API Settings", visualHint: "Look for \"API Keys\" or \"Credentials\" in the sidebar" },
+        { title: "Get a Sender Number", description: "Purchase or register a phone number or alphanumeric Sender ID through your provider.", platform: "Provider → Numbers / Sender IDs", visualHint: "Look for \"Numbers\" or \"Buy a Number\" in the navigation" },
+        { title: "Send a Test Message", description: "Use the provider's dashboard or API testing tool to send a test SMS to your phone and verify delivery.", platform: "Provider Dashboard", visualHint: "Look for \"Send Test Message\" or \"API Explorer\"" },
+      ],
+    },
+    existingGuide: {
+      prerequisites: "An existing SMS provider account with API credentials",
+      estimatedTime: "3 min",
+      docsUrl: "https://www.vonage.com/communications-apis/sms/",
+      steps: [
+        { title: "Locate Your API Credentials", description: "Log in to your SMS provider dashboard. Navigate to API settings or account settings to find your API Key and Secret.", platform: "Provider Dashboard → API Settings", visualHint: "Look for \"API Keys\", \"Credentials\", or \"Account Settings\"" },
+        { title: "Copy Your Sender Number", description: "Find the phone number or Sender ID you want to use under your provider's Numbers section.", platform: "Provider → Numbers", visualHint: "Look for your active phone numbers or Sender IDs" },
+        { title: "Paste Credentials Below", description: "Enter your provider name, Account SID/API Key, Auth Token, and sender number in the form.", platform: "Connection form", visualHint: "Fill in the credential fields on the left side" },
+      ],
+    },
   },
   messenger: {
-    prerequisites: "Facebook account, a Facebook Page, Meta Developer account",
-    estimatedTime: "20–30 min",
-    docsUrl: "https://developers.facebook.com/docs/messenger-platform/getting-started",
-    steps: [
-      { title: "Create a Meta Developer Account", description: "Go to developers.facebook.com, click \"Get Started\" and complete the registration.", platform: "developers.facebook.com", visualHint: "Look for \"Get Started\" in the top navigation" },
-      { title: "Create a New App", description: "Click \"My Apps\" → \"Create App\". Select \"Business\" type, then choose \"Business messaging\" use case.", platform: "developers.facebook.com/apps", visualHint: "Look for \"Create App\" button, then \"Business messaging\" card" },
-      { title: "Add Messenger Product", description: "In the app dashboard, click \"Add Product\", find the Messenger tile, and click \"Set Up\".", platform: "App Dashboard → Add Product", visualHint: "Find the Messenger icon with \"Set Up\" button" },
-      { title: "Connect Your Facebook Page", description: "Under Messenger Settings → Access Tokens, click \"Add or Remove Pages\" and select your Page.", platform: "App Dashboard → Messenger → Settings", visualHint: "Look for \"Add or Remove Pages\" and the page selector" },
-      { title: "Generate a Page Access Token", description: "After connecting your page, click \"Generate Token\" next to the page name. Copy and store it securely.", platform: "App Dashboard → Messenger → Settings", visualHint: "Look for \"Generate Token\" next to your page name" },
-      { title: "Configure Webhooks", description: "Scroll to \"Webhooks\", click \"Add Callback URL\". Enter your HTTPS URL and verify token, then save.", platform: "App Dashboard → Messenger → Webhooks", visualHint: "Look for \"Callback URL\" and \"Verify Token\" fields" },
-      { title: "Subscribe to Events", description: "After verifying, click \"Add Subscriptions\" and check \"messages\" and \"messaging_postbacks\". Save.", platform: "App Dashboard → Messenger → Webhooks", visualHint: "Look for checklist of event types with checkboxes" },
-    ],
+    choiceTitle: "Connect Facebook Messenger",
+    choiceSubtitle: "Get started by creating a new Facebook app or connecting an existing one.",
+    newLabel: "Create a new app",
+    existingLabel: "Connect an existing app",
+    newGuide: {
+      prerequisites: "Facebook account, a Facebook Page, Meta Developer account",
+      estimatedTime: "20–30 min",
+      docsUrl: "https://developers.facebook.com/docs/messenger-platform/getting-started",
+      steps: [
+        { title: "Create a Meta Developer Account", description: "Go to developers.facebook.com, click \"Get Started\" and complete the registration.", platform: "developers.facebook.com", visualHint: "Look for \"Get Started\" in the top navigation" },
+        { title: "Create a New App", description: "Click \"My Apps\" → \"Create App\". Select \"Business\" type, then choose \"Business messaging\" use case.", platform: "developers.facebook.com/apps", visualHint: "Look for \"Create App\" button, then \"Business messaging\" card" },
+        { title: "Add Messenger Product", description: "In the app dashboard, click \"Add Product\", find the Messenger tile, and click \"Set Up\".", platform: "App Dashboard → Add Product", visualHint: "Find the Messenger icon with \"Set Up\" button" },
+        { title: "Connect Your Facebook Page", description: "Under Messenger Settings → Access Tokens, click \"Add or Remove Pages\" and select your Page.", platform: "App Dashboard → Messenger → Settings", visualHint: "Look for \"Add or Remove Pages\" and the page selector" },
+        { title: "Generate a Page Access Token", description: "After connecting your page, click \"Generate Token\" next to the page name. Copy and store it securely.", platform: "App Dashboard → Messenger → Settings", visualHint: "Look for \"Generate Token\" next to your page name" },
+        { title: "Configure Webhooks", description: "Scroll to \"Webhooks\", click \"Add Callback URL\". Enter your HTTPS URL and verify token, then save.", platform: "App Dashboard → Messenger → Webhooks", visualHint: "Look for \"Callback URL\" and \"Verify Token\" fields" },
+        { title: "Subscribe to Events", description: "After verifying, click \"Add Subscriptions\" and check \"messages\" and \"messaging_postbacks\". Save.", platform: "App Dashboard → Messenger → Webhooks", visualHint: "Look for checklist of event types with checkboxes" },
+      ],
+    },
+    existingGuide: {
+      prerequisites: "An existing Meta app with Messenger product enabled",
+      estimatedTime: "5 min",
+      docsUrl: "https://developers.facebook.com/docs/messenger-platform/getting-started",
+      steps: [
+        { title: "Open Your App Dashboard", description: "Go to developers.facebook.com/apps and select your existing app that has Messenger configured.", platform: "developers.facebook.com/apps", visualHint: "Click on your app name from the My Apps list" },
+        { title: "Copy Page Access Token", description: "Go to Messenger → Settings → Access Tokens. Click \"Generate Token\" for the page you want to connect.", platform: "App Dashboard → Messenger → Settings", visualHint: "Look for \"Generate Token\" next to your page name" },
+        { title: "Copy App ID & Verify Token", description: "Find your App ID at the top of the dashboard. Copy the Verify Token from your webhook configuration.", platform: "App Dashboard → Settings → Basic", visualHint: "Look for \"App ID\" at the top and webhook settings" },
+        { title: "Paste Credentials Below", description: "Enter the Page ID, App ID, Page Access Token, and Verify Token in the form on this page.", platform: "Connection form", visualHint: "Fill in the credential fields on the left side" },
+      ],
+    },
   },
   instagram: {
-    prerequisites: "Instagram Business/Creator Account, linked Facebook Page, Meta Developer account",
-    estimatedTime: "25–35 min",
-    docsUrl: "https://developers.facebook.com/docs/instagram-platform/instagram-api-with-instagram-login",
-    steps: [
-      { title: "Switch to Business Account", description: "In Instagram app, go to Settings → Account → Switch to Professional Account. Choose Business and connect a Facebook Page.", platform: "Instagram App → Settings", visualHint: "Look for \"Switch to Professional Account\" under Account" },
-      { title: "Link to a Facebook Page", description: "In Instagram Settings → Linked Accounts, connect your Facebook Page. This is required for API access.", platform: "Instagram App → Settings → Linked Accounts", visualHint: "Look for \"Facebook\" and the page selector" },
-      { title: "Create a Meta App", description: "On developers.facebook.com, create an app with \"Business\" type. Add the \"Instagram\" product.", platform: "developers.facebook.com/apps", visualHint: "Find the Instagram tile under \"Add Products\"" },
-      { title: "Configure Permissions", description: "In App Review → Permissions, request instagram_basic, instagram_manage_messages, pages_manage_metadata.", platform: "App Dashboard → App Review → Permissions", visualHint: "Look for permissions list with \"Request\" buttons" },
-      { title: "Set Up Webhooks", description: "Under Webhooks, add an \"Instagram\" subscription. Enter your callback URL and verify token, subscribe to \"messages\".", platform: "App Dashboard → Webhooks", visualHint: "Select \"Instagram\" from the object dropdown" },
-      { title: "Generate an Access Token", description: "In Messenger/Instagram Settings, generate a Page access token for the linked Facebook Page.", platform: "App Dashboard → Messenger → Settings", visualHint: "Look for \"Generate Token\" next to your linked page" },
-    ],
+    choiceTitle: "Connect Instagram",
+    choiceSubtitle: "Get started by setting up a new Instagram integration or connecting an existing one.",
+    newLabel: "Set up new integration",
+    existingLabel: "Connect existing integration",
+    newGuide: {
+      prerequisites: "Instagram Business/Creator Account, linked Facebook Page, Meta Developer account",
+      estimatedTime: "25–35 min",
+      docsUrl: "https://developers.facebook.com/docs/instagram-platform/instagram-api-with-instagram-login",
+      steps: [
+        { title: "Switch to Business Account", description: "In Instagram app, go to Settings → Account → Switch to Professional Account. Choose Business and connect a Facebook Page.", platform: "Instagram App → Settings", visualHint: "Look for \"Switch to Professional Account\" under Account" },
+        { title: "Link to a Facebook Page", description: "In Instagram Settings → Linked Accounts, connect your Facebook Page. This is required for API access.", platform: "Instagram App → Settings → Linked Accounts", visualHint: "Look for \"Facebook\" and the page selector" },
+        { title: "Create a Meta App", description: "On developers.facebook.com, create an app with \"Business\" type. Add the \"Instagram\" product.", platform: "developers.facebook.com/apps", visualHint: "Find the Instagram tile under \"Add Products\"" },
+        { title: "Configure Permissions", description: "In App Review → Permissions, request instagram_basic, instagram_manage_messages, pages_manage_metadata.", platform: "App Dashboard → App Review → Permissions", visualHint: "Look for permissions list with \"Request\" buttons" },
+        { title: "Set Up Webhooks", description: "Under Webhooks, add an \"Instagram\" subscription. Enter your callback URL and verify token, subscribe to \"messages\".", platform: "App Dashboard → Webhooks", visualHint: "Select \"Instagram\" from the object dropdown" },
+        { title: "Generate an Access Token", description: "In Messenger/Instagram Settings, generate a Page access token for the linked Facebook Page.", platform: "App Dashboard → Messenger → Settings", visualHint: "Look for \"Generate Token\" next to your linked page" },
+      ],
+    },
+    existingGuide: {
+      prerequisites: "An existing Meta app with Instagram messaging configured",
+      estimatedTime: "5 min",
+      docsUrl: "https://developers.facebook.com/docs/instagram-platform/instagram-api-with-instagram-login",
+      steps: [
+        { title: "Open Your Meta App", description: "Go to developers.facebook.com/apps and select the app that has Instagram messaging enabled.", platform: "developers.facebook.com/apps", visualHint: "Click your app name from the My Apps list" },
+        { title: "Copy Your Credentials", description: "Find your Instagram Business Account ID, Facebook App ID, and Page Access Token from the app settings.", platform: "App Dashboard → Settings", visualHint: "Look for the Account ID in Instagram settings and token in Messenger settings" },
+        { title: "Paste Credentials Below", description: "Enter the Instagram Business Account ID, App ID, Access Token, and Webhook Verify Token in the form.", platform: "Connection form", visualHint: "Fill in the credential fields on the left side" },
+      ],
+    },
   },
   tiktok: {
-    prerequisites: "TikTok for Business account, business entity registration",
-    estimatedTime: "20–30 min",
-    docsUrl: "https://business-api.tiktok.com/portal/docs",
-    steps: [
-      { title: "Create a Developer Account", description: "Go to the TikTok Developer Portal and register with your TikTok for Business credentials.", platform: "developers.tiktok.com", visualHint: "Look for \"Log In\" or \"Sign Up\" on the Developer Portal" },
-      { title: "Create a New App", description: "In the dashboard, click \"Create App\". Enter your app name, description, and select your use case.", platform: "developers.tiktok.com → Manage Apps", visualHint: "Look for the \"Create App\" button" },
-      { title: "Apply for Messaging API", description: "In app settings, navigate to permissions and apply for Business Messaging API access.", platform: "Developer Portal → App Settings", visualHint: "Look for \"Business Messaging\" under API products" },
-      { title: "Configure Permissions", description: "Once approved, enable \"TikTok Accounts\" under Scope of permission. Add required redirect URLs.", platform: "Developer Portal → App Settings → Permissions", visualHint: "Look for the permission toggles" },
-      { title: "Set Up Webhook", description: "Configure your callback URL to receive real-time message notifications via HTTPS POST.", platform: "Developer Portal → App Settings → Webhooks", visualHint: "Look for the \"Webhook\" or \"Callback URL\" field" },
-      { title: "Copy Your Credentials", description: "Copy your Client Key (App ID) and Client Secret from the app settings page.", platform: "Developer Portal → App Settings", visualHint: "Look for \"Client Key\" and \"Client Secret\" with copy icons" },
-    ],
+    choiceTitle: "Connect TikTok Business",
+    choiceSubtitle: "Get started by creating a new TikTok developer app or connecting an existing one.",
+    newLabel: "Create a new app",
+    existingLabel: "Connect an existing app",
+    newGuide: {
+      prerequisites: "TikTok for Business account, business entity registration",
+      estimatedTime: "20–30 min",
+      docsUrl: "https://business-api.tiktok.com/portal/docs",
+      steps: [
+        { title: "Create a Developer Account", description: "Go to the TikTok Developer Portal and register with your TikTok for Business credentials.", platform: "developers.tiktok.com", visualHint: "Look for \"Log In\" or \"Sign Up\" on the Developer Portal" },
+        { title: "Create a New App", description: "In the dashboard, click \"Create App\". Enter your app name, description, and select your use case.", platform: "developers.tiktok.com → Manage Apps", visualHint: "Look for the \"Create App\" button" },
+        { title: "Apply for Messaging API", description: "In app settings, navigate to permissions and apply for Business Messaging API access.", platform: "Developer Portal → App Settings", visualHint: "Look for \"Business Messaging\" under API products" },
+        { title: "Configure Permissions", description: "Once approved, enable \"TikTok Accounts\" under Scope of permission. Add required redirect URLs.", platform: "Developer Portal → App Settings → Permissions", visualHint: "Look for the permission toggles" },
+        { title: "Set Up Webhook", description: "Configure your callback URL to receive real-time message notifications via HTTPS POST.", platform: "Developer Portal → App Settings → Webhooks", visualHint: "Look for the \"Webhook\" or \"Callback URL\" field" },
+        { title: "Copy Your Credentials", description: "Copy your Client Key (App ID) and Client Secret from the app settings page.", platform: "Developer Portal → App Settings", visualHint: "Look for \"Client Key\" and \"Client Secret\" with copy icons" },
+      ],
+    },
+    existingGuide: {
+      prerequisites: "An existing TikTok developer app with messaging API access",
+      estimatedTime: "3 min",
+      docsUrl: "https://business-api.tiktok.com/portal/docs",
+      steps: [
+        { title: "Open Your App Settings", description: "Log in to developers.tiktok.com, go to Manage Apps, and select your existing app.", platform: "developers.tiktok.com → Manage Apps", visualHint: "Click on your app name in the app list" },
+        { title: "Copy Your Credentials", description: "Copy the App ID (Client Key), App Secret (Client Secret), and Access Token from the app settings.", platform: "Developer Portal → App Settings", visualHint: "Look for \"Client Key\" and \"Client Secret\" fields" },
+        { title: "Paste Credentials Below", description: "Enter the App ID, App Secret, Access Token, and Business Account ID in the form on this page.", platform: "Connection form", visualHint: "Fill in the credential fields on the left side" },
+      ],
+    },
   },
   email: {
-    prerequisites: "An email account or service provider (Gmail, Outlook, SendGrid, Amazon SES, etc.)",
-    estimatedTime: "10–15 min",
-    docsUrl: "https://support.google.com/mail/answer/7126229",
-    steps: [
-      { title: "Identify Your SMTP Server", description: "Find the hostname: smtp.gmail.com (Gmail), smtp.office365.com (Outlook), smtp.sendgrid.net (SendGrid).", platform: "Email provider's documentation", visualHint: "Look for \"SMTP settings\" or \"Outgoing server\" in help docs" },
-      { title: "Determine Port & Encryption", description: "Use port 587 (TLS/STARTTLS — recommended), 465 (SSL), or 25 (unencrypted, not recommended).", platform: "Email provider's documentation", visualHint: "Port and security settings listed with the SMTP hostname" },
-      { title: "Generate an App Password", description: "If using Gmail or 2FA-enabled accounts: Google Account → Security → App Passwords → Generate.", platform: "myaccount.google.com/apppasswords (Gmail)", visualHint: "Look for \"App Passwords\" under Security, then \"Generate\"" },
-      { title: "Enter SMTP Credentials", description: "Use your full email as the username and your password (or app password). For SendGrid, username is \"apikey\".", platform: "Connection form", visualHint: "Enter in the Username and Password fields on this page" },
-      { title: "Set the Sender Address", description: "Enter the \"From\" email address. This should match or be authorized by your SMTP account.", platform: "Connection form", visualHint: "Enter in the From Address field on this page" },
-    ],
+    choiceTitle: "Connect Email",
+    choiceSubtitle: "Get started by setting up a new email service or connecting your existing SMTP server.",
+    newLabel: "Set up a new email service",
+    existingLabel: "Connect existing SMTP",
+    newGuide: {
+      prerequisites: "An email account or email service provider (Gmail, Outlook, SendGrid, etc.)",
+      estimatedTime: "10–15 min",
+      docsUrl: "https://support.google.com/mail/answer/7126229",
+      steps: [
+        { title: "Choose an Email Provider", description: "Select an email service: Gmail (smtp.gmail.com), Outlook (smtp.office365.com), or SendGrid (smtp.sendgrid.net).", platform: "Email provider's website", visualHint: "Sign up for an account if you don't have one" },
+        { title: "Enable SMTP Access", description: "For Gmail: enable \"Less secure apps\" or generate an App Password. For Outlook: SMTP is enabled by default.", platform: "Email provider settings", visualHint: "Look for \"SMTP\", \"App Passwords\", or \"Mail forwarding\" in settings" },
+        { title: "Generate an App Password", description: "If using 2FA: Google Account → Security → App Passwords → Generate. Copy the 16-character password.", platform: "myaccount.google.com/apppasswords (Gmail)", visualHint: "Look for \"App Passwords\" under Security, then \"Generate\"" },
+        { title: "Note Your SMTP Settings", description: "SMTP Host, Port (587 for TLS), your email as username, and app password. These go in the form.", platform: "Email provider's documentation", visualHint: "Host, port, username, and password — all needed for the form" },
+        { title: "Set the Sender Address", description: "Enter the \"From\" email address. It should match or be authorized by your SMTP account.", platform: "Connection form", visualHint: "Enter in the From Address field on the left" },
+      ],
+    },
+    existingGuide: {
+      prerequisites: "SMTP server credentials (host, port, username, password)",
+      estimatedTime: "3 min",
+      docsUrl: "https://support.google.com/mail/answer/7126229",
+      steps: [
+        { title: "Gather Your SMTP Details", description: "You need: SMTP host, port (587/465/25), username (usually email), and password (or app password).", platform: "Your email provider's settings", visualHint: "Check your email provider's documentation for SMTP settings" },
+        { title: "Paste Credentials Below", description: "Enter the SMTP Host, Port, Username, Password, and From Address in the form on this page.", platform: "Connection form", visualHint: "Fill in the credential fields on the left side" },
+      ],
+    },
   },
   smpp: {
-    prerequisites: "SMSC provider account, SMPP credentials (system_id, password, host, port), static IP for whitelisting",
-    estimatedTime: "15–25 min",
-    docsUrl: "https://smpp.org/SMPP_v3_4_Issue1_2.pdf",
-    steps: [
-      { title: "Obtain SMSC Credentials", description: "Contact your SMPP provider or log into their portal to get: SMSC host/IP, port, system_id (username), and password.", platform: "SMPP provider portal", visualHint: "Look for \"SMPP Credentials\" or \"Connection Details\"" },
-      { title: "Set Connection Parameters", description: "Enter the SMSC host and port (typically 2775 standard, 2776 TLS). Set bind type to Transceiver for two-way messaging.", platform: "Connection form", visualHint: "Enter Host and Port fields, select Transceiver mode" },
-      { title: "Enter Authentication", description: "Enter your system_id (ESME identifier) and password from your SMSC operator. Optionally set system_type.", platform: "Connection form", visualHint: "Enter in the System ID, Password, and System Type fields" },
-      { title: "Configure Source Address", description: "Enter your source address (sender ID) — typically a short code or phone number assigned by your provider.", platform: "Connection form", visualHint: "Enter in the source address or sender ID field" },
-      { title: "Test the Connection", description: "Initiate a bind to verify connectivity. A successful bind returns ESME_ROK status (0x00000000).", platform: "Connection form → Test", visualHint: "Click \"Test Connection\" and look for success indicator" },
-    ],
+    choiceTitle: "Connect SMPP",
+    choiceSubtitle: "Get started by setting up a new SMSC account or connecting with existing SMPP credentials.",
+    newLabel: "Set up a new SMSC account",
+    existingLabel: "Connect with existing credentials",
+    newGuide: {
+      prerequisites: "Business registration, a need for high-volume SMS",
+      estimatedTime: "15–25 min",
+      docsUrl: "https://smpp.org/SMPP_v3_4_Issue1_2.pdf",
+      steps: [
+        { title: "Choose an SMSC Provider", description: "Select an SMSC provider that supports your target regions. Common providers include Infobip, Clickatell, and route-specific aggregators.", platform: "Provider's website", visualHint: "Look for \"SMPP\" or \"Enterprise SMS\" plans on the provider's page" },
+        { title: "Request SMPP Credentials", description: "Contact your provider or sign up via their portal. Request SMPP access with: host/IP, port, system_id, and password.", platform: "SMPP provider portal", visualHint: "Look for \"SMPP Credentials\" or \"ESME Configuration\"" },
+        { title: "Whitelist Your IP", description: "Most SMSC providers require IP whitelisting. Provide your server's static IP address to the provider.", platform: "SMPP provider portal", visualHint: "Look for \"IP Whitelist\" or \"Allowed IPs\" in the settings" },
+        { title: "Configure Connection", description: "Enter the SMSC host and port (2775 standard, 2776 TLS). Set bind type to Transceiver for two-way messaging.", platform: "Connection form", visualHint: "Enter Host, Port, and select bind type on the left" },
+        { title: "Test the Connection", description: "Initiate a bind to verify connectivity. A successful bind returns ESME_ROK status (0x00000000).", platform: "Connection form → Test", visualHint: "Click \"Test Connection\" and look for success indicator" },
+      ],
+    },
+    existingGuide: {
+      prerequisites: "SMPP credentials from your SMSC provider (host, port, system_id, password)",
+      estimatedTime: "3 min",
+      docsUrl: "https://smpp.org/SMPP_v3_4_Issue1_2.pdf",
+      steps: [
+        { title: "Gather Your SMPP Credentials", description: "You need: SMSC host/IP, port, system_id (username), password, and optionally system_type.", platform: "Your SMSC provider portal", visualHint: "Check your provider dashboard or the welcome email for SMPP details" },
+        { title: "Paste Credentials Below", description: "Enter the Host, Port, System ID, Password, and System Type in the form on this page.", platform: "Connection form", visualHint: "Fill in the credential fields on the left side" },
+      ],
+    },
   },
 };
 
@@ -881,7 +1041,7 @@ const ConnectedChannelRow = ({
 
 
 // ============================================================
-// Screen 2: Connect (two-column: form left, guide right)
+// Screen 2: Connect (choice → two-column form + guide)
 // ============================================================
 
 const ConnectScreen = ({
@@ -894,8 +1054,95 @@ const ConnectScreen = ({
   onAdd: (data: Omit<DeliveryChannel, "id" | "createdAt" | "stats">) => void;
 }) => {
   const typeInfo = CHANNEL_TYPES.find(c => c.id === channelType)!;
+  const connectConfig = CHANNEL_CONNECT_CONFIG[channelType];
+  const [method, setMethod] = useState<ConnectMethod | null>(null);
+
+  return (
+    <div className="p-6 lg:p-10 space-y-6 animate-in fade-in duration-300">
+      {/* Back */}
+      <button
+        onClick={method ? () => setMethod(null) : onBack}
+        className="flex items-center gap-1.5 text-sm font-semibold text-muted-foreground hover:text-foreground transition-colors"
+      >
+        <ArrowLeft className="w-4 h-4" />
+        {method ? "Back" : "Back to Catalog"}
+      </button>
+
+      <AnimatePresence mode="wait">
+        {!method ? (
+          /* ─── Choice Screen ─── */
+          <motion.div
+            key="choice"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0, x: -16 }}
+            transition={{ duration: 0.2 }}
+            className="max-w-xl"
+          >
+            <h1 className="text-2xl font-bold text-foreground mb-1">{connectConfig.choiceTitle}</h1>
+            <p className="text-sm text-muted-foreground mb-8">{connectConfig.choiceSubtitle}</p>
+
+            <div className="flex items-center gap-4">
+              <button
+                onClick={() => setMethod("new")}
+                className="inline-flex items-center gap-2 px-5 py-2.5 text-sm font-semibold bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
+              >
+                <Plus className="w-4 h-4" />
+                {connectConfig.newLabel}
+              </button>
+              <button
+                onClick={() => setMethod("existing")}
+                className="text-sm font-semibold text-primary hover:text-primary/80 transition-colors"
+              >
+                {connectConfig.existingLabel}
+              </button>
+            </div>
+          </motion.div>
+        ) : (
+          /* ─── Form + Guide (two-column) ─── */
+          <motion.div
+            key="form"
+            initial={{ opacity: 0, x: 16 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2 }}
+          >
+            <ConnectFormWithGuide
+              channelType={channelType}
+              typeInfo={typeInfo}
+              method={method}
+              guide={method === "new" ? connectConfig.newGuide : connectConfig.existingGuide}
+              onBack={() => setMethod(null)}
+              onAdd={onAdd}
+            />
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+};
+
+
+// ============================================================
+// Connect Form + Guide (used after method is chosen)
+// ============================================================
+
+const ConnectFormWithGuide = ({
+  channelType,
+  typeInfo,
+  method,
+  guide,
+  onBack,
+  onAdd,
+}: {
+  channelType: ChannelType;
+  typeInfo: typeof CHANNEL_TYPES[number];
+  method: ConnectMethod;
+  guide: SetupGuide;
+  onBack: () => void;
+  onAdd: (data: Omit<DeliveryChannel, "id" | "createdAt" | "stats">) => void;
+}) => {
   const fields = CHANNEL_CONFIG_FIELDS[channelType];
-  const guide = CHANNEL_SETUP_GUIDES[channelType];
 
   const [name, setName] = useState("");
   const [senderName, setSenderName] = useState("");
@@ -923,13 +1170,7 @@ const ConnectScreen = ({
   };
 
   return (
-    <div className="p-6 lg:p-10 space-y-6">
-      {/* Back */}
-      <button onClick={onBack} className="flex items-center gap-1.5 text-sm font-semibold text-muted-foreground hover:text-foreground transition-colors">
-        <ArrowLeft className="w-4 h-4" />
-        Back to Catalog
-      </button>
-
+    <div className="space-y-6">
       {/* Channel type banner */}
       <div className="flex items-center gap-4 p-4 bg-muted/30 border border-border">
         <div className={cn("w-12 h-12 flex items-center justify-center border", typeInfo.bgColor, typeInfo.borderColor)}>
@@ -937,7 +1178,9 @@ const ConnectScreen = ({
         </div>
         <div className="flex-1">
           <h1 className="text-lg font-bold text-foreground">Connect {typeInfo.label}</h1>
-          <p className="text-sm text-muted-foreground">{typeInfo.description}</p>
+          <p className="text-sm text-muted-foreground">
+            {method === "new" ? "Setting up from scratch" : "Connecting with existing credentials"}
+          </p>
         </div>
         <div className="hidden sm:flex items-center gap-3 text-xs text-muted-foreground">
           <span className="flex items-center gap-1">
