@@ -793,7 +793,7 @@ const ChannelListScreen = ({
           <p className="text-sm font-medium text-muted-foreground">No channels match your search.</p>
         </div>
       ) : (
-        <div className="space-y-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {filteredChannels.map(channel => (
             <ConnectedChannelRow
               key={channel.id}
@@ -985,55 +985,55 @@ const ConnectedChannelRow = ({
   return (
     <div
       className={cn(
-        "border border-border rounded-xl bg-card px-5 py-4 flex items-center gap-4 cursor-pointer hover:border-primary/30 hover:shadow-sm transition-all",
+        "border border-border rounded-xl bg-card p-4 cursor-pointer hover:border-primary/30 hover:shadow-sm transition-all flex flex-col",
         !channel.enabled && "opacity-60"
       )}
       onClick={onClick}
     >
-      {/* Icon */}
-      <div className={cn("w-12 h-12 rounded-xl flex items-center justify-center shrink-0 relative", typeInfo?.bgColor, typeInfo?.borderColor, "border")}>
-        {typeInfo && <ChannelIcon type={typeInfo} className="w-6 h-6" />}
-        <span className={cn(
-          "absolute -bottom-0.5 -right-0.5 w-3 h-3 border-2 border-card rounded-full",
-          channel.status === "connected" ? "bg-emerald-500" :
-          channel.status === "error" ? "bg-destructive" :
-          channel.status === "rate_limited" ? "bg-amber-500" : "bg-muted-foreground/40"
-        )} />
-      </div>
-
-      {/* Info */}
-      <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-2 mb-0.5">
-          <p className="text-base font-bold text-foreground truncate">{channel.name}</p>
-          <span className={cn("inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold border", statusInfo.bgColor, statusInfo.color)}>
-            <StatusIcon className="w-2.5 h-2.5" />
-            {statusInfo.label}
-          </span>
-          {!channel.enabled && (
-            <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-muted text-muted-foreground border border-border">Disabled</span>
-          )}
+      {/* Top: icon + toggle */}
+      <div className="flex items-start justify-between mb-3">
+        <div className={cn("w-10 h-10 rounded-lg flex items-center justify-center relative border", typeInfo?.bgColor, typeInfo?.borderColor)}>
+          {typeInfo && <ChannelIcon type={typeInfo} className="w-5 h-5" />}
+          <span className={cn(
+            "absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 border-2 border-card rounded-full",
+            channel.status === "connected" ? "bg-emerald-500" :
+            channel.status === "error" ? "bg-destructive" :
+            channel.status === "rate_limited" ? "bg-amber-500" : "bg-muted-foreground/40"
+          )} />
         </div>
-        <p className="text-xs text-muted-foreground">
-          {typeInfo?.label}
-          {channel.lastActiveAt && <> · Active {formatTimeAgo(channel.lastActiveAt)}</>}
-        </p>
+        <div onClick={e => e.stopPropagation()}>
+          <Switch checked={channel.enabled} onCheckedChange={onToggle} aria-label="Enable channel" />
+        </div>
       </div>
 
-      {/* Stats */}
-      <div className="hidden md:flex items-center gap-8 text-center shrink-0">
-        <div>
+      {/* Name + status */}
+      <p className="text-sm font-bold text-foreground truncate mb-1">{channel.name}</p>
+      <div className="flex items-center gap-1.5 mb-3">
+        <span className={cn("inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] font-bold border", statusInfo.bgColor, statusInfo.color)}>
+          <StatusIcon className="w-2.5 h-2.5" />
+          {statusInfo.label}
+        </span>
+        {!channel.enabled && (
+          <span className="px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-muted text-muted-foreground border border-border">Disabled</span>
+        )}
+      </div>
+
+      {/* Type + active */}
+      <p className="text-xs text-muted-foreground mb-3">
+        {typeInfo?.label}
+        {channel.lastActiveAt && <> · {formatTimeAgo(channel.lastActiveAt)}</>}
+      </p>
+
+      {/* Stats row */}
+      <div className="flex items-center gap-4 pt-3 border-t border-border/60 mt-auto">
+        <div className="flex-1">
           <p className="text-sm font-bold text-foreground">{channel.stats.sent.toLocaleString()}</p>
-          <p className="text-[10px] text-muted-foreground font-medium">Sent</p>
+          <p className="text-[10px] text-muted-foreground">Sent</p>
         </div>
-        <div>
+        <div className="flex-1 text-right">
           <p className={cn("text-sm font-bold", deliveryRate >= 90 ? "text-emerald-600" : deliveryRate >= 70 ? "text-amber-600" : "text-foreground")}>{deliveryRate}%</p>
-          <p className="text-[10px] text-muted-foreground font-medium">Delivery</p>
+          <p className="text-[10px] text-muted-foreground">Delivery</p>
         </div>
-      </div>
-
-      {/* Toggle */}
-      <div onClick={e => e.stopPropagation()} className="shrink-0">
-        <Switch checked={channel.enabled} onCheckedChange={onToggle} aria-label="Enable channel" />
       </div>
     </div>
   );
