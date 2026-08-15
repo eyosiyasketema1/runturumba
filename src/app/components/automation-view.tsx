@@ -8,7 +8,7 @@ import {
   Inbox, ListOrdered, GitBranch, FolderPlus, Folder, FolderOpen,
   ArrowUpDown, SlidersHorizontal, ChevronDown,
   CornerDownRight, FileText, LayoutTemplate,
-  Reply, Droplet, Workflow, Megaphone, Star, TrendingUp,
+  Reply, Droplet, Workflow, Megaphone, Star, TrendingUp, ArrowLeft,
   UserPlus, Heart, CalendarDays, Gift, BookOpen, Sparkles,
   Bell, HandHeart, GraduationCap, Target
 } from "lucide-react";
@@ -346,7 +346,7 @@ export const AutomationView = ({
 }: AutomationViewProps) => {
   // Webhooks tab removed — webhooks now live inside the Journey Builder.
   const activeTab = "rules" as const;
-  const [viewMode, setViewMode] = useState<"automations" | "templates">("automations");
+  const [viewMode, setViewMode] = useState<"automations" | "templates" | "new-gallery">("automations");
   const [searchQuery, setSearchQuery] = useState("");
   const [isAddRuleOpen, setIsAddRuleOpen] = useState(false);
   // isAddWebhookOpen removed — webhooks are managed inside the Journey Builder.
@@ -577,7 +577,7 @@ export const AutomationView = ({
           if (activeFolder === "basic")    { setBuilderState({ kind: "basic",    mode: "new" }); return; }
           if (activeFolder === "sequence") { setBuilderState({ kind: "sequence", mode: "new" }); return; }
           if (activeFolder === "flow")     { setBuilderState({ kind: "flow",     mode: "new" }); return; }
-          setIsTypePickerOpen(true);
+          setViewMode("new-gallery");
         }}>
           <Plus className="w-4 h-4 mr-1.5" />
           {folderCopy.createLabel}
@@ -620,6 +620,25 @@ export const AutomationView = ({
             }
             toast.success(`Started new ${TEMPLATE_TYPE_CONFIG[tpl.type].label} from "${tpl.name}"`);
           }}
+        />
+      )}
+
+      {viewMode === "new-gallery" && (
+        <NewAutomationGallery
+          onUseTemplate={(tpl) => {
+            setViewMode("automations");
+            if (tpl.type === "broadcast") {
+              setBuilderState({ kind: "sequence", mode: "new", template: tpl });
+            } else {
+              setBuilderState({ kind: tpl.type, mode: "new", template: tpl });
+            }
+            toast.success(`Started new ${TEMPLATE_TYPE_CONFIG[tpl.type].label} from "${tpl.name}"`);
+          }}
+          onStartFromScratch={() => {
+            setViewMode("automations");
+            setIsTypePickerOpen(true);
+          }}
+          onBack={() => setViewMode("automations")}
         />
       )}
 
@@ -819,7 +838,7 @@ export const AutomationView = ({
                         if (activeFolder === "basic")    setBuilderState({ kind: "basic",    mode: "new" });
                         else if (activeFolder === "sequence") setBuilderState({ kind: "sequence", mode: "new" });
                         else if (activeFolder === "flow")     setBuilderState({ kind: "flow",     mode: "new" });
-                        else setIsTypePickerOpen(true);
+                        else setViewMode("new-gallery");
                       }}>
                         <Plus className="w-4 h-4 mr-1.5" />
                         {folderCopy.createLabel}
@@ -1115,6 +1134,170 @@ export const AutomationView = ({
 // ============================================================
 // Automation Templates Tab
 // ============================================================
+
+// ── New Automation Gallery — shown when clicking "New Automation" ──
+const NewAutomationGallery = ({
+  onUseTemplate,
+  onStartFromScratch,
+  onBack,
+}: {
+  onUseTemplate: (tpl: AutomationTemplate) => void;
+  onStartFromScratch: () => void;
+  onBack: () => void;
+}) => {
+  const [search, setSearch] = useState("");
+  const [typeFilter, setTypeFilter] = useState<TemplateType | "all">("all");
+
+  const filtered = useMemo(() => {
+    return AUTOMATION_TEMPLATES.filter(tpl => {
+      const q = search.toLowerCase();
+      const matchesSearch = !q || tpl.name.toLowerCase().includes(q) || tpl.description.toLowerCase().includes(q) || tpl.tags.some(t => t.includes(q));
+      const matchesType = typeFilter === "all" || tpl.type === typeFilter;
+      return matchesSearch && matchesType;
+    });
+  }, [search, typeFilter]);
+
+  // Group templates by type for sectioned display
+  const grouped = useMemo(() => {
+    const groups: { type: TemplateType; config: typeof TEMPLATE_TYPE_CONFIG["basic"]; templates: AutomationTemplate[] }[] = [];
+    const types: TemplateType[] = ["basic", "sequence", "flow", "broadcast"];
+    for (const t of types) {
+      const tpls = filtered.filter(tpl => tpl.type === t);
+      if (tpls.length > 0) groups.push({ type: t, config: TEMPLATE_TYPE_CONFIG[t], templates: tpls });
+    }
+    return groups;
+  }, [filtered]);
+
+  return (
+    <div className="space-y-5 -mt-1">
+      {/* Header with back + title + Start From Scratch */}
+      <div className="flex items-center justify-between gap-4">
+        <div className="flex items-center gap-3">
+          <button
+            onClick={onBack}
+            className="w-8 h-8 rounded-lg border border-border bg-card flex items-center justify-center text-muted-foreground hover:text-foreground hover:border-foreground/30 transition-colors"
+          >
+            <ArrowLeft className="w-4 h-4" />
+          </button>
+          <div>
+            <h2 className="text-lg font-bold text-foreground">Create a Workflow</h2>
+            <p className="text-xs text-muted-foreground">Select a template or start from scratch</p>
+          </div>
+        </div>
+        <Button variant="outline" onClick={onStartFromScratch}>
+          <Plus className="w-4 h-4 mr-1.5" />
+          Start From Scratch
+        </Button>
+      </div>
+
+      {/* Search + type filter */}
+      <div className="flex flex-col sm:flex-row gap-3">
+        <div className="relative flex-1 max-w-md">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+          <Input
+            placeholder="Search templates..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="pl-9 h-10 text-sm"
+            aria-label="Search templates"
+          />
+        </div>
+        <div className="flex items-center gap-2 flex-wrap">
+          {([
+            ["all", "All"],
+            ["basic", "Auto-Reply"],
+            ["sequence", "Drip / Sequence"],
+            ["flow", "Flow / Journey"],
+            ["broadcast", "Broadcast"],
+          ] as const).map(([k, label]) => (
+            <button
+              key={k}
+              onClick={() => setTypeFilter(k as any)}
+              className={cn(
+                "px-3 py-1.5 text-xs font-medium rounded-full border transition-all",
+                typeFilter === k
+                  ? "bg-primary text-primary-foreground border-primary"
+                  : "bg-background text-muted-foreground border-border hover:border-foreground/30 hover:text-foreground"
+              )}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Template cards */}
+      {filtered.length === 0 ? (
+        <div className="text-center py-16">
+          <LayoutTemplate className="w-10 h-10 text-muted-foreground mx-auto mb-3" />
+          <p className="text-sm font-medium text-muted-foreground">No templates match your search</p>
+          <p className="text-xs text-muted-foreground/70 mt-1">Try a different keyword or clear your filter.</p>
+          <Button variant="outline" size="sm" className="mt-4" onClick={() => { setSearch(""); setTypeFilter("all"); }}>
+            Clear Filters
+          </Button>
+        </div>
+      ) : (
+        <div className="space-y-6">
+          {grouped.map(({ type, config, templates }) => {
+            const SectionIcon = config.icon;
+            return (
+              <div key={type}>
+                <div className="flex items-center gap-2 mb-3">
+                  <div className={cn("w-6 h-6 rounded flex items-center justify-center", config.bg)}>
+                    <SectionIcon className={cn("w-3.5 h-3.5", config.color)} />
+                  </div>
+                  <h3 className="text-sm font-semibold text-foreground">{config.label}</h3>
+                  <span className="text-xs text-muted-foreground">({templates.length})</span>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                  {templates.map(tpl => {
+                    const TplIcon = tpl.icon;
+                    return (
+                      <div
+                        key={tpl.id}
+                        className="group border border-border rounded-xl bg-card hover:border-primary/30 transition-all flex flex-col overflow-hidden cursor-pointer"
+                        onClick={() => onUseTemplate(tpl)}
+                      >
+                        {/* Illustration area */}
+                        <div className={cn("h-28 flex items-center justify-center relative", tpl.iconTint)}>
+                          <TplIcon className="w-10 h-10 opacity-60" />
+                          {tpl.popular && (
+                            <span className="absolute top-2 right-2 inline-flex items-center gap-1 px-2 py-0.5 text-[10px] font-semibold rounded-full bg-white/90 text-amber-600 border border-amber-200 shadow-sm">
+                              <Star className="w-2.5 h-2.5" fill="currentColor" /> Popular
+                            </span>
+                          )}
+                          {tpl.steps && (
+                            <span className="absolute bottom-2 left-2 inline-flex items-center gap-1 px-2 py-0.5 text-[10px] font-medium rounded-full bg-white/90 text-foreground/70 border border-border/50">
+                              {tpl.steps} steps
+                            </span>
+                          )}
+                        </div>
+                        {/* Content */}
+                        <div className="p-4 flex flex-col flex-1">
+                          <p className="text-sm font-semibold text-foreground mb-1">{tpl.name}</p>
+                          <p className="text-xs text-muted-foreground leading-relaxed flex-1 line-clamp-2">{tpl.description}</p>
+                          <div className="mt-3 flex items-center justify-between">
+                            <span className={cn("inline-flex items-center gap-1 px-2 py-0.5 text-[10px] font-medium rounded-full border", config.bg, config.color, config.border)}>
+                              <SectionIcon className="w-2.5 h-2.5" />
+                              {config.label}
+                            </span>
+                            <span className="text-xs font-medium text-primary opacity-0 group-hover:opacity-100 transition-opacity">
+                              Use Template →
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+};
 
 const AutomationTemplatesTab = ({ onUseTemplate }: { onUseTemplate: (tpl: AutomationTemplate) => void }) => {
   const [search, setSearch] = useState("");
