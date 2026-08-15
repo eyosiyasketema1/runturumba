@@ -10,6 +10,7 @@ import {
   Image, Mic, Square, Trash2,
   Pencil, History, Merge, ChevronUp,
   ShieldAlert, Ban, Undo2, Church, AlertTriangle,
+  Bot,
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { toast } from "sonner";
@@ -330,6 +331,117 @@ const getPresence = (userId: string): "online" | "away" | "offline" =>
 const PRESENCE_DOT: Record<string, string> = {
   online: "bg-green-500", away: "bg-amber-400", offline: "bg-gray-400",
 };
+
+// ─── AssignDropdown ──────────────────────────────────────────────────────────
+
+function AssignDropdown({
+  users,
+  assigneeId,
+  getPresence,
+  onAssign,
+  onUnassign,
+  onClose,
+}: {
+  users: User[];
+  assigneeId: string | null | undefined;
+  getPresence: (id: string) => string;
+  onAssign: (userId: string) => void;
+  onUnassign: () => void;
+  onClose: () => void;
+}) {
+  const [search, setSearch] = useState("");
+  const searchRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    searchRef.current?.focus();
+  }, []);
+
+  const activeUsers = useMemo(() => {
+    const q = search.toLowerCase();
+    return users.filter(u => u.status === "active" && (!q || u.name.toLowerCase().includes(q) || u.role.toLowerCase().includes(q)));
+  }, [users, search]);
+
+  return (
+    <div className="absolute top-full left-0 z-50 mt-1 w-64 bg-background border border-border max-h-[420px] flex flex-col">
+      {/* Search */}
+      <div className="px-2.5 py-2 border-b border-border">
+        <div className="relative">
+          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
+          <input
+            ref={searchRef}
+            placeholder="Search"
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            className="w-full h-8 pl-8 pr-3 text-xs bg-muted/50 border border-border text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+            aria-label="Search agents"
+          />
+        </div>
+      </div>
+
+      <div className="overflow-y-auto flex-1 custom-scrollbar">
+        {/* AI Agents section */}
+        <div className="px-3 py-2 flex items-center justify-between">
+          <span className="text-xs font-bold text-foreground">AI Agents</span>
+          <span className="px-1.5 py-0.5 text-[9px] font-bold text-primary bg-primary/10 border border-primary/20 uppercase tracking-wider">Beta</span>
+        </div>
+        <button
+          onClick={() => { toast.info("AI Agent creation coming soon"); onClose(); }}
+          className="w-full flex items-center gap-2.5 px-3 py-2 hover:bg-muted/50 transition-colors border-b border-border"
+        >
+          <div className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center">
+            <Bot className="w-3.5 h-3.5 text-primary" />
+          </div>
+          <span className="text-xs font-semibold text-primary">Create AI Agent</span>
+        </button>
+
+        {/* Human agents */}
+        {activeUsers.map(u => {
+          const pr = getPresence(u.id);
+          return (
+            <button key={u.id}
+              onClick={() => onAssign(u.id)}
+              className={cn(
+                "w-full flex items-center gap-2.5 px-3 py-2.5 hover:bg-muted/50 transition-colors",
+                assigneeId === u.id && "bg-primary/5"
+              )}
+            >
+              <div className="relative shrink-0">
+                <div className="w-7 h-7 rounded-full bg-primary/10 flex items-center justify-center text-xs font-bold text-primary">
+                  {u.name.charAt(0)}
+                </div>
+                <div className={cn("absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full border-2 border-background", PRESENCE_DOT[pr])} />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-xs font-semibold text-foreground truncate">{u.name}</p>
+                <p className="text-[10px] text-muted-foreground capitalize">{pr} · {u.role}</p>
+              </div>
+              {assigneeId === u.id && <Check className="w-3.5 h-3.5 text-primary shrink-0" />}
+            </button>
+          );
+        })}
+
+        {activeUsers.length === 0 && search && (
+          <div className="px-3 py-4 text-center">
+            <p className="text-xs text-muted-foreground">No agents match "{search}"</p>
+          </div>
+        )}
+      </div>
+
+      {/* Unassign — bottom */}
+      {assigneeId && (
+        <button
+          onClick={onUnassign}
+          className="w-full flex items-center gap-2.5 px-3 py-2.5 border-t border-border hover:bg-muted/50 transition-colors shrink-0"
+        >
+          <div className="w-7 h-7 rounded-full bg-destructive/10 flex items-center justify-center">
+            <XCircle className="w-3.5 h-3.5 text-destructive" />
+          </div>
+          <span className="text-xs font-semibold text-muted-foreground">Unassign</span>
+        </button>
+      )}
+    </div>
+  );
+}
 
 // ─── TypingIndicator ──────────────────────────────────────────────────────────
 
@@ -901,37 +1013,23 @@ function ConversationControlBar({
               <ChevronDown className="w-3 h-3 text-muted-foreground" />
             </button>
             {openDropdown === "ctrl-assign" && (
-              <div className="absolute top-full left-0 z-50 mt-1 w-52 bg-background border border-border">
-                <div className="px-3 py-2 border-b border-border">
-                  <span className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Assign Agent</span>
-                </div>
-                <button onClick={() => { onUpdateMeta({ assigneeId: null, status: "open" }); onAddSystem("Conversation unassigned"); setOpenDropdown(null); }}
-                  className="w-full flex items-center gap-2 px-3 py-2 text-xs text-muted-foreground hover:bg-muted/50 transition-colors"
-                >
-                  <XCircle className="w-3.5 h-3.5" /> Unassign
-                </button>
-                {users.filter(u => u.status === "active").map(u => {
-                  const pr = getPresence(u.id);
-                  return (
-                    <button key={u.id}
-                      onClick={() => { onUpdateMeta({ assigneeId: u.id, status: "assigned" }); onAddSystem(`Assigned to ${u.name}`); setOpenDropdown(null); }}
-                      className="w-full flex items-center gap-2.5 px-3 py-2.5 hover:bg-muted/50 transition-colors"
-                    >
-                      <div className="relative shrink-0">
-                        <div className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center text-xs font-bold text-primary">
-                          {u.name.charAt(0)}
-                        </div>
-                        <div className={cn("absolute -bottom-0.5 -right-0.5 w-2 h-2 rounded-full border border-background", PRESENCE_DOT[pr])} />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-xs font-semibold text-foreground truncate">{u.name}</p>
-                        <p className="text-xs text-muted-foreground capitalize">{pr} · {u.role}</p>
-                      </div>
-                      {meta.assigneeId === u.id && <Check className="w-3.5 h-3.5 text-primary shrink-0" />}
-                    </button>
-                  );
-                })}
-              </div>
+              <AssignDropdown
+                users={users}
+                assigneeId={meta.assigneeId}
+                getPresence={getPresence}
+                onAssign={(userId) => {
+                  const u = users.find(u => u.id === userId);
+                  onUpdateMeta({ assigneeId: userId, status: "assigned" });
+                  onAddSystem(`Assigned to ${u?.name || "agent"}`);
+                  setOpenDropdown(null);
+                }}
+                onUnassign={() => {
+                  onUpdateMeta({ assigneeId: null, status: "open" });
+                  onAddSystem("Conversation unassigned");
+                  setOpenDropdown(null);
+                }}
+                onClose={() => setOpenDropdown(null)}
+              />
             )}
           </div>
         )}
