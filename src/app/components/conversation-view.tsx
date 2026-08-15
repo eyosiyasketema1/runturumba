@@ -21,6 +21,7 @@ import {
   type Group, type TeamGroup,
   type FaithJourney, type ContactMilestones, type Match, type ContentRow,
   type MilestoneKey,
+  type AIAgent,
   formatTimeAgo,
 } from "./types";
 import { RoutingRulesPanel } from "./routing-rules-panel";
@@ -341,6 +342,9 @@ function AssignDropdown({
   onAssign,
   onUnassign,
   onClose,
+  aiAgents = [],
+  onAssignAiAgent,
+  onNavigateToSettings,
 }: {
   users: User[];
   assigneeId: string | null | undefined;
@@ -348,6 +352,9 @@ function AssignDropdown({
   onAssign: (userId: string) => void;
   onUnassign: () => void;
   onClose: () => void;
+  aiAgents?: AIAgent[];
+  onAssignAiAgent?: (agentId: string) => void;
+  onNavigateToSettings?: () => void;
 }) {
   const [search, setSearch] = useState("");
   const searchRef = useRef<HTMLInputElement>(null);
@@ -384,15 +391,69 @@ function AssignDropdown({
           <span className="text-xs font-bold text-foreground">AI Agents</span>
           <span className="px-1.5 py-0.5 text-[9px] font-bold text-primary bg-primary/10 border border-primary/20 uppercase tracking-wider">Beta</span>
         </div>
-        <button
-          onClick={() => { toast.info("Go to Settings → AI Agents to create a new agent"); onClose(); }}
-          className="w-full flex items-center gap-2.5 px-3 py-2 hover:bg-muted/50 transition-colors border-b border-border"
-        >
-          <div className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center">
-            <Bot className="w-3.5 h-3.5 text-primary" />
-          </div>
-          <span className="text-xs font-semibold text-primary">Create AI Agent</span>
-        </button>
+
+        {(() => {
+          const activeAiAgents = aiAgents.filter(a => a.status === "active");
+          const q = search.toLowerCase();
+          const filteredAi = activeAiAgents.filter(a => !q || a.name.toLowerCase().includes(q) || a.description.toLowerCase().includes(q));
+
+          if (activeAiAgents.length === 0) {
+            // No AI agents — show Create button
+            return (
+              <button
+                onClick={() => {
+                  onNavigateToSettings?.();
+                  toast.info("Go to Settings → AI Agents to create a new agent");
+                  onClose();
+                }}
+                className="w-full flex items-center gap-2.5 px-3 py-2 hover:bg-muted/50 transition-colors border-b border-border"
+              >
+                <div className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center">
+                  <Bot className="w-3.5 h-3.5 text-primary" />
+                </div>
+                <span className="text-xs font-semibold text-primary">Create AI Agent</span>
+              </button>
+            );
+          }
+
+          // AI agents exist — show selectable list
+          return (
+            <div className="border-b border-border">
+              {filteredAi.map(agent => (
+                <button
+                  key={agent.id}
+                  onClick={() => onAssignAiAgent?.(agent.id)}
+                  className={cn(
+                    "w-full flex items-center gap-2.5 px-3 py-2.5 hover:bg-muted/50 transition-colors",
+                    assigneeId === `ai:${agent.id}` && "bg-primary/5"
+                  )}
+                >
+                  <div className="relative shrink-0">
+                    <div className="w-7 h-7 rounded-full bg-primary/10 flex items-center justify-center text-sm">
+                      {agent.avatar}
+                    </div>
+                    <div className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full border-2 border-background bg-emerald-500" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs font-semibold text-foreground truncate">{agent.name}</p>
+                    <p className="text-[10px] text-muted-foreground truncate">AI · {agent.stats.resolutionRate}% resolved</p>
+                  </div>
+                  {assigneeId === `ai:${agent.id}` && <Check className="w-3.5 h-3.5 text-primary shrink-0" />}
+                </button>
+              ))}
+              {filteredAi.length === 0 && q && (
+                <div className="px-3 py-2 text-center">
+                  <p className="text-[10px] text-muted-foreground">No AI agents match "{search}"</p>
+                </div>
+              )}
+            </div>
+          );
+        })()}
+
+        {/* Human agents header */}
+        <div className="px-3 py-2">
+          <span className="text-xs font-bold text-foreground">Agents</span>
+        </div>
 
         {/* Human agents */}
         {activeUsers.map(u => {
@@ -1029,6 +1090,14 @@ function ConversationControlBar({
                   setOpenDropdown(null);
                 }}
                 onClose={() => setOpenDropdown(null)}
+                aiAgents={aiAgents}
+                onAssignAiAgent={(agentId) => {
+                  const a = aiAgents.find(a => a.id === agentId);
+                  onUpdateMeta({ assigneeId: `ai:${agentId}`, status: "assigned" });
+                  onAddSystem(`Assigned to AI Agent: ${a?.name || "AI Agent"}`);
+                  setOpenDropdown(null);
+                }}
+                onNavigateToSettings={onNavigateToSettings}
               />
             )}
           </div>
@@ -2865,6 +2934,9 @@ interface ConversationViewProps {
   onRequestReassign?:  (contactId: string, reason: string) => void;
   onApproveReassign?:  (reqId: string, newMentorId: string) => void;
   onRejectReassign?:   (reqId: string) => void;
+  // --- AI Agents ---
+  aiAgents?:           AIAgent[];
+  onNavigateToSettings?: () => void;
 }
 
 export const ConversationView = ({
@@ -2876,6 +2948,7 @@ export const ConversationView = ({
   onUpdateContact, onUpdateJourney, onLogMilestone, onUpdateMatch,
   onAddNote, onDeleteNote,
   reassignRequests = [], onRequestReassign, onApproveReassign, onRejectReassign,
+  aiAgents = [], onNavigateToSettings,
 }: ConversationViewProps) => {
   const isAgent = viewMode === "volunteer";
 

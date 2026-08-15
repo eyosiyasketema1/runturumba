@@ -11,7 +11,7 @@ import {
 import { motion } from "motion/react";
 import { toast } from "sonner";
 
-import { cn, type Tenant, type User as UserType, type Plan, type OrgStatus, PLAN_LIMITS } from "./types";
+import { cn, type Tenant, type User as UserType, type Plan, type OrgStatus, PLAN_LIMITS, type AIAgent, type AIAgentStatus, type AgentTone, type HandoffCondition, type KnowledgeSource } from "./types";
 import { RolesPermissionsSection } from "./roles-permissions";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "./ui/card";
 import { Button } from "./ui/button";
@@ -1695,6 +1695,8 @@ export const SettingsView = ({
   onUpgrade,
   onUpdateTenant,
   onUpdateUser,
+  aiAgents = [],
+  onUpdateAiAgents,
   childOrgs = [],
   onCreateChildOrg,
   onUpdateChildOrg,
@@ -1706,6 +1708,8 @@ export const SettingsView = ({
   onUpgrade: (plan: Plan) => void;
   onUpdateTenant: (data: Partial<Tenant>) => void;
   onUpdateUser: (data: Partial<UserType>) => void;
+  aiAgents?: AIAgent[];
+  onUpdateAiAgents?: (agents: AIAgent[]) => void;
   childOrgs?: Tenant[];
   onCreateChildOrg?: (data: Partial<Tenant>) => void;
   onUpdateChildOrg?: (id: string, data: Partial<Tenant>) => void;
@@ -1801,7 +1805,7 @@ export const SettingsView = ({
             {activeSection === "ai" && <AISection />}
             {activeSection === "terminology" && <TerminologySection />}
             {activeSection === "roles" && <RolesPermissionsSection />}
-            {activeSection === "ai-agents" && <AIAgentsSection />}
+            {activeSection === "ai-agents" && <AIAgentsSection agents={aiAgents} onUpdateAgents={onUpdateAiAgents} />}
           </div>
         </div>
       </Card>
@@ -1810,39 +1814,6 @@ export const SettingsView = ({
 };
 
 // --- AI Agents Section ---
-type AIAgentStatus = "active" | "paused" | "draft";
-type AgentTone = "professional" | "friendly" | "casual" | "empathetic" | "concise";
-type HandoffCondition = "sentiment_negative" | "explicit_request" | "low_confidence" | "complex_query" | "vip_contact";
-
-interface KnowledgeSource {
-  id: string;
-  type: "url" | "document" | "faq";
-  name: string;
-  url?: string;
-  addedAt: string;
-  status: "synced" | "syncing" | "error";
-}
-
-interface AIAgent {
-  id: string;
-  name: string;
-  description: string;
-  avatar: string;
-  status: AIAgentStatus;
-  tone: AgentTone;
-  persona: string;
-  language: string;
-  channels: string[];
-  knowledgeSources: KnowledgeSource[];
-  handoffConditions: HandoffCondition[];
-  createdAt: string;
-  stats: {
-    conversationsHandled: number;
-    avgResponseTime: string;
-    resolutionRate: number;
-    activeConversations: number;
-  };
-}
 
 const HANDOFF_CONDITIONS: { id: HandoffCondition; label: string; description: string }[] = [
   { id: "sentiment_negative", label: "Negative Sentiment", description: "Hand off when conversation sentiment turns negative" },
@@ -1860,15 +1831,20 @@ const TONE_OPTIONS: { id: AgentTone; label: string; example: string }[] = [
   { id: "concise", label: "Concise", example: "Got it. Here's what you need:" },
 ];
 
-const INITIAL_AI_AGENTS: AIAgent[] = [];
-
 const AGENT_AVATARS = ["🤖", "🧠", "💬", "🎯", "⚡", "🌟", "🔮", "🛡️"];
 
 type AgentScreen = "landing" | "list" | "create" | "detail";
 type CreateStep = 1 | 2 | 3 | 4;
 
-const AIAgentsSection = () => {
-  const [agents, setAgents] = useState<AIAgent[]>(INITIAL_AI_AGENTS);
+const AIAgentsSection = ({ agents: agentsProp, onUpdateAgents }: { agents: AIAgent[]; onUpdateAgents?: (agents: AIAgent[]) => void }) => {
+  const [agents, setAgentsLocal] = useState<AIAgent[]>(agentsProp);
+  const setAgents = (updater: AIAgent[] | ((prev: AIAgent[]) => AIAgent[])) => {
+    setAgentsLocal(prev => {
+      const next = typeof updater === "function" ? updater(prev) : updater;
+      onUpdateAgents?.(next);
+      return next;
+    });
+  };
   const [screen, setScreen] = useState<AgentScreen>(agents.length > 0 ? "list" : "landing");
   const [selectedAgent, setSelectedAgent] = useState<AIAgent | null>(null);
 

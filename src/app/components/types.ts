@@ -1564,3 +1564,78 @@ export const INITIAL_CAMPAIGNS: Campaign[] = [
     publishedAt: "2025-08-15T10:00:00Z", createdAt: "2025-08-01T08:00:00Z",
   },
 ];
+
+// ── AI Agents ────────────────────────────────────────────────────────────────
+export type AIAgentStatus = "active" | "paused" | "draft";
+export type AgentTone = "professional" | "friendly" | "casual" | "empathetic" | "concise";
+export type HandoffCondition = "sentiment_negative" | "explicit_request" | "low_confidence" | "complex_query" | "vip_contact";
+
+export interface KnowledgeSource {
+  id: string;
+  type: "url" | "document" | "faq";
+  name: string;
+  url?: string;
+  addedAt: string;
+  status: "synced" | "syncing" | "error";
+}
+
+export interface AIAgent {
+  id: string;
+  name: string;
+  description: string;
+  avatar: string;
+  status: AIAgentStatus;
+  tone: AgentTone;
+  persona: string;
+  language: string;
+  channels: string[];
+  knowledgeSources: KnowledgeSource[];
+  handoffConditions: HandoffCondition[];
+  createdAt: string;
+  stats: {
+    conversationsHandled: number;
+    avgResponseTime: string;
+    resolutionRate: number;
+    activeConversations: number;
+  };
+}
+
+export const INITIAL_AI_AGENTS: AIAgent[] = [
+  {
+    id: "agent-1",
+    name: "Support Agent",
+    description: "Handles customer support queries and FAQs for GCM Ethiopia",
+    avatar: "🤖",
+    status: "active",
+    tone: "friendly",
+    persona: "You are a friendly and helpful customer support agent for GCM Ethiopia. Always greet users warmly, be patient, and provide clear guidance.",
+    language: "English",
+    channels: ["whatsapp", "telegram", "messenger"],
+    knowledgeSources: [
+      { id: "ks-1", type: "url", name: "https://help.gcmethiopia.org", url: "https://help.gcmethiopia.org", addedAt: "Jul 10, 2026", status: "synced" },
+      { id: "ks-2", type: "faq", name: "What are your business hours?", addedAt: "Jul 10, 2026", status: "synced" },
+    ],
+    handoffConditions: ["explicit_request", "low_confidence", "sentiment_negative"],
+    createdAt: "Jul 10, 2026",
+    stats: { conversationsHandled: 342, avgResponseTime: "8s", resolutionRate: 87, activeConversations: 5 },
+  },
+  {
+    id: "agent-2",
+    name: "Seeker Guide",
+    description: "Guides seekers through their faith journey with empathetic conversations",
+    avatar: "🌟",
+    status: "active",
+    tone: "empathetic",
+    persona: "You are a compassionate guide helping seekers explore their faith journey. Listen carefully, answer questions about Christianity with warmth, and connect them with mentors when ready.",
+    language: "Amharic",
+    channels: ["whatsapp", "telegram"],
+    knowledgeSources: [
+      { id: "ks-3", type: "url", name: "https://gcmethiopia.org/faith-resources", url: "https://gcmethiopia.org/faith-resources", addedAt: "Jul 15, 2026", status: "synced" },
+      { id: "ks-4", type: "faq", name: "How do I connect with a mentor?", addedAt: "Jul 15, 2026", status: "synced" },
+      { id: "ks-5", type: "faq", name: "What is the faith journey process?", addedAt: "Jul 15, 2026", status: "synced" },
+    ],
+    handoffConditions: ["explicit_request", "complex_query", "vip_contact"],
+    createdAt: "Jul 15, 2026",
+    stats: { conversationsHandled: 156, avgResponseTime: "12s", resolutionRate: 72, activeConversations: 3 },
+  },
+];

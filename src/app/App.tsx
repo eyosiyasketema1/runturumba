@@ -41,6 +41,7 @@ import {
   INITIAL_CHANNELS, INITIAL_AUTOMATIONS, INITIAL_WEBHOOKS, INITIAL_AUDIT_LOG,
   INITIAL_CHAT_ENDPOINTS, INITIAL_CONVERSATION_RULES,
   INITIAL_FAITH_JOURNEYS, INITIAL_CONTACT_MILESTONES, INITIAL_MATCHES, INITIAL_CONTENT,
+  type AIAgent, INITIAL_AI_AGENTS,
 } from "./components/types";
 
 // Supabase services (Phase 1)
@@ -253,6 +254,9 @@ export default function App() {
   const [webhooks, setWebhooks] = useState<WebhookType[]>(INITIAL_WEBHOOKS);
   const [chatEndpoints, setChatEndpoints] = useState<ChatEndpoint[]>(INITIAL_CHAT_ENDPOINTS);
   const [conversationRules, setConversationRules] = useState<ConversationRule[]>(INITIAL_CONVERSATION_RULES);
+
+  // AI Agents state (shared between Settings and Conversations)
+  const [aiAgents, setAiAgents] = useState<AIAgent[]>(INITIAL_AI_AGENTS);
 
   // Discipleship state (shared across Seekers, Mentors, Matches, Journeys, Milestones, Conversations)
   const [faithJourneys, setFaithJourneys] = useState<FaithJourney[]>(INITIAL_FAITH_JOURNEYS);
@@ -1287,6 +1291,8 @@ export default function App() {
                       groups={groups}
                       teamGroups={teamGroups}
                       viewMode={viewMode}
+                      aiAgents={aiAgents}
+                      onNavigateToSettings={() => { setCurrentView("settings"); }}
                       faithJourneys={faithJourneys}
                       contactMilestones={contactMilestones}
                       matches={matches}
@@ -1358,6 +1364,8 @@ export default function App() {
                   onUpgrade={(plan) => setActiveTenant(prev => ({ ...prev, plan }))}
                   onUpdateTenant={(data) => setActiveTenant(prev => ({ ...prev, ...data }))}
                   onUpdateUser={(data) => setCurrentUser(prev => ({ ...prev, ...data }))}
+                  aiAgents={aiAgents}
+                  onUpdateAiAgents={setAiAgents}
                   childOrgs={childOrgs}
                   onCreateChildOrg={(data) => {
                     const newOrg: Tenant = {
