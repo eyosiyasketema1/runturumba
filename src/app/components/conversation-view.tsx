@@ -998,6 +998,7 @@ const InboxListItem = React.memo(function InboxListItem({
 function ConversationControlBar({
   contact, meta, users, port, openDropdown, setOpenDropdown,
   onUpdateMeta, onAddSystem, onToggleInfo, isInfoOpen, isAgent, contactMessages,
+  aiAgents = [], onNavigateToSettings,
 }: {
   contact:          Contact;
   meta:             ConvMeta;
@@ -1011,6 +1012,8 @@ function ConversationControlBar({
   isInfoOpen:       boolean;
   isAgent?:         boolean;
   contactMessages?: Message[];
+  aiAgents?:        AIAgent[];
+  onNavigateToSettings?: () => void;
 }) {
   const assignee    = users.find(u => u.id === meta.assigneeId);
   const statusOpt   = STATUS_OPTIONS.find(s => s.id === meta.status)!;
@@ -3407,6 +3410,8 @@ export const ConversationView = ({
                     isInfoOpen={isInfoOpen}
                     isAgent={isAgent}
                     contactMessages={messages.filter(m => m.contactId === selectedId)}
+                    aiAgents={aiAgents}
+                    onNavigateToSettings={onNavigateToSettings}
                   />
                 </div>
 
