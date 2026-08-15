@@ -793,7 +793,7 @@ const ChannelListScreen = ({
           <p className="text-sm font-medium text-muted-foreground">No channels match your search.</p>
         </div>
       ) : (
-        <div className="space-y-2">
+        <div className="space-y-3">
           {filteredChannels.map(channel => (
             <ConnectedChannelRow
               key={channel.id}
@@ -985,16 +985,16 @@ const ConnectedChannelRow = ({
   return (
     <div
       className={cn(
-        "border border-border bg-card p-4 flex items-center gap-4 cursor-pointer hover:border-primary/30 transition-colors",
+        "border border-border rounded-xl bg-card px-5 py-4 flex items-center gap-4 cursor-pointer hover:border-primary/30 hover:shadow-sm transition-all",
         !channel.enabled && "opacity-60"
       )}
       onClick={onClick}
     >
       {/* Icon */}
-      <div className={cn("w-10 h-10 flex items-center justify-center shrink-0 border relative", typeInfo?.bgColor, typeInfo?.borderColor)}>
-        {typeInfo && <ChannelIcon type={typeInfo} className="w-5 h-5" />}
+      <div className={cn("w-12 h-12 rounded-xl flex items-center justify-center shrink-0 relative", typeInfo?.bgColor, typeInfo?.borderColor, "border")}>
+        {typeInfo && <ChannelIcon type={typeInfo} className="w-6 h-6" />}
         <span className={cn(
-          "absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 border-2 border-background rounded-full",
+          "absolute -bottom-0.5 -right-0.5 w-3 h-3 border-2 border-card rounded-full",
           channel.status === "connected" ? "bg-emerald-500" :
           channel.status === "error" ? "bg-destructive" :
           channel.status === "rate_limited" ? "bg-amber-500" : "bg-muted-foreground/40"
@@ -1003,36 +1003,36 @@ const ConnectedChannelRow = ({
 
       {/* Info */}
       <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-2">
-          <p className="text-sm font-semibold text-foreground truncate">{channel.name}</p>
-          <span className={cn("inline-flex items-center gap-1 px-1.5 py-0.5 text-[10px] font-bold border", statusInfo.bgColor, statusInfo.color)}>
+        <div className="flex items-center gap-2 mb-0.5">
+          <p className="text-base font-bold text-foreground truncate">{channel.name}</p>
+          <span className={cn("inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold border", statusInfo.bgColor, statusInfo.color)}>
             <StatusIcon className="w-2.5 h-2.5" />
             {statusInfo.label}
           </span>
           {!channel.enabled && (
-            <span className="px-1.5 py-0.5 text-[10px] font-bold bg-muted text-muted-foreground border border-border">Disabled</span>
+            <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-muted text-muted-foreground border border-border">Disabled</span>
           )}
         </div>
-        <p className="text-xs text-muted-foreground mt-0.5">
+        <p className="text-xs text-muted-foreground">
           {typeInfo?.label}
-          {channel.lastActiveAt && <> &middot; Active {formatTimeAgo(channel.lastActiveAt)}</>}
+          {channel.lastActiveAt && <> · Active {formatTimeAgo(channel.lastActiveAt)}</>}
         </p>
       </div>
 
       {/* Stats */}
-      <div className="hidden md:flex items-center gap-6 text-center">
+      <div className="hidden md:flex items-center gap-8 text-center shrink-0">
         <div>
-          <p className="text-xs font-bold text-foreground">{channel.stats.sent.toLocaleString()}</p>
-          <p className="text-[10px] text-muted-foreground">Sent</p>
+          <p className="text-sm font-bold text-foreground">{channel.stats.sent.toLocaleString()}</p>
+          <p className="text-[10px] text-muted-foreground font-medium">Sent</p>
         </div>
         <div>
-          <p className={cn("text-xs font-bold", deliveryRate >= 90 ? "text-emerald-600" : deliveryRate >= 70 ? "text-amber-600" : "text-foreground")}>{deliveryRate}%</p>
-          <p className="text-[10px] text-muted-foreground">Delivery</p>
+          <p className={cn("text-sm font-bold", deliveryRate >= 90 ? "text-emerald-600" : deliveryRate >= 70 ? "text-amber-600" : "text-foreground")}>{deliveryRate}%</p>
+          <p className="text-[10px] text-muted-foreground font-medium">Delivery</p>
         </div>
       </div>
 
       {/* Toggle */}
-      <div onClick={e => e.stopPropagation()}>
+      <div onClick={e => e.stopPropagation()} className="shrink-0">
         <Switch checked={channel.enabled} onCheckedChange={onToggle} aria-label="Enable channel" />
       </div>
     </div>
