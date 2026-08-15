@@ -1135,7 +1135,28 @@ export const AutomationView = ({
 // Automation Templates Tab
 // ============================================================
 
-// ── New Automation Gallery — shown when clicking "New Automation" ──
+// ── Illustration compositions for template gallery cards ──
+// Each template gets a mini icon scene in its illustration area.
+const GALLERY_ILLUSTRATIONS: Record<string, { icons: { Icon: any; x: string; y: string; size: string; opacity: string; rotate?: string }[] }> = {
+  "tpl-1":  { icons: [{ Icon: MessageSquare, x: "left-6", y: "top-4", size: "w-8 h-8", opacity: "opacity-30" }, { Icon: HandHeart, x: "right-8", y: "top-6", size: "w-12 h-12", opacity: "opacity-50" }, { Icon: Users, x: "left-14", y: "bottom-4", size: "w-7 h-7", opacity: "opacity-25" }] },
+  "tpl-2":  { icons: [{ Icon: MessageSquare, x: "left-8", y: "top-5", size: "w-10 h-10", opacity: "opacity-40" }, { Icon: Search, x: "right-6", y: "top-4", size: "w-7 h-7", opacity: "opacity-25" }, { Icon: Zap, x: "right-10", y: "bottom-4", size: "w-8 h-8", opacity: "opacity-35" }] },
+  "tpl-3":  { icons: [{ Icon: Clock, x: "left-8", y: "top-4", size: "w-11 h-11", opacity: "opacity-45" }, { Icon: MessageSquare, x: "right-6", y: "top-6", size: "w-8 h-8", opacity: "opacity-30" }, { Icon: Send, x: "left-16", y: "bottom-3", size: "w-6 h-6", opacity: "opacity-25" }] },
+  "tpl-4":  { icons: [{ Icon: UserPlus, x: "left-6", y: "top-4", size: "w-10 h-10", opacity: "opacity-40" }, { Icon: Bell, x: "right-8", y: "top-5", size: "w-8 h-8", opacity: "opacity-30" }, { Icon: BookOpen, x: "right-14", y: "bottom-4", size: "w-7 h-7", opacity: "opacity-25" }] },
+  "tpl-5":  { icons: [{ Icon: BookOpen, x: "left-6", y: "top-3", size: "w-10 h-10", opacity: "opacity-40" }, { Icon: Clock, x: "right-6", y: "top-5", size: "w-8 h-8", opacity: "opacity-30" }, { Icon: ArrowRight, x: "left-16", y: "bottom-4", size: "w-6 h-6", opacity: "opacity-25" }] },
+  "tpl-6":  { icons: [{ Icon: Heart, x: "left-8", y: "top-4", size: "w-10 h-10", opacity: "opacity-40" }, { Icon: RefreshCw, x: "right-6", y: "top-5", size: "w-8 h-8", opacity: "opacity-30" }, { Icon: Users, x: "left-14", y: "bottom-3", size: "w-7 h-7", opacity: "opacity-25" }] },
+  "tpl-7":  { icons: [{ Icon: GraduationCap, x: "left-6", y: "top-3", size: "w-11 h-11", opacity: "opacity-45" }, { Icon: Check, x: "right-8", y: "top-6", size: "w-7 h-7", opacity: "opacity-30" }, { Icon: FileText, x: "right-12", y: "bottom-4", size: "w-6 h-6", opacity: "opacity-25" }] },
+  "tpl-8":  { icons: [{ Icon: Sparkles, x: "left-6", y: "top-3", size: "w-10 h-10", opacity: "opacity-45" }, { Icon: BookOpen, x: "right-6", y: "top-5", size: "w-9 h-9", opacity: "opacity-35" }, { Icon: Users, x: "left-16", y: "bottom-3", size: "w-7 h-7", opacity: "opacity-25" }] },
+  "tpl-9":  { icons: [{ Icon: Target, x: "left-6", y: "top-3", size: "w-11 h-11", opacity: "opacity-45" }, { Icon: Users, x: "right-8", y: "top-6", size: "w-8 h-8", opacity: "opacity-30" }, { Icon: ArrowRight, x: "right-12", y: "bottom-4", size: "w-6 h-6", opacity: "opacity-25" }] },
+  "tpl-10": { icons: [{ Icon: CalendarDays, x: "left-6", y: "top-3", size: "w-11 h-11", opacity: "opacity-45" }, { Icon: Check, x: "right-6", y: "top-5", size: "w-8 h-8", opacity: "opacity-30" }, { Icon: Bell, x: "left-16", y: "bottom-4", size: "w-7 h-7", opacity: "opacity-25" }] },
+  "tpl-11": { icons: [{ Icon: GitBranch, x: "left-8", y: "top-3", size: "w-10 h-10", opacity: "opacity-40" }, { Icon: Filter, x: "right-6", y: "top-5", size: "w-8 h-8", opacity: "opacity-30" }, { Icon: ArrowRight, x: "right-14", y: "bottom-4", size: "w-6 h-6", opacity: "opacity-25" }] },
+  "tpl-12": { icons: [{ Icon: TrendingUp, x: "left-6", y: "top-3", size: "w-10 h-10", opacity: "opacity-40" }, { Icon: Users, x: "right-6", y: "top-5", size: "w-9 h-9", opacity: "opacity-35" }, { Icon: MessageSquare, x: "left-16", y: "bottom-3", size: "w-7 h-7", opacity: "opacity-25" }] },
+  "tpl-13": { icons: [{ Icon: Send, x: "left-6", y: "top-3", size: "w-11 h-11", opacity: "opacity-45" }, { Icon: Users, x: "right-8", y: "top-6", size: "w-8 h-8", opacity: "opacity-30" }, { Icon: Clock, x: "right-12", y: "bottom-4", size: "w-6 h-6", opacity: "opacity-25" }] },
+  "tpl-14": { icons: [{ Icon: Bell, x: "left-6", y: "top-3", size: "w-11 h-11", opacity: "opacity-45" }, { Icon: CalendarDays, x: "right-6", y: "top-5", size: "w-8 h-8", opacity: "opacity-30" }, { Icon: Users, x: "left-16", y: "bottom-4", size: "w-7 h-7", opacity: "opacity-25" }] },
+  "tpl-15": { icons: [{ Icon: Gift, x: "left-8", y: "top-3", size: "w-11 h-11", opacity: "opacity-45" }, { Icon: Heart, x: "right-6", y: "top-5", size: "w-8 h-8", opacity: "opacity-30" }, { Icon: Send, x: "right-14", y: "bottom-4", size: "w-6 h-6", opacity: "opacity-25" }] },
+  "tpl-16": { icons: [{ Icon: Star, x: "left-6", y: "top-3", size: "w-10 h-10", opacity: "opacity-40" }, { Icon: Megaphone, x: "right-6", y: "top-5", size: "w-9 h-9", opacity: "opacity-35" }, { Icon: Zap, x: "left-16", y: "bottom-4", size: "w-7 h-7", opacity: "opacity-25" }] },
+};
+
+// ── New Automation Gallery — shown when clicking "Or start from a template" ──
 const NewAutomationGallery = ({
   onUseTemplate,
   onStartFromScratch,
@@ -1145,32 +1166,9 @@ const NewAutomationGallery = ({
   onStartFromScratch: () => void;
   onBack: () => void;
 }) => {
-  const [search, setSearch] = useState("");
-  const [typeFilter, setTypeFilter] = useState<TemplateType | "all">("all");
-
-  const filtered = useMemo(() => {
-    return AUTOMATION_TEMPLATES.filter(tpl => {
-      const q = search.toLowerCase();
-      const matchesSearch = !q || tpl.name.toLowerCase().includes(q) || tpl.description.toLowerCase().includes(q) || tpl.tags.some(t => t.includes(q));
-      const matchesType = typeFilter === "all" || tpl.type === typeFilter;
-      return matchesSearch && matchesType;
-    });
-  }, [search, typeFilter]);
-
-  // Group templates by type for sectioned display
-  const grouped = useMemo(() => {
-    const groups: { type: TemplateType; config: typeof TEMPLATE_TYPE_CONFIG["basic"]; templates: AutomationTemplate[] }[] = [];
-    const types: TemplateType[] = ["basic", "sequence", "flow", "broadcast"];
-    for (const t of types) {
-      const tpls = filtered.filter(tpl => tpl.type === t);
-      if (tpls.length > 0) groups.push({ type: t, config: TEMPLATE_TYPE_CONFIG[t], templates: tpls });
-    }
-    return groups;
-  }, [filtered]);
-
   return (
-    <div className="space-y-5 -mt-1">
-      {/* Header with back + title + Start From Scratch */}
+    <div className="space-y-6 -mt-1">
+      {/* Header row */}
       <div className="flex items-center justify-between gap-4">
         <div className="flex items-center gap-3">
           <button
@@ -1180,121 +1178,59 @@ const NewAutomationGallery = ({
             <ArrowLeft className="w-4 h-4" />
           </button>
           <div>
-            <h2 className="text-lg font-bold text-foreground">Create a Workflow</h2>
-            <p className="text-xs text-muted-foreground">Select a template or start from scratch</p>
+            <h2 className="text-lg font-bold text-foreground">Templates</h2>
+            <p className="text-xs text-muted-foreground">Select a template or start creating a workflow</p>
           </div>
         </div>
-        <Button variant="outline" onClick={onStartFromScratch}>
-          <Plus className="w-4 h-4 mr-1.5" />
+        <Button onClick={onStartFromScratch}>
           Start From Scratch
         </Button>
       </div>
 
-      {/* Search + type filter */}
-      <div className="flex flex-col sm:flex-row gap-3">
-        <div className="relative flex-1 max-w-md">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-          <Input
-            placeholder="Search templates..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="pl-9 h-10 text-sm"
-            aria-label="Search templates"
-          />
-        </div>
-        <div className="flex items-center gap-2 flex-wrap">
-          {([
-            ["all", "All"],
-            ["basic", "Auto-Reply"],
-            ["sequence", "Drip / Sequence"],
-            ["flow", "Flow / Journey"],
-            ["broadcast", "Broadcast"],
-          ] as const).map(([k, label]) => (
-            <button
-              key={k}
-              onClick={() => setTypeFilter(k as any)}
-              className={cn(
-                "px-3 py-1.5 text-xs font-medium rounded-full border transition-all",
-                typeFilter === k
-                  ? "bg-primary text-primary-foreground border-primary"
-                  : "bg-background text-muted-foreground border-border hover:border-foreground/30 hover:text-foreground"
-              )}
+      {/* Flat 4-column grid of template cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        {AUTOMATION_TEMPLATES.map(tpl => {
+          const TplIcon = tpl.icon;
+          const illustration = GALLERY_ILLUSTRATIONS[tpl.id];
+          return (
+            <div
+              key={tpl.id}
+              className="border border-border rounded-xl bg-card hover:border-primary/40 hover:shadow-sm transition-all flex flex-col overflow-hidden"
             >
-              {label}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {/* Template cards */}
-      {filtered.length === 0 ? (
-        <div className="text-center py-16">
-          <LayoutTemplate className="w-10 h-10 text-muted-foreground mx-auto mb-3" />
-          <p className="text-sm font-medium text-muted-foreground">No templates match your search</p>
-          <p className="text-xs text-muted-foreground/70 mt-1">Try a different keyword or clear your filter.</p>
-          <Button variant="outline" size="sm" className="mt-4" onClick={() => { setSearch(""); setTypeFilter("all"); }}>
-            Clear Filters
-          </Button>
-        </div>
-      ) : (
-        <div className="space-y-6">
-          {grouped.map(({ type, config, templates }) => {
-            const SectionIcon = config.icon;
-            return (
-              <div key={type}>
-                <div className="flex items-center gap-2 mb-3">
-                  <div className={cn("w-6 h-6 rounded flex items-center justify-center", config.bg)}>
-                    <SectionIcon className={cn("w-3.5 h-3.5", config.color)} />
-                  </div>
-                  <h3 className="text-sm font-semibold text-foreground">{config.label}</h3>
-                  <span className="text-xs text-muted-foreground">({templates.length})</span>
-                </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-                  {templates.map(tpl => {
-                    const TplIcon = tpl.icon;
+              {/* Illustration area — icon scene on tinted background */}
+              <div className="h-36 bg-blue-50 relative overflow-hidden">
+                {illustration ? (
+                  illustration.icons.map((item, i) => {
+                    const IIcon = item.Icon;
                     return (
-                      <div
-                        key={tpl.id}
-                        className="group border border-border rounded-xl bg-card hover:border-primary/30 transition-all flex flex-col overflow-hidden cursor-pointer"
-                        onClick={() => onUseTemplate(tpl)}
-                      >
-                        {/* Illustration area */}
-                        <div className={cn("h-28 flex items-center justify-center relative", tpl.iconTint)}>
-                          <TplIcon className="w-10 h-10 opacity-60" />
-                          {tpl.popular && (
-                            <span className="absolute top-2 right-2 inline-flex items-center gap-1 px-2 py-0.5 text-[10px] font-semibold rounded-full bg-white/90 text-amber-600 border border-amber-200 shadow-sm">
-                              <Star className="w-2.5 h-2.5" fill="currentColor" /> Popular
-                            </span>
-                          )}
-                          {tpl.steps && (
-                            <span className="absolute bottom-2 left-2 inline-flex items-center gap-1 px-2 py-0.5 text-[10px] font-medium rounded-full bg-white/90 text-foreground/70 border border-border/50">
-                              {tpl.steps} steps
-                            </span>
-                          )}
-                        </div>
-                        {/* Content */}
-                        <div className="p-4 flex flex-col flex-1">
-                          <p className="text-sm font-semibold text-foreground mb-1">{tpl.name}</p>
-                          <p className="text-xs text-muted-foreground leading-relaxed flex-1 line-clamp-2">{tpl.description}</p>
-                          <div className="mt-3 flex items-center justify-between">
-                            <span className={cn("inline-flex items-center gap-1 px-2 py-0.5 text-[10px] font-medium rounded-full border", config.bg, config.color, config.border)}>
-                              <SectionIcon className="w-2.5 h-2.5" />
-                              {config.label}
-                            </span>
-                            <span className="text-xs font-medium text-primary opacity-0 group-hover:opacity-100 transition-opacity">
-                              Use Template →
-                            </span>
-                          </div>
-                        </div>
-                      </div>
+                      <IIcon
+                        key={i}
+                        className={cn("absolute text-primary", item.x, item.y, item.size, item.opacity)}
+                      />
                     );
-                  })}
+                  })
+                ) : (
+                  <TplIcon className="absolute inset-0 m-auto w-12 h-12 text-primary opacity-30" />
+                )}
+              </div>
+
+              {/* Content */}
+              <div className="p-4 flex flex-col flex-1">
+                <p className="text-sm font-bold text-foreground mb-1.5">{tpl.name}</p>
+                <p className="text-xs text-muted-foreground leading-relaxed flex-1 line-clamp-3">{tpl.description}</p>
+                <div className="mt-4">
+                  <button
+                    onClick={() => onUseTemplate(tpl)}
+                    className="px-3 py-1.5 text-xs font-medium border border-border rounded-lg text-foreground hover:bg-muted transition-colors"
+                  >
+                    Use Template
+                  </button>
                 </div>
               </div>
-            );
-          })}
-        </div>
-      )}
+            </div>
+          );
+        })}
+      </div>
     </div>
   );
 };
