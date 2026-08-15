@@ -5,7 +5,8 @@ import {
   Check, ChevronRight, Key, Smartphone, Lock, Eye, EyeOff, Copy, CalendarDays,
   ArrowLeft, ArrowUpRight, Download, Sparkles, Pencil, Plus, Trash2, X,
   Brain, Share2, AlertCircle, BookOpen, Loader2, CheckCircle2, XCircle, ExternalLink, Zap, ShieldCheck, RotateCcw,
-  MapPin, Users, MessageSquare, MoreVertical, PauseCircle, PlayCircle, RefreshCw
+  MapPin, Users, MessageSquare, MoreVertical, PauseCircle, PlayCircle, RefreshCw,
+  Bot, MessageCircle, RefreshCcw, FileText, Link, Upload, ChevronDown, ChevronUp, Pause, Play, BarChart3, Settings2, Wand2
 } from "lucide-react";
 import { motion } from "motion/react";
 import { toast } from "sonner";
@@ -52,6 +53,7 @@ const settingsNavGroups = [
     items: [
       { id: "api", label: "API & Integrations", icon: Key, description: "API keys & developer tools" },
       { id: "ai", label: "AI Configuration", icon: Sparkles, description: "Business rules, API keys & sharing" },
+      { id: "ai-agents", label: "AI Agents", icon: Bot, description: "Create & manage AI agents" },
     ],
   },
 ];
@@ -1799,10 +1801,858 @@ export const SettingsView = ({
             {activeSection === "ai" && <AISection />}
             {activeSection === "terminology" && <TerminologySection />}
             {activeSection === "roles" && <RolesPermissionsSection />}
+            {activeSection === "ai-agents" && <AIAgentsSection />}
           </div>
         </div>
       </Card>
     </div>
+  );
+};
+
+// --- AI Agents Section ---
+type AIAgentStatus = "active" | "paused" | "draft";
+type AgentTone = "professional" | "friendly" | "casual" | "empathetic" | "concise";
+type HandoffCondition = "sentiment_negative" | "explicit_request" | "low_confidence" | "complex_query" | "vip_contact";
+
+interface KnowledgeSource {
+  id: string;
+  type: "url" | "document" | "faq";
+  name: string;
+  url?: string;
+  addedAt: string;
+  status: "synced" | "syncing" | "error";
+}
+
+interface AIAgent {
+  id: string;
+  name: string;
+  description: string;
+  avatar: string;
+  status: AIAgentStatus;
+  tone: AgentTone;
+  persona: string;
+  language: string;
+  channels: string[];
+  knowledgeSources: KnowledgeSource[];
+  handoffConditions: HandoffCondition[];
+  createdAt: string;
+  stats: {
+    conversationsHandled: number;
+    avgResponseTime: string;
+    resolutionRate: number;
+    activeConversations: number;
+  };
+}
+
+const HANDOFF_CONDITIONS: { id: HandoffCondition; label: string; description: string }[] = [
+  { id: "sentiment_negative", label: "Negative Sentiment", description: "Hand off when conversation sentiment turns negative" },
+  { id: "explicit_request", label: "Human Requested", description: "Hand off when user asks to speak with a human" },
+  { id: "low_confidence", label: "Low Confidence", description: "Hand off when AI confidence drops below threshold" },
+  { id: "complex_query", label: "Complex Query", description: "Hand off for queries requiring human judgment" },
+  { id: "vip_contact", label: "VIP Contact", description: "Always hand off conversations from VIP contacts" },
+];
+
+const TONE_OPTIONS: { id: AgentTone; label: string; example: string }[] = [
+  { id: "professional", label: "Professional", example: "Thank you for reaching out. I'd be happy to assist you with that." },
+  { id: "friendly", label: "Friendly", example: "Hey there! Great to hear from you — let me help you out!" },
+  { id: "casual", label: "Casual", example: "Sure thing! Let me look into that for you real quick." },
+  { id: "empathetic", label: "Empathetic", example: "I understand how frustrating that must be. Let me see what I can do." },
+  { id: "concise", label: "Concise", example: "Got it. Here's what you need:" },
+];
+
+const INITIAL_AI_AGENTS: AIAgent[] = [];
+
+const AGENT_AVATARS = ["🤖", "🧠", "💬", "🎯", "⚡", "🌟", "🔮", "🛡️"];
+
+type AgentScreen = "landing" | "list" | "create" | "detail";
+type CreateStep = 1 | 2 | 3 | 4;
+
+const AIAgentsSection = () => {
+  const [agents, setAgents] = useState<AIAgent[]>(INITIAL_AI_AGENTS);
+  const [screen, setScreen] = useState<AgentScreen>(agents.length > 0 ? "list" : "landing");
+  const [selectedAgent, setSelectedAgent] = useState<AIAgent | null>(null);
+
+  // Create form state
+  const [createStep, setCreateStep] = useState<CreateStep>(1);
+  const [agentName, setAgentName] = useState("");
+  const [agentDesc, setAgentDesc] = useState("");
+  const [agentAvatar, setAgentAvatar] = useState("🤖");
+  const [agentTone, setAgentTone] = useState<AgentTone>("professional");
+  const [agentPersona, setAgentPersona] = useState("");
+  const [agentLanguage, setAgentLanguage] = useState("English");
+  const [agentChannels, setAgentChannels] = useState<string[]>([]);
+  const [agentKnowledge, setAgentKnowledge] = useState<KnowledgeSource[]>([]);
+  const [agentHandoff, setAgentHandoff] = useState<HandoffCondition[]>(["explicit_request", "low_confidence"]);
+  const [newKnowledgeUrl, setNewKnowledgeUrl] = useState("");
+  const [newFaqQuestion, setNewFaqQuestion] = useState("");
+  const [newFaqAnswer, setNewFaqAnswer] = useState("");
+
+  const resetCreate = () => {
+    setCreateStep(1);
+    setAgentName("");
+    setAgentDesc("");
+    setAgentAvatar("🤖");
+    setAgentTone("professional");
+    setAgentPersona("");
+    setAgentLanguage("English");
+    setAgentChannels([]);
+    setAgentKnowledge([]);
+    setAgentHandoff(["explicit_request", "low_confidence"]);
+    setNewKnowledgeUrl("");
+    setNewFaqQuestion("");
+    setNewFaqAnswer("");
+  };
+
+  const handleCreate = () => {
+    if (!agentName.trim()) { toast.error("Agent name is required"); return; }
+    const now = new Date().toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+    const newAgent: AIAgent = {
+      id: `agent-${Date.now()}`,
+      name: agentName.trim(),
+      description: agentDesc.trim() || "AI-powered conversational agent",
+      avatar: agentAvatar,
+      status: "draft",
+      tone: agentTone,
+      persona: agentPersona.trim() || `A helpful ${agentTone} AI agent for customer conversations.`,
+      language: agentLanguage,
+      channels: agentChannels,
+      knowledgeSources: agentKnowledge,
+      handoffConditions: agentHandoff,
+      createdAt: now,
+      stats: { conversationsHandled: 0, avgResponseTime: "—", resolutionRate: 0, activeConversations: 0 },
+    };
+    setAgents(prev => [...prev, newAgent]);
+    resetCreate();
+    setScreen("list");
+    toast.success(`AI Agent "${newAgent.name}" created successfully`);
+  };
+
+  const toggleChannel = (ch: string) => {
+    setAgentChannels(prev => prev.includes(ch) ? prev.filter(c => c !== ch) : [...prev, ch]);
+  };
+
+  const toggleHandoff = (h: HandoffCondition) => {
+    setAgentHandoff(prev => prev.includes(h) ? prev.filter(c => c !== h) : [...prev, h]);
+  };
+
+  const addKnowledgeUrl = () => {
+    if (!newKnowledgeUrl.trim()) return;
+    setAgentKnowledge(prev => [...prev, {
+      id: `ks-${Date.now()}`,
+      type: "url",
+      name: newKnowledgeUrl.trim(),
+      url: newKnowledgeUrl.trim(),
+      addedAt: new Date().toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }),
+      status: "synced",
+    }]);
+    setNewKnowledgeUrl("");
+  };
+
+  const addFaq = () => {
+    if (!newFaqQuestion.trim() || !newFaqAnswer.trim()) return;
+    setAgentKnowledge(prev => [...prev, {
+      id: `ks-${Date.now()}`,
+      type: "faq",
+      name: newFaqQuestion.trim(),
+      addedAt: new Date().toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }),
+      status: "synced",
+    }]);
+    setNewFaqQuestion("");
+    setNewFaqAnswer("");
+  };
+
+  const removeKnowledge = (id: string) => {
+    setAgentKnowledge(prev => prev.filter(k => k.id !== id));
+  };
+
+  const toggleAgentStatus = (id: string) => {
+    setAgents(prev => prev.map(a => {
+      if (a.id !== id) return a;
+      const next = a.status === "active" ? "paused" : "active";
+      toast.success(`${a.name} ${next === "active" ? "activated" : "paused"}`);
+      return { ...a, status: next };
+    }));
+  };
+
+  const deleteAgent = (id: string) => {
+    const agent = agents.find(a => a.id === id);
+    setAgents(prev => prev.filter(a => a.id !== id));
+    if (selectedAgent?.id === id) setSelectedAgent(null);
+    toast.success(`${agent?.name || "Agent"} deleted`);
+    if (agents.length <= 1) setScreen("landing");
+    else setScreen("list");
+  };
+
+  // ── Landing Page ──
+  if (screen === "landing") {
+    const features = [
+      { icon: MessageCircle, label: "Replies to messages instantly, 24/7", color: "text-primary" },
+      { icon: RefreshCcw, label: "Updates Lifecycle Stages and contact fields automatically", color: "text-primary" },
+      { icon: Users, label: "Assigns conversations to other agents, teams and AI Agents", color: "text-primary" },
+      { icon: BookOpen, label: "Answers questions using knowledge sources, and more!", color: "text-primary" },
+    ];
+
+    return (
+      <motion.div
+        initial={{ opacity: 0, y: 8 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.25 }}
+        className="flex flex-col items-center justify-center min-h-[500px] text-center px-6"
+      >
+        <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center mb-6">
+          <Bot className="w-8 h-8 text-primary" />
+        </div>
+        <h2 className="text-2xl font-bold text-foreground mb-2">Grow your team with AI Agents</h2>
+        <p className="text-sm text-muted-foreground mb-8 max-w-md">
+          Built to handle hundreds of conversations at a time.
+        </p>
+        <div className="space-y-4 mb-10 text-left max-w-sm w-full">
+          {features.map((f, i) => (
+            <motion.div
+              key={i}
+              initial={{ opacity: 0, x: -10 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.1 + i * 0.08 }}
+              className="flex items-center gap-4"
+            >
+              <div className="w-10 h-10 rounded-xl bg-primary/8 flex items-center justify-center shrink-0">
+                <f.icon className="w-5 h-5 text-primary" />
+              </div>
+              <span className="text-sm text-foreground">{f.label}</span>
+            </motion.div>
+          ))}
+        </div>
+        <button
+          onClick={() => { resetCreate(); setScreen("create"); }}
+          className="w-full max-w-sm h-11 rounded-lg bg-primary text-primary-foreground font-semibold text-sm hover:bg-primary/90 transition-colors flex items-center justify-center gap-2"
+        >
+          <Wand2 className="w-4 h-4" />
+          Get started
+        </button>
+      </motion.div>
+    );
+  }
+
+  // ── Agent List ──
+  if (screen === "list") {
+    return (
+      <motion.div
+        initial={{ opacity: 0, y: 8 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.25 }}
+        className="space-y-6"
+      >
+        <div className="flex items-center justify-between">
+          <SectionHeader title="AI Agents" description="Manage your AI-powered conversational agents." />
+          <button
+            onClick={() => { resetCreate(); setScreen("create"); }}
+            className="flex items-center gap-2 px-4 h-9 rounded-md bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition-colors"
+          >
+            <Plus className="w-4 h-4" />
+            Create Agent
+          </button>
+        </div>
+        <Separator />
+
+        {agents.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-16 text-center">
+            <div className="w-12 h-12 rounded-xl bg-muted flex items-center justify-center mb-4">
+              <Bot className="w-6 h-6 text-muted-foreground" />
+            </div>
+            <p className="text-sm font-medium text-foreground mb-1">No agents yet</p>
+            <p className="text-xs text-muted-foreground mb-4">Create your first AI agent to get started.</p>
+            <button
+              onClick={() => { resetCreate(); setScreen("create"); }}
+              className="flex items-center gap-2 px-4 h-9 rounded-md bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition-colors"
+            >
+              <Plus className="w-4 h-4" />
+              Create Agent
+            </button>
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {agents.map((agent) => {
+              const statusColors: Record<AIAgentStatus, string> = {
+                active: "bg-emerald-50 text-emerald-700 border-emerald-200",
+                paused: "bg-amber-50 text-amber-700 border-amber-200",
+                draft: "bg-zinc-50 text-zinc-600 border-zinc-200",
+              };
+              return (
+                <div
+                  key={agent.id}
+                  className="flex items-center gap-4 p-4 rounded-lg border border-border bg-background hover:border-foreground/20 transition-colors cursor-pointer group"
+                  onClick={() => { setSelectedAgent(agent); setScreen("detail"); }}
+                >
+                  <div className="w-11 h-11 rounded-xl bg-primary/8 flex items-center justify-center text-xl shrink-0">
+                    {agent.avatar}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 mb-0.5">
+                      <span className="text-sm font-semibold text-foreground truncate">{agent.name}</span>
+                      <span className={cn("text-[10px] px-2 py-0.5 rounded-full border font-medium capitalize", statusColors[agent.status])}>
+                        {agent.status}
+                      </span>
+                    </div>
+                    <p className="text-xs text-muted-foreground truncate">{agent.description}</p>
+                  </div>
+                  <div className="hidden sm:flex items-center gap-6 text-xs text-muted-foreground shrink-0">
+                    <div className="text-center">
+                      <p className="font-bold text-foreground text-sm">{agent.stats.conversationsHandled}</p>
+                      <p>Handled</p>
+                    </div>
+                    <div className="text-center">
+                      <p className="font-bold text-foreground text-sm">{agent.stats.resolutionRate}%</p>
+                      <p>Resolved</p>
+                    </div>
+                  </div>
+                  <ChevronRight className="w-4 h-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity shrink-0" />
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </motion.div>
+    );
+  }
+
+  // ── Agent Detail ──
+  if (screen === "detail" && selectedAgent) {
+    const agent = agents.find(a => a.id === selectedAgent.id) || selectedAgent;
+    const statusColors: Record<AIAgentStatus, string> = {
+      active: "bg-emerald-50 text-emerald-700 border-emerald-200",
+      paused: "bg-amber-50 text-amber-700 border-amber-200",
+      draft: "bg-zinc-50 text-zinc-600 border-zinc-200",
+    };
+
+    return (
+      <motion.div
+        initial={{ opacity: 0, y: 8 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.25 }}
+        className="space-y-6"
+      >
+        {/* Header */}
+        <div className="flex items-center gap-3">
+          <button
+            onClick={() => setScreen("list")}
+            className="w-8 h-8 rounded-md border border-border flex items-center justify-center hover:bg-muted transition-colors"
+          >
+            <ArrowLeft className="w-4 h-4" />
+          </button>
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-primary/8 flex items-center justify-center text-lg shrink-0">
+                {agent.avatar}
+              </div>
+              <div>
+                <div className="flex items-center gap-2">
+                  <h2 className="text-lg font-bold text-foreground">{agent.name}</h2>
+                  <span className={cn("text-[10px] px-2 py-0.5 rounded-full border font-medium capitalize", statusColors[agent.status])}>
+                    {agent.status}
+                  </span>
+                </div>
+                <p className="text-xs text-muted-foreground">{agent.description}</p>
+              </div>
+            </div>
+          </div>
+          <div className="flex items-center gap-2 shrink-0">
+            <button
+              onClick={() => toggleAgentStatus(agent.id)}
+              className={cn(
+                "flex items-center gap-2 px-3 h-8 rounded-md border text-xs font-medium transition-colors",
+                agent.status === "active"
+                  ? "border-amber-200 text-amber-700 hover:bg-amber-50"
+                  : "border-emerald-200 text-emerald-700 hover:bg-emerald-50"
+              )}
+            >
+              {agent.status === "active" ? <Pause className="w-3.5 h-3.5" /> : <Play className="w-3.5 h-3.5" />}
+              {agent.status === "active" ? "Pause" : "Activate"}
+            </button>
+            <button
+              onClick={() => deleteAgent(agent.id)}
+              className="flex items-center gap-2 px-3 h-8 rounded-md border border-red-200 text-red-600 text-xs font-medium hover:bg-red-50 transition-colors"
+            >
+              <Trash2 className="w-3.5 h-3.5" />
+              Delete
+            </button>
+          </div>
+        </div>
+        <Separator />
+
+        {/* Stats Row */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          {[
+            { label: "Conversations", value: agent.stats.conversationsHandled, icon: MessageCircle },
+            { label: "Avg Response", value: agent.stats.avgResponseTime, icon: Clock },
+            { label: "Resolution", value: `${agent.stats.resolutionRate}%`, icon: CheckCircle2 },
+            { label: "Active Now", value: agent.stats.activeConversations, icon: Zap },
+          ].map((stat) => (
+            <div key={stat.label} className="p-3 rounded-lg border border-border bg-background">
+              <div className="flex items-center gap-2 mb-1">
+                <stat.icon className="w-3.5 h-3.5 text-muted-foreground" />
+                <span className="text-[11px] text-muted-foreground font-medium">{stat.label}</span>
+              </div>
+              <p className="text-lg font-bold text-foreground">{stat.value}</p>
+            </div>
+          ))}
+        </div>
+
+        {/* Config Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {/* Persona */}
+          <Card>
+            <CardHeader className="pb-3">
+              <div className="flex items-center gap-2">
+                <Brain className="w-4 h-4 text-muted-foreground" />
+                <CardTitle className="text-sm">Persona & Tone</CardTitle>
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-xs text-muted-foreground">Tone</span>
+                <span className="text-xs font-medium text-foreground capitalize">{agent.tone}</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-xs text-muted-foreground">Language</span>
+                <span className="text-xs font-medium text-foreground">{agent.language}</span>
+              </div>
+              <div>
+                <span className="text-xs text-muted-foreground">Persona</span>
+                <p className="text-xs text-foreground mt-1 leading-relaxed">{agent.persona}</p>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Channels */}
+          <Card>
+            <CardHeader className="pb-3">
+              <div className="flex items-center gap-2">
+                <MessageSquare className="w-4 h-4 text-muted-foreground" />
+                <CardTitle className="text-sm">Channels</CardTitle>
+              </div>
+            </CardHeader>
+            <CardContent>
+              {agent.channels.length === 0 ? (
+                <p className="text-xs text-muted-foreground">All channels</p>
+              ) : (
+                <div className="flex flex-wrap gap-1.5">
+                  {agent.channels.map(ch => (
+                    <span key={ch} className="text-[11px] px-2 py-1 rounded-md bg-muted border border-border font-medium capitalize">{ch}</span>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Knowledge Sources */}
+          <Card>
+            <CardHeader className="pb-3">
+              <div className="flex items-center gap-2">
+                <BookOpen className="w-4 h-4 text-muted-foreground" />
+                <CardTitle className="text-sm">Knowledge Sources</CardTitle>
+              </div>
+            </CardHeader>
+            <CardContent>
+              {agent.knowledgeSources.length === 0 ? (
+                <p className="text-xs text-muted-foreground">No knowledge sources added</p>
+              ) : (
+                <div className="space-y-2">
+                  {agent.knowledgeSources.map(ks => (
+                    <div key={ks.id} className="flex items-center gap-2 text-xs">
+                      {ks.type === "url" ? <Link className="w-3 h-3 text-muted-foreground shrink-0" /> :
+                       ks.type === "faq" ? <MessageCircle className="w-3 h-3 text-muted-foreground shrink-0" /> :
+                       <FileText className="w-3 h-3 text-muted-foreground shrink-0" />}
+                      <span className="text-foreground truncate">{ks.name}</span>
+                      <span className={cn("text-[10px] px-1.5 py-0.5 rounded-full font-medium ml-auto shrink-0",
+                        ks.status === "synced" ? "bg-emerald-50 text-emerald-600" :
+                        ks.status === "syncing" ? "bg-blue-50 text-blue-600" : "bg-red-50 text-red-600"
+                      )}>{ks.status}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Handoff Rules */}
+          <Card>
+            <CardHeader className="pb-3">
+              <div className="flex items-center gap-2">
+                <Users className="w-4 h-4 text-muted-foreground" />
+                <CardTitle className="text-sm">Handoff Rules</CardTitle>
+              </div>
+            </CardHeader>
+            <CardContent>
+              {agent.handoffConditions.length === 0 ? (
+                <p className="text-xs text-muted-foreground">No handoff rules configured</p>
+              ) : (
+                <div className="space-y-1.5">
+                  {agent.handoffConditions.map(hc => {
+                    const cond = HANDOFF_CONDITIONS.find(c => c.id === hc);
+                    return cond ? (
+                      <div key={hc} className="flex items-center gap-2 text-xs">
+                        <div className="w-1.5 h-1.5 rounded-full bg-primary shrink-0" />
+                        <span className="text-foreground">{cond.label}</span>
+                      </div>
+                    ) : null;
+                  })}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+
+        <div className="text-xs text-muted-foreground">Created {agent.createdAt}</div>
+      </motion.div>
+    );
+  }
+
+  // ── Create Agent Flow ──
+  const STEPS: { num: CreateStep; label: string }[] = [
+    { num: 1, label: "Identity" },
+    { num: 2, label: "Persona" },
+    { num: 3, label: "Knowledge" },
+    { num: 4, label: "Rules" },
+  ];
+
+  const canProceed = () => {
+    if (createStep === 1) return agentName.trim().length > 0;
+    return true;
+  };
+
+  const CHANNEL_LIST = ["whatsapp", "telegram", "messenger", "instagram", "email", "sms"];
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 8 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.25 }}
+      className="space-y-6"
+    >
+      {/* Header */}
+      <div className="flex items-center gap-3">
+        <button
+          onClick={() => { resetCreate(); setScreen(agents.length > 0 ? "list" : "landing"); }}
+          className="w-8 h-8 rounded-md border border-border flex items-center justify-center hover:bg-muted transition-colors"
+        >
+          <ArrowLeft className="w-4 h-4" />
+        </button>
+        <SectionHeader title="Create AI Agent" description="Set up a new AI-powered agent for your team." />
+      </div>
+
+      {/* Step Indicator */}
+      <div className="flex items-center gap-0 rounded-lg border border-border bg-muted/30 overflow-hidden">
+        {STEPS.map(({ num, label }) => {
+          const isCurrent = createStep === num;
+          const isDone = createStep > num;
+          return (
+            <div
+              key={num}
+              className={cn(
+                "flex items-center gap-2 px-4 py-2.5 text-xs font-semibold flex-1 border-r border-border last:border-0",
+                isCurrent ? "bg-background text-foreground" : isDone ? "text-foreground/70" : "text-muted-foreground"
+              )}
+            >
+              {isDone ? (
+                <CheckCircle2 className="w-3.5 h-3.5 text-primary" />
+              ) : (
+                <span className={cn(
+                  "w-5 h-5 rounded-full flex items-center justify-center text-xs font-bold",
+                  isCurrent ? "bg-foreground text-background" : "bg-muted text-muted-foreground"
+                )}>{num}</span>
+              )}
+              {label}
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Step Content */}
+      <Card>
+        <CardContent className="pt-6 space-y-5">
+          {/* Step 1: Identity */}
+          {createStep === 1 && (
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-5">
+              <div>
+                <p className="text-sm font-semibold text-foreground mb-1">Agent Identity</p>
+                <p className="text-xs text-muted-foreground">Give your agent a name and identity.</p>
+              </div>
+
+              {/* Avatar Picker */}
+              <div className="space-y-2">
+                <Label className="text-xs font-medium">Avatar</Label>
+                <div className="flex items-center gap-2">
+                  {AGENT_AVATARS.map(av => (
+                    <button
+                      key={av}
+                      onClick={() => setAgentAvatar(av)}
+                      className={cn(
+                        "w-10 h-10 rounded-xl flex items-center justify-center text-lg border transition-all",
+                        agentAvatar === av ? "border-primary bg-primary/8 ring-1 ring-primary/30" : "border-border hover:border-foreground/30"
+                      )}
+                    >
+                      {av}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <FormField label="Agent Name" htmlFor="agent-name" description="A friendly name for your agent.">
+                <Input
+                  id="agent-name"
+                  value={agentName}
+                  onChange={e => setAgentName(e.target.value)}
+                  placeholder="e.g. Support Agent, Sales Bot, FAQ Helper"
+                />
+              </FormField>
+
+              <FormField label="Description" htmlFor="agent-desc" description="What does this agent do? (optional)">
+                <Textarea
+                  id="agent-desc"
+                  value={agentDesc}
+                  onChange={e => setAgentDesc(e.target.value)}
+                  placeholder="Handles customer support queries and FAQs..."
+                  className="min-h-[80px]"
+                />
+              </FormField>
+            </motion.div>
+          )}
+
+          {/* Step 2: Persona */}
+          {createStep === 2 && (
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-5">
+              <div>
+                <p className="text-sm font-semibold text-foreground mb-1">Persona & Tone</p>
+                <p className="text-xs text-muted-foreground">Define how your agent communicates.</p>
+              </div>
+
+              {/* Tone Selection */}
+              <div className="space-y-2">
+                <Label className="text-xs font-medium">Conversation Tone</Label>
+                <div className="space-y-2">
+                  {TONE_OPTIONS.map(t => (
+                    <button
+                      key={t.id}
+                      onClick={() => setAgentTone(t.id)}
+                      className={cn(
+                        "w-full text-left p-3 rounded-lg border transition-all",
+                        agentTone === t.id ? "border-primary bg-primary/5" : "border-border hover:border-foreground/20"
+                      )}
+                    >
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className="text-sm font-semibold text-foreground">{t.label}</span>
+                        {agentTone === t.id && <Check className="w-3.5 h-3.5 text-primary" />}
+                      </div>
+                      <p className="text-xs text-muted-foreground italic">"{t.example}"</p>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <FormField label="Custom Persona" htmlFor="persona" description="Detailed instructions for how the agent should behave.">
+                <Textarea
+                  id="persona"
+                  value={agentPersona}
+                  onChange={e => setAgentPersona(e.target.value)}
+                  placeholder="You are a friendly customer support agent for GCM Ethiopia. Always greet users warmly, be patient, and provide clear step-by-step guidance..."
+                  className="min-h-[100px]"
+                />
+              </FormField>
+
+              <FormField label="Primary Language" htmlFor="lang">
+                <select
+                  id="lang"
+                  value={agentLanguage}
+                  onChange={e => setAgentLanguage(e.target.value)}
+                  className="w-full h-10 rounded-md border border-border bg-background px-3 text-sm"
+                >
+                  {["English", "Amharic", "Arabic", "French", "Spanish", "Portuguese", "Swahili", "Chinese", "Hindi"].map(l => (
+                    <option key={l} value={l}>{l}</option>
+                  ))}
+                </select>
+              </FormField>
+            </motion.div>
+          )}
+
+          {/* Step 3: Knowledge Sources */}
+          {createStep === 3 && (
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-5">
+              <div>
+                <p className="text-sm font-semibold text-foreground mb-1">Knowledge Sources</p>
+                <p className="text-xs text-muted-foreground">Add URLs, documents, or FAQs that your agent can reference when answering questions.</p>
+              </div>
+
+              {/* Add URL */}
+              <div className="space-y-2">
+                <Label className="text-xs font-medium">Website URL</Label>
+                <div className="flex items-center gap-2">
+                  <Input
+                    value={newKnowledgeUrl}
+                    onChange={e => setNewKnowledgeUrl(e.target.value)}
+                    placeholder="https://help.example.com"
+                    onKeyDown={e => e.key === "Enter" && addKnowledgeUrl()}
+                  />
+                  <button onClick={addKnowledgeUrl} className="h-10 px-3 rounded-md border border-border hover:bg-muted transition-colors shrink-0">
+                    <Plus className="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
+
+              {/* Add FAQ */}
+              <div className="space-y-2">
+                <Label className="text-xs font-medium">FAQ Entry</Label>
+                <Input
+                  value={newFaqQuestion}
+                  onChange={e => setNewFaqQuestion(e.target.value)}
+                  placeholder="Question: e.g. What are your business hours?"
+                  className="mb-2"
+                />
+                <Textarea
+                  value={newFaqAnswer}
+                  onChange={e => setNewFaqAnswer(e.target.value)}
+                  placeholder="Answer: e.g. We are open Monday-Friday, 9am-5pm EAT."
+                  className="min-h-[60px]"
+                />
+                <button
+                  onClick={addFaq}
+                  className="flex items-center gap-2 text-xs text-primary font-medium hover:underline mt-1"
+                >
+                  <Plus className="w-3 h-3" />
+                  Add FAQ
+                </button>
+              </div>
+
+              {/* Upload hint */}
+              <div className="flex items-center gap-3 p-3 rounded-lg border border-dashed border-border bg-muted/30">
+                <Upload className="w-5 h-5 text-muted-foreground shrink-0" />
+                <div>
+                  <p className="text-xs font-medium text-foreground">Upload Documents</p>
+                  <p className="text-[11px] text-muted-foreground">PDF, DOCX, TXT files — coming soon</p>
+                </div>
+              </div>
+
+              {/* Current Sources */}
+              {agentKnowledge.length > 0 && (
+                <div className="space-y-2">
+                  <Label className="text-xs font-medium">Added Sources ({agentKnowledge.length})</Label>
+                  {agentKnowledge.map(ks => (
+                    <div key={ks.id} className="flex items-center gap-2 p-2.5 rounded-md border border-border bg-background text-xs">
+                      {ks.type === "url" ? <Link className="w-3.5 h-3.5 text-muted-foreground shrink-0" /> :
+                       ks.type === "faq" ? <MessageCircle className="w-3.5 h-3.5 text-muted-foreground shrink-0" /> :
+                       <FileText className="w-3.5 h-3.5 text-muted-foreground shrink-0" />}
+                      <span className="text-foreground truncate flex-1">{ks.name}</span>
+                      <span className="text-[10px] text-emerald-600 font-medium shrink-0">{ks.status}</span>
+                      <button onClick={() => removeKnowledge(ks.id)} className="text-muted-foreground hover:text-red-500 transition-colors shrink-0">
+                        <X className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </motion.div>
+          )}
+
+          {/* Step 4: Assignment & Handoff */}
+          {createStep === 4 && (
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-5">
+              <div>
+                <p className="text-sm font-semibold text-foreground mb-1">Channels & Handoff Rules</p>
+                <p className="text-xs text-muted-foreground">Choose which channels this agent handles and when to hand off to a human.</p>
+              </div>
+
+              {/* Channel Assignment */}
+              <div className="space-y-2">
+                <Label className="text-xs font-medium">Assigned Channels</Label>
+                <p className="text-[11px] text-muted-foreground">Leave empty to handle all channels.</p>
+                <div className="flex flex-wrap gap-2 mt-1">
+                  {CHANNEL_LIST.map(ch => (
+                    <button
+                      key={ch}
+                      onClick={() => toggleChannel(ch)}
+                      className={cn(
+                        "px-3 py-1.5 rounded-md border text-xs font-medium capitalize transition-all",
+                        agentChannels.includes(ch)
+                          ? "border-primary bg-primary/8 text-primary"
+                          : "border-border text-muted-foreground hover:border-foreground/20 hover:text-foreground"
+                      )}
+                    >
+                      {ch}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Handoff Conditions */}
+              <div className="space-y-2">
+                <Label className="text-xs font-medium">Handoff to Human When...</Label>
+                <div className="space-y-2">
+                  {HANDOFF_CONDITIONS.map(cond => (
+                    <button
+                      key={cond.id}
+                      onClick={() => toggleHandoff(cond.id)}
+                      className={cn(
+                        "w-full text-left p-3 rounded-lg border transition-all",
+                        agentHandoff.includes(cond.id) ? "border-primary bg-primary/5" : "border-border hover:border-foreground/20"
+                      )}
+                    >
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="text-sm font-medium text-foreground">{cond.label}</p>
+                          <p className="text-xs text-muted-foreground mt-0.5">{cond.description}</p>
+                        </div>
+                        <div className={cn(
+                          "w-5 h-5 rounded-md border flex items-center justify-center transition-all shrink-0",
+                          agentHandoff.includes(cond.id) ? "bg-primary border-primary" : "border-border"
+                        )}>
+                          {agentHandoff.includes(cond.id) && <Check className="w-3 h-3 text-primary-foreground" />}
+                        </div>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </motion.div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Navigation Buttons */}
+      <div className="flex items-center justify-between">
+        <button
+          onClick={() => {
+            if (createStep === 1) { resetCreate(); setScreen(agents.length > 0 ? "list" : "landing"); }
+            else setCreateStep((createStep - 1) as CreateStep);
+          }}
+          className="flex items-center gap-2 px-4 h-9 rounded-md border border-border text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+        >
+          <ArrowLeft className="w-4 h-4" />
+          {createStep === 1 ? "Cancel" : "Back"}
+        </button>
+        {createStep < 4 ? (
+          <button
+            onClick={() => canProceed() && setCreateStep((createStep + 1) as CreateStep)}
+            disabled={!canProceed()}
+            className={cn(
+              "flex items-center gap-2 px-4 h-9 rounded-md text-sm font-medium transition-colors",
+              canProceed()
+                ? "bg-primary text-primary-foreground hover:bg-primary/90"
+                : "bg-muted text-muted-foreground cursor-not-allowed"
+            )}
+          >
+            Continue
+            <ChevronRight className="w-4 h-4" />
+          </button>
+        ) : (
+          <button
+            onClick={handleCreate}
+            className="flex items-center gap-2 px-5 h-9 rounded-md bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition-colors"
+          >
+            <Wand2 className="w-4 h-4" />
+            Create Agent
+          </button>
+        )}
+      </div>
+    </motion.div>
   );
 };
 

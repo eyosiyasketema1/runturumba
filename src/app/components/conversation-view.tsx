@@ -385,7 +385,7 @@ function AssignDropdown({
           <span className="px-1.5 py-0.5 text-[9px] font-bold text-primary bg-primary/10 border border-primary/20 uppercase tracking-wider">Beta</span>
         </div>
         <button
-          onClick={() => { toast.info("AI Agent creation coming soon"); onClose(); }}
+          onClick={() => { toast.info("Go to Settings → AI Agents to create a new agent"); onClose(); }}
           className="w-full flex items-center gap-2.5 px-3 py-2 hover:bg-muted/50 transition-colors border-b border-border"
         >
           <div className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center">
