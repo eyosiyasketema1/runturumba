@@ -577,7 +577,7 @@ export const AutomationView = ({
           if (activeFolder === "basic")    { setBuilderState({ kind: "basic",    mode: "new" }); return; }
           if (activeFolder === "sequence") { setBuilderState({ kind: "sequence", mode: "new" }); return; }
           if (activeFolder === "flow")     { setBuilderState({ kind: "flow",     mode: "new" }); return; }
-          setViewMode("new-gallery");
+          setIsTypePickerOpen(true);
         }}>
           <Plus className="w-4 h-4 mr-1.5" />
           {folderCopy.createLabel}
@@ -838,7 +838,7 @@ export const AutomationView = ({
                         if (activeFolder === "basic")    setBuilderState({ kind: "basic",    mode: "new" });
                         else if (activeFolder === "sequence") setBuilderState({ kind: "sequence", mode: "new" });
                         else if (activeFolder === "flow")     setBuilderState({ kind: "flow",     mode: "new" });
-                        else setViewMode("new-gallery");
+                        else setIsTypePickerOpen(true);
                       }}>
                         <Plus className="w-4 h-4 mr-1.5" />
                         {folderCopy.createLabel}
@@ -1033,7 +1033,7 @@ export const AutomationView = ({
         }} />
         <div className="border-t border-border pt-4 mt-2 text-center">
           <button
-            onClick={() => { setIsTypePickerOpen(false); setViewMode("templates"); }}
+            onClick={() => { setIsTypePickerOpen(false); setViewMode("new-gallery"); }}
             className="text-sm text-primary font-medium hover:underline inline-flex items-center gap-1.5"
           >
             <LayoutTemplate className="w-4 h-4" />
