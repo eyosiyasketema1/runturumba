@@ -21,8 +21,10 @@
   --destructive: oklch(0.577 0.245 27.325);
   --destructive-foreground: oklch(1 0 0);
   --success: oklch(0.53 0.14 150);
+  --success-soft: rgba(22, 163, 74, 0.1);
   --warning: oklch(0.55 0.14 70);
   --info: oklch(0.55 0.16 250);
+  --destructive-soft: rgba(224, 52, 52, 0.1);
   --border: oklch(0.922 0 0);
   --input: oklch(0.922 0 0);
   --ring: oklch(0.708 0 0);

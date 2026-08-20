@@ -20,6 +20,11 @@ import {
 } from "./types";
 import { ChatEndpointsView } from "./chat-endpoints-view";
 import { Switch } from "./ui/switch";
+import { contentIcons } from "../lib/figma-assets";
+import { FigmaIcon } from "./ui/FigmaIcon";
+import { ChannelCard, type FigmaChannel, type ChannelProvider } from "./channels/ChannelCard";
+import { ChannelsToolbar } from "./channels/ChannelsToolbar";
+import { StatTile } from "./channels/StatTile";
 
 // ============================================================
 // Constants
@@ -702,8 +707,59 @@ export const ChannelsView = ({
 
 
 // ============================================================
-// Screen 0: Channel List (default — your connected channels)
+// Screen 0: Channel List (Figma-faithful design)
 // ============================================================
+
+/** Map a DeliveryChannel type to a ChannelProvider key for Figma brand logos. */
+const TYPE_TO_PROVIDER: Record<string, ChannelProvider> = {
+  whatsapp: "whatsapp",
+  telegram: "telegram",
+  sms: "sms",
+  smpp: "sms",
+  twilio: "sms",
+  webchat: "agelgil",
+  email: "sms",
+  messenger: "telegram",
+  instagram: "telegram",
+  tiktok: "telegram",
+};
+
+/** Convert internal DeliveryChannel to the Figma card format. */
+function toFigmaChannel(ch: DeliveryChannel): FigmaChannel {
+  const provider = TYPE_TO_PROVIDER[ch.type] ?? "sms";
+  const statuses: FigmaChannel["statuses"] = [];
+  if (ch.status === "connected") statuses.push("connected");
+  else if (ch.status === "disconnected") statuses.push("disconnected");
+  else if (ch.status === "error") statuses.push("error");
+  else if (ch.status === "rate_limited") statuses.push("error");
+  if (!ch.enabled) statuses.push("disabled");
+
+  const typeInfo = CHANNEL_TYPES.find(ct => ct.id === ch.type);
+  const dateStr = ch.createdAt ? new Date(ch.createdAt).toLocaleDateString("en-US", { month: "2-digit", day: "2-digit", year: "numeric" }) : "";
+  const deliveryRate = ch.stats.sent > 0 ? Math.round((ch.stats.delivered / ch.stats.sent) * 100) : 0;
+
+  const base: FigmaChannel = {
+    id: ch.id,
+    name: ch.name,
+    provider,
+    enabled: ch.enabled,
+    statuses,
+  };
+
+  // Webchat / agelgil cards show credentials variant
+  if (ch.type === "webchat") {
+    base.channelType = "Web Chat";
+    base.publicKey = ch.config?.publicKey || "SyX8A0mq1cwJ0G3bQ0nTNvhk2MqX4Ulh1cW...";
+  } else {
+    base.meta = `${typeInfo?.label || ch.type} – ${dateStr}`;
+    base.metrics = {
+      sent: ch.stats.sent.toLocaleString(),
+      delivery: `${deliveryRate}%`,
+    };
+  }
+
+  return base;
+}
 
 const ChannelListScreen = ({
   channels,
@@ -721,24 +777,13 @@ const ChannelListScreen = ({
   chatEndpointsCount: number;
 }) => {
   const [searchQuery, setSearchQuery] = useState("");
-  const [statusFilter, setStatusFilter] = useState<ChannelStatus | "all">("all");
-  const [typeFilter, setTypeFilter] = useState<ChannelType | "all">("all");
-  const [sortBy, setSortBy] = useState<"newest" | "oldest" | "name">("newest");
   const [showArchived, setShowArchived] = useState(false);
 
   const filteredChannels = useMemo(() => {
-    const q = searchQuery.toLowerCase();
-    return channels.filter(ch => {
-      const matchesSearch = !q || ch.name.toLowerCase().includes(q) || ch.type.toLowerCase().includes(q);
-      const matchesStatus = statusFilter === "all" || ch.status === statusFilter;
-      const matchesType = typeFilter === "all" || ch.type === typeFilter;
-      return matchesSearch && matchesStatus && matchesType;
-    }).sort((a, b) => {
-      if (sortBy === "name") return a.name.localeCompare(b.name);
-      if (sortBy === "oldest") return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
-      return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
-    });
-  }, [channels, searchQuery, statusFilter, typeFilter, sortBy]);
+    const needle = searchQuery.trim().toLowerCase();
+    if (!needle) return channels;
+    return channels.filter(ch => ch.name.toLowerCase().includes(needle));
+  }, [channels, searchQuery]);
 
   // Aggregate stats
   const stats = useMemo(() => {
@@ -750,104 +795,63 @@ const ChannelListScreen = ({
     return { activeCount, totalSent, totalDelivered, deliveryRate, errorCount };
   }, [channels]);
 
+  const STATS = [
+    { label: "Active", value: String(stats.activeCount), caption: `of ${channels.length} total` },
+    { label: "Sent", value: stats.totalSent.toLocaleString(), caption: "All time" },
+    { label: "Delivery rate", value: `${stats.deliveryRate}%`, caption: `${stats.totalDelivered.toLocaleString()} delivered` },
+    { label: "Errors", value: String(stats.errorCount), caption: "Need attention" },
+  ];
+
   return (
-    <div className="space-y-6 p-6 lg:p-10">
-      {/* Header */}
-      <header className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight text-foreground">Channels</h1>
-          <p className="text-muted-foreground text-sm mt-1">
-            Manage your messaging connections — SMS, WhatsApp, Telegram, Email, and more.
-          </p>
+    <div className="flex w-full shrink-0 flex-col items-start gap-[16px] p-[24px]">
+      <div className="flex w-full shrink-0 flex-col items-start gap-[16px]">
+        <div className="flex w-full shrink-0 flex-col items-start gap-[20px]">
+          {/* Header */}
+          <div className="flex w-full shrink-0 flex-col items-start pt-[16px]">
+            <div className="flex w-full items-center">
+              <div className="flex min-w-0 flex-1 items-center justify-between">
+                <div className="flex shrink-0 flex-col items-start justify-center gap-[4px] whitespace-nowrap">
+                  <h1 className="text-[18px] leading-[28px] font-semibold text-foreground">Channels</h1>
+                  <p className="text-[16px] leading-[24px] text-muted-foreground">
+                    Manage your messaging connections — SMS, WhatsApp, Telegram, Email, and more.
+                  </p>
+                </div>
+                <div className="flex shrink-0 items-center gap-[16px]">
+                  <button
+                    type="button"
+                    onClick={onGoAddChannel}
+                    className="flex shrink-0 items-center gap-[8px] overflow-hidden rounded-sm bg-primary py-[10px] pr-[24px] pl-[20px] text-[14px] leading-[20px] font-medium whitespace-nowrap text-primary-foreground hover:bg-primary/90 transition-colors"
+                  >
+                    <FigmaIcon spec={contentIcons.plus} />
+                    Add Channel
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
-        <button
-          onClick={onGoAddChannel}
-          className="inline-flex items-center gap-2 px-4 py-2.5 text-sm font-semibold bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors shrink-0"
-        >
-          <Plus className="w-4 h-4" />
-          Add Channel
-        </button>
-      </header>
 
-      {/* Stats row */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-        <div className="border border-border rounded-xl bg-card px-5 py-4">
-          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1">Active</p>
-          <p className="text-3xl font-bold text-foreground">{stats.activeCount}</p>
-          <p className="text-xs text-muted-foreground mt-0.5">of {channels.length} total</p>
+        {/* Stats row */}
+        <div className="flex w-full shrink-0 items-center py-[24px]">
+          <div className="flex min-w-0 flex-1 items-center gap-[8px]">
+            {STATS.map((stat) => (
+              <StatTile key={stat.label} {...stat} />
+            ))}
+          </div>
         </div>
-        <div className="border border-border rounded-xl bg-card px-5 py-4">
-          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1">Sent</p>
-          <p className="text-3xl font-bold text-foreground">{stats.totalSent.toLocaleString()}</p>
-          <p className="text-xs text-muted-foreground mt-0.5">All time</p>
-        </div>
-        <div className="border border-border rounded-xl bg-card px-5 py-4">
-          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1">Delivery Rate</p>
-          <p className="text-3xl font-bold text-foreground">{stats.deliveryRate}%</p>
-          <p className="text-xs text-muted-foreground mt-0.5">{stats.totalDelivered.toLocaleString()} delivered</p>
-        </div>
-        <div className="border border-border rounded-xl bg-card px-5 py-4">
-          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1">Errors</p>
-          <p className="text-3xl font-bold text-foreground">{stats.errorCount}</p>
-          <p className="text-xs text-muted-foreground mt-0.5">Need attention</p>
-        </div>
-      </div>
 
-      {/* Filter bar */}
-      <div className="flex flex-col sm:flex-row sm:items-center gap-3">
-        <div className="relative flex-1 max-w-sm">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-          <input
-            placeholder="Search Channels"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full h-10 pl-9 pr-3 text-sm bg-background border border-border rounded-lg text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary"
-            aria-label="Search channels"
-          />
-        </div>
-        <select
-          value={typeFilter}
-          onChange={(e) => setTypeFilter(e.target.value as any)}
-          className="h-10 px-3 pr-8 rounded-lg border border-border bg-background text-sm text-foreground appearance-none cursor-pointer hover:border-muted-foreground transition-colors"
-          style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%239ca3af' stroke-width='2'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E")`, backgroundRepeat: "no-repeat", backgroundPosition: "right 10px center" }}
-          aria-label="Filter by type"
-        >
-          <option value="all">All Types</option>
-          {CHANNEL_TYPES.map(ct => <option key={ct.id} value={ct.id}>{ct.label}</option>)}
-        </select>
-        <select
-          value={statusFilter}
-          onChange={(e) => setStatusFilter(e.target.value as any)}
-          className="h-10 px-3 pr-8 rounded-lg border border-border bg-background text-sm text-foreground appearance-none cursor-pointer hover:border-muted-foreground transition-colors"
-          style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%239ca3af' stroke-width='2'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E")`, backgroundRepeat: "no-repeat", backgroundPosition: "right 10px center" }}
-          aria-label="Filter by status"
-        >
-          <option value="all">All Status</option>
-          <option value="connected">Connected</option>
-          <option value="disconnected">Disconnected</option>
-          <option value="error">Error</option>
-          <option value="rate_limited">Rate Limited</option>
-        </select>
-        <select
-          value={sortBy}
-          onChange={(e) => setSortBy(e.target.value as any)}
-          className="h-10 px-3 pr-8 rounded-lg border border-border bg-background text-sm text-foreground appearance-none cursor-pointer hover:border-muted-foreground transition-colors"
-          style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%239ca3af' stroke-width='2'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E")`, backgroundRepeat: "no-repeat", backgroundPosition: "right 10px center" }}
-          aria-label="Sort order"
-        >
-          <option value="newest">Newest First</option>
-          <option value="oldest">Oldest First</option>
-          <option value="name">Name A–Z</option>
-        </select>
-        <label className="flex items-center gap-2 text-sm text-muted-foreground whitespace-nowrap cursor-pointer select-none">
-          <Switch checked={showArchived} onCheckedChange={setShowArchived} aria-label="Show archived" />
-          Show archived
-        </label>
+        {/* Toolbar */}
+        <ChannelsToolbar
+          query={searchQuery}
+          onQueryChange={setSearchQuery}
+          showArchived={showArchived}
+          onShowArchivedChange={setShowArchived}
+        />
       </div>
 
       {/* Channel cards */}
       {channels.length === 0 ? (
-        <div className="border border-border rounded-xl p-16 text-center">
+        <div className="border border-border rounded-xl p-16 text-center w-full">
           <Signal className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
           <h3 className="text-sm font-bold text-foreground mb-1">No channels connected yet</h3>
           <p className="text-xs text-muted-foreground mb-4">
@@ -855,27 +859,34 @@ const ChannelListScreen = ({
           </p>
           <button
             onClick={onGoAddChannel}
-            className="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-semibold bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors"
+            className="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-semibold bg-primary text-primary-foreground rounded-sm hover:bg-primary/90 transition-colors"
           >
             <Plus className="w-4 h-4" />
             Add Channel
           </button>
         </div>
       ) : filteredChannels.length === 0 ? (
-        <div className="border border-border rounded-xl p-12 text-center">
+        <div className="border border-border rounded-xl p-12 text-center w-full">
           <Search className="w-10 h-10 text-muted-foreground mx-auto mb-3" />
           <p className="text-sm font-medium text-muted-foreground">No channels match your filters.</p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {filteredChannels.map(channel => (
-            <ConnectedChannelRow
-              key={channel.id}
-              channel={channel}
-              onToggle={() => onToggleChannel(channel.id)}
-              onClick={() => onGoDetail(channel.id)}
-            />
-          ))}
+        <div className="flex w-full shrink-0 flex-col items-start">
+          <div className="flex w-full shrink-0 flex-wrap content-center items-center gap-[32px]">
+            {filteredChannels.map(ch => {
+              const figmaChannel = toFigmaChannel(ch);
+              return (
+                <ChannelCard
+                  key={ch.id}
+                  channel={figmaChannel}
+                  onToggle={(id, enabled) => {
+                    if (enabled !== ch.enabled) onToggleChannel(id);
+                  }}
+                  onClick={() => onGoDetail(ch.id)}
+                />
+              );
+            })}
+          </div>
         </div>
       )}
     </div>
