@@ -20,11 +20,14 @@ import {
 } from "./types";
 import { ChatEndpointsView } from "./chat-endpoints-view";
 import { Switch } from "./ui/switch";
-import { contentIcons } from "../lib/figma-assets";
+import { contentIcons, catalogIcons } from "../lib/figma-assets";
 import { FigmaIcon } from "./ui/FigmaIcon";
 import { ChannelCard, type FigmaChannel, type ChannelProvider } from "./channels/ChannelCard";
 import { ChannelsToolbar } from "./channels/ChannelsToolbar";
 import { StatTile } from "./channels/StatTile";
+import { CatalogCard } from "./catalog/CatalogCard";
+import { CatalogTabs, type CatalogFilter } from "./catalog/CatalogTabs";
+import { CATALOG, CATALOG_SECTIONS, type CatalogEntry } from "../lib/catalog-data";
 
 // ============================================================
 // Constants
@@ -898,6 +901,25 @@ const ChannelListScreen = ({
 // Screen 1: Catalog (reached via "Add Channel")
 // ============================================================
 
+/** Map catalog entry IDs → ChannelType so the connect flow can proceed. */
+const CATALOG_ID_TO_CHANNEL_TYPE: Record<string, ChannelType> = {
+  whatsapp: 'whatsapp',
+  'whatsapp-twilio': 'whatsapp',
+  telegram: 'telegram',
+  tiktok: 'tiktok',
+  messenger: 'messenger',
+  viber: 'messenger',
+  instagram: 'instagram',
+  line: 'telegram',
+  slack: 'messenger',
+  gmail: 'email',
+  twilio: 'twilio',
+  sms: 'sms',
+  'email-sms': 'sms',
+  smpp: 'smpp',
+  'web-chat': 'webchat',
+};
+
 const CatalogScreen = ({
   channels,
   onGoConnect,
@@ -907,217 +929,113 @@ const CatalogScreen = ({
   onGoConnect: (type: ChannelType) => void;
   onBack: () => void;
 }) => {
-  const [categoryFilter, setCategoryFilter] = useState<string>("all");
-  const [searchQuery, setSearchQuery] = useState("");
+  const [filter, setFilter] = useState<CatalogFilter>(null);
+  const [query, setQuery] = useState('');
 
-  const CATEGORIES = [
-    { id: "all", label: "All" },
-    { id: "messaging", label: "Business Messaging" },
-    { id: "sms", label: "SMS" },
-    { id: "email", label: "Email" },
-    { id: "social", label: "Social Media" },
-  ];
+  /** Update connected counts from live channel data. */
+  const catalogWithCounts = useMemo(() => {
+    const countByType: Record<string, number> = {};
+    channels.forEach((ch) => {
+      countByType[ch.type] = (countByType[ch.type] || 0) + 1;
+    });
 
-  const CHANNEL_CATEGORY: Record<ChannelType, string> = {
-    whatsapp: "messaging",
-    messenger: "messaging",
-    telegram: "messaging",
-    sms: "sms",
-    twilio: "sms",
-    smpp: "sms",
-    email: "email",
-    instagram: "social",
-    tiktok: "social",
-    webchat: "messaging",
+    return CATALOG.map((entry) => {
+      const channelType = CATALOG_ID_TO_CHANNEL_TYPE[entry.id];
+      return {
+        ...entry,
+        connectedCount: channelType ? countByType[channelType] ?? 0 : entry.connectedCount,
+      };
+    });
+  }, [channels]);
+
+  const sections = useMemo(() => {
+    const needle = query.trim().toLowerCase();
+
+    return CATALOG_SECTIONS.map((category) => ({
+      category,
+      entries: catalogWithCounts.filter((entry) => {
+        if (entry.category !== category) return false;
+        if (filter && entry.category !== filter) return false;
+        if (!needle) return true;
+        return `${entry.title ?? ''}${entry.titleTail ?? ''} ${entry.description}`
+          .toLowerCase()
+          .includes(needle);
+      }),
+    })).filter((section) => section.entries.length > 0);
+  }, [filter, query, catalogWithCounts]);
+
+  const handleConnect = (id: string) => {
+    const channelType = CATALOG_ID_TO_CHANNEL_TYPE[id];
+    if (channelType) onGoConnect(channelType);
   };
 
-  const filteredTypes = useMemo(() => {
-    const q = searchQuery.toLowerCase();
-    return CHANNEL_TYPES.filter(ct => {
-      const matchesCategory = categoryFilter === "all" || CHANNEL_CATEGORY[ct.id] === categoryFilter;
-      const matchesSearch = !q || ct.label.toLowerCase().includes(q) || ct.description.toLowerCase().includes(q);
-      return matchesCategory && matchesSearch;
-    });
-  }, [categoryFilter, searchQuery]);
-
   return (
-    <div className="space-y-6 p-6 lg:p-10">
-      {/* Back */}
-      <button onClick={onBack} className="flex items-center gap-1.5 text-sm font-semibold text-muted-foreground hover:text-foreground transition-colors">
-        <ArrowLeft className="w-4 h-4" />
-        Back to Channels
-      </button>
+    <main className="flex w-full shrink-0 flex-col items-start gap-[32px] p-[24px]">
+      <div className="flex w-full shrink-0 flex-col items-start gap-[16px]">
+        <button
+          type="button"
+          onClick={onBack}
+          className="flex shrink-0 cursor-pointer items-center gap-[8px]"
+        >
+          <span className="flex shrink-0 items-center justify-center p-[6px] hover:bg-[var(--muted)]">
+            <FigmaIcon spec={catalogIcons.back} />
+          </span>
+          <span className="text-[14px] leading-[20px] font-medium whitespace-nowrap text-[var(--foreground)]">
+            Back to Channels
+          </span>
+        </button>
 
-      {/* Header */}
-      <header>
-        <h1 className="text-3xl font-bold tracking-tight text-foreground">Channel Catalog</h1>
-        <p className="text-muted-foreground text-sm mt-1">
-          Manage your messaging channels and discover new ones to help you acquire more customers.
-        </p>
-      </header>
+        <div className="flex w-full shrink-0 flex-col items-start gap-[16px]">
+          <div className="flex shrink-0 flex-col items-start justify-center gap-[4px] whitespace-nowrap">
+            <h1 className="text-[18px] leading-[28px] font-semibold text-black">
+              Channel Catalog
+            </h1>
+            <p className="text-[16px] leading-[24px] text-[var(--muted-foreground)]">
+              Connect and manage your messaging channels.
+            </p>
+          </div>
 
-      {/* Category tabs + search */}
-      <div className="flex flex-col sm:flex-row sm:items-center gap-3">
-        <div className="flex gap-1 p-1 bg-muted border border-border overflow-x-auto flex-1">
-          {CATEGORIES.map(cat => (
-            <FilterButton key={cat.id} active={categoryFilter === cat.id} onClick={() => setCategoryFilter(cat.id)}>
-              {cat.label}
-            </FilterButton>
-          ))}
-        </div>
-        <div className="relative w-full sm:w-64">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-          <input
-            placeholder="Search Channel Catalog"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full h-9 pl-9 pr-3 text-sm bg-background border border-border text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary"
-            aria-label="Search channel catalog"
-          />
-        </div>
-      </div>
+          <div className="flex w-full shrink-0 items-center justify-between p-[8px]">
+            <CatalogTabs value={filter} onChange={setFilter} />
 
-      {/* Channel type cards grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-        {filteredTypes.map(ct => {
-          const isPopular = POPULAR_CHANNELS.includes(ct.id);
-          const isBeta = BETA_CHANNELS.includes(ct.id);
-          const connectedCount = channels.filter(ch => ch.type === ct.id).length;
-          const catalogDesc = CHANNEL_CATALOG_DESCRIPTIONS[ct.id] || ct.description;
-          return (
-            <div
-              key={ct.id}
-              className={cn(
-                "relative border p-5 flex flex-col group hover:border-primary/30 transition-colors",
-                ct.bgColor, ct.borderColor
-              )}
-            >
-              {/* Badge */}
-              {(isPopular || isBeta) && (
-                <div className="flex gap-1.5 mb-3">
-                  {isPopular && (
-                    <span className={cn("inline-flex items-center gap-1 px-1.5 py-0.5 text-[10px] font-bold", ct.color)}>
-                      <Signal className="w-3 h-3" />
-                      Popular
-                    </span>
-                  )}
-                  {isBeta && (
-                    <span className="inline-flex items-center gap-1 px-1.5 py-0.5 text-[10px] font-bold text-amber-600">
-                      <Activity className="w-3 h-3" />
-                      Beta
-                    </span>
-                  )}
-                </div>
-              )}
-
-              {/* Title + large icon */}
-              <div className="flex items-start justify-between gap-3 mb-2">
-                <h3 className="text-base font-bold text-foreground leading-snug flex-1">{ct.label}</h3>
-                <div className="w-12 h-12 flex items-center justify-center shrink-0">
-                  <ChannelIcon type={ct} className="w-10 h-10" />
-                </div>
-              </div>
-
-              {/* Description */}
-              <p className="text-xs text-muted-foreground leading-relaxed flex-1">{catalogDesc}</p>
-
-              {/* Separator + Connect button */}
-              <div className="border-t border-border/60 mt-4 pt-3 flex items-center justify-end gap-2">
-                {connectedCount > 0 && (
-                  <span className="text-[10px] text-muted-foreground mr-auto">
-                    {connectedCount} connected
-                  </span>
-                )}
-                <button
-                  onClick={() => onGoConnect(ct.id)}
-                  className="inline-flex items-center gap-1.5 px-4 py-1.5 text-xs font-semibold border border-border bg-background/80 text-foreground hover:bg-background transition-colors"
-                >
-                  Connect
-                </button>
+            <div className="flex w-[358px] shrink-0 flex-col items-start">
+              <div className="flex h-[40px] w-full shrink-0 items-center gap-[8px] border border-[var(--sidebar-border)] bg-[var(--sidebar)] px-[12px] py-[6px]">
+                <FigmaIcon spec={contentIcons.search} />
+                <input
+                  type="search"
+                  value={query}
+                  onChange={(event) => setQuery(event.target.value)}
+                  placeholder="Search Channels"
+                  aria-label="Search channels"
+                  className="min-w-0 flex-1 bg-transparent text-[14px] leading-[20px] text-[var(--foreground)] outline-none placeholder:text-[var(--muted-foreground)]"
+                />
               </div>
             </div>
-          );
-        })}
-      </div>
-      {filteredTypes.length === 0 && (
-        <div className="border border-border p-12 text-center">
-          <Signal className="w-10 h-10 text-muted-foreground mx-auto mb-3" />
-          <p className="text-sm font-medium text-muted-foreground">No channel types match your search</p>
-        </div>
-      )}
-    </div>
-  );
-};
-
-
-// ============================================================
-// Connected Channel Row (used in catalog's "Your Channels")
-// ============================================================
-
-const ConnectedChannelRow = ({
-  channel,
-  onToggle,
-  onClick,
-}: {
-  channel: DeliveryChannel;
-  onToggle: () => void;
-  onClick: () => void;
-}) => {
-  const typeInfo = CHANNEL_TYPES.find(ct => ct.id === channel.type);
-  const statusInfo = statusConfig[channel.status];
-  const StatusIcon = statusInfo.icon;
-  const deliveryRate = channel.stats.sent > 0 ? Math.round((channel.stats.delivered / channel.stats.sent) * 100) : 0;
-  const dateStr = channel.lastActiveAt
-    ? new Date(channel.lastActiveAt).toLocaleDateString("en-US", { month: "2-digit", day: "2-digit", year: "numeric" })
-    : null;
-
-  return (
-    <div
-      className="border border-border rounded-xl bg-card p-5 cursor-pointer hover:border-primary/30 hover:shadow-sm transition-all flex flex-col"
-      onClick={onClick}
-    >
-      {/* Row 1: icon + name + toggle */}
-      <div className="flex items-center justify-between gap-3 mb-3">
-        <div className="flex items-center gap-3 min-w-0">
-          <div className={cn("w-10 h-10 rounded-lg flex items-center justify-center shrink-0 border", typeInfo?.bgColor, typeInfo?.borderColor)}>
-            {typeInfo && <ChannelIcon type={typeInfo} className="w-5 h-5" />}
           </div>
-          <p className="text-sm font-bold text-foreground truncate">{channel.name}</p>
-        </div>
-        <div onClick={e => e.stopPropagation()} className="shrink-0">
-          <Switch checked={channel.enabled} onCheckedChange={onToggle} aria-label="Enable channel" />
         </div>
       </div>
 
-      {/* Row 2: status badges */}
-      <div className="flex items-center gap-1.5 mb-3">
-        <span className={cn("inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold border", statusInfo.bgColor, statusInfo.color)}>
-          <StatusIcon className="w-3 h-3" />
-          {statusInfo.label}
-        </span>
-        {!channel.enabled && (
-          <span className="px-2 py-0.5 rounded-full text-xs font-semibold bg-muted text-muted-foreground border border-border">Disabled</span>
+      <div className="flex w-full shrink-0 flex-col items-start gap-[32px]">
+        {sections.map((section) => (
+          <section key={section.category} className="flex w-full shrink-0 flex-col items-start gap-[16px]">
+            <h2 className="w-full shrink-0 text-[14px] leading-[20px] font-semibold text-black">
+              {section.category}
+            </h2>
+            <div className="flex w-full shrink-0 flex-wrap content-center items-center gap-[32px]">
+              {section.entries.map((entry) => (
+                <CatalogCard key={entry.id} entry={entry} onConnect={handleConnect} />
+              ))}
+            </div>
+          </section>
+        ))}
+
+        {sections.length === 0 && (
+          <div className="w-full border border-border p-12 text-center">
+            <p className="text-sm font-medium text-muted-foreground">No channels match your search</p>
+          </div>
         )}
       </div>
-
-      {/* Row 3: type + date */}
-      <p className="text-xs text-muted-foreground mb-4">
-        {typeInfo?.label}
-        {dateStr && <> – {dateStr}</>}
-      </p>
-
-      {/* Row 4: sent + delivery stats */}
-      <div className="flex items-end gap-6 mt-auto">
-        <div>
-          <p className="text-[10px] text-muted-foreground mb-0.5">Sent</p>
-          <p className="text-lg font-bold text-foreground leading-none">{channel.stats.sent.toLocaleString()}</p>
-        </div>
-        <div>
-          <p className="text-[10px] text-muted-foreground mb-0.5">Delivery</p>
-          <p className="text-lg font-bold text-foreground leading-none">{deliveryRate}%</p>
-        </div>
-      </div>
-    </div>
+    </main>
   );
 };
 

@@ -97,3 +97,126 @@ export const switchThumb = {
   md: remote('90a805fa-370f-42e6-8ac7-8e9edbc353e7.svg'),
   sm: remote('de7e6b30-9617-4c75-8f13-cd2c412ec2f1.svg'),
 };
+
+/* ============================================================
+   Catalog page assets
+   ============================================================ */
+
+/** Inline SVG helper — produces a data URI that FigmaIcon can render. */
+const inlineSvg = (svg: string, box = 16): FigmaIconSpec => ({
+  src: `data:image/svg+xml,${encodeURIComponent(svg)}`,
+  box,
+  inset: '0%',
+  bleed: '0%',
+});
+
+export const catalogIcons = {
+  back: inlineSvg(
+    '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="none" stroke="%230a0a0a" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10 3L5 8l5 5"/></svg>',
+  ),
+  link: inlineSvg(
+    '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="none" stroke="%230a0a0a" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6.5 9.5l3-3"/><path d="M7.17 5.17l.83-.84a2.83 2.83 0 114 4l-.83.84"/><path d="M8.83 10.83l-.83.84a2.83 2.83 0 11-4-4l.83-.84"/></svg>',
+  ),
+};
+
+export const tabIcons = {
+  all: inlineSvg(
+    '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><rect x="2" y="2" width="5" height="5" rx="1"/><rect x="9" y="2" width="5" height="5" rx="1"/><rect x="2" y="9" width="5" height="5" rx="1"/><rect x="9" y="9" width="5" height="5" rx="1"/></svg>',
+  ),
+  social: inlineSvg(
+    '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2 13V3a1 1 0 011-1h10a1 1 0 011 1v7a1 1 0 01-1 1H5l-3 2z"/></svg>',
+  ),
+  sms: inlineSvg(
+    '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="1" width="10" height="14" rx="2"/><line x1="8" y1="12" x2="8" y2="12.01"/></svg>',
+  ),
+  email: inlineSvg(
+    '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="3" width="14" height="10" rx="1"/><path d="M1 4l7 5 7-5"/></svg>',
+  ),
+  liveChat: inlineSvg(
+    '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 10a1 1 0 01-1 1H5l-3 3V3a1 1 0 011-1h10a1 1 0 011 1v7z"/><circle cx="5.5" cy="6.5" r=".5" fill="currentColor"/><circle cx="8" cy="6.5" r=".5" fill="currentColor"/><circle cx="10.5" cy="6.5" r=".5" fill="currentColor"/></svg>',
+  ),
+};
+
+/* ---------------------------------------------------------------- brand marks */
+
+export type BrandMarkSpec =
+  | {
+      kind: 'image';
+      src: string;
+      fit?: 'contain' | 'cover' | 'fill';
+      rounded?: boolean;
+      clip?: boolean;
+    }
+  | {
+      kind: 'layers';
+      layers: Array<{
+        src: string;
+        inset?: string;
+        left?: number;
+        top?: number;
+        width?: number;
+        height?: number;
+      }>;
+      background?: string;
+      rounded?: boolean;
+      clip?: boolean;
+    };
+
+/** Helper: single-image brand mark from a colored circle SVG with a letter. */
+const brandCircle = (color: string, letter: string): BrandMarkSpec => ({
+  kind: 'image',
+  src: `data:image/svg+xml,${encodeURIComponent(
+    `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><circle cx="16" cy="16" r="16" fill="${color}"/><text x="16" y="21" text-anchor="middle" fill="white" font-size="14" font-family="sans-serif" font-weight="600">${letter}</text></svg>`,
+  )}`,
+  fit: 'contain',
+  rounded: true,
+  clip: true,
+});
+
+/** Helper: brand mark from an existing remote asset. */
+const brandImage = (src: string, rounded = false): BrandMarkSpec => ({
+  kind: 'image',
+  src,
+  fit: 'contain',
+  rounded,
+  clip: true,
+});
+
+export const brandMarks = {
+  whatsapp: brandImage(brandLogos.whatsapp),
+  telegram: brandImage(brandLogos.telegram),
+  tiktok: brandCircle('#000000', 'T'),
+  messenger: brandCircle('#0084FF', 'M'),
+  viber: brandCircle('#7360F2', 'V'),
+  instagram: brandCircle('#C506E9', 'I'),
+  line: brandCircle('#06C755', 'L'),
+  slack: brandCircle('#ECB22E', 'S'),
+  gmail: brandCircle('#EA4335', 'G'),
+  twilio: brandCircle('#F22F46', 'T'),
+  sms: brandImage(brandLogos.sms),
+  mail: brandCircle('#2196F3', 'E'),
+  smpp: brandCircle('#33B672', 'S'),
+  webChat: brandImage(brandLogos.agelgil),
+};
+
+/** Glow: decorative radial gradient behind each catalog card. */
+const glow = (color: string) =>
+  `data:image/svg+xml,${encodeURIComponent(
+    `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200"><defs><radialGradient id="g"><stop offset="0%" stop-color="${color}" stop-opacity="0.3"/><stop offset="100%" stop-color="${color}" stop-opacity="0"/></radialGradient></defs><circle cx="100" cy="100" r="100" fill="url(%23g)"/></svg>`,
+  )}`;
+
+export const catalogGlow = {
+  whatsapp: glow('#25D366'),
+  telegram: glow('#26A5E4'),
+  tiktok: glow('#25F4EE'),
+  messenger: glow('#0084FF'),
+  viber: glow('#7360F2'),
+  instagram: glow('#C506E9'),
+  line: glow('#06C755'),
+  slack: glow('#ECB22E'),
+  gmail: glow('#EA4335'),
+  twilio: glow('#F22F46'),
+  blue: glow('#2196F3'),
+  smpp: glow('#33B672'),
+  webChat: glow('#2563EB'),
+};

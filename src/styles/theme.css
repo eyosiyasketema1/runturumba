@@ -25,6 +25,11 @@
   --warning: oklch(0.55 0.14 70);
   --info: oklch(0.55 0.16 250);
   --destructive-soft: rgba(224, 52, 52, 0.1);
+  --opacity-primary-soft: oklch(0.5461 0.2152 262.88 / 10%);
+  --opacity-accent-10: oklch(0.97 0 0);
+  --radius-selector: 0px;
+  --radius-card: 0px;
+  --radius-full: 9999px;
   --border: oklch(0.922 0 0);
   --input: oklch(0.922 0 0);
   --ring: oklch(0.708 0 0);
