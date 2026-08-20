@@ -691,89 +691,132 @@ const ChannelListScreen = ({
 }) => {
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<ChannelStatus | "all">("all");
+  const [typeFilter, setTypeFilter] = useState<ChannelType | "all">("all");
+  const [sortBy, setSortBy] = useState<"newest" | "oldest" | "name">("newest");
+  const [showArchived, setShowArchived] = useState(false);
 
   const filteredChannels = useMemo(() => {
     const q = searchQuery.toLowerCase();
     return channels.filter(ch => {
       const matchesSearch = !q || ch.name.toLowerCase().includes(q) || ch.type.toLowerCase().includes(q);
       const matchesStatus = statusFilter === "all" || ch.status === statusFilter;
-      return matchesSearch && matchesStatus;
+      const matchesType = typeFilter === "all" || ch.type === typeFilter;
+      return matchesSearch && matchesStatus && matchesType;
+    }).sort((a, b) => {
+      if (sortBy === "name") return a.name.localeCompare(b.name);
+      if (sortBy === "oldest") return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+      return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
     });
-  }, [channels, searchQuery, statusFilter]);
+  }, [channels, searchQuery, statusFilter, typeFilter, sortBy]);
 
-  const statusCounts = useMemo(() => {
-    const counts: Record<string, number> = { all: channels.length };
-    channels.forEach(ch => { counts[ch.status] = (counts[ch.status] || 0) + 1; });
-    return counts;
+  // Aggregate stats
+  const stats = useMemo(() => {
+    const activeCount = channels.filter(ch => ch.status === "connected" && ch.enabled).length;
+    const totalSent = channels.reduce((sum, ch) => sum + ch.stats.sent, 0);
+    const totalDelivered = channels.reduce((sum, ch) => sum + ch.stats.delivered, 0);
+    const deliveryRate = totalSent > 0 ? Math.round((totalDelivered / totalSent) * 100) : 0;
+    const errorCount = channels.filter(ch => ch.status === "error").length;
+    return { activeCount, totalSent, totalDelivered, deliveryRate, errorCount };
   }, [channels]);
 
   return (
     <div className="space-y-6 p-6 lg:p-10">
       {/* Header */}
-      <header className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <header className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight text-foreground">Channels</h1>
+          <h1 className="text-2xl font-bold tracking-tight text-foreground">Channels</h1>
           <p className="text-muted-foreground text-sm mt-1">
-            Manage your messaging channels and monitor their performance.
+            Manage your messaging connections — SMS, WhatsApp, Telegram, Email, and more.
           </p>
         </div>
-        <div className="flex items-center gap-2">
-          <button
-            onClick={onOpenChatEndpoints}
-            className="inline-flex items-center gap-2 px-3 py-2 text-sm font-semibold border border-border bg-background text-foreground hover:bg-muted transition-colors"
-          >
-            <Bot className="w-4 h-4" />
-            Chat Endpoints
-            {chatEndpointsCount > 0 && (
-              <span className="inline-flex items-center justify-center w-5 h-5 text-xs font-bold bg-primary/10 text-primary border border-primary/20">
-                {chatEndpointsCount}
-              </span>
-            )}
-          </button>
-          <button
-            onClick={onGoAddChannel}
-            className="inline-flex items-center gap-2 px-3 py-2 text-sm font-semibold bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
-          >
-            <Plus className="w-4 h-4" />
-            Add Channel
-          </button>
-        </div>
+        <button
+          onClick={onGoAddChannel}
+          className="inline-flex items-center gap-2 px-4 py-2.5 text-sm font-semibold bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors shrink-0"
+        >
+          <Plus className="w-4 h-4" />
+          Add Channel
+        </button>
       </header>
 
-      {/* Filters + search */}
-      <div className="flex flex-col sm:flex-row sm:items-center gap-3">
-        <div className="flex gap-1 p-1 bg-muted border border-border overflow-x-auto">
-          <FilterButton active={statusFilter === "all"} onClick={() => setStatusFilter("all")}>
-            All <span className="ml-1 opacity-60">{statusCounts.all || 0}</span>
-          </FilterButton>
-          <FilterButton active={statusFilter === "connected"} onClick={() => setStatusFilter("connected")}>
-            <Wifi className="w-3 h-3" />
-            Connected <span className="ml-1 opacity-60">{statusCounts.connected || 0}</span>
-          </FilterButton>
-          <FilterButton active={statusFilter === "disconnected"} onClick={() => setStatusFilter("disconnected")}>
-            <WifiOff className="w-3 h-3" />
-            Disconnected <span className="ml-1 opacity-60">{statusCounts.disconnected || 0}</span>
-          </FilterButton>
-          <FilterButton active={statusFilter === "error"} onClick={() => setStatusFilter("error")}>
-            <AlertTriangle className="w-3 h-3" />
-            Error <span className="ml-1 opacity-60">{statusCounts.error || 0}</span>
-          </FilterButton>
+      {/* Stats row */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+        <div className="border border-border rounded-xl bg-card px-5 py-4">
+          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1">Active</p>
+          <p className="text-3xl font-bold text-foreground">{stats.activeCount}</p>
+          <p className="text-xs text-muted-foreground mt-0.5">of {channels.length} total</p>
         </div>
-        <div className="relative w-full sm:w-64 sm:ml-auto">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-          <input
-            placeholder="Search channels..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full h-9 pl-9 pr-3 text-sm bg-background border border-border text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary"
-            aria-label="Search channels"
-          />
+        <div className="border border-border rounded-xl bg-card px-5 py-4">
+          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1">Sent</p>
+          <p className="text-3xl font-bold text-foreground">{stats.totalSent.toLocaleString()}</p>
+          <p className="text-xs text-muted-foreground mt-0.5">All time</p>
+        </div>
+        <div className="border border-border rounded-xl bg-card px-5 py-4">
+          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1">Delivery Rate</p>
+          <p className="text-3xl font-bold text-foreground">{stats.deliveryRate}%</p>
+          <p className="text-xs text-muted-foreground mt-0.5">{stats.totalDelivered.toLocaleString()} delivered</p>
+        </div>
+        <div className="border border-border rounded-xl bg-card px-5 py-4">
+          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1">Errors</p>
+          <p className="text-3xl font-bold text-foreground">{stats.errorCount}</p>
+          <p className="text-xs text-muted-foreground mt-0.5">Need attention</p>
         </div>
       </div>
 
-      {/* Channel list */}
+      {/* Filter bar */}
+      <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+        <div className="relative flex-1 max-w-sm">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+          <input
+            placeholder="Search Channels"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full h-10 pl-9 pr-3 text-sm bg-background border border-border rounded-lg text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+            aria-label="Search channels"
+          />
+        </div>
+        <select
+          value={typeFilter}
+          onChange={(e) => setTypeFilter(e.target.value as any)}
+          className="h-10 px-3 pr-8 rounded-lg border border-border bg-background text-sm text-foreground appearance-none cursor-pointer hover:border-muted-foreground transition-colors"
+          style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%239ca3af' stroke-width='2'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E")`, backgroundRepeat: "no-repeat", backgroundPosition: "right 10px center" }}
+          aria-label="Filter by type"
+        >
+          <option value="all">All Types</option>
+          {CHANNEL_TYPES.map(ct => <option key={ct.id} value={ct.id}>{ct.label}</option>)}
+        </select>
+        <select
+          value={statusFilter}
+          onChange={(e) => setStatusFilter(e.target.value as any)}
+          className="h-10 px-3 pr-8 rounded-lg border border-border bg-background text-sm text-foreground appearance-none cursor-pointer hover:border-muted-foreground transition-colors"
+          style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%239ca3af' stroke-width='2'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E")`, backgroundRepeat: "no-repeat", backgroundPosition: "right 10px center" }}
+          aria-label="Filter by status"
+        >
+          <option value="all">All Status</option>
+          <option value="connected">Connected</option>
+          <option value="disconnected">Disconnected</option>
+          <option value="error">Error</option>
+          <option value="rate_limited">Rate Limited</option>
+        </select>
+        <select
+          value={sortBy}
+          onChange={(e) => setSortBy(e.target.value as any)}
+          className="h-10 px-3 pr-8 rounded-lg border border-border bg-background text-sm text-foreground appearance-none cursor-pointer hover:border-muted-foreground transition-colors"
+          style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%239ca3af' stroke-width='2'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E")`, backgroundRepeat: "no-repeat", backgroundPosition: "right 10px center" }}
+          aria-label="Sort order"
+        >
+          <option value="newest">Newest First</option>
+          <option value="oldest">Oldest First</option>
+          <option value="name">Name A–Z</option>
+        </select>
+        <label className="flex items-center gap-2 text-sm text-muted-foreground whitespace-nowrap cursor-pointer select-none">
+          <Switch checked={showArchived} onCheckedChange={setShowArchived} aria-label="Show archived" />
+          Show archived
+        </label>
+      </div>
+
+      {/* Channel cards */}
       {channels.length === 0 ? (
-        <div className="border border-border p-16 text-center">
+        <div className="border border-border rounded-xl p-16 text-center">
           <Signal className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
           <h3 className="text-sm font-bold text-foreground mb-1">No channels connected yet</h3>
           <p className="text-xs text-muted-foreground mb-4">
@@ -781,16 +824,16 @@ const ChannelListScreen = ({
           </p>
           <button
             onClick={onGoAddChannel}
-            className="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-semibold bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
+            className="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-semibold bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors"
           >
             <Plus className="w-4 h-4" />
             Add Channel
           </button>
         </div>
       ) : filteredChannels.length === 0 ? (
-        <div className="border border-border p-12 text-center">
+        <div className="border border-border rounded-xl p-12 text-center">
           <Search className="w-10 h-10 text-muted-foreground mx-auto mb-3" />
-          <p className="text-sm font-medium text-muted-foreground">No channels match your search.</p>
+          <p className="text-sm font-medium text-muted-foreground">No channels match your filters.</p>
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -981,58 +1024,54 @@ const ConnectedChannelRow = ({
   const statusInfo = statusConfig[channel.status];
   const StatusIcon = statusInfo.icon;
   const deliveryRate = channel.stats.sent > 0 ? Math.round((channel.stats.delivered / channel.stats.sent) * 100) : 0;
+  const dateStr = channel.lastActiveAt
+    ? new Date(channel.lastActiveAt).toLocaleDateString("en-US", { month: "2-digit", day: "2-digit", year: "numeric" })
+    : null;
 
   return (
     <div
-      className={cn(
-        "border border-border rounded-xl bg-card p-4 cursor-pointer hover:border-primary/30 hover:shadow-sm transition-all flex flex-col",
-        !channel.enabled && "opacity-60"
-      )}
+      className="border border-border rounded-xl bg-card p-5 cursor-pointer hover:border-primary/30 hover:shadow-sm transition-all flex flex-col"
       onClick={onClick}
     >
-      {/* Top: icon + toggle */}
-      <div className="flex items-start justify-between mb-3">
-        <div className={cn("w-10 h-10 rounded-lg flex items-center justify-center relative border", typeInfo?.bgColor, typeInfo?.borderColor)}>
-          {typeInfo && <ChannelIcon type={typeInfo} className="w-5 h-5" />}
-          <span className={cn(
-            "absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 border-2 border-card rounded-full",
-            channel.status === "connected" ? "bg-emerald-500" :
-            channel.status === "error" ? "bg-destructive" :
-            channel.status === "rate_limited" ? "bg-amber-500" : "bg-muted-foreground/40"
-          )} />
+      {/* Row 1: icon + name + toggle */}
+      <div className="flex items-center justify-between gap-3 mb-3">
+        <div className="flex items-center gap-3 min-w-0">
+          <div className={cn("w-10 h-10 rounded-lg flex items-center justify-center shrink-0 border", typeInfo?.bgColor, typeInfo?.borderColor)}>
+            {typeInfo && <ChannelIcon type={typeInfo} className="w-5 h-5" />}
+          </div>
+          <p className="text-sm font-bold text-foreground truncate">{channel.name}</p>
         </div>
-        <div onClick={e => e.stopPropagation()}>
+        <div onClick={e => e.stopPropagation()} className="shrink-0">
           <Switch checked={channel.enabled} onCheckedChange={onToggle} aria-label="Enable channel" />
         </div>
       </div>
 
-      {/* Name + status */}
-      <p className="text-sm font-bold text-foreground truncate mb-1">{channel.name}</p>
+      {/* Row 2: status badges */}
       <div className="flex items-center gap-1.5 mb-3">
-        <span className={cn("inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] font-bold border", statusInfo.bgColor, statusInfo.color)}>
-          <StatusIcon className="w-2.5 h-2.5" />
+        <span className={cn("inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold border", statusInfo.bgColor, statusInfo.color)}>
+          <StatusIcon className="w-3 h-3" />
           {statusInfo.label}
         </span>
         {!channel.enabled && (
-          <span className="px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-muted text-muted-foreground border border-border">Disabled</span>
+          <span className="px-2 py-0.5 rounded-full text-xs font-semibold bg-muted text-muted-foreground border border-border">Disabled</span>
         )}
       </div>
 
-      {/* Type + active */}
-      <p className="text-xs text-muted-foreground mb-3">
+      {/* Row 3: type + date */}
+      <p className="text-xs text-muted-foreground mb-4">
         {typeInfo?.label}
-        {channel.lastActiveAt && <> · {formatTimeAgo(channel.lastActiveAt)}</>}
+        {dateStr && <> – {dateStr}</>}
       </p>
 
-      {/* Stats row */}
-      <div className="flex items-center gap-4 pt-3 border-t border-border/60 mt-auto">
-        <div className="flex-1">
-          <p className="text-sm font-bold text-foreground">{channel.stats.sent.toLocaleString()}</p>
-          <p className="text-[10px] text-muted-foreground">Sent</p>
+      {/* Row 4: sent + delivery stats */}
+      <div className="flex items-end gap-6 mt-auto">
+        <div>
+          <p className="text-[10px] text-muted-foreground mb-0.5">Sent</p>
+          <p className="text-lg font-bold text-foreground leading-none">{channel.stats.sent.toLocaleString()}</p>
         </div>
-        <div className="flex-1 text-right">
-          <p className={cn("text-sm font-bold", deliveryRate >= 90 ? "text-emerald-600" : deliveryRate >= 70 ? "text-amber-600" : "text-foreground")}>{deliveryRate}%</p>
-          <p className="text-[10px] text-muted-foreground">Delivery</p>
+        <div>
+          <p className="text-[10px] text-muted-foreground mb-0.5">Delivery</p>
+          <p className="text-lg font-bold text-foreground leading-none">{deliveryRate}%</p>
         </div>
       </div>
     </div>
