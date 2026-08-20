@@ -87,6 +87,11 @@ const CHANNEL_CONFIG_FIELDS: Record<ChannelType, { key: string; label: string; p
     { key: "accessToken", label: "Access Token", placeholder: "act.xxxx...", sensitive: true },
     { key: "businessId", label: "Business Account ID", placeholder: "7198765432" },
   ],
+  webchat: [
+    { key: "publicKey", label: "Public Key", placeholder: "SyX8AOmq1cw..." },
+    { key: "widgetColor", label: "Widget Color", placeholder: "#3B82F6" },
+    { key: "welcomeMessage", label: "Welcome Message", placeholder: "Hi! How can we help you?" },
+  ],
 };
 
 const POPULAR_CHANNELS: ChannelType[] = ["whatsapp", "messenger", "instagram"];
@@ -102,6 +107,7 @@ const CHANNEL_CATALOG_DESCRIPTIONS: Record<ChannelType, string> = {
   messenger: "Connect Facebook Messenger to engage with your customers on the world's largest social media...",
   instagram: "Connect Instagram to reply to private messages and build strong brand connections.",
   tiktok: "Connect TikTok Business Messaging to engage with a whole new audience from TikTok.",
+  webchat: "Embed a live chat widget on your website to capture and respond to visitor conversations in real time.",
 };
 
 // ============================================================
@@ -368,6 +374,31 @@ const CHANNEL_CONNECT_CONFIG: Record<ChannelType, ChannelConnectConfig> = {
       steps: [
         { title: "Gather Your SMTP Details", description: "You need: SMTP host, port (587/465/25), username (usually email), and password (or app password).", platform: "Your email provider's settings", visualHint: "Check your email provider's documentation for SMTP settings" },
         { title: "Paste Credentials Below", description: "Enter the SMTP Host, Port, Username, Password, and From Address in the form on this page.", platform: "Connection form", visualHint: "Fill in the credential fields on the left side" },
+      ],
+    },
+  },
+  webchat: {
+    choiceTitle: "Set Up Web Chat",
+    choiceSubtitle: "Add a live chat widget to your website to capture visitor conversations.",
+    newLabel: "Create a new widget",
+    existingLabel: "Connect an existing widget",
+    newGuide: {
+      prerequisites: "A website where you can add a script tag",
+      estimatedTime: "5 min",
+      docsUrl: "https://docs.turumba.io/webchat",
+      steps: [
+        { title: "Name Your Widget", description: "Give your web chat widget a name that identifies the site or purpose, e.g. \"Main Site Chat\".", platform: "Connection form", visualHint: "Enter a name in the Widget Name field" },
+        { title: "Customize Appearance", description: "Choose a primary color and set a welcome message that visitors see when the chat opens.", platform: "Connection form", visualHint: "Use the color picker and welcome message fields" },
+        { title: "Copy the Embed Code", description: "After saving, copy the generated script tag and paste it into your website's HTML, just before </body>.", platform: "Your website's HTML", visualHint: "Paste the script tag at the bottom of your page" },
+      ],
+    },
+    existingGuide: {
+      prerequisites: "An existing web chat public key",
+      estimatedTime: "2 min",
+      docsUrl: "https://docs.turumba.io/webchat",
+      steps: [
+        { title: "Enter Your Public Key", description: "Paste your existing web chat public key into the form on this page.", platform: "Connection form", visualHint: "Enter the key in the Public Key field" },
+        { title: "Verify Connection", description: "Click Test Connection to verify the widget is reachable.", platform: "Connection form", visualHint: "Click the Test button and look for a green check" },
       ],
     },
   },
@@ -886,6 +917,7 @@ const CatalogScreen = ({
     email: "email",
     instagram: "social",
     tiktok: "social",
+    webchat: "messaging",
   };
 
   const filteredTypes = useMemo(() => {

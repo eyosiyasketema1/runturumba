@@ -69,7 +69,7 @@ export const RBAC_ROLES: RBACRole[] = [
   { id: "role-asst-trainer",    name: "Assistant Trainer",   userTypeId: "ut-trainer",          isSystem: false, memberCount: 2 },
 ];
 export type MessageStatus = "sent" | "delivered" | "read" | "failed" | "scheduled" | "received";
-export type ChannelType = "whatsapp" | "sms" | "email" | "telegram" | "messenger" | "smpp" | "twilio" | "instagram" | "tiktok";
+export type ChannelType = "whatsapp" | "sms" | "email" | "telegram" | "messenger" | "smpp" | "twilio" | "instagram" | "tiktok" | "webchat";
 /** @deprecated Use ChannelType instead */
 export type MessagePort = ChannelType;
 export type ScheduleFrequency = "once" | "daily" | "weekly" | "biweekly" | "monthly";
@@ -421,6 +421,7 @@ export const CHANNEL_TYPES: { id: ChannelType; label: string; icon: any; color: 
   { id: "messenger", label: "Messenger", icon: Facebook, color: "text-blue-500", bgColor: "bg-blue-50", borderColor: "border-blue-200", description: "Facebook Messenger Platform", logoUrl: "https://cdn.simpleicons.org/messenger/0084FF" },
   { id: "instagram", label: "Instagram", icon: Camera, color: "text-pink-600", bgColor: "bg-pink-50", borderColor: "border-pink-200", description: "Instagram Direct Messaging", logoUrl: "https://cdn.simpleicons.org/instagram/E4405F" },
   { id: "tiktok", label: "TikTok", icon: Music, color: "text-gray-900", bgColor: "bg-gray-100", borderColor: "border-gray-300", description: "TikTok Business Messaging", logoUrl: "https://cdn.simpleicons.org/tiktok/000000" },
+  { id: "webchat", label: "Web Chat", icon: MessageSquare, color: "text-indigo-600", bgColor: "bg-indigo-50", borderColor: "border-indigo-200", description: "Embeddable web chat widget" },
 ];
 
 /** @deprecated Use CHANNEL_TYPES instead */
@@ -917,44 +918,44 @@ export const INITIAL_NOTES: ContactNote[] = [
 
 export const INITIAL_CHANNELS: DeliveryChannel[] = [
   {
-    id: "ch-1", tenantId: "tenant-1", name: "Main WhatsApp", type: "whatsapp",
+    id: "ch-1", tenantId: "tenant-1", name: "WhatsApp Main", type: "whatsapp",
     status: "connected", enabled: true,
     config: { phoneNumber: "+1 555-0199", businessId: "waba-123456" },
     senderName: "GCM Ethiopia", rateLimit: 1000, priority: 1,
     createdAt: "2025-01-15T10:00:00Z", lastActiveAt: "2026-02-21T08:30:00Z",
-    stats: { sent: 4520, delivered: 4380, failed: 140 }
+    stats: { sent: 4520, delivered: 4384, failed: 136 }
   },
   {
-    id: "ch-2", tenantId: "tenant-1", name: "Transactional SMS", type: "sms",
+    id: "ch-2", tenantId: "tenant-1", name: "GCM Bot", type: "telegram",
+    status: "disconnected", enabled: false,
+    config: { botToken: "bot***", botUsername: "@GCMBot" },
+    senderName: "GCMBot", priority: 2,
+    createdAt: "2025-01-20T10:00:00Z", lastActiveAt: "2026-02-21T14:00:00Z",
+    stats: { sent: 4520, delivered: 4384, failed: 136 }
+  },
+  {
+    id: "ch-3", tenantId: "tenant-1", name: "Transactional SMS", type: "sms",
     status: "connected", enabled: true,
     config: { provider: "Twilio", accountSid: "AC***", authToken: "***" },
-    senderName: "GCM", defaultCountryCode: "+1", rateLimit: 500, priority: 2,
-    createdAt: "2025-01-20T10:00:00Z", lastActiveAt: "2026-02-20T14:00:00Z",
-    stats: { sent: 2100, delivered: 2050, failed: 50 }
-  },
-  {
-    id: "ch-3", tenantId: "tenant-1", name: "Support Email", type: "email",
-    status: "connected", enabled: true,
-    config: { smtpHost: "smtp.gcmethiopia.org", smtpPort: "587", imapHost: "imap.gcmethiopia.org" },
-    senderName: "support@gcmethiopia.org", priority: 3,
+    senderName: "GCM", defaultCountryCode: "+1", rateLimit: 500, priority: 3,
     createdAt: "2025-01-22T10:00:00Z", lastActiveAt: "2026-02-21T09:00:00Z",
-    stats: { sent: 1800, delivered: 1790, failed: 10 }
+    stats: { sent: 2300, delivered: 2254, failed: 46 }
   },
   {
-    id: "ch-4", tenantId: "tenant-1", name: "GCM Bot", type: "telegram",
-    status: "disconnected", enabled: false,
-    config: { botToken: "bot***" },
-    senderName: "GCMBot", priority: 4,
-    createdAt: "2025-02-01T10:00:00Z", lastActiveAt: "2026-01-15T16:00:00Z",
-    stats: { sent: 320, delivered: 312, failed: 8 }
-  },
-  {
-    id: "ch-5", tenantId: "tenant-1", name: "Bulk SMS Gateway", type: "smpp",
+    id: "ch-4", tenantId: "tenant-1", name: "Bulk SMS Gateway", type: "sms",
     status: "error", enabled: true,
-    config: { host: "smsc.provider.com", port: "2775", systemId: "gcm_sys" },
-    senderName: "GCM", defaultCountryCode: "+1", rateLimit: 2000,
-    createdAt: "2025-02-10T10:00:00Z",
-    stats: { sent: 0, delivered: 0, failed: 0 }
+    config: { provider: "Africa's Talking", accountSid: "AT***", authToken: "***" },
+    senderName: "GCM", defaultCountryCode: "+251", rateLimit: 2000, priority: 4,
+    createdAt: "2025-02-01T10:00:00Z", lastActiveAt: "2026-02-21T16:00:00Z",
+    stats: { sent: 2300, delivered: 2254, failed: 46 }
+  },
+  {
+    id: "ch-5", tenantId: "tenant-1", name: "Agelgil Support Chat", type: "webchat",
+    status: "connected", enabled: true,
+    config: { publicKey: "SyX8AOmq1cwJOG3bQOnTNvhk2MqX4Ulh1cW" },
+    senderName: "Agelgil", priority: 5,
+    createdAt: "2025-02-10T10:00:00Z", lastActiveAt: "2026-02-21T12:00:00Z",
+    stats: { sent: 1562, delivered: 1550, failed: 12 }
   },
 ];
 
