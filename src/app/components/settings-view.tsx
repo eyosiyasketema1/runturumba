@@ -5,7 +5,7 @@ import {
   Check, ChevronRight, Key, Smartphone, Lock, Eye, EyeOff, Copy, CalendarDays,
   ArrowLeft, ArrowUpRight, Download, Sparkles, Pencil, Plus, Trash2, X,
   Brain, Share2, AlertCircle, BookOpen, Loader2, CheckCircle2, XCircle, ExternalLink, Zap, ShieldCheck, RotateCcw,
-  MapPin, Users, MessageSquare, MoreVertical, PauseCircle, PlayCircle, RefreshCw,
+  Users, MessageSquare, MoreVertical, PauseCircle, PlayCircle, RefreshCw,
   Bot, MessageCircle, RefreshCcw, FileText, Link, Upload, ChevronDown, ChevronUp, Pause, Play, BarChart3, Settings2, Wand2
 } from "lucide-react";
 import { motion } from "motion/react";
