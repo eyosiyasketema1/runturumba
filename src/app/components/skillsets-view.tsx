@@ -35,6 +35,8 @@ import { GuidanceWorkflow } from './skills/GuidanceWorkflow';
 import { DescribeWorkflow } from './skills/DescribeWorkflow';
 import { GuidedWorkflow } from './skills/GuidedWorkflow';
 import { useSkillStore, type SkillStore } from './skills/useSkillStore';
+import { GuideModal } from './skills/GuideModal';
+import type { GuideKind } from './skills/guide-questions';
 import {
   AccessBadge,
   Button,
@@ -944,6 +946,8 @@ function SkillEditor({
   const [showHistory, setShowHistory] = useState(false);
   /** Validation stays hidden until an activation attempt fails. */
   const [showValidation, setShowValidation] = useState(false);
+  /** Which guided-composition modal is open, if any. */
+  const [guide, setGuide] = useState<GuideKind | null>(null);
   const instructionsRef = useRef<HTMLTextAreaElement>(null);
   const validationRef = useRef<HTMLDivElement>(null);
 
@@ -1074,21 +1078,27 @@ function SkillEditor({
             title="Instructions"
             subtitle="Write instructions in Markdown to guide AI behavior"
             action={
-              <div className="flex shrink-0 items-center gap-[2px] border border-border p-[2px]">
-                {(['edit', 'preview'] as const).map((t) => (
-                  <button
-                    key={t}
-                    onClick={() => setTab(t)}
-                    className={cn(
-                      'px-[12px] py-[4px] text-[13px] leading-[18px] font-medium capitalize transition-colors',
-                      tab === t
-                        ? 'bg-secondary text-foreground'
-                        : 'bg-transparent text-foreground/60 hover:text-foreground',
-                    )}
-                  >
-                    {t}
-                  </button>
-                ))}
+              <div className="flex shrink-0 items-center gap-[8px]">
+                <Button variant="outline" onClick={() => setGuide('instructions')}>
+                  <Sparkles className="h-[14px] w-[14px]" />
+                  Instruction guide
+                </Button>
+                <div className="flex shrink-0 items-center gap-[2px] border border-border p-[2px]">
+                  {(['edit', 'preview'] as const).map((t) => (
+                    <button
+                      key={t}
+                      onClick={() => setTab(t)}
+                      className={cn(
+                        'px-[12px] py-[4px] text-[13px] leading-[18px] font-medium capitalize transition-colors',
+                        tab === t
+                          ? 'bg-secondary text-foreground'
+                          : 'bg-transparent text-foreground/60 hover:text-foreground',
+                      )}
+                    >
+                      {t}
+                    </button>
+                  ))}
+                </div>
               </div>
             }
           >
@@ -1131,6 +1141,12 @@ function SkillEditor({
                 Rendered per run. Use <code className="font-mono">{'{{variable}}'}</code>{' '}
                 placeholders for runtime values.
               </>
+            }
+            action={
+              <Button variant="outline" onClick={() => setGuide('userPrompt')}>
+                <Sparkles className="h-[14px] w-[14px]" />
+                Prompt guide
+              </Button>
             }
           >
             <textarea
@@ -1267,6 +1283,22 @@ function SkillEditor({
           </Card>
         </div>
       </div>
+
+      {guide && (
+        <GuideModal
+          kind={guide}
+          existing={guide === 'instructions' ? v.instructions : v.userPromptTemplate}
+          onClose={() => setGuide(null)}
+          onInsert={(composed) => {
+            set(guide === 'instructions' ? 'instructions' : 'userPromptTemplate', composed);
+            setGuide(null);
+            setTab('edit');
+            toast.success(
+              guide === 'instructions' ? 'Instructions written in' : 'Prompt written in',
+            );
+          }}
+        />
+      )}
     </div>
   );
 }
