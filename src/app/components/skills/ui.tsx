@@ -173,6 +173,116 @@ export function CategoryChip({ category }: { category: string }) {
   );
 }
 
+// ------------------------------------------------------------
+// Token highlighting
+// ------------------------------------------------------------
+
+/** Global, for splitting. Never call .test() on this — it is stateful. */
+const TOKEN_SPLIT = /(\{\{[^}]+\}\})/g;
+const IS_TOKEN = /^\{\{[^}]+\}\}$/;
+
+/** Split text on {{tokens}} and render them in the accent colour. */
+export function renderTokens(text: string): React.ReactNode[] {
+  return text.split(TOKEN_SPLIT).map((part, idx) =>
+    IS_TOKEN.test(part) ? (
+      <span key={idx} className="bg-primary/10 font-medium text-primary">
+        {part}
+      </span>
+    ) : (
+      <React.Fragment key={idx}>{part}</React.Fragment>
+    ),
+  );
+}
+
+/**
+ * A textarea that shows {{variable}} tokens in the accent colour.
+ *
+ * A textarea cannot style part of its own content, so the real text is
+ * rendered in a mirror behind it and the textarea's own text is made
+ * transparent. The mirror sits in normal flow and defines the height, so
+ * the box grows with its content and the two can never scroll apart.
+ */
+export function TokenTextarea({
+  value,
+  onChange,
+  onFocus,
+  placeholder,
+  minHeight = 96,
+  textClass = 'text-[13px] leading-[20px]',
+  invalid,
+  inputRef,
+  ...rest
+}: {
+  value: string;
+  onChange: (next: string) => void;
+  onFocus?: () => void;
+  placeholder?: string;
+  minHeight?: number;
+  /** Must be identical for mirror and textarea or the two drift apart. */
+  textClass?: string;
+  invalid?: boolean;
+  inputRef?: (el: HTMLTextAreaElement | null) => void;
+  'aria-label'?: string;
+  id?: string;
+}) {
+  const shared = cn('px-[12px] py-[8px] font-mono whitespace-pre-wrap break-words', textClass);
+
+  return (
+    <div
+      className={cn(
+        'relative border bg-background focus-within:border-primary',
+        invalid ? 'border-destructive' : 'border-border',
+      )}
+      style={{ minHeight }}
+    >
+      <div aria-hidden="true" className={cn(shared, 'pointer-events-none text-foreground')}>
+        {renderTokens(value)}
+        {/* Keeps the last line's height when the value ends in a newline. */}
+        {'​'}
+      </div>
+      <textarea
+        {...rest}
+        ref={inputRef}
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        onFocus={onFocus}
+        placeholder={placeholder}
+        spellCheck={false}
+        className={cn(
+          shared,
+          'absolute inset-0 h-full w-full resize-none overflow-hidden bg-transparent text-transparent caret-foreground outline-none placeholder:text-foreground/40',
+        )}
+      />
+    </div>
+  );
+}
+
+/** Read-only block that highlights {{tokens}} — used for previews. */
+export function TokenPreview({
+  value,
+  empty,
+  className,
+}: {
+  value: string;
+  empty: string;
+  className?: string;
+}) {
+  return (
+    <div
+      className={cn(
+        'overflow-auto border border-border bg-secondary/20 p-[12px] font-mono text-[13px] leading-[20px] whitespace-pre-wrap break-words',
+        className,
+      )}
+    >
+      {value ? (
+        <span className="text-foreground/80">{renderTokens(value)}</span>
+      ) : (
+        <span className="text-foreground/45">{empty}</span>
+      )}
+    </div>
+  );
+}
+
 /** Page header used by every workflow's list screen. */
 export function PageHeader({
   title,

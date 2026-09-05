@@ -4,7 +4,7 @@ import React, { useMemo, useRef, useState } from 'react';
 import { motion } from 'motion/react';
 import { AlertTriangle, Plus, Sparkles, X } from 'lucide-react';
 import { cn } from '../types';
-import { Button, Label, inputClass, monoClass } from './ui';
+import { Button, Label, TokenPreview, TokenTextarea, inputClass } from './ui';
 import {
   TEMPLATE_VARIABLES,
   composeFromGuide,
@@ -171,21 +171,17 @@ export function GuideModal({
                   )}
 
                   {q.multiline ? (
-                    <textarea
+                    <TokenTextarea
                       id={`guide-${q.id}`}
-                      ref={(el) => {
+                      inputRef={(el) => {
                         fieldRefs.current[q.id] = el;
                       }}
                       value={answers[q.id] ?? ''}
-                      onChange={(e) => set(q.id, e.target.value)}
+                      onChange={(next) => set(q.id, next)}
                       onFocus={() => setActiveField(q.id)}
-                      rows={q.list ? 4 : 3}
+                      minHeight={q.list ? 108 : 84}
                       placeholder={q.placeholder}
-                      className={cn(
-                        inputClass,
-                        'resize-y text-[13px]',
-                        problem && 'border-destructive',
-                      )}
+                      invalid={Boolean(problem)}
                     />
                   ) : (
                     <input
@@ -233,7 +229,7 @@ export function GuideModal({
                         title={v.token}
                         className="flex items-start gap-[8px] border border-border bg-background p-[8px] text-left transition-colors hover:border-primary/40 hover:bg-secondary/40"
                       >
-                        <Plus className="mt-[2px] h-[12px] w-[12px] shrink-0 text-primary" />
+                        <Plus className="mt-[2px] h-[12px] w-[12px] shrink-0 text-foreground/40" />
                         <span className="flex min-w-0 flex-col gap-[1px]">
                           <span className="text-[12px] leading-[16px] font-medium text-foreground">
                             {v.label}
@@ -251,14 +247,11 @@ export function GuideModal({
 
             <div className="flex min-h-0 flex-1 flex-col gap-[8px] p-[16px]">
               <Label>Preview</Label>
-              <pre
-                className={cn(
-                  'min-h-[160px] flex-1 overflow-auto border border-border bg-secondary/20 p-[12px] whitespace-pre-wrap text-foreground/80',
-                  monoClass,
-                )}
-              >
-                {composed || 'Your answers will appear here as you type.'}
-              </pre>
+              <TokenPreview
+                value={composed}
+                empty="Your answers will appear here as you type."
+                className="min-h-[160px] flex-1"
+              />
             </div>
           </div>
         </div>

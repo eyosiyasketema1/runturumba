@@ -46,6 +46,7 @@ import {
   Label,
   Select,
   StatusBadge,
+  TokenTextarea,
   inputClass,
   monoClass,
 } from './skills/ui';
@@ -1149,11 +1150,11 @@ function SkillEditor({
               </Button>
             }
           >
-            <textarea
+            <TokenTextarea
               value={v.userPromptTemplate}
-              onChange={(e) => set('userPromptTemplate', e.target.value)}
+              onChange={(next) => set('userPromptTemplate', next)}
               aria-label="User prompt template"
-              className={cn(inputClass, monoClass, 'min-h-[300px] resize-y')}
+              minHeight={300}
             />
           </Card>
 
