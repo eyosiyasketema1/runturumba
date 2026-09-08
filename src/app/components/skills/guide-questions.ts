@@ -22,6 +22,21 @@ export interface GuideQuestion {
   required?: boolean;
   /** Repeatable answers, e.g. one rule per line. */
   list?: boolean;
+  /**
+   * Renders the paired "Use it when / Don't use it when" lists instead of a
+   * text box. Answers are stored under `${id}.use` and `${id}.avoid`, one
+   * example per line.
+   */
+  examples?: boolean;
+  /** Placeholder for the "Use it when" column. */
+  usePlaceholder?: string;
+  /** Placeholder for the "Don't use it when" column. */
+  avoidPlaceholder?: string;
+}
+
+/** Answer keys for an examples question. */
+export function exampleKeys(id: string) {
+  return { use: `${id}.use`, avoid: `${id}.avoid` };
 }
 
 // ------------------------------------------------------------
@@ -121,6 +136,16 @@ export const INSTRUCTION_QUESTIONS: GuideQuestion[] = [
     list: true,
   },
   {
+    id: 'scope',
+    question: 'Show it with examples',
+    help: 'Concrete situations beat clever wording. Point at conversations you have actually seen.',
+    placeholder: '',
+    multiline: false,
+    examples: true,
+    usePlaceholder: 'A customer asks to return an item',
+    avoidPlaceholder: 'They are only asking about delivery time',
+  },
+  {
     id: 'escalate',
     question: 'When should a person take over?',
     help: 'One per line. Anything you never want handled automatically.',
@@ -176,6 +201,16 @@ export const USER_PROMPT_QUESTIONS: GuideQuestion[] = [
     list: true,
   },
   {
+    id: 'scope',
+    question: 'Show it with examples',
+    help: 'Examples of runs where it should act, and runs where it should leave things alone.',
+    placeholder: '',
+    multiline: false,
+    examples: true,
+    usePlaceholder: 'The customer names the product and the problem',
+    avoidPlaceholder: 'The conversation is a single greeting',
+  },
+  {
     id: 'finish',
     question: 'How should it finish?',
     help: 'What it should output, and when to stop.',
@@ -201,6 +236,19 @@ function lines(value: string | undefined): string[] {
     .filter(Boolean);
 }
 
+/** Renders the paired examples, if any were given. */
+function exampleSection(a: GuideAnswers): string[] {
+  const keys = exampleKeys('scope');
+  const use = lines(a[keys.use]);
+  const avoid = lines(a[keys.avoid]);
+  if (use.length === 0 && avoid.length === 0) return [];
+
+  const out = ['', '## Examples'];
+  for (const e of use) out.push(`- Use it when: ${e}`);
+  for (const e of avoid) out.push(`- Do not use it when: ${e}`);
+  return out;
+}
+
 function bulletSection(title: string, value: string | undefined): string[] {
   const items = lines(value);
   if (items.length === 0) return [];
@@ -219,6 +267,8 @@ export function composeInstructionsFromGuide(a: GuideAnswers): string {
   out.push(...bulletSection('When to act', a.act));
   out.push(...bulletSection('When to do nothing', a.stop));
   out.push(...bulletSection('When to hand over to a person', a.escalate));
+
+  out.push(...exampleSection(a));
 
   const tone = (a.tone ?? '').trim();
   if (tone) out.push('', '## How to speak', tone);
@@ -247,6 +297,8 @@ export function composeUserPromptFromGuide(a: GuideAnswers): string {
     steps.forEach((step, idx) => out.push(`${idx + 1}. ${step}`));
   }
 
+  out.push(...exampleSection(a));
+
   const finish = (a.finish ?? '').trim();
   if (finish) out.push('', finish);
 
@@ -263,6 +315,7 @@ export function composeFromGuide(kind: GuideKind, answers: GuideAnswers): string
 export function guideProblems(kind: GuideKind, answers: GuideAnswers): Record<string, string> {
   const problems: Record<string, string> = {};
   for (const q of questionsFor(kind)) {
+    if (q.examples) continue;
     if (q.required && !(answers[q.id] ?? '').trim()) {
       problems[q.id] = 'Answer this before you can insert';
     }

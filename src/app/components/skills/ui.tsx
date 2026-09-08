@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { ChevronDown } from 'lucide-react';
+import { ChevronDown, X } from 'lucide-react';
 import { cn } from '../types';
 import type { SkillStatus } from '../../lib/skills-data';
 
@@ -170,6 +170,107 @@ export function CategoryChip({ category }: { category: string }) {
     <span className="shrink-0 border border-border bg-secondary/40 px-[8px] py-[1px] text-[11px] leading-[16px] text-foreground/60">
       {category}
     </span>
+  );
+}
+
+// ------------------------------------------------------------
+// Scoping examples — "use it when" / "don't use it when"
+// ------------------------------------------------------------
+
+/**
+ * A list of concrete examples that scope a rule or an instruction.
+ * Shared by the Guidance workflow and the guide modals so the two teach
+ * the same habit: point at real conversations instead of writing
+ * conditions.
+ */
+export function ExampleList({
+  label,
+  placeholder,
+  values,
+  onChange,
+  tone,
+}: {
+  label: string;
+  placeholder: string;
+  values: string[];
+  onChange: (next: string[]) => void;
+  tone: 'positive' | 'negative';
+}) {
+  return (
+    <div className="flex flex-col gap-[6px]">
+      <span
+        className={cn(
+          'text-[12px] leading-[16px] font-medium',
+          tone === 'positive' ? 'text-emerald-700' : 'text-amber-700',
+        )}
+      >
+        {label}
+      </span>
+      {values.map((value, idx) => (
+        <div key={idx} className="flex items-center gap-[6px]">
+          <input
+            value={value}
+            placeholder={placeholder}
+            aria-label={`${label} example ${idx + 1}`}
+            onChange={(e) => {
+              const next = [...values];
+              next[idx] = e.target.value;
+              onChange(next);
+            }}
+            className={cn(inputClass, 'text-[13px]')}
+          />
+          <button
+            onClick={() => onChange(values.filter((_, i) => i !== idx))}
+            aria-label="Remove example"
+            className="shrink-0 p-[6px] text-foreground/40 transition-colors hover:text-destructive"
+          >
+            <X className="h-[14px] w-[14px]" />
+          </button>
+        </div>
+      ))}
+      <button
+        onClick={() => onChange([...values, ''])}
+        className="self-start text-[12px] leading-[16px] font-medium text-primary hover:underline"
+      >
+        + Add an example
+      </button>
+    </div>
+  );
+}
+
+/** The two lists side by side. */
+export function ExamplePair({
+  use,
+  avoid,
+  onUseChange,
+  onAvoidChange,
+  usePlaceholder,
+  avoidPlaceholder,
+}: {
+  use: string[];
+  avoid: string[];
+  onUseChange: (next: string[]) => void;
+  onAvoidChange: (next: string[]) => void;
+  usePlaceholder: string;
+  avoidPlaceholder: string;
+}) {
+  return (
+    <div className="grid gap-[16px] border border-border p-[16px] sm:grid-cols-2">
+      <ExampleList
+        label="Use it when…"
+        placeholder={usePlaceholder}
+        tone="positive"
+        values={use}
+        onChange={onUseChange}
+      />
+      <ExampleList
+        label="Don't use it when…"
+        placeholder={avoidPlaceholder}
+        tone="negative"
+        values={avoid}
+        onChange={onAvoidChange}
+      />
+    </div>
   );
 }
 

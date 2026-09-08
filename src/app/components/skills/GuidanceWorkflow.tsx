@@ -10,6 +10,7 @@ import {
   Button,
   Card,
   EmptyState,
+  ExampleList,
   Field,
   PageHeader,
   StatusBadge,
@@ -77,65 +78,6 @@ function reviewRules(rules: GuidanceRule[]): string[] {
 function truncate(text: string, max = 42) {
   const clean = text.trim();
   return clean.length <= max ? clean : `${clean.slice(0, max)}…`;
-}
-
-// ------------------------------------------------------------
-// Example list (apply when / don't apply when)
-// ------------------------------------------------------------
-
-function ExampleList({
-  label,
-  placeholder,
-  values,
-  onChange,
-  tone,
-}: {
-  label: string;
-  placeholder: string;
-  values: string[];
-  onChange: (next: string[]) => void;
-  tone: 'positive' | 'negative';
-}) {
-  return (
-    <div className="flex flex-col gap-[6px]">
-      <span
-        className={cn(
-          'text-[12px] leading-[16px] font-medium',
-          tone === 'positive' ? 'text-emerald-700' : 'text-amber-700',
-        )}
-      >
-        {label}
-      </span>
-      {values.map((value, idx) => (
-        <div key={idx} className="flex items-center gap-[6px]">
-          <input
-            value={value}
-            placeholder={placeholder}
-            aria-label={`${label} example ${idx + 1}`}
-            onChange={(e) => {
-              const next = [...values];
-              next[idx] = e.target.value;
-              onChange(next);
-            }}
-            className={cn(inputClass, 'text-[13px]')}
-          />
-          <button
-            onClick={() => onChange(values.filter((_, i) => i !== idx))}
-            aria-label="Remove example"
-            className="shrink-0 p-[6px] text-foreground/40 transition-colors hover:text-destructive"
-          >
-            <X className="h-[14px] w-[14px]" />
-          </button>
-        </div>
-      ))}
-      <button
-        onClick={() => onChange([...values, ''])}
-        className="self-start text-[12px] leading-[16px] font-medium text-primary hover:underline"
-      >
-        + Add an example
-      </button>
-    </div>
-  );
 }
 
 // ------------------------------------------------------------

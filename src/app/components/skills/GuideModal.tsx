@@ -4,10 +4,11 @@ import React, { useMemo, useRef, useState } from 'react';
 import { motion } from 'motion/react';
 import { AlertTriangle, Plus, Sparkles, X } from 'lucide-react';
 import { cn } from '../types';
-import { Button, Label, TokenPreview, TokenTextarea, inputClass } from './ui';
+import { Button, ExamplePair, Label, TokenPreview, TokenTextarea, inputClass } from './ui';
 import {
   TEMPLATE_VARIABLES,
   composeFromGuide,
+  exampleKeys,
   guideProblems,
   questionsFor,
   type GuideAnswers,
@@ -67,6 +68,10 @@ export function GuideModal({
     setAnswers((prev) => ({ ...prev, [id]: value }));
     setShowProblems(false);
   };
+
+  /** Examples are stored newline-joined so the composer stays string-based. */
+  const readList = (key: string) => (answers[key] ?? '').split('\n').filter((l) => l !== '');
+  const writeList = (key: string, next: string[]) => set(key, next.join('\n'));
 
   /** Drop a variable token at the cursor of whichever answer box was last active. */
   const insertVariable = (token: string) => {
@@ -170,7 +175,21 @@ export function GuideModal({
                     </span>
                   )}
 
-                  {q.multiline ? (
+                  {q.examples ? (
+                    (() => {
+                      const keys = exampleKeys(q.id);
+                      return (
+                        <ExamplePair
+                          use={readList(keys.use)}
+                          avoid={readList(keys.avoid)}
+                          onUseChange={(next) => writeList(keys.use, next)}
+                          onAvoidChange={(next) => writeList(keys.avoid, next)}
+                          usePlaceholder={q.usePlaceholder ?? 'When it should apply'}
+                          avoidPlaceholder={q.avoidPlaceholder ?? 'When it should not'}
+                        />
+                      );
+                    })()
+                  ) : q.multiline ? (
                     <TokenTextarea
                       id={`guide-${q.id}`}
                       inputRef={(el) => {
